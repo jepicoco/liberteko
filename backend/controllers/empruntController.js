@@ -176,7 +176,7 @@ const createEmprunt = async (req, res) => {
     // Déclencher l'événement de création d'emprunt
     try {
       await eventTriggerService.triggerEmpruntCreated(emprunt, adherent, jeu);
-      console.log('Event EMPRUNT_CREATED déclenché pour emprunt:', emprunt.id);
+// console.('Event EMPRUNT_CREATED déclenché pour emprunt:', emprunt.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue
@@ -246,7 +246,7 @@ const retourEmprunt = async (req, res) => {
     // Déclencher l'événement de retour d'emprunt
     try {
       await eventTriggerService.triggerEmpruntReturned(emprunt, emprunt.adherent, emprunt.jeu);
-      console.log('Event EMPRUNT_RETURNED déclenché pour emprunt:', emprunt.id);
+// console.('Event EMPRUNT_RETURNED déclenché pour emprunt:', emprunt.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer le retour si l'événement échoue

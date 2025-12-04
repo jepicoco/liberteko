@@ -15,20 +15,12 @@ class EventTriggerService {
    */
   async triggerEvent(eventCode, data, options = {}) {
     try {
-      console.log(`[EventTrigger] Déclenchement de l'événement: ${eventCode}`);
-
       // Récupérer le trigger par code
       const trigger = await EventTrigger.findByCode(eventCode);
 
       if (!trigger) {
-        console.warn(`[EventTrigger] ❌ Event trigger '${eventCode}' non trouvé`);
         return { success: false, reason: 'trigger_not_found' };
       }
-
-      console.log(`[EventTrigger] ✓ Trigger trouvé: ${trigger.libelle}`);
-      console.log(`[EventTrigger]   - Email actif: ${trigger.email_actif}`);
-      console.log(`[EventTrigger]   - SMS actif: ${trigger.sms_actif}`);
-      console.log(`[EventTrigger]   - Template email: ${trigger.template_email_code || '(aucun)'}`);
 
       const results = {
         eventCode,
@@ -39,31 +31,18 @@ class EventTriggerService {
 
       // Évaluer la condition d'envoi
       if (!trigger.evaluateCondition(data)) {
-        console.log(`[EventTrigger] ⚠ Condition d'envoi non satisfaite pour '${eventCode}'`);
         return { success: false, reason: 'condition_not_met' };
-      }
-
-      console.log(`[EventTrigger] ✓ Condition d'envoi satisfaite`);
-
-      // Gérer le délai d'envoi
-      if (trigger.delai_envoi && trigger.delai_envoi > 0) {
-        // TODO: Implémenter un système de queue pour les envois différés
-        console.log(`Envoi différé de ${trigger.delai_envoi} minutes pour '${eventCode}'`);
       }
 
       // Envoyer l'email si activé
       if (trigger.shouldSendEmail()) {
-        console.log(`[EventTrigger] → Envoi de l'email...`);
         try {
-          const emailResult = await this.sendEmail(trigger, data, options);
+          await this.sendEmail(trigger, data, options);
           results.emailSent = true;
-          console.log(`[EventTrigger] ✓ Email envoyé avec succès`);
         } catch (error) {
-          console.error(`[EventTrigger] ❌ Erreur envoi email pour '${eventCode}':`, error.message);
+          console.error(`Erreur email '${eventCode}':`, error.message);
           results.errors.push({ type: 'email', message: error.message });
         }
-      } else {
-        console.log(`[EventTrigger] ⊘ Envoi d'email non activé ou pas de template configuré`);
       }
 
       // Envoyer le SMS si activé
@@ -72,7 +51,7 @@ class EventTriggerService {
           await this.sendSMS(trigger, data, options);
           results.smsSent = true;
         } catch (error) {
-          console.error(`Erreur envoi SMS pour '${eventCode}':`, error);
+          console.error(`Erreur SMS '${eventCode}':`, error.message);
           results.errors.push({ type: 'sms', message: error.message });
         }
       }
@@ -82,7 +61,7 @@ class EventTriggerService {
         ...results
       };
     } catch (error) {
-      console.error(`Erreur lors du déclenchement de l'événement '${eventCode}':`, error);
+      console.error(`Erreur trigger '${eventCode}':`, error.message);
       return {
         success: false,
         reason: 'trigger_error',
@@ -156,8 +135,6 @@ class EventTriggerService {
     }
 
     // TODO: Implémenter l'envoi de SMS
-    console.log(`Envoi SMS pour '${trigger.code}' - À implémenter`);
-
     // Pour l'instant, on simule un succès
     return { success: true, reason: 'sms_not_implemented' };
   }

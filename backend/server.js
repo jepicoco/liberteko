@@ -23,11 +23,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Middlewares de logging personnalisés
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  next();
-});
+// Middlewares de logging personnalisés (désactivé sauf erreurs)
+// app.use((req, res, next) => {
+//   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+//   next();
+// });
 
 // Serve static files from frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -105,29 +105,16 @@ app.use((err, req, res, next) => {
 // Démarrage du serveur
 const startServer = async () => {
   try {
-    console.log('Starting Ludothèque server...');
-    console.log('Connecting to database:', process.env.DB_HOST);
-
-    // Test database connection
+    // Test database connection (silencieux)
     await sequelize.authenticate();
-    console.log('✓ Database connected successfully');
 
-    console.log('Synchronizing database models...');
     // Sync models with database (create tables if they don't exist)
     await sequelize.sync({ alter: false });
-    console.log('✓ Database models synchronized');
 
     // Initialize email service
-    console.log('Initializing email service...');
     const emailService = require('./services/emailService');
-    const emailInitialized = await emailService.initialize();
-    if (emailInitialized) {
-      console.log('✓ Email service initialized successfully');
-    } else {
-      console.warn('⚠ Email service not initialized (no active configuration)');
-    }
+    await emailService.initialize();
 
-    console.log('Starting HTTP server on port', PORT);
     app.listen(PORT, () => {
       console.log(`
 ╔════════════════════════════════════════╗
@@ -140,11 +127,9 @@ const startServer = async () => {
     });
   } catch (error) {
     console.error('✗ Failed to start server');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
+    console.error('Error:', error.message);
     if (error.original) {
-      console.error('Original error:', error.original.message);
-      console.error('Error code:', error.original.code);
+      console.error('Database error:', error.original.message);
     }
     process.exit(1);
   }

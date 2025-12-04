@@ -142,7 +142,7 @@ const createAdherent = async (req, res) => {
     // Déclencher l'événement de création d'adhérent
     try {
       await eventTriggerService.triggerAdherentCreated(adherent);
-      console.log('Event ADHERENT_CREATED déclenché pour:', adherent.email);
+// console.('Event ADHERENT_CREATED déclenché pour:', adherent.email);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue
@@ -229,11 +229,11 @@ const updateAdherent = async (req, res) => {
       // Si le statut a changé vers suspendu
       if (statut && statut === 'suspendu' && previousStatut !== 'suspendu') {
         await eventTriggerService.triggerAdherentSuspended(adherent);
-        console.log('Event ADHERENT_SUSPENDED déclenché pour:', adherent.email);
+// console.('Event ADHERENT_SUSPENDED déclenché pour:', adherent.email);
       } else {
         // Pour toute autre modification
         await eventTriggerService.triggerAdherentUpdated(adherent);
-        console.log('Event ADHERENT_UPDATED déclenché pour:', adherent.email);
+// console.('Event ADHERENT_UPDATED déclenché pour:', adherent.email);
       }
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
@@ -561,7 +561,7 @@ const sendSms = async (req, res) => {
 
     // TODO: Implémenter l'envoi de SMS via un service SMS
     // Pour l'instant, on simule un succès
-    console.log(`[SMS] Envoi à ${adherent.telephone}: ${smsText}`);
+// console.(`[SMS] Envoi à ${adherent.telephone}: ${smsText}`);
 
     res.json({
       success: true,

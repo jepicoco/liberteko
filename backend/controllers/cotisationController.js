@@ -262,7 +262,7 @@ exports.createCotisation = async (req, res) => {
     // Déclencher l'événement de création de cotisation
     try {
       await eventTriggerService.triggerCotisationCreated(cotisation, adherent);
-      console.log('Event COTISATION_CREATED déclenché pour cotisation:', cotisation.id);
+// console.('Event COTISATION_CREATED déclenché pour cotisation:', cotisation.id);
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue

@@ -35,7 +35,6 @@ class EmailService {
       encrypted += cipher.final('hex');
       return iv.toString('hex') + ':' + encrypted;
     } catch (error) {
-      console.error('Erreur lors du chiffrement:', error);
       throw new Error('Erreur de chiffrement du mot de passe');
     }
   }
@@ -61,7 +60,6 @@ class EmailService {
       decrypted += decipher.final('utf8');
       return decrypted;
     } catch (error) {
-      console.error('Erreur lors du déchiffrement:', error);
       throw new Error('Erreur de déchiffrement du mot de passe');
     }
   }
@@ -78,7 +76,7 @@ class EmailService {
       });
 
       if (!this.defaultConfig) {
-        console.warn('⚠ Aucune configuration email active trouvée - Les emails ne seront pas envoyés');
+        // Pas de configuration email active
         return false;
       }
 
@@ -99,19 +97,14 @@ class EmailService {
       // Vérifier la connexion (mais ne pas bloquer si ça échoue)
       try {
         await this.transporter.verify();
-        console.log('✓ Service email initialisé avec succès');
-        console.log(`  Serveur: ${this.defaultConfig.smtp_host}:${this.defaultConfig.smtp_port}`);
-        console.log(`  Expéditeur: ${this.defaultConfig.email_expediteur}`);
         return true;
       } catch (verifyError) {
-        console.error('⚠ Erreur de vérification SMTP:', verifyError.message);
-        console.warn('  Le service email est configuré mais la connexion a échoué');
-        console.warn('  Les emails ne pourront pas être envoyés');
+        console.error('Erreur SMTP:', verifyError.message);
         // Ne pas réinitialiser le transporteur, il pourra peut-être fonctionner quand même
         return false;
       }
     } catch (error) {
-      console.error('❌ Erreur initialisation service email:', error.message);
+      console.error('Erreur init email:', error.message);
       return false;
     }
   }
@@ -185,7 +178,6 @@ class EmailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
-      console.log('Email envoyé:', info.messageId);
 
       // Mettre à jour le log avec succès
       await emailLog.update({
@@ -195,7 +187,7 @@ class EmailService {
 
       return { success: true, messageId: info.messageId, logId: emailLog.id };
     } catch (error) {
-      console.error('Erreur envoi email:', error);
+      console.error('Erreur envoi email:', error.message);
 
       // Mettre à jour le log avec l'erreur
       await emailLog.update({
@@ -229,7 +221,7 @@ class EmailService {
         ...options
       });
     } catch (error) {
-      console.error(`Erreur envoi email template '${templateCode}':`, error);
+      console.error(`Erreur template '${templateCode}':`, error.message);
       throw error;
     }
   }

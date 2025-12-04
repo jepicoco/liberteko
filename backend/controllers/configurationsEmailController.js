@@ -68,7 +68,7 @@ exports.getConfigurationById = async (req, res) => {
  */
 exports.createConfiguration = async (req, res) => {
   try {
-    console.log('createConfiguration appelé avec:', req.body);
+    // console.log('createConfiguration appelé avec:', req.body);
     const {
       libelle,
       email_expediteur,
@@ -113,7 +113,7 @@ exports.createConfiguration = async (req, res) => {
       );
     }
 
-    console.log('Création de la configuration...');
+    // console.log('Création de la configuration...');
     const configuration = await ConfigurationEmail.create({
       libelle,
       email_expediteur,
@@ -138,7 +138,7 @@ exports.createConfiguration = async (req, res) => {
     const result = configuration.toJSON();
     delete result.smtp_password;
 
-    console.log('Configuration créée avec succès:', result.id);
+    // console.log('Configuration créée avec succès:', result.id);
     res.status(201).json(result);
   } catch (error) {
     console.error('Erreur lors de la création de la configuration:', error);
