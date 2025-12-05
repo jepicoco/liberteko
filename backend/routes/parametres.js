@@ -3,6 +3,7 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
 const { isAdmin, isGestionnaire } = require('../middleware/checkRole');
 const parametresController = require('../controllers/parametresController');
+const parametresFrontController = require('../controllers/parametresFrontController');
 const modesPaiementController = require('../controllers/modesPaiementController');
 const codesReductionController = require('../controllers/codesReductionController');
 const tarifsController = require('../controllers/tarifsController');
@@ -25,6 +26,25 @@ router.put('/structure', verifyToken, isAdmin(), parametresController.updatePara
 
 // Upload du logo (admin seulement)
 router.post('/structure/logo', verifyToken, isAdmin(), parametresController.uploadLogo);
+
+// ============================================
+// Routes pour les parametres du site public (front)
+// ============================================
+
+// Recuperer les parametres front (admin seulement)
+router.get('/front', verifyToken, isAdmin(), parametresFrontController.getParametres);
+
+// Recuperer les parametres front publics (accessible a tous)
+router.get('/front/public', parametresFrontController.getParametresPublics);
+
+// Mettre a jour les parametres front (admin seulement)
+router.put('/front', verifyToken, isAdmin(), parametresFrontController.updateParametres);
+
+// Mettre a jour une section specifique (admin seulement)
+router.put('/front/section/:section', verifyToken, isAdmin(), parametresFrontController.updateSection);
+
+// Upload du logo front (admin seulement)
+router.post('/front/logo', verifyToken, isAdmin(), parametresFrontController.uploadLogo);
 
 // ============================================
 // Routes pour les modes de paiement

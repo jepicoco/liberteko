@@ -7,8 +7,40 @@
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    .param-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      height: 100%;
+    }
+    .param-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .param-card .card-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    .param-card .icon-container {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .param-card .icon-container i {
+      font-size: 2.5rem;
+    }
+    .param-card.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
   <!-- Navigation (genere par JS) -->
@@ -29,27 +61,21 @@
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs mb-4" id="parametresTabs" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="structure-tab" data-bs-toggle="tab" data-bs-target="#structure"
+            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general"
                     type="button" role="tab">
-              <i class="bi bi-building"></i> Structure
+              <i class="bi bi-gear"></i> General
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tarifs-tab" data-bs-toggle="tab" data-bs-target="#tarifs"
+            <button class="nav-link" id="comptabilite-tab" data-bs-toggle="tab" data-bs-target="#comptabilite"
                     type="button" role="tab">
-              <i class="bi bi-tags"></i> Tarifs
+              <i class="bi bi-calculator"></i> Comptabilite
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="listes-tab" data-bs-toggle="tab" data-bs-target="#listes"
+            <button class="nav-link" id="communication-tab" data-bs-toggle="tab" data-bs-target="#communication"
                     type="button" role="tab">
-              <i class="bi bi-list-ul"></i> Listes
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="utilisateurs-tab" data-bs-toggle="tab" data-bs-target="#utilisateurs"
-                    type="button" role="tab">
-              <i class="bi bi-people"></i> Utilisateurs
+              <i class="bi bi-envelope"></i> Communication
             </button>
           </li>
           <li class="nav-item" role="presentation">
@@ -64,321 +90,202 @@
         <div class="tab-content" id="parametresTabContent">
 
           <!-- ======================== -->
-          <!-- Structure Tab            -->
+          <!-- General Tab              -->
           <!-- ======================== -->
-          <div class="tab-pane fade show active" id="structure" role="tabpanel">
-            <div class="card">
-              <div class="card-header">
-                <h4 class="card-title mb-0">Informations de la structure</h4>
-              </div>
-              <div class="card-body">
-                <form id="form-structure">
-                  <div class="row g-3">
-                    <!-- Identite -->
-                    <div class="col-12">
-                      <h5 class="border-bottom pb-2"><i class="bi bi-info-circle"></i> Identite</h5>
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="nom_structure" class="form-label">Nom de la structure *</label>
-                      <input type="text" class="form-control" id="nom_structure" name="nom_structure" required>
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="logo" class="form-label">Logo (URL)</label>
-                      <input type="text" class="form-control" id="logo" name="logo">
-                      <small class="text-muted">Chemin ou URL vers le fichier logo</small>
-                    </div>
-
-                    <div class="col-12">
-                      <label for="description" class="form-label">Description</label>
-                      <textarea class="form-control" id="description" name="description" rows="3"></textarea>
-                    </div>
-
-                    <!-- Coordonnees -->
-                    <div class="col-12 mt-4">
-                      <h5 class="border-bottom pb-2"><i class="bi bi-geo-alt"></i> Coordonnees</h5>
-                    </div>
-
-                    <div class="col-md-12">
-                      <label for="adresse" class="form-label">Adresse</label>
-                      <textarea class="form-control" id="adresse" name="adresse" rows="2"></textarea>
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="code_postal" class="form-label">Code postal</label>
-                      <input type="text" class="form-control" id="code_postal" name="code_postal">
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="ville" class="form-label">Ville</label>
-                      <input type="text" class="form-control" id="ville" name="ville">
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="pays" class="form-label">Pays</label>
-                      <input type="text" class="form-control" id="pays" name="pays" value="France">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="telephone" class="form-label">Telephone</label>
-                      <input type="tel" class="form-control" id="telephone" name="telephone">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="email" class="form-label">Email</label>
-                      <input type="email" class="form-control" id="email" name="email">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="site_web" class="form-label">Site web</label>
-                      <input type="url" class="form-control" id="site_web" name="site_web">
-                    </div>
-
-                    <!-- Informations legales -->
-                    <div class="col-12 mt-4">
-                      <h5 class="border-bottom pb-2"><i class="bi bi-file-text"></i> Informations legales</h5>
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="siret" class="form-label">SIRET</label>
-                      <input type="text" class="form-control" id="siret" name="siret" maxlength="14">
-                      <small class="text-muted">14 chiffres</small>
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="numero_rna" class="form-label">Numero RNA</label>
-                      <input type="text" class="form-control" id="numero_rna" name="numero_rna" maxlength="12">
-                      <small class="text-muted">Pour associations (W + 9 chiffres)</small>
-                    </div>
-
-                    <div class="col-md-4">
-                      <label for="numero_tva" class="form-label">Numero TVA</label>
-                      <input type="text" class="form-control" id="numero_tva" name="numero_tva">
-                    </div>
-
-                    <!-- Informations bancaires -->
-                    <div class="col-12 mt-4">
-                      <h5 class="border-bottom pb-2"><i class="bi bi-bank"></i> Informations bancaires</h5>
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="iban" class="form-label">IBAN</label>
-                      <input type="text" class="form-control" id="iban" name="iban" maxlength="34">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="bic" class="form-label">BIC/SWIFT</label>
-                      <input type="text" class="form-control" id="bic" name="bic" maxlength="11">
-                    </div>
-
-                    <!-- Horaires -->
-                    <div class="col-12 mt-4">
-                      <h5 class="border-bottom pb-2"><i class="bi bi-clock"></i> Horaires d'ouverture</h5>
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_lundi" class="form-label">Lundi</label>
-                      <input type="text" class="form-control" id="horaires_lundi" placeholder="9h-17h ou Ferme">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_mardi" class="form-label">Mardi</label>
-                      <input type="text" class="form-control" id="horaires_mardi" placeholder="9h-17h ou Ferme">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_mercredi" class="form-label">Mercredi</label>
-                      <input type="text" class="form-control" id="horaires_mercredi" placeholder="9h-17h ou Ferme">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_jeudi" class="form-label">Jeudi</label>
-                      <input type="text" class="form-control" id="horaires_jeudi" placeholder="9h-17h ou Ferme">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_vendredi" class="form-label">Vendredi</label>
-                      <input type="text" class="form-control" id="horaires_vendredi" placeholder="9h-17h ou Ferme">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_samedi" class="form-label">Samedi</label>
-                      <input type="text" class="form-control" id="horaires_samedi" placeholder="9h-17h ou Ferme">
-                    </div>
-
-                    <div class="col-md-6">
-                      <label for="horaires_dimanche" class="form-label">Dimanche</label>
-                      <input type="text" class="form-control" id="horaires_dimanche" placeholder="Ferme">
-                    </div>
-
-                    <!-- Mentions legales -->
-                    <div class="col-12 mt-4">
-                      <label for="mentions_legales" class="form-label">Mentions legales</label>
-                      <textarea class="form-control" id="mentions_legales" name="mentions_legales" rows="4"></textarea>
-                    </div>
-
-                    <!-- Boutons -->
-                    <div class="col-12 mt-4">
-                      <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-lg"></i> Enregistrer les modifications
-                      </button>
-                      <button type="button" class="btn btn-secondary" onclick="loadStructure()">
-                        <i class="bi bi-arrow-clockwise"></i> Annuler
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-
-          <!-- ======================== -->
-          <!-- Tarifs Tab               -->
-          <!-- ======================== -->
-          <div class="tab-pane fade" id="tarifs" role="tabpanel">
-            <div class="card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <h4 class="card-title mb-0">Tarifs des cotisations</h4>
-                <button class="btn btn-success" onclick="showModalTarif()">
-                  <i class="bi bi-plus-lg"></i> Nouveau tarif
-                </button>
-              </div>
-              <div class="card-body">
-                <p class="text-muted">
-                  <i class="bi bi-info-circle"></i>
-                  Glissez-deposez les lignes pour reorganiser l'ordre d'affichage
-                </p>
-                <div id="liste-tarifs">
-                  <div class="text-center p-4">
-                    <div class="spinner-border text-primary" role="status">
-                      <span class="visually-hidden">Chargement...</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ======================== -->
-          <!-- Listes Tab               -->
-          <!-- ======================== -->
-          <div class="tab-pane fade" id="listes" role="tabpanel">
-            <ul class="nav nav-pills mb-3" id="listes-pills">
-              <li class="nav-item">
-                <a class="nav-link active" href="#" onclick="showListeSection('modes-paiement'); return false;">
-                  <i class="bi bi-wallet2"></i> Modes de paiement
-                </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="#" onclick="showListeSection('codes-reduction'); return false;">
-                  <i class="bi bi-percent"></i> Codes de reduction
-                </a>
-              </li>
-            </ul>
-
-            <!-- Section Modes de paiement -->
-            <div id="section-modes-paiement">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h4 class="card-title mb-0">Modes de paiement</h4>
-                  <button class="btn btn-success" onclick="showModalModePaiement()">
-                    <i class="bi bi-plus-lg"></i> Nouveau mode
-                  </button>
-                </div>
-                <div class="card-body">
-                  <p class="text-muted">
-                    <i class="bi bi-info-circle"></i>
-                    Glissez-deposez les lignes pour reorganiser l'ordre d'affichage
-                  </p>
-                  <div id="liste-modes-paiement">
-                    <div class="text-center p-4">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Chargement...</span>
+          <div class="tab-pane fade show active" id="general" role="tabpanel">
+            <div class="row g-4">
+              <!-- Site web -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-site-web.html" class="text-decoration-none">
+                  <div class="card param-card border-primary">
+                    <div class="card-body">
+                      <div class="icon-container bg-primary bg-opacity-10">
+                        <i class="bi bi-globe text-primary"></i>
                       </div>
+                      <h5 class="card-title text-dark">Site web</h5>
+                      <p class="text-muted mb-0">Nom, logo, SEO, modules actifs, CGV/CGU</p>
                     </div>
                   </div>
-                </div>
+                </a>
               </div>
-            </div>
 
-            <!-- Section Codes de reduction -->
-            <div id="section-codes-reduction" style="display: none;">
-              <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <h4 class="card-title mb-0">Codes de reduction</h4>
-                  <button class="btn btn-success" onclick="showModalCodeReduction()">
-                    <i class="bi bi-plus-lg"></i> Nouveau code
-                  </button>
-                </div>
-                <div class="card-body">
-                  <p class="text-muted">
-                    <i class="bi bi-info-circle"></i>
-                    Glissez-deposez les lignes pour reorganiser l'ordre d'affichage
-                  </p>
-                  <div id="liste-codes-reduction">
-                    <div class="text-center p-4">
-                      <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Chargement...</span>
+              <!-- Listes & Categories -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-listes.html" class="text-decoration-none">
+                  <div class="card param-card border-info">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-list-ul text-info"></i>
                       </div>
+                      <h5 class="card-title text-dark">Listes & Categories</h5>
+                      <p class="text-muted mb-0">Modes de paiement, categories de jeux</p>
                     </div>
                   </div>
-                </div>
+                </a>
+              </div>
+
+              <!-- Sites -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-sites.html" class="text-decoration-none">
+                  <div class="card param-card border-success">
+                    <div class="card-body">
+                      <div class="icon-container bg-success bg-opacity-10">
+                        <i class="bi bi-building text-success"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Sites</h5>
+                      <p class="text-muted mb-0">Multi-sites, horaires d'ouverture, fermetures</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Utilisateurs -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-utilisateurs.html" class="text-decoration-none">
+                  <div class="card param-card border-warning">
+                    <div class="card-body">
+                      <div class="icon-container bg-warning bg-opacity-10">
+                        <i class="bi bi-people text-warning"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Utilisateurs</h5>
+                      <p class="text-muted mb-0">Gestion des roles et droits d'acces</p>
+                    </div>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
 
           <!-- ======================== -->
-          <!-- Utilisateurs Tab         -->
+          <!-- Comptabilite Tab         -->
           <!-- ======================== -->
-          <div class="tab-pane fade" id="utilisateurs" role="tabpanel">
-            <div class="card">
-              <div class="card-header">
-                <h4 class="card-title mb-0">Gestion des utilisateurs et roles</h4>
-              </div>
-              <div class="card-body">
-                <div class="row mb-3">
-                  <div class="col-md-4">
-                    <label for="filter-role" class="form-label">Filtrer par role</label>
-                    <select class="form-select" id="filter-role" onchange="loadUtilisateurs()">
-                      <option value="">Tous les roles</option>
-                      <option value="administrateur">Administrateur</option>
-                      <option value="comptable">Comptable</option>
-                      <option value="gestionnaire">Gestionnaire</option>
-                      <option value="benevole">Benevole</option>
-                      <option value="usager">Usager</option>
-                    </select>
-                  </div>
-                  <div class="col-md-4">
-                    <label for="filter-statut" class="form-label">Filtrer par statut</label>
-                    <select class="form-select" id="filter-statut" onchange="loadUtilisateurs()">
-                      <option value="">Tous les statuts</option>
-                      <option value="actif">Actif</option>
-                      <option value="inactif">Inactif</option>
-                      <option value="suspendu">Suspendu</option>
-                    </select>
-                  </div>
-                </div>
-
-                <!-- Legende des roles -->
-                <div class="alert alert-info">
-                  <h6><i class="bi bi-info-circle"></i> Hierarchie des roles :</h6>
-                  <ul class="mb-0">
-                    <li><strong>Administrateur</strong> : Acces total, gestion des parametres</li>
-                    <li><strong>Comptable</strong> : Acces comptabilite, cotisations et exports</li>
-                    <li><strong>Gestionnaire</strong> : Gestion complete (adherents, jeux, emprunts, cotisations)</li>
-                    <li><strong>Benevole</strong> : Gestion des emprunts/retours uniquement</li>
-                    <li><strong>Usager</strong> : Consultation profil personnel (par defaut)</li>
-                  </ul>
-                </div>
-
-                <div id="liste-utilisateurs">
-                  <div class="text-center p-4">
-                    <div class="spinner-border text-primary" role="status">
-                      <span class="visually-hidden">Chargement...</span>
+          <div class="tab-pane fade" id="comptabilite" role="tabpanel">
+            <div class="row g-4">
+              <!-- Tarifs cotisation -->
+              <div class="col-md-6 col-lg-4">
+                <a href="tarifs-cotisation.html" class="text-decoration-none">
+                  <div class="card param-card border-success">
+                    <div class="card-body">
+                      <div class="icon-container bg-success bg-opacity-10">
+                        <i class="bi bi-currency-euro text-success"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Tarifs cotisation</h5>
+                      <p class="text-muted mb-0">Tarifs des adhesions, prorata, reductions adherents</p>
                     </div>
                   </div>
-                </div>
+                </a>
+              </div>
+
+              <!-- Codes reduction -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-codes-reduction.html" class="text-decoration-none">
+                  <div class="card param-card border-info">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-ticket-perforated text-info"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Codes de reduction</h5>
+                      <p class="text-muted mb-0">Codes promo, coupons, reductions speciales</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Comptes bancaires -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-comptes-bancaires.html" class="text-decoration-none">
+                  <div class="card param-card border-primary">
+                    <div class="card-body">
+                      <div class="icon-container bg-primary bg-opacity-10">
+                        <i class="bi bi-bank text-primary"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Comptes bancaires</h5>
+                      <p class="text-muted mb-0">RIB, IBAN/BIC pour les encaissements</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Communication Tab        -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="communication" role="tabpanel">
+            <div class="row g-4">
+              <!-- Configuration Email -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-email.html" class="text-decoration-none">
+                  <div class="card param-card border-primary">
+                    <div class="card-body">
+                      <div class="icon-container bg-primary bg-opacity-10">
+                        <i class="bi bi-envelope-at text-primary"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Configuration Email</h5>
+                      <p class="text-muted mb-0">Serveur SMTP, expediteur, parametres</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Configuration SMS -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-sms.html" class="text-decoration-none">
+                  <div class="card param-card border-success">
+                    <div class="card-body">
+                      <div class="icon-container bg-success bg-opacity-10">
+                        <i class="bi bi-phone text-success"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Configuration SMS</h5>
+                      <p class="text-muted mb-0">Fournisseur SMS, credits, expediteur</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Templates -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-templates.html" class="text-decoration-none">
+                  <div class="card param-card border-info">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-file-text text-info"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Templates de messages</h5>
+                      <p class="text-muted mb-0">Modeles d'emails et SMS personnalisables</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Declencheurs -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-declencheurs.html" class="text-decoration-none">
+                  <div class="card param-card border-warning">
+                    <div class="card-body">
+                      <div class="icon-container bg-warning bg-opacity-10">
+                        <i class="bi bi-lightning text-warning"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Declencheurs</h5>
+                      <p class="text-muted mb-0">Envois automatiques (rappels, relances...)</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Historique Communications -->
+              <div class="col-md-6 col-lg-4">
+                <a href="historique-communications.html" class="text-decoration-none">
+                  <div class="card param-card border-secondary">
+                    <div class="card-body">
+                      <div class="icon-container bg-secondary bg-opacity-10">
+                        <i class="bi bi-clock-history text-secondary"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Historique</h5>
+                      <p class="text-muted mb-0">Emails et SMS envoyes, statistiques</p>
+                    </div>
+                  </div>
+                </a>
               </div>
             </div>
           </div>
@@ -387,410 +294,65 @@
           <!-- Outils Tab               -->
           <!-- ======================== -->
           <div class="tab-pane fade" id="outils" role="tabpanel">
-            <div class="card">
-              <div class="card-header">
-                <h4 class="card-title mb-0"><i class="bi bi-tools"></i> Outils et pages supplementaires</h4>
+            <div class="row g-4">
+              <!-- Import de jeux -->
+              <div class="col-md-6 col-lg-4">
+                <a href="import-jeux.html" class="text-decoration-none">
+                  <div class="card param-card border-primary">
+                    <div class="card-body">
+                      <div class="icon-container bg-primary bg-opacity-10">
+                        <i class="bi bi-upload text-primary"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Import de jeux</h5>
+                      <p class="text-muted mb-0">Importer depuis CSV (MyLudo ou autre)</p>
+                    </div>
+                  </div>
+                </a>
               </div>
-              <div class="card-body">
-                <div class="row g-4">
-                  <!-- Import de jeux -->
-                  <div class="col-md-4">
-                    <div class="card h-100 border-primary">
-                      <div class="card-body text-center">
-                        <i class="bi bi-upload display-4 text-primary mb-3"></i>
-                        <h5>Import de jeux</h5>
-                        <p class="text-muted">Importer des jeux depuis un fichier CSV (format MyLudo ou personnalise)</p>
-                        <a href="import-jeux.html" class="btn btn-primary">
-                          <i class="bi bi-upload"></i> Acceder
-                        </a>
+
+              <!-- Archives RGPD -->
+              <div class="col-md-6 col-lg-4">
+                <a href="parametres-archives.html" class="text-decoration-none">
+                  <div class="card param-card border-warning">
+                    <div class="card-body">
+                      <div class="icon-container bg-warning bg-opacity-10">
+                        <i class="bi bi-archive text-warning"></i>
                       </div>
+                      <h5 class="card-title text-dark">Archives RGPD</h5>
+                      <p class="text-muted mb-0">Adherents archives, anonymisation</p>
                     </div>
                   </div>
+                </a>
+              </div>
 
-                  <!-- Communications -->
-                  <div class="col-md-4">
-                    <div class="card h-100 border-info">
-                      <div class="card-body text-center">
-                        <i class="bi bi-envelope-at display-4 text-info mb-3"></i>
-                        <h5>Communications</h5>
-                        <p class="text-muted">Configurations Email, SMS, templates de messages et declencheurs</p>
-                        <a href="parametres-communications.html" class="btn btn-info">
-                          <i class="bi bi-envelope-at"></i> Acceder
-                        </a>
-                      </div>
+              <!-- Export de donnees (placeholder) -->
+              <div class="col-md-6 col-lg-4">
+                <div class="card param-card border-secondary disabled">
+                  <div class="card-body">
+                    <div class="icon-container bg-secondary bg-opacity-10">
+                      <i class="bi bi-download text-secondary"></i>
                     </div>
+                    <h5 class="card-title text-dark">Export de donnees</h5>
+                    <p class="text-muted mb-0">Exporter en CSV (bientot disponible)</p>
                   </div>
+                </div>
+              </div>
 
-                  <!-- Archives RGPD -->
-                  <div class="col-md-4">
-                    <div class="card h-100 border-warning">
-                      <div class="card-body text-center">
-                        <i class="bi bi-archive display-4 text-warning mb-3"></i>
-                        <h5>Archives RGPD</h5>
-                        <p class="text-muted">Gestion des adherents archives et anonymisation des donnees</p>
-                        <a href="parametres-archives.html" class="btn btn-warning">
-                          <i class="bi bi-archive"></i> Acceder
-                        </a>
-                      </div>
+              <!-- Maintenance BDD (placeholder) -->
+              <div class="col-md-6 col-lg-4">
+                <div class="card param-card border-secondary disabled">
+                  <div class="card-body">
+                    <div class="icon-container bg-secondary bg-opacity-10">
+                      <i class="bi bi-database-check text-secondary"></i>
                     </div>
-                  </div>
-
-                  <!-- Export de donnees (placeholder) -->
-                  <div class="col-md-4">
-                    <div class="card h-100 border-secondary opacity-50">
-                      <div class="card-body text-center">
-                        <i class="bi bi-download display-4 text-secondary mb-3"></i>
-                        <h5>Export de donnees</h5>
-                        <p class="text-muted">Exporter les adherents, jeux ou emprunts en CSV</p>
-                        <button class="btn btn-outline-secondary" disabled>
-                          <i class="bi bi-download"></i> Bientot disponible
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Maintenance BDD (placeholder) -->
-                  <div class="col-md-4">
-                    <div class="card h-100 border-secondary opacity-50">
-                      <div class="card-body text-center">
-                        <i class="bi bi-database-check display-4 text-secondary mb-3"></i>
-                        <h5>Maintenance BDD</h5>
-                        <p class="text-muted">Verifier et reparer l'integrite des donnees</p>
-                        <button class="btn btn-outline-secondary" disabled>
-                          <i class="bi bi-database-check"></i> Bientot disponible
-                        </button>
-                      </div>
-                    </div>
+                    <h5 class="card-title text-dark">Maintenance BDD</h5>
+                    <p class="text-muted mb-0">Verifier l'integrite (bientot disponible)</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Mode de Paiement -->
-  <div class="modal fade" id="modalModePaiement" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalModePaiementTitle">Nouveau mode de paiement</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="form-mode-paiement">
-          <div class="modal-body">
-            <input type="hidden" id="mode_id">
-
-            <div class="mb-3">
-              <label for="mode_libelle" class="form-label">Libelle *</label>
-              <input type="text" class="form-control" id="mode_libelle" required>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="mode_icone" class="form-label">Icone</label>
-                <select class="form-select" id="mode_icone">
-                  <option value="bi-wallet2">Portefeuille</option>
-                  <option value="bi-cash">Especes</option>
-                  <option value="bi-credit-card">Carte bancaire</option>
-                  <option value="bi-journal-check">Cheque</option>
-                  <option value="bi-bank">Banque</option>
-                  <option value="bi-arrow-repeat">Prelevement</option>
-                  <option value="bi-ticket-perforated">Avoir</option>
-                </select>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="mode_couleur" class="form-label">Couleur</label>
-                <select class="form-select" id="mode_couleur">
-                  <option value="primary">Bleu</option>
-                  <option value="success">Vert</option>
-                  <option value="info">Cyan</option>
-                  <option value="warning">Orange</option>
-                  <option value="danger">Rouge</option>
-                  <option value="secondary">Gris</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="mode_journal" class="form-label">Journal comptable</label>
-              <input type="text" class="form-control" id="mode_journal" placeholder="BQ, CA, VT, OD...">
-              <small class="text-muted">Code du journal pour l'export comptable</small>
-            </div>
-
-            <div class="mb-3">
-              <label for="mode_type_operation" class="form-label">Type d'operation</label>
-              <select class="form-select" id="mode_type_operation">
-                <option value="debit">Debit</option>
-                <option value="credit">Credit</option>
-              </select>
-            </div>
-
-            <div class="mb-3">
-              <label for="mode_code_comptable" class="form-label">Code comptable</label>
-              <input type="text" class="form-control" id="mode_code_comptable" placeholder="530, 512...">
-              <small class="text-muted">Numero de compte general</small>
-            </div>
-
-            <div class="mb-3">
-              <label for="mode_libelle_export" class="form-label">Libelle export comptable</label>
-              <input type="text" class="form-control" id="mode_libelle_export">
-            </div>
-
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="mode_actif" checked>
-              <label class="form-check-label" for="mode_actif">
-                Mode de paiement actif
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Code de Reduction -->
-  <div class="modal fade" id="modalCodeReduction" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalCodeReductionTitle">Nouveau code de reduction</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="form-code-reduction">
-          <div class="modal-body">
-            <input type="hidden" id="code_id">
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="code_code" class="form-label">Code *</label>
-                <input type="text" class="form-control text-uppercase" id="code_code" required placeholder="NOEL2024">
-                <small class="text-muted">Sera automatiquement en majuscules</small>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="code_libelle" class="form-label">Libelle *</label>
-                <input type="text" class="form-control" id="code_libelle" required placeholder="Promotion de Noel">
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="code_description" class="form-label">Description</label>
-              <textarea class="form-control" id="code_description" rows="2"></textarea>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="code_type_reduction" class="form-label">Type de reduction *</label>
-                <select class="form-select" id="code_type_reduction" required>
-                  <option value="pourcentage">Pourcentage</option>
-                  <option value="fixe">Fixe (minimum 0 euro)</option>
-                  <option value="fixe_avec_avoir">Fixe avec avoir (credit si inferieur 0 euro)</option>
-                </select>
-                <small class="text-muted" id="code_type_help">Reduction en pourcentage du montant</small>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="code_valeur" class="form-label">Valeur *</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" id="code_valeur" required min="0" step="0.01">
-                  <span class="input-group-text" id="code_valeur_unit">%</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="code_date_debut" class="form-label">Date debut validite</label>
-                <input type="date" class="form-control" id="code_date_debut">
-                <small class="text-muted">Laisser vide = immediatement</small>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="code_date_fin" class="form-label">Date fin validite</label>
-                <input type="date" class="form-control" id="code_date_fin">
-                <small class="text-muted">Laisser vide = illimite</small>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="code_usage_limite" class="form-label">Limite d'utilisation</label>
-              <input type="number" class="form-control" id="code_usage_limite" min="1" placeholder="Illimite">
-              <small class="text-muted">Nombre maximum d'utilisations (laisser vide = illimite)</small>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="code_icone" class="form-label">Icone</label>
-                <select class="form-select" id="code_icone">
-                  <option value="bi-percent">Pourcent (%)</option>
-                  <option value="bi-tag">Etiquette</option>
-                  <option value="bi-gift">Cadeau</option>
-                  <option value="bi-star">Etoile</option>
-                  <option value="bi-trophy">Trophee</option>
-                </select>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="code_couleur" class="form-label">Couleur</label>
-                <select class="form-select" id="code_couleur">
-                  <option value="success">Vert</option>
-                  <option value="primary">Bleu</option>
-                  <option value="info">Cyan</option>
-                  <option value="warning">Orange</option>
-                  <option value="danger">Rouge</option>
-                  <option value="secondary">Gris</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-check">
-              <input type="checkbox" class="form-check-input" id="code_actif" checked>
-              <label class="form-check-label" for="code_actif">
-                Code de reduction actif
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Tarif Cotisation -->
-  <div class="modal fade" id="modalTarif" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalTarifTitle">Nouveau tarif de cotisation</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <form id="form-tarif">
-          <div class="modal-body">
-            <input type="hidden" id="tarif_id">
-
-            <div class="mb-3">
-              <label for="tarif_libelle" class="form-label">Libelle *</label>
-              <input type="text" class="form-control" id="tarif_libelle" required placeholder="Adhesion individuelle">
-            </div>
-
-            <div class="mb-3">
-              <label for="tarif_description" class="form-label">Description</label>
-              <textarea class="form-control" id="tarif_description" rows="2" placeholder="Details du tarif..."></textarea>
-            </div>
-
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label for="tarif_montant_base" class="form-label">Montant de base *</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" id="tarif_montant_base" required min="0" step="0.01">
-                  <span class="input-group-text">euro</span>
-                </div>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label for="tarif_type_periode" class="form-label">Type de periode *</label>
-                <select class="form-select" id="tarif_type_periode" required>
-                  <option value="annee_civile">Annee civile (jan-dec)</option>
-                  <option value="annee_scolaire">Annee scolaire (sep-aout)</option>
-                  <option value="date_a_date">Date a date (12 mois)</option>
-                </select>
-              </div>
-
-              <div class="col-md-4 mb-3">
-                <label for="tarif_type_montant" class="form-label">Type de montant *</label>
-                <select class="form-select" id="tarif_type_montant" required>
-                  <option value="fixe">Fixe</option>
-                  <option value="prorata">Prorata (au mois)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <h6 class="border-bottom pb-2"><i class="bi bi-percent"></i> Reduction pour adherents a l'association</h6>
-            </div>
-
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="tarif_reduction_type" class="form-label">Type de reduction</label>
-                <select class="form-select" id="tarif_reduction_type">
-                  <option value="pourcentage">Pourcentage (%)</option>
-                  <option value="montant">Montant fixe (euro)</option>
-                </select>
-              </div>
-
-              <div class="col-md-6 mb-3">
-                <label for="tarif_reduction_valeur" class="form-label">Valeur de la reduction</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" id="tarif_reduction_valeur" min="0" step="0.01" value="0">
-                  <span class="input-group-text" id="tarif_reduction_unit">%</span>
-                </div>
-                <small class="text-muted">Laisser a 0 pour aucune reduction</small>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="tarif_actif" checked>
-                <label class="form-check-label" for="tarif_actif">
-                  Tarif actif
-                </label>
-              </div>
-              <div class="form-check mt-2">
-                <input type="checkbox" class="form-check-input" id="tarif_par_defaut">
-                <label class="form-check-label" for="tarif_par_defaut">
-                  <i class="bi bi-star"></i> Tarif par defaut
-                </label>
-                <small class="text-muted d-block">Sera precharge dans le formulaire de creation de cotisation</small>
-              </div>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-            <button type="submit" class="btn btn-primary">Enregistrer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Calculatrice de Cotisation -->
-  <div class="modal fade" id="calculatorModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Calculateur de Cotisation</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Adherent a l'association ?</label>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="calc_adhesion" id="calc_adhesion_oui" value="true">
-              <label class="form-check-label" for="calc_adhesion_oui">Oui</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="calc_adhesion" id="calc_adhesion_non" value="false" checked>
-              <label class="form-check-label" for="calc_adhesion_non">Non</label>
-            </div>
-          </div>
-          <div class="mb-3">
-            <label for="calc_date_debut" class="form-label">Date de debut (optionnel)</label>
-            <input type="date" class="form-control" id="calc_date_debut">
-          </div>
-          <button class="btn btn-primary w-100" onclick="calculerMontantTarif()">Calculer</button>
-          <div id="calcResult" class="mt-3"></div>
         </div>
       </div>
     </div>
@@ -801,20 +363,27 @@
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
-  <script src="js/parametres.js"></script>
-  <script src="js/codes-reduction.js"></script>
-  <script src="js/tarifs.js"></script>
   <script>
-    // Changer l'unite de la reduction selon le type
-    document.addEventListener('DOMContentLoaded', () => {
-      const typeReduction = document.getElementById('tarif_reduction_type');
-      const unitSpan = document.getElementById('tarif_reduction_unit');
+    initTemplate('parametres');
 
-      if (typeReduction && unitSpan) {
-        typeReduction.addEventListener('change', () => {
-          unitSpan.textContent = typeReduction.value === 'pourcentage' ? '%' : 'euro';
-        });
+    // Gestion du hash pour ouvrir l'onglet correspondant
+    document.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        const tabEl = document.querySelector(`#${hash}-tab`);
+        if (tabEl) {
+          const tab = new bootstrap.Tab(tabEl);
+          tab.show();
+        }
       }
+
+      // Mettre a jour le hash quand on change d'onglet
+      document.querySelectorAll('#parametresTabs button[data-bs-toggle="tab"]').forEach(tabEl => {
+        tabEl.addEventListener('shown.bs.tab', event => {
+          const tabId = event.target.id.replace('-tab', '');
+          history.replaceState(null, null, `#${tabId}`);
+        });
+      });
     });
   </script>
 </body>

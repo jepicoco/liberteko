@@ -50,16 +50,10 @@ const MENU_ITEMS = [
         href: 'statistiques.html'
     },
     {
-        id: 'historique-emails',
-        label: 'Historique Emails',
-        icon: 'envelope-paper',
-        href: 'historique-emails.html'
-    },
-    {
-        id: 'historique-sms',
-        label: 'Historique SMS',
-        icon: 'chat-dots',
-        href: 'historique-sms.html'
+        id: 'historique-communications',
+        label: 'Communications',
+        icon: 'send',
+        href: 'historique-communications.html'
     },
     {
         id: 'parametres',

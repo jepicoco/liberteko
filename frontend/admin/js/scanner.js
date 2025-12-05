@@ -14,9 +14,13 @@ let lastScannedCode = null;
 let lastScanTime = 0;
 
 // Config
-const SCAN_COOLDOWN = 2000; // 2 secondes entre chaque scan du meme code
+const SCAN_COOLDOWN = 500; // 0.5 seconde entre chaque scan
+const BARCODE_RESCAN_COOLDOWN = 5000; // 5 secondes avant de pouvoir rescanner le meme code-barre
 const DEFAULT_LOAN_DAYS = 14;
 const BARCODE_SCANNER_TIMEOUT = 100; // Timeout pour detecter fin de saisie douchette (ms)
+
+// Historique des codes scannes (pour eviter rescans rapides du meme code)
+const scannedCodesHistory = new Map(); // code -> timestamp du dernier scan
 
 // Douchette USB - Buffer pour capturer les caracteres rapides
 let barcodeBuffer = '';
@@ -176,14 +180,31 @@ async function stopScanning() {
 // ==================== SCAN HANDLING ====================
 
 async function onScanSuccess(decodedText, decodedResult) {
-  // Eviter les scans multiples du meme code
   const now = Date.now();
-  if (decodedText === lastScannedCode && (now - lastScanTime) < SCAN_COOLDOWN) {
+
+  // Cooldown general entre chaque scan (0.5s)
+  if ((now - lastScanTime) < SCAN_COOLDOWN) {
     return;
   }
 
+  // Cooldown specifique par code-barre (5s avant de pouvoir rescanner le meme code)
+  const lastScanForThisCode = scannedCodesHistory.get(decodedText);
+  if (lastScanForThisCode && (now - lastScanForThisCode) < BARCODE_RESCAN_COOLDOWN) {
+    console.log(`[Scanner] Code ${decodedText} en cooldown (${Math.ceil((BARCODE_RESCAN_COOLDOWN - (now - lastScanForThisCode)) / 1000)}s restantes)`);
+    return;
+  }
+
+  // Mettre a jour les timestamps
   lastScannedCode = decodedText;
   lastScanTime = now;
+  scannedCodesHistory.set(decodedText, now);
+
+  // Nettoyer les anciens codes de l'historique (plus de 30s)
+  for (const [code, timestamp] of scannedCodesHistory) {
+    if (now - timestamp > 30000) {
+      scannedCodesHistory.delete(code);
+    }
+  }
 
   console.log('Code scanne:', decodedText);
   await processBarcode(decodedText);
@@ -337,7 +358,7 @@ function displayAdherent(adherent) {
         <span class="badge-statut ${badgeClass}">${adherent.statut}</span>
       </div>
       <button class="btn-clear-adherent" onclick="clearAdherent()">
-        <i class="bi bi-x-lg"></i> Retirer
+        <i class="bi bi-x-lg"></i> Terminer la saisie
       </button>
     </div>
   `;

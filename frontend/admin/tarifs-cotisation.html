@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tarifs de cotisation - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/admin-style.css">
+  <style>
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+    .section-card .card-header {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .tarif-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .tarif-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .tarif-card.inactive {
+      opacity: 0.6;
+    }
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+    .list-group-item {
+      transition: background-color 0.2s;
+    }
+    .list-group-item:hover {
+      background-color: #f8f9fa;
+    }
+    .bi-grip-vertical {
+      cursor: grab;
+    }
+    .bi-grip-vertical:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-currency-euro"></i> Tarifs de cotisation</h1>
+            <p class="text-muted mb-0">Gerez les differents tarifs et formules d'abonnement</p>
+          </div>
+          <button class="btn btn-primary" onclick="showModalTarif()">
+            <i class="bi bi-plus"></i> Nouveau tarif
+          </button>
+        </div>
+
+        <!-- Stats -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h3 class="mb-0" id="stat-total">-</h3>
+                <small class="text-muted">Tarifs total</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center border-success">
+              <div class="card-body">
+                <h3 class="mb-0 text-success" id="stat-actifs">-</h3>
+                <small class="text-muted">Actifs</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center border-primary">
+              <div class="card-body">
+                <h3 class="mb-0 text-primary" id="stat-cotisations">-</h3>
+                <small class="text-muted">Cotisations en cours</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center border-info">
+              <div class="card-body">
+                <h3 class="mb-0 text-info" id="stat-defaut">-</h3>
+                <small class="text-muted">Tarif par defaut</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info box -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle"></i>
+          <strong>Conseil :</strong> Glissez-deposez les tarifs pour modifier leur ordre d'affichage.
+          Le tarif par defaut sera automatiquement selectionne lors de la creation d'une nouvelle cotisation.
+        </div>
+
+        <!-- Liste des tarifs -->
+        <div class="card section-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ul"></i> Liste des tarifs</span>
+          </div>
+          <div class="card-body" id="liste-tarifs">
+            <div class="text-center py-5">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 mb-0">Chargement des tarifs...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Tarif -->
+  <div class="modal fade" id="modalTarif" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTarifTitle">Nouveau tarif de cotisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-tarif">
+            <input type="hidden" id="tarif_id">
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="tarif_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="tarif_libelle" required
+                         placeholder="Ex: Abonnement annuel famille">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="tarif_montant_base" class="form-label">Montant de base <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="tarif_montant_base" required min="0" step="0.01">
+                    <span class="input-group-text">EUR</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="tarif_description" class="form-label">Description</label>
+              <textarea class="form-control" id="tarif_description" rows="2"
+                        placeholder="Description optionnelle du tarif"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tarif_type_periode" class="form-label">Type de periode</label>
+                  <select class="form-select" id="tarif_type_periode">
+                    <option value="annee_civile">Annee civile (janvier-decembre)</option>
+                    <option value="annee_scolaire">Annee scolaire (septembre-aout)</option>
+                    <option value="date_a_date">Date a date (12 mois glissants)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tarif_type_montant" class="form-label">Type de montant</label>
+                  <select class="form-select" id="tarif_type_montant">
+                    <option value="fixe">Montant fixe</option>
+                    <option value="prorata">Prorata temporis</option>
+                  </select>
+                  <div class="form-text">Prorata : calcul au mois pres selon la date d'inscription</div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <h6 class="mb-3"><i class="bi bi-percent"></i> Reduction adherent association (optionnel)</h6>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tarif_reduction_type" class="form-label">Type de reduction</label>
+                  <select class="form-select" id="tarif_reduction_type">
+                    <option value="pourcentage">Pourcentage</option>
+                    <option value="montant_fixe">Montant fixe</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tarif_reduction_valeur" class="form-label">Valeur de la reduction</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="tarif_reduction_valeur" min="0" step="0.01" value="0">
+                    <span class="input-group-text" id="reduction-suffix">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="tarif_actif" checked>
+                  <label class="form-check-label" for="tarif_actif">Tarif actif</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="tarif_par_defaut">
+                  <label class="form-check-label" for="tarif_par_defaut">Definir comme tarif par defaut</label>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="form-tarif" class="btn btn-primary">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Calculateur -->
+  <div class="modal fade" id="calculatorModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-calculator"></i> Calculateur de cotisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="calc_date_debut" class="form-label">Date de debut</label>
+            <input type="date" class="form-control" id="calc_date_debut">
+            <div class="form-text">Laissez vide pour utiliser la date du jour</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Adhesion a l'association ?</label>
+            <div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="calc_adhesion" id="calc_adhesion_non" value="false" checked>
+                <label class="form-check-label" for="calc_adhesion_non">Non</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="calc_adhesion" id="calc_adhesion_oui" value="true">
+                <label class="form-check-label" for="calc_adhesion_oui">Oui (reduction)</label>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn btn-primary w-100" onclick="calculerMontantTarif()">
+            <i class="bi bi-calculator"></i> Calculer
+          </button>
+
+          <div id="calcResult" class="mt-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CDN SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- CDN SortableJS -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script src="js/tarifs.js"></script>
+  <script>
+    // Initialisation template
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Render sub-navigation
+      renderSubNav('comptabilite', 'tarifs');
+
+      // Charger les tarifs immediatement (pas besoin d'attendre un onglet)
+      loadTarifs();
+
+      // Mettre a jour le suffixe de reduction selon le type
+      document.getElementById('tarif_reduction_type').addEventListener('change', function() {
+        document.getElementById('reduction-suffix').textContent =
+          this.value === 'pourcentage' ? '%' : 'EUR';
+      });
+    });
+
+    // Surcharge de loadTarifs pour la page dediee (mise a jour des stats)
+    const originalLoadTarifs = loadTarifs;
+    loadTarifs = async function() {
+      await originalLoadTarifs();
+      updateTarifsStats();
+    };
+
+    // Mise a jour des statistiques
+    function updateTarifsStats() {
+      const actifs = tarifsCache.filter(t => t.actif);
+      const totalCotisations = tarifsCache.reduce((sum, t) => sum + (parseInt(t.cotisations_en_cours) || 0), 0);
+      const tarifDefaut = tarifsCache.find(t => t.par_defaut);
+
+      document.getElementById('stat-total').textContent = tarifsCache.length;
+      document.getElementById('stat-actifs').textContent = actifs.length;
+      document.getElementById('stat-cotisations').textContent = totalCotisations;
+      document.getElementById('stat-defaut').textContent = tarifDefaut ? tarifDefaut.libelle : 'Aucun';
+    }
+  </script>
+</body>
+</html>

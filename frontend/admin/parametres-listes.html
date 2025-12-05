@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listes & Categories - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+    .section-card .card-header {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+      background: white;
+    }
+    .list-item:hover {
+      background-color: #f8f9fa;
+    }
+    .list-item .drag-handle {
+      cursor: move;
+      color: #6c757d;
+      margin-right: 0.75rem;
+    }
+    .list-item .item-content {
+      flex: 1;
+    }
+    .list-item .item-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+    .list-item.inactive {
+      opacity: 0.5;
+    }
+    .badge-mode {
+      font-size: 0.7rem;
+      margin-left: 0.5rem;
+    }
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+    .color-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 0.5rem;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="mb-4">
+          <h1><i class="bi bi-list-ul"></i> Listes & Categories</h1>
+          <p class="text-muted mb-0">Gestion des modes de paiement et categories de jeux</p>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-4" id="listesTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="paiements-tab" data-bs-toggle="tab" data-bs-target="#paiements" type="button">
+              <i class="bi bi-credit-card"></i> Modes de paiement
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button">
+              <i class="bi bi-tags"></i> Categories de jeux
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="listesTabContent">
+          <!-- ======================== -->
+          <!-- Modes de paiement Tab   -->
+          <!-- ======================== -->
+          <div class="tab-pane fade show active" id="paiements" role="tabpanel">
+            <div class="card section-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-credit-card"></i> Modes de paiement acceptes</span>
+                <button class="btn btn-primary btn-sm" onclick="openAddModeModal()">
+                  <i class="bi bi-plus"></i> Ajouter
+                </button>
+              </div>
+              <div class="card-body">
+                <p class="text-muted small">
+                  Definissez les modes de paiement acceptes pour les cotisations et autres transactions.
+                  Vous pouvez reorganiser les elements par glisser-deposer.
+                </p>
+
+                <div id="modes-paiement-list">
+                  <!-- Charge dynamiquement -->
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Categories Tab          -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="categories" role="tabpanel">
+            <div class="card section-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-tags"></i> Categories de jeux</span>
+                <button class="btn btn-primary btn-sm" onclick="openAddCategorieModal()">
+                  <i class="bi bi-plus"></i> Ajouter
+                </button>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-info">
+                  <i class="bi bi-info-circle"></i>
+                  Les categories permettent de classer les jeux par type (Strategie, Ambiance, Enfants, etc.).
+                  Elles sont utilisees pour le filtrage dans le catalogue.
+                </div>
+
+                <div id="categories-list">
+                  <!-- Charge dynamiquement -->
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card section-card">
+              <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Utilisation des categories
+              </div>
+              <div class="card-body">
+                <div id="categories-stats">
+                  <div class="text-center py-3 text-muted">
+                    Selectionnez l'onglet pour voir les statistiques
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Mode de paiement -->
+  <div class="modal fade" id="modalModePaiement" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalModePaiementTitle">Ajouter un mode de paiement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formModePaiement">
+            <input type="hidden" id="mode_id">
+            <div class="mb-3">
+              <label for="mode_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="mode_libelle" required placeholder="Ex: Carte bancaire">
+            </div>
+            <div class="mb-3">
+              <label for="mode_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="mode_code" placeholder="Ex: CB" maxlength="20">
+              <div class="form-text">Code court pour l'export (optionnel)</div>
+            </div>
+            <div class="mb-3">
+              <label for="mode_description" class="form-label">Description</label>
+              <textarea class="form-control" id="mode_description" rows="2" placeholder="Description optionnelle"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="mode_icone" class="form-label">Icone Bootstrap</label>
+              <div class="input-group">
+                <span class="input-group-text" id="mode_icone_preview"><i class="bi bi-credit-card"></i></span>
+                <input type="text" class="form-control" id="mode_icone" placeholder="credit-card" value="credit-card">
+              </div>
+              <div class="form-text">
+                Nom de l'icone Bootstrap Icons (sans le prefixe bi-).
+                <a href="https://icons.getbootstrap.com/" target="_blank">Voir la liste</a>
+              </div>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="mode_actif" checked>
+              <label class="form-check-label" for="mode_actif">Actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveModePaiement()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Categorie -->
+  <div class="modal fade" id="modalCategorie" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCategorieTitle">Ajouter une categorie</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCategorie">
+            <input type="hidden" id="categorie_id">
+            <div class="mb-3">
+              <label for="categorie_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="categorie_nom" required placeholder="Ex: Strategie">
+            </div>
+            <div class="mb-3">
+              <label for="categorie_description" class="form-label">Description</label>
+              <textarea class="form-control" id="categorie_description" rows="2" placeholder="Description optionnelle"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="categorie_couleur" class="form-label">Couleur</label>
+              <div class="d-flex gap-2">
+                <input type="color" class="form-control form-control-color" id="categorie_couleur" value="#0d6efd">
+                <input type="text" class="form-control" id="categorie_couleur_text" value="#0d6efd" style="max-width: 100px;">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label for="categorie_icone" class="form-label">Icone Bootstrap</label>
+              <div class="input-group">
+                <span class="input-group-text" id="categorie_icone_preview"><i class="bi bi-tag"></i></span>
+                <input type="text" class="form-control" id="categorie_icone" placeholder="tag" value="tag">
+              </div>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="categorie_actif" checked>
+              <label class="form-check-label" for="categorie_actif">Active</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveCategorie()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let modesPaiement = [];
+    let categories = [];
+    let modalModePaiement, modalCategorie;
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('general', 'listes');
+
+      modalModePaiement = new bootstrap.Modal(document.getElementById('modalModePaiement'));
+      modalCategorie = new bootstrap.Modal(document.getElementById('modalCategorie'));
+
+      // Charger les donnees
+      loadModesPaiement();
+
+      // Charger les categories quand on clique sur l'onglet
+      document.getElementById('categories-tab').addEventListener('shown.bs.tab', () => {
+        if (categories.length === 0) {
+          loadCategories();
+          loadCategoriesStats();
+        }
+      });
+
+      // Preview icone mode paiement
+      document.getElementById('mode_icone').addEventListener('input', (e) => {
+        const icon = e.target.value || 'credit-card';
+        document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      });
+
+      // Preview icone categorie
+      document.getElementById('categorie_icone').addEventListener('input', (e) => {
+        const icon = e.target.value || 'tag';
+        document.getElementById('categorie_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      });
+
+      // Sync couleur categorie
+      document.getElementById('categorie_couleur').addEventListener('input', (e) => {
+        document.getElementById('categorie_couleur_text').value = e.target.value;
+      });
+      document.getElementById('categorie_couleur_text').addEventListener('input', (e) => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+          document.getElementById('categorie_couleur').value = e.target.value;
+        }
+      });
+    });
+
+    // ========================
+    // Modes de paiement
+    // ========================
+
+    async function loadModesPaiement() {
+      try {
+        const response = await fetch('/api/parametres/modes-paiement', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Erreur chargement');
+        modesPaiement = await response.json();
+        renderModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('modes-paiement-list').innerHTML = `
+          <div class="alert alert-danger">Erreur lors du chargement des modes de paiement</div>
+        `;
+      }
+    }
+
+    function renderModesPaiement() {
+      const container = document.getElementById('modes-paiement-list');
+
+      if (modesPaiement.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucun mode de paiement configure</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddModeModal()">
+              <i class="bi bi-plus"></i> Ajouter le premier
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = modesPaiement.map(mode => `
+        <div class="list-item ${mode.actif ? '' : 'inactive'}" data-id="${mode.id}">
+          <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+          <div class="item-content">
+            <i class="bi bi-${mode.icone || 'credit-card'} me-2"></i>
+            <strong>${mode.libelle}</strong>
+            ${mode.code ? `<span class="badge bg-secondary badge-mode">${mode.code}</span>` : ''}
+            ${!mode.actif ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
+            ${mode.description ? `<br><small class="text-muted">${mode.description}</small>` : ''}
+          </div>
+          <div class="item-actions">
+            <button class="btn btn-sm btn-outline-secondary" onclick="editModePaiement(${mode.id})" title="Modifier">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-${mode.actif ? 'warning' : 'success'}" onclick="toggleModePaiement(${mode.id})" title="${mode.actif ? 'Desactiver' : 'Activer'}">
+              <i class="bi bi-${mode.actif ? 'eye-slash' : 'eye'}"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteModePaiement(${mode.id})" title="Supprimer">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // Activer le drag & drop
+      new Sortable(container, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: async function(evt) {
+          const items = container.querySelectorAll('.list-item');
+          const ordres = Array.from(items).map((item, index) => ({
+            id: parseInt(item.dataset.id),
+            ordre: index
+          }));
+          await reorderModesPaiement(ordres);
+        }
+      });
+    }
+
+    function openAddModeModal() {
+      document.getElementById('modalModePaiementTitle').textContent = 'Ajouter un mode de paiement';
+      document.getElementById('formModePaiement').reset();
+      document.getElementById('mode_id').value = '';
+      document.getElementById('mode_icone').value = 'credit-card';
+      document.getElementById('mode_icone_preview').innerHTML = '<i class="bi bi-credit-card"></i>';
+      document.getElementById('mode_actif').checked = true;
+      modalModePaiement.show();
+    }
+
+    function editModePaiement(id) {
+      const mode = modesPaiement.find(m => m.id === id);
+      if (!mode) return;
+
+      document.getElementById('modalModePaiementTitle').textContent = 'Modifier le mode de paiement';
+      document.getElementById('mode_id').value = mode.id;
+      document.getElementById('mode_libelle').value = mode.libelle;
+      document.getElementById('mode_code').value = mode.code || '';
+      document.getElementById('mode_description').value = mode.description || '';
+      document.getElementById('mode_icone').value = mode.icone || 'credit-card';
+      document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${mode.icone || 'credit-card'}"></i>`;
+      document.getElementById('mode_actif').checked = mode.actif;
+      modalModePaiement.show();
+    }
+
+    async function saveModePaiement() {
+      const id = document.getElementById('mode_id').value;
+      const data = {
+        libelle: document.getElementById('mode_libelle').value,
+        code: document.getElementById('mode_code').value || null,
+        description: document.getElementById('mode_description').value || null,
+        icone: document.getElementById('mode_icone').value || 'credit-card',
+        actif: document.getElementById('mode_actif').checked
+      };
+
+      try {
+        const url = id ? `/api/parametres/modes-paiement/${id}` : '/api/parametres/modes-paiement';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Erreur');
+        }
+
+        modalModePaiement.hide();
+        showToast('Mode de paiement enregistre', 'success');
+        loadModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    async function toggleModePaiement(id) {
+      try {
+        const response = await fetch(`/api/parametres/modes-paiement/${id}/toggle`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        loadModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteModePaiement(id) {
+      if (!confirm('Supprimer ce mode de paiement ?')) return;
+
+      try {
+        const response = await fetch(`/api/parametres/modes-paiement/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('Mode de paiement supprime', 'success');
+        loadModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la suppression', 'error');
+      }
+    }
+
+    async function reorderModesPaiement(ordres) {
+      try {
+        await fetch('/api/parametres/modes-paiement-reorder', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ ordres })
+        });
+      } catch (error) {
+        console.error('Erreur reorder:', error);
+      }
+    }
+
+    // ========================
+    // Categories de jeux
+    // ========================
+
+    async function loadCategories() {
+      try {
+        // Note: API categories a implementer cote backend
+        // Pour l'instant, on extrait les categories uniques des jeux
+        const response = await fetch('/api/jeux?limit=1000', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        const data = await response.json();
+        const jeux = data.rows || data;
+
+        // Extraire les categories uniques
+        const catsSet = new Set();
+        jeux.forEach(jeu => {
+          if (jeu.categorie) catsSet.add(jeu.categorie);
+        });
+
+        categories = Array.from(catsSet).sort().map((cat, index) => ({
+          id: index + 1,
+          nom: cat,
+          nbJeux: jeux.filter(j => j.categorie === cat).length
+        }));
+
+        renderCategories();
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('categories-list').innerHTML = `
+          <div class="alert alert-danger">Erreur lors du chargement des categories</div>
+        `;
+      }
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('categories-list');
+
+      if (categories.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucune categorie trouvee</p>
+            <p class="small">Les categories sont extraites automatiquement des jeux existants</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = categories.map(cat => `
+        <div class="list-item" data-id="${cat.id}">
+          <div class="item-content">
+            <i class="bi bi-tag me-2"></i>
+            <strong>${cat.nom}</strong>
+            <span class="badge bg-info ms-2">${cat.nbJeux} jeu${cat.nbJeux > 1 ? 'x' : ''}</span>
+          </div>
+          <div class="item-actions">
+            <button class="btn btn-sm btn-outline-secondary" onclick="editCategorie('${cat.nom}')" title="Renommer">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function loadCategoriesStats() {
+      try {
+        const response = await fetch('/api/stats', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) return;
+
+        const stats = await response.json();
+
+        // Afficher les stats si disponibles
+        if (stats.categories) {
+          const container = document.getElementById('categories-stats');
+          container.innerHTML = `
+            <div class="row text-center">
+              <div class="col-4">
+                <h3 class="mb-0">${categories.length}</h3>
+                <small class="text-muted">Categories</small>
+              </div>
+              <div class="col-4">
+                <h3 class="mb-0">${stats.totalJeux || '-'}</h3>
+                <small class="text-muted">Jeux total</small>
+              </div>
+              <div class="col-4">
+                <h3 class="mb-0">${Math.round((stats.totalJeux || 0) / (categories.length || 1))}</h3>
+                <small class="text-muted">Jeux/categorie</small>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Erreur stats:', error);
+      }
+    }
+
+    function openAddCategorieModal() {
+      document.getElementById('modalCategorieTitle').textContent = 'Ajouter une categorie';
+      document.getElementById('formCategorie').reset();
+      document.getElementById('categorie_id').value = '';
+      document.getElementById('categorie_couleur').value = '#0d6efd';
+      document.getElementById('categorie_couleur_text').value = '#0d6efd';
+      document.getElementById('categorie_icone').value = 'tag';
+      document.getElementById('categorie_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+      document.getElementById('categorie_actif').checked = true;
+      modalCategorie.show();
+    }
+
+    function editCategorie(nom) {
+      // Pour l'instant, renommer une categorie n'est pas supporte
+      // car il faudrait mettre a jour tous les jeux
+      showToast('Pour renommer une categorie, modifiez les jeux individuellement', 'info');
+    }
+
+    async function saveCategorie() {
+      // TODO: Implementer quand le backend supportera les categories
+      showToast('Fonctionnalite en cours de developpement', 'info');
+      modalCategorie.hide();
+    }
+
+    // ========================
+    // Utils
+    // ========================
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

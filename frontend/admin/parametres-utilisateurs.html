@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Utilisateurs - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+    .section-card .card-header {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .user-row:last-child {
+      border-bottom: none;
+    }
+    .user-row:hover {
+      background-color: #f8f9fa;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 1rem;
+    }
+    .user-info {
+      flex: 1;
+    }
+    .user-name {
+      font-weight: 600;
+      margin-bottom: 0;
+    }
+    .user-email {
+      color: #6c757d;
+      font-size: 0.875rem;
+    }
+    .role-badge {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+    }
+    .role-admin { background-color: #dc3545; color: white; }
+    .role-gestionnaire { background-color: #0d6efd; color: white; }
+    .role-benevole { background-color: #198754; color: white; }
+    .role-adherent { background-color: #6c757d; color: white; }
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+    .role-card {
+      border-left: 4px solid;
+      transition: transform 0.2s;
+    }
+    .role-card:hover {
+      transform: translateY(-2px);
+    }
+    .role-card.role-admin { border-left-color: #dc3545; }
+    .role-card.role-gestionnaire { border-left-color: #0d6efd; }
+    .role-card.role-benevole { border-left-color: #198754; }
+    .role-card.role-adherent { border-left-color: #6c757d; }
+    .permission-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .permission-list li {
+      padding: 0.25rem 0;
+      font-size: 0.875rem;
+    }
+    .permission-list li i {
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="mb-4">
+          <h1><i class="bi bi-people"></i> Gestion des utilisateurs</h1>
+          <p class="text-muted mb-0">Attribution des roles et droits d'acces</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="row mb-4" id="stats-container">
+          <div class="col-md-3">
+            <div class="card text-center">
+              <div class="card-body">
+                <h3 class="mb-0" id="stat-total">-</h3>
+                <small class="text-muted">Utilisateurs</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center border-danger">
+              <div class="card-body">
+                <h3 class="mb-0 text-danger" id="stat-admins">-</h3>
+                <small class="text-muted">Admins</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center border-primary">
+              <div class="card-body">
+                <h3 class="mb-0 text-primary" id="stat-gestionnaires">-</h3>
+                <small class="text-muted">Gestionnaires</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card text-center border-success">
+              <div class="card-body">
+                <h3 class="mb-0 text-success" id="stat-benevoles">-</h3>
+                <small class="text-muted">Benevoles</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roles description -->
+        <div class="card section-card mb-4">
+          <div class="card-header">
+            <i class="bi bi-shield-check"></i> Roles et permissions
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <div class="card role-card role-admin h-100">
+                  <div class="card-body">
+                    <h6><span class="badge role-badge role-admin">Admin</span></h6>
+                    <p class="small text-muted mb-2">Acces complet a l'administration</p>
+                    <ul class="permission-list">
+                      <li><i class="bi bi-check-circle text-success"></i> Tout gerer</li>
+                      <li><i class="bi bi-check-circle text-success"></i> Parametres systeme</li>
+                      <li><i class="bi bi-check-circle text-success"></i> Gerer les roles</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card role-card role-gestionnaire h-100">
+                  <div class="card-body">
+                    <h6><span class="badge role-badge role-gestionnaire">Gestionnaire</span></h6>
+                    <p class="small text-muted mb-2">Gestion quotidienne</p>
+                    <ul class="permission-list">
+                      <li><i class="bi bi-check-circle text-success"></i> Adherents</li>
+                      <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
+                      <li><i class="bi bi-check-circle text-success"></i> Cotisations</li>
+                      <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card role-card role-benevole h-100">
+                  <div class="card-body">
+                    <h6><span class="badge role-badge role-benevole">Benevole</span></h6>
+                    <p class="small text-muted mb-2">Operations de base</p>
+                    <ul class="permission-list">
+                      <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
+                      <li><i class="bi bi-check-circle text-success"></i> Consultation</li>
+                      <li><i class="bi bi-x-circle text-danger"></i> Modification</li>
+                      <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="card role-card role-adherent h-100">
+                  <div class="card-body">
+                    <h6><span class="badge role-badge role-adherent">Adherent</span></h6>
+                    <p class="small text-muted mb-2">Espace membre</p>
+                    <ul class="permission-list">
+                      <li><i class="bi bi-check-circle text-success"></i> Son profil</li>
+                      <li><i class="bi bi-check-circle text-success"></i> Ses emprunts</li>
+                      <li><i class="bi bi-x-circle text-danger"></i> Administration</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users list -->
+        <div class="card section-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-people-fill"></i> Liste des utilisateurs avec acces admin</span>
+            <div class="d-flex gap-2">
+              <select class="form-select form-select-sm" id="filter-role" style="width: auto;">
+                <option value="">Tous les roles</option>
+                <option value="admin">Admin</option>
+                <option value="gestionnaire">Gestionnaire</option>
+                <option value="benevole">Benevole</option>
+              </select>
+              <input type="text" class="form-control form-control-sm" id="search-user" placeholder="Rechercher..." style="width: 200px;">
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div id="users-list">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 mb-0">Chargement des utilisateurs...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Changer Role -->
+  <div class="modal fade" id="modalRole" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Modifier le role</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Utilisateur</label>
+            <p class="form-control-plaintext" id="modal-user-name">-</p>
+          </div>
+          <div class="mb-3">
+            <label for="modal-new-role" class="form-label">Nouveau role</label>
+            <select class="form-select" id="modal-new-role">
+              <option value="admin">Admin - Acces complet</option>
+              <option value="gestionnaire">Gestionnaire - Gestion quotidienne</option>
+              <option value="benevole">Benevole - Operations de base</option>
+              <option value="adherent">Adherent - Espace membre uniquement</option>
+            </select>
+          </div>
+          <div class="alert alert-warning" id="modal-warning" style="display: none;">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span id="modal-warning-text"></span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveRole()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let users = [];
+    let currentUserId = null;
+    let modalRole;
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('general', 'utilisateurs');
+
+      modalRole = new bootstrap.Modal(document.getElementById('modalRole'));
+
+      loadUsers();
+
+      // Filtres
+      document.getElementById('filter-role').addEventListener('change', renderUsers);
+      document.getElementById('search-user').addEventListener('input', renderUsers);
+
+      // Warning quand on change le role
+      document.getElementById('modal-new-role').addEventListener('change', updateModalWarning);
+    });
+
+    async function loadUsers() {
+      try {
+        const response = await fetch('/api/parametres/utilisateurs', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        users = await response.json();
+        updateStats();
+        renderUsers();
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('users-list').innerHTML = `
+          <div class="alert alert-danger m-3">Erreur lors du chargement des utilisateurs</div>
+        `;
+      }
+    }
+
+    function updateStats() {
+      const total = users.filter(u => u.role && u.role !== 'adherent').length;
+      const admins = users.filter(u => u.role === 'admin').length;
+      const gestionnaires = users.filter(u => u.role === 'gestionnaire').length;
+      const benevoles = users.filter(u => u.role === 'benevole').length;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-admins').textContent = admins;
+      document.getElementById('stat-gestionnaires').textContent = gestionnaires;
+      document.getElementById('stat-benevoles').textContent = benevoles;
+    }
+
+    function renderUsers() {
+      const container = document.getElementById('users-list');
+      const filterRole = document.getElementById('filter-role').value;
+      const searchTerm = document.getElementById('search-user').value.toLowerCase();
+
+      // Filtrer les utilisateurs
+      let filteredUsers = users.filter(u => u.role && u.role !== 'adherent');
+
+      if (filterRole) {
+        filteredUsers = filteredUsers.filter(u => u.role === filterRole);
+      }
+
+      if (searchTerm) {
+        filteredUsers = filteredUsers.filter(u =>
+          (u.nom && u.nom.toLowerCase().includes(searchTerm)) ||
+          (u.prenom && u.prenom.toLowerCase().includes(searchTerm)) ||
+          (u.email && u.email.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      if (filteredUsers.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2 mb-0">Aucun utilisateur trouve</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filteredUsers.map(user => {
+        const initials = getInitials(user);
+        const roleClass = `role-${user.role}`;
+
+        return `
+          <div class="user-row">
+            <div class="user-avatar">${initials}</div>
+            <div class="user-info">
+              <p class="user-name">${user.prenom || ''} ${user.nom || ''}</p>
+              <p class="user-email mb-0">${user.email}</p>
+            </div>
+            <span class="badge role-badge ${roleClass} me-3">${capitalizeFirst(user.role)}</span>
+            <button class="btn btn-sm btn-outline-primary" onclick="openRoleModal(${user.id})">
+              <i class="bi bi-pencil"></i> Modifier
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function getInitials(user) {
+      const prenom = user.prenom || '';
+      const nom = user.nom || '';
+      if (prenom && nom) {
+        return (prenom[0] + nom[0]).toUpperCase();
+      }
+      if (user.email) {
+        return user.email[0].toUpperCase();
+      }
+      return '?';
+    }
+
+    function capitalizeFirst(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function openRoleModal(userId) {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      currentUserId = userId;
+      document.getElementById('modal-user-name').textContent = `${user.prenom || ''} ${user.nom || ''} (${user.email})`;
+      document.getElementById('modal-new-role').value = user.role;
+      document.getElementById('modal-warning').style.display = 'none';
+
+      modalRole.show();
+    }
+
+    function updateModalWarning() {
+      const newRole = document.getElementById('modal-new-role').value;
+      const user = users.find(u => u.id === currentUserId);
+      const warning = document.getElementById('modal-warning');
+      const warningText = document.getElementById('modal-warning-text');
+
+      if (user && user.role === 'admin' && newRole !== 'admin') {
+        const adminCount = users.filter(u => u.role === 'admin').length;
+        if (adminCount <= 1) {
+          warning.style.display = 'block';
+          warningText.textContent = 'Attention: vous etes le dernier admin! Vous ne pouvez pas vous retirer ce role.';
+          return;
+        }
+        warning.style.display = 'block';
+        warningText.textContent = 'Cet utilisateur perdra ses droits d\'administration.';
+      } else if (newRole === 'admin') {
+        warning.style.display = 'block';
+        warningText.textContent = 'Cet utilisateur aura un acces complet a l\'administration.';
+      } else {
+        warning.style.display = 'none';
+      }
+    }
+
+    async function saveRole() {
+      const newRole = document.getElementById('modal-new-role').value;
+      const user = users.find(u => u.id === currentUserId);
+
+      // Verification de securite
+      if (user && user.role === 'admin' && newRole !== 'admin') {
+        const adminCount = users.filter(u => u.role === 'admin').length;
+        if (adminCount <= 1) {
+          showToast('Impossible: vous etes le dernier administrateur', 'error');
+          return;
+        }
+      }
+
+      try {
+        const response = await fetch(`/api/parametres/utilisateurs/${currentUserId}/role`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ role: newRole })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Erreur');
+        }
+
+        modalRole.hide();
+        showToast('Role modifie avec succes', 'success');
+        loadUsers();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site web - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+    .section-card .card-header {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .form-label-required::after {
+      content: " *";
+      color: #dc3545;
+    }
+    .preview-logo {
+      max-width: 200px;
+      max-height: 100px;
+      object-fit: contain;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      padding: 0.5rem;
+      background: #f8f9fa;
+    }
+    .preview-favicon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border: 1px solid #dee2e6;
+      border-radius: 0.25rem;
+    }
+    .module-card {
+      border: 2px solid #dee2e6;
+      transition: border-color 0.2s;
+    }
+    .module-card.active {
+      border-color: #198754;
+      background-color: rgba(25, 135, 84, 0.05);
+    }
+    .module-card .form-check-input:checked ~ .form-check-label {
+      color: #198754;
+    }
+    .color-preview {
+      width: 40px;
+      height: 40px;
+      border-radius: 0.375rem;
+      border: 1px solid #dee2e6;
+      cursor: pointer;
+    }
+    .ql-container {
+      min-height: 200px;
+    }
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+    .char-counter {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+    .char-counter.warning {
+      color: #ffc107;
+    }
+    .char-counter.danger {
+      color: #dc3545;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-globe"></i> Configuration du site web</h1>
+            <p class="text-muted mb-0">Nom, logo, SEO, modules actifs et pages legales</p>
+          </div>
+          <button class="btn btn-primary btn-lg" id="btnSaveAll" onclick="saveAllSettings()">
+            <i class="bi bi-check-lg"></i> Enregistrer tout
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading-container" class="text-center py-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2">Chargement des parametres...</p>
+        </div>
+
+        <!-- Content -->
+        <div id="content-container" style="display: none;">
+          <!-- Tabs -->
+          <ul class="nav nav-tabs mb-4" id="siteWebTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="identite-tab" data-bs-toggle="tab" data-bs-target="#identite" type="button">
+                <i class="bi bi-card-heading"></i> Identite
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="seo-tab" data-bs-toggle="tab" data-bs-target="#seo" type="button">
+                <i class="bi bi-search"></i> SEO
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="modules-tab" data-bs-toggle="tab" data-bs-target="#modules" type="button">
+                <i class="bi bi-grid-3x3-gap"></i> Modules
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="legal-tab" data-bs-toggle="tab" data-bs-target="#legal" type="button">
+                <i class="bi bi-file-earmark-text"></i> Pages legales
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button">
+                <i class="bi bi-person-lines-fill"></i> Contact
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="personnalisation-tab" data-bs-toggle="tab" data-bs-target="#personnalisation" type="button">
+                <i class="bi bi-palette"></i> Personnalisation
+              </button>
+            </li>
+          </ul>
+
+          <!-- Tab Content -->
+          <div class="tab-content" id="siteWebTabContent">
+            <!-- ======================== -->
+            <!-- Identite Tab            -->
+            <!-- ======================== -->
+            <div class="tab-pane fade show active" id="identite" role="tabpanel">
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-card-heading"></i> Identite du site
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="nom_site" class="form-label form-label-required">Nom du site</label>
+                        <input type="text" class="form-control" id="nom_site" placeholder="Ma Ludotheque" required>
+                        <div class="form-text">Nom affiche dans le titre et l'en-tete du site public</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="logo_url" class="form-label">URL du logo</label>
+                        <div class="input-group">
+                          <input type="url" class="form-control" id="logo_url" placeholder="https://...">
+                          <button class="btn btn-outline-secondary" type="button" onclick="previewLogo()">
+                            <i class="bi bi-eye"></i>
+                          </button>
+                        </div>
+                        <div class="form-text">Logo principal (recommande: PNG transparent, 200x100px)</div>
+                        <div id="logo-preview" class="mt-2" style="display: none;">
+                          <img src="" alt="Apercu logo" class="preview-logo" id="logo-preview-img">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="favicon_url" class="form-label">URL du favicon</label>
+                        <div class="input-group">
+                          <input type="url" class="form-control" id="favicon_url" placeholder="https://...">
+                          <button class="btn btn-outline-secondary" type="button" onclick="previewFavicon()">
+                            <i class="bi bi-eye"></i>
+                          </button>
+                        </div>
+                        <div class="form-text">Icone du navigateur (recommande: ICO ou PNG 32x32px)</div>
+                        <div id="favicon-preview" class="mt-2" style="display: none;">
+                          <img src="" alt="Apercu favicon" class="preview-favicon" id="favicon-preview-img">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================== -->
+            <!-- SEO Tab                 -->
+            <!-- ======================== -->
+            <div class="tab-pane fade" id="seo" role="tabpanel">
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-search"></i> Referencement (SEO)
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-8">
+                      <div class="mb-3">
+                        <label for="meta_description" class="form-label">Meta description</label>
+                        <textarea class="form-control" id="meta_description" rows="3" maxlength="300"
+                                  placeholder="Description de votre ludotheque pour les moteurs de recherche..."
+                                  oninput="updateCharCounter('meta_description', 160)"></textarea>
+                        <div class="d-flex justify-content-between">
+                          <div class="form-text">Description affichee dans les resultats Google (160 caracteres recommandes)</div>
+                          <div class="char-counter" id="meta_description-counter">0/160</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-8">
+                      <div class="mb-3">
+                        <label for="meta_keywords" class="form-label">Mots-cles</label>
+                        <input type="text" class="form-control" id="meta_keywords"
+                               placeholder="ludotheque, jeux de societe, emprunt, ville...">
+                        <div class="form-text">Mots-cles separes par des virgules (moins important pour le SEO moderne)</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="meta_author" class="form-label">Auteur</label>
+                        <input type="text" class="form-control" id="meta_author" placeholder="Nom de l'association">
+                      </div>
+                    </div>
+                    <div class="col-md-8">
+                      <div class="mb-3">
+                        <label for="og_image_url" class="form-label">Image Open Graph</label>
+                        <input type="url" class="form-control" id="og_image_url"
+                               placeholder="https://... (1200x630px recommande)">
+                        <div class="form-text">Image affichee lors du partage sur les reseaux sociaux</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr>
+                  <h6 class="mb-3">Outils Google</h6>
+
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="google_analytics_id" class="form-label">Google Analytics ID</label>
+                        <input type="text" class="form-control" id="google_analytics_id"
+                               placeholder="G-XXXXXXXXXX">
+                        <div class="form-text">ID de mesure Google Analytics 4</div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="google_site_verification" class="form-label">Google Search Console</label>
+                        <input type="text" class="form-control" id="google_site_verification"
+                               placeholder="Code de verification">
+                        <div class="form-text">Meta tag de verification</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-12">
+                      <div class="mb-3">
+                        <label for="robots_txt" class="form-label">Robots.txt personnalise</label>
+                        <textarea class="form-control font-monospace" id="robots_txt" rows="5"
+                                  placeholder="User-agent: *&#10;Allow: /"></textarea>
+                        <div class="form-text">Contenu du fichier robots.txt (laisser vide pour utiliser le defaut)</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================== -->
+            <!-- Modules Tab             -->
+            <!-- ======================== -->
+            <div class="tab-pane fade" id="modules" role="tabpanel">
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-toggle-on"></i> Mode de fonctionnement
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="card module-card p-3" id="card-mode-catalogue">
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="mode_fonctionnement"
+                                 id="mode_catalogue" value="catalogue" onchange="updateModeCard()">
+                          <label class="form-check-label" for="mode_catalogue">
+                            <strong><i class="bi bi-book"></i> Mode catalogue</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">
+                          Presentation des jeux en lecture seule. Pas d'emprunt ni d'inscription en ligne.
+                          Ideal pour un site vitrine.
+                        </p>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="card module-card p-3" id="card-mode-complet">
+                        <div class="form-check">
+                          <input class="form-check-input" type="radio" name="mode_fonctionnement"
+                                 id="mode_complet" value="complet" checked onchange="updateModeCard()">
+                          <label class="form-check-label" for="mode_complet">
+                            <strong><i class="bi bi-gear-wide-connected"></i> Mode complet</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">
+                          Gestion complete avec emprunts, adhesions en ligne et espace membre.
+                          Pour une ludotheque pleinement fonctionnelle.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-grid-3x3-gap"></i> Modules actifs
+                </div>
+                <div class="card-body">
+                  <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Activez les modules dont vous avez besoin. Les modules desactives ne seront pas affiches sur le site public.
+                  </div>
+
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <div class="card module-card p-3" id="card-module-ludotheque">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_ludotheque" checked onchange="updateModuleCard('ludotheque')">
+                          <label class="form-check-label" for="module_ludotheque">
+                            <strong><i class="bi bi-dice-5"></i> Ludotheque</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Gestion des jeux de societe</p>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="card module-card p-3" id="card-module-bibliotheque">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_bibliotheque" onchange="updateModuleCard('bibliotheque')">
+                          <label class="form-check-label" for="module_bibliotheque">
+                            <strong><i class="bi bi-book"></i> Bibliotheque</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Gestion des livres et magazines</p>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="card module-card p-3" id="card-module-inscriptions">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_inscriptions" checked onchange="updateModuleCard('inscriptions')">
+                          <label class="form-check-label" for="module_inscriptions">
+                            <strong><i class="bi bi-person-plus"></i> Inscriptions</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Inscriptions en ligne des adherents</p>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="card module-card p-3" id="card-module-reservations">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_reservations" onchange="updateModuleCard('reservations')">
+                          <label class="form-check-label" for="module_reservations">
+                            <strong><i class="bi bi-calendar-check"></i> Reservations</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Reservation de jeux en ligne</p>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="card module-card p-3" id="card-module-paiement">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_paiement_en_ligne" onchange="updateModuleCard('paiement')">
+                          <label class="form-check-label" for="module_paiement_en_ligne">
+                            <strong><i class="bi bi-credit-card"></i> Paiement en ligne</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Paiement des cotisations en ligne</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================== -->
+            <!-- Legal Tab               -->
+            <!-- ======================== -->
+            <div class="tab-pane fade" id="legal" role="tabpanel">
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Ces pages sont obligatoires pour tout site web. Vous pouvez utiliser l'editeur ci-dessous pour les personnaliser.
+              </div>
+
+              <!-- CGV -->
+              <div class="card section-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-file-earmark-text"></i> Conditions Generales de Vente (CGV)</span>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="toggleEditor('cgv')">
+                    <i class="bi bi-arrows-expand"></i> Agrandir
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div id="editor-cgv"></div>
+                  <input type="hidden" id="cgv">
+                </div>
+              </div>
+
+              <!-- CGU -->
+              <div class="card section-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-file-earmark-text"></i> Conditions Generales d'Utilisation (CGU)</span>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="toggleEditor('cgu')">
+                    <i class="bi bi-arrows-expand"></i> Agrandir
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div id="editor-cgu"></div>
+                  <input type="hidden" id="cgu">
+                </div>
+              </div>
+
+              <!-- Politique de confidentialite -->
+              <div class="card section-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-shield-lock"></i> Politique de confidentialite</span>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="toggleEditor('politique_confidentialite')">
+                    <i class="bi bi-arrows-expand"></i> Agrandir
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div id="editor-politique_confidentialite"></div>
+                  <input type="hidden" id="politique_confidentialite">
+                </div>
+              </div>
+
+              <!-- Mentions legales -->
+              <div class="card section-card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-info-circle"></i> Mentions legales</span>
+                  <button class="btn btn-sm btn-outline-secondary" onclick="toggleEditor('mentions_legales')">
+                    <i class="bi bi-arrows-expand"></i> Agrandir
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div id="editor-mentions_legales"></div>
+                  <input type="hidden" id="mentions_legales">
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================== -->
+            <!-- Contact Tab             -->
+            <!-- ======================== -->
+            <div class="tab-pane fade" id="contact" role="tabpanel">
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-person-lines-fill"></i> Informations de contact
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="email_contact" class="form-label">Email de contact</label>
+                        <input type="email" class="form-control" id="email_contact" placeholder="contact@ludotheque.fr">
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="telephone_contact" class="form-label">Telephone</label>
+                        <input type="tel" class="form-control" id="telephone_contact" placeholder="01 23 45 67 89">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-8">
+                      <div class="mb-3">
+                        <label for="adresse_contact" class="form-label">Adresse</label>
+                        <textarea class="form-control" id="adresse_contact" rows="3"
+                                  placeholder="123 rue des Jeux&#10;75001 Paris"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-share"></i> Reseaux sociaux
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="facebook_url" class="form-label">
+                          <i class="bi bi-facebook text-primary"></i> Facebook
+                        </label>
+                        <input type="url" class="form-control" id="facebook_url"
+                               placeholder="https://facebook.com/...">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="instagram_url" class="form-label">
+                          <i class="bi bi-instagram text-danger"></i> Instagram
+                        </label>
+                        <input type="url" class="form-control" id="instagram_url"
+                               placeholder="https://instagram.com/...">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="twitter_url" class="form-label">
+                          <i class="bi bi-twitter-x"></i> X (Twitter)
+                        </label>
+                        <input type="url" class="form-control" id="twitter_url"
+                               placeholder="https://x.com/...">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="youtube_url" class="form-label">
+                          <i class="bi bi-youtube text-danger"></i> YouTube
+                        </label>
+                        <input type="url" class="form-control" id="youtube_url"
+                               placeholder="https://youtube.com/...">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ======================== -->
+            <!-- Personnalisation Tab    -->
+            <!-- ======================== -->
+            <div class="tab-pane fade" id="personnalisation" role="tabpanel">
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-palette"></i> Couleurs
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="couleur_primaire" class="form-label">Couleur primaire</label>
+                        <div class="d-flex gap-2">
+                          <input type="color" class="form-control form-control-color color-preview"
+                                 id="couleur_primaire_picker" value="#0d6efd"
+                                 onchange="document.getElementById('couleur_primaire').value = this.value">
+                          <input type="text" class="form-control" id="couleur_primaire" value="#0d6efd"
+                                 pattern="^#[0-9A-Fa-f]{6}$"
+                                 onchange="document.getElementById('couleur_primaire_picker').value = this.value">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-md-4">
+                      <div class="mb-3">
+                        <label for="couleur_secondaire" class="form-label">Couleur secondaire</label>
+                        <div class="d-flex gap-2">
+                          <input type="color" class="form-control form-control-color color-preview"
+                                 id="couleur_secondaire_picker" value="#6c757d"
+                                 onchange="document.getElementById('couleur_secondaire').value = this.value">
+                          <input type="text" class="form-control" id="couleur_secondaire" value="#6c757d"
+                                 pattern="^#[0-9A-Fa-f]{6}$"
+                                 onchange="document.getElementById('couleur_secondaire_picker').value = this.value">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-code-slash"></i> CSS personnalise
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <textarea class="form-control font-monospace" id="css_personnalise" rows="10"
+                              placeholder="/* Ajoutez votre CSS personnalise ici */"></textarea>
+                    <div class="form-text">CSS injecte dans toutes les pages du site public</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card section-card border-warning">
+                <div class="card-header bg-warning bg-opacity-10">
+                  <i class="bi bi-tools"></i> Mode maintenance
+                </div>
+                <div class="card-body">
+                  <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="mode_maintenance">
+                    <label class="form-check-label" for="mode_maintenance">
+                      <strong>Activer le mode maintenance</strong>
+                    </label>
+                  </div>
+                  <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    En mode maintenance, le site public affiche un message d'indisponibilite.
+                    L'administration reste accessible.
+                  </div>
+                  <div class="mb-3">
+                    <label for="message_maintenance" class="form-label">Message de maintenance</label>
+                    <textarea class="form-control" id="message_maintenance" rows="3"
+                              placeholder="Notre site est actuellement en maintenance. Nous serons de retour tres bientot !"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom save button -->
+          <div class="d-flex justify-content-end mt-4 mb-5">
+            <button class="btn btn-primary btn-lg" onclick="saveAllSettings()">
+              <i class="bi bi-check-lg"></i> Enregistrer tout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    // Editeurs Quill
+    let editors = {};
+    const editorFields = ['cgv', 'cgu', 'politique_confidentialite', 'mentions_legales'];
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('general', 'site-web');
+      initEditors();
+      loadParametres();
+    });
+
+    // Initialiser les editeurs WYSIWYG
+    function initEditors() {
+      const toolbarOptions = [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        ['link'],
+        ['clean']
+      ];
+
+      editorFields.forEach(field => {
+        editors[field] = new Quill(`#editor-${field}`, {
+          theme: 'snow',
+          modules: {
+            toolbar: toolbarOptions
+          },
+          placeholder: 'Saisissez le contenu ici...'
+        });
+      });
+    }
+
+    // Charger les parametres
+    async function loadParametres() {
+      try {
+        const response = await fetch('/api/parametres/front', {
+          headers: {
+            'Authorization': `Bearer ${getAuthToken()}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du chargement');
+        }
+
+        const data = await response.json();
+        populateForm(data);
+
+        document.getElementById('loading-container').style.display = 'none';
+        document.getElementById('content-container').style.display = 'block';
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors du chargement des parametres', 'error');
+      }
+    }
+
+    // Remplir le formulaire avec les donnees
+    function populateForm(data) {
+      // Identite
+      document.getElementById('nom_site').value = data.nom_site || '';
+      document.getElementById('logo_url').value = data.logo_url || '';
+      document.getElementById('favicon_url').value = data.favicon_url || '';
+
+      // SEO
+      document.getElementById('meta_description').value = data.meta_description || '';
+      document.getElementById('meta_keywords').value = data.meta_keywords || '';
+      document.getElementById('meta_author').value = data.meta_author || '';
+      document.getElementById('og_image_url').value = data.og_image_url || '';
+      document.getElementById('google_analytics_id').value = data.google_analytics_id || '';
+      document.getElementById('google_site_verification').value = data.google_site_verification || '';
+      document.getElementById('robots_txt').value = data.robots_txt || '';
+
+      // Mode
+      if (data.mode_fonctionnement === 'catalogue') {
+        document.getElementById('mode_catalogue').checked = true;
+      } else {
+        document.getElementById('mode_complet').checked = true;
+      }
+      updateModeCard();
+
+      // Modules
+      document.getElementById('module_ludotheque').checked = data.module_ludotheque !== false;
+      document.getElementById('module_bibliotheque').checked = data.module_bibliotheque || false;
+      document.getElementById('module_inscriptions').checked = data.module_inscriptions !== false;
+      document.getElementById('module_reservations').checked = data.module_reservations || false;
+      document.getElementById('module_paiement_en_ligne').checked = data.module_paiement_en_ligne || false;
+      ['ludotheque', 'bibliotheque', 'inscriptions', 'reservations', 'paiement'].forEach(updateModuleCard);
+
+      // Legal (Quill editors)
+      if (data.cgv) editors.cgv.root.innerHTML = data.cgv;
+      if (data.cgu) editors.cgu.root.innerHTML = data.cgu;
+      if (data.politique_confidentialite) editors.politique_confidentialite.root.innerHTML = data.politique_confidentialite;
+      if (data.mentions_legales) editors.mentions_legales.root.innerHTML = data.mentions_legales;
+
+      // Contact
+      document.getElementById('email_contact').value = data.email_contact || '';
+      document.getElementById('telephone_contact').value = data.telephone_contact || '';
+      document.getElementById('adresse_contact').value = data.adresse_contact || '';
+
+      // Reseaux sociaux
+      document.getElementById('facebook_url').value = data.facebook_url || '';
+      document.getElementById('instagram_url').value = data.instagram_url || '';
+      document.getElementById('twitter_url').value = data.twitter_url || '';
+      document.getElementById('youtube_url').value = data.youtube_url || '';
+
+      // Personnalisation
+      document.getElementById('couleur_primaire').value = data.couleur_primaire || '#0d6efd';
+      document.getElementById('couleur_primaire_picker').value = data.couleur_primaire || '#0d6efd';
+      document.getElementById('couleur_secondaire').value = data.couleur_secondaire || '#6c757d';
+      document.getElementById('couleur_secondaire_picker').value = data.couleur_secondaire || '#6c757d';
+      document.getElementById('css_personnalise').value = data.css_personnalise || '';
+
+      // Maintenance
+      document.getElementById('mode_maintenance').checked = data.mode_maintenance || false;
+      document.getElementById('message_maintenance').value = data.message_maintenance || '';
+
+      // Update char counters
+      updateCharCounter('meta_description', 160);
+
+      // Preview images if URLs exist
+      if (data.logo_url) previewLogo();
+      if (data.favicon_url) previewFavicon();
+    }
+
+    // Collecter les donnees du formulaire
+    function collectFormData() {
+      return {
+        // Identite
+        nom_site: document.getElementById('nom_site').value,
+        logo_url: document.getElementById('logo_url').value || null,
+        favicon_url: document.getElementById('favicon_url').value || null,
+
+        // SEO
+        meta_description: document.getElementById('meta_description').value || null,
+        meta_keywords: document.getElementById('meta_keywords').value || null,
+        meta_author: document.getElementById('meta_author').value || null,
+        og_image_url: document.getElementById('og_image_url').value || null,
+        google_analytics_id: document.getElementById('google_analytics_id').value || null,
+        google_site_verification: document.getElementById('google_site_verification').value || null,
+        robots_txt: document.getElementById('robots_txt').value || null,
+
+        // Mode
+        mode_fonctionnement: document.querySelector('input[name="mode_fonctionnement"]:checked').value,
+
+        // Modules
+        module_ludotheque: document.getElementById('module_ludotheque').checked,
+        module_bibliotheque: document.getElementById('module_bibliotheque').checked,
+        module_inscriptions: document.getElementById('module_inscriptions').checked,
+        module_reservations: document.getElementById('module_reservations').checked,
+        module_paiement_en_ligne: document.getElementById('module_paiement_en_ligne').checked,
+
+        // Legal
+        cgv: editors.cgv.root.innerHTML,
+        cgu: editors.cgu.root.innerHTML,
+        politique_confidentialite: editors.politique_confidentialite.root.innerHTML,
+        mentions_legales: editors.mentions_legales.root.innerHTML,
+
+        // Contact
+        email_contact: document.getElementById('email_contact').value || null,
+        telephone_contact: document.getElementById('telephone_contact').value || null,
+        adresse_contact: document.getElementById('adresse_contact').value || null,
+
+        // Reseaux sociaux
+        facebook_url: document.getElementById('facebook_url').value || null,
+        instagram_url: document.getElementById('instagram_url').value || null,
+        twitter_url: document.getElementById('twitter_url').value || null,
+        youtube_url: document.getElementById('youtube_url').value || null,
+
+        // Personnalisation
+        couleur_primaire: document.getElementById('couleur_primaire').value,
+        couleur_secondaire: document.getElementById('couleur_secondaire').value,
+        css_personnalise: document.getElementById('css_personnalise').value || null,
+
+        // Maintenance
+        mode_maintenance: document.getElementById('mode_maintenance').checked,
+        message_maintenance: document.getElementById('message_maintenance').value || null
+      };
+    }
+
+    // Sauvegarder tous les parametres
+    async function saveAllSettings() {
+      const btn = document.getElementById('btnSaveAll');
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Enregistrement...';
+
+      try {
+        const data = collectFormData();
+
+        const response = await fetch('/api/parametres/front', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur lors de la sauvegarde');
+        }
+
+        showToast('Parametres enregistres avec succes', 'success');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+
+    // Helpers UI
+    function updateModeCard() {
+      const isCatalogue = document.getElementById('mode_catalogue').checked;
+      document.getElementById('card-mode-catalogue').classList.toggle('active', isCatalogue);
+      document.getElementById('card-mode-complet').classList.toggle('active', !isCatalogue);
+    }
+
+    function updateModuleCard(module) {
+      let checkboxId, cardId;
+      if (module === 'paiement') {
+        checkboxId = 'module_paiement_en_ligne';
+        cardId = 'card-module-paiement';
+      } else {
+        checkboxId = `module_${module}`;
+        cardId = `card-module-${module}`;
+      }
+      const checkbox = document.getElementById(checkboxId);
+      const card = document.getElementById(cardId);
+      if (checkbox && card) {
+        card.classList.toggle('active', checkbox.checked);
+      }
+    }
+
+    function previewLogo() {
+      const url = document.getElementById('logo_url').value;
+      const preview = document.getElementById('logo-preview');
+      const img = document.getElementById('logo-preview-img');
+      if (url) {
+        img.src = url;
+        preview.style.display = 'block';
+        img.onerror = () => { preview.style.display = 'none'; };
+      } else {
+        preview.style.display = 'none';
+      }
+    }
+
+    function previewFavicon() {
+      const url = document.getElementById('favicon_url').value;
+      const preview = document.getElementById('favicon-preview');
+      const img = document.getElementById('favicon-preview-img');
+      if (url) {
+        img.src = url;
+        preview.style.display = 'block';
+        img.onerror = () => { preview.style.display = 'none'; };
+      } else {
+        preview.style.display = 'none';
+      }
+    }
+
+    function updateCharCounter(fieldId, recommended) {
+      const field = document.getElementById(fieldId);
+      const counter = document.getElementById(`${fieldId}-counter`);
+      const length = field.value.length;
+      counter.textContent = `${length}/${recommended}`;
+      counter.classList.remove('warning', 'danger');
+      if (length > recommended * 1.5) {
+        counter.classList.add('danger');
+      } else if (length > recommended) {
+        counter.classList.add('warning');
+      }
+    }
+
+    function toggleEditor(field) {
+      const container = document.querySelector(`#editor-${field}`).closest('.card-body');
+      const currentHeight = container.querySelector('.ql-container').style.minHeight;
+      if (currentHeight === '500px') {
+        container.querySelector('.ql-container').style.minHeight = '200px';
+      } else {
+        container.querySelector('.ql-container').style.minHeight = '500px';
+      }
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

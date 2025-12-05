@@ -17,6 +17,12 @@ const SmsLogModel = require('./SmsLog');
 const EventTriggerModel = require('./EventTrigger');
 const AdherentArchiveModel = require('./AdherentArchive');
 const ArchiveAccessLogModel = require('./ArchiveAccessLog');
+const CompteBancaireModel = require('./CompteBancaire');
+const SiteModel = require('./Site');
+const HoraireOuvertureModel = require('./HoraireOuverture');
+const FermetureExceptionnelleModel = require('./FermetureExceptionnelle');
+const ParametresCalendrierModel = require('./ParametresCalendrier');
+const ParametresFrontModel = require('./ParametresFront');
 
 // Initialize models
 const Adherent = AdherentModel(sequelize);
@@ -35,6 +41,12 @@ const SmsLog = SmsLogModel(sequelize);
 const EventTrigger = EventTriggerModel(sequelize);
 const AdherentArchive = AdherentArchiveModel(sequelize);
 const ArchiveAccessLog = ArchiveAccessLogModel(sequelize);
+const CompteBancaire = CompteBancaireModel(sequelize);
+const Site = SiteModel(sequelize);
+const HoraireOuverture = HoraireOuvertureModel(sequelize);
+const FermetureExceptionnelle = FermetureExceptionnelleModel(sequelize);
+const ParametresCalendrier = ParametresCalendrierModel(sequelize);
+const ParametresFront = ParametresFrontModel(sequelize);
 
 // Define associations
 // Adherent <-> Emprunt (One-to-Many)
@@ -114,6 +126,52 @@ SmsLog.belongsTo(Adherent, {
   as: 'adherent'
 });
 
+// CompteBancaire <-> Site (One-to-Many)
+CompteBancaire.hasMany(Site, {
+  foreignKey: 'compte_bancaire_id',
+  as: 'sites'
+});
+
+Site.belongsTo(CompteBancaire, {
+  foreignKey: 'compte_bancaire_id',
+  as: 'compteBancaire'
+});
+
+// Site <-> HoraireOuverture (One-to-Many)
+Site.hasMany(HoraireOuverture, {
+  foreignKey: 'site_id',
+  as: 'horaires'
+});
+
+HoraireOuverture.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+// Site <-> FermetureExceptionnelle (One-to-Many)
+// Note: site_id peut être NULL (fermeture globale)
+Site.hasMany(FermetureExceptionnelle, {
+  foreignKey: 'site_id',
+  as: 'fermetures'
+});
+
+FermetureExceptionnelle.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+// Site <-> ParametresCalendrier (One-to-One)
+// Note: site_id peut être NULL (paramètres globaux)
+Site.hasOne(ParametresCalendrier, {
+  foreignKey: 'site_id',
+  as: 'parametresCalendrier'
+});
+
+ParametresCalendrier.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -132,5 +190,11 @@ module.exports = {
   SmsLog,
   EventTrigger,
   AdherentArchive,
-  ArchiveAccessLog
+  ArchiveAccessLog,
+  CompteBancaire,
+  Site,
+  HoraireOuverture,
+  FermetureExceptionnelle,
+  ParametresCalendrier,
+  ParametresFront
 };

@@ -38,3 +38,6 @@ tmp/
 
 # OS
 Thumbs.db
+
+# Scripts locaux
+scripts/

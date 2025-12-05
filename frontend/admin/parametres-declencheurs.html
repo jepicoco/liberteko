@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Declencheurs - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card { margin-bottom: 1.5rem; }
+    .section-card .card-header { background-color: #f8f9fa; font-weight: 600; }
+    .trigger-card { transition: transform 0.2s; }
+    .trigger-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .trigger-card.inactive { opacity: 0.6; }
+    .sub-nav { background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #e9ecef; }
+    .event-badge { font-size: 0.7rem; }
+    .timeline-item { position: relative; padding-left: 30px; margin-bottom: 1rem; }
+    .timeline-item::before { content: ''; position: absolute; left: 10px; top: 0; bottom: -1rem; width: 2px; background: #dee2e6; }
+    .timeline-item::after { content: ''; position: absolute; left: 5px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: #0d6efd; }
+    .timeline-item:last-child::before { display: none; }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-lightning"></i> Declencheurs automatiques</h1>
+            <p class="text-muted mb-0">Envois automatiques de rappels et notifications</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="bi bi-plus"></i> Nouveau declencheur
+          </button>
+        </div>
+
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          Les declencheurs envoient automatiquement des emails ou SMS lorsqu'un evenement se produit
+          (nouvel adherent, emprunt en retard, adhesion expirant, etc.).
+        </div>
+
+        <!-- Filtres -->
+        <div class="card section-card">
+          <div class="card-body py-2">
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" id="filter-categorie">
+                  <option value="">Toutes les categories</option>
+                  <option value="adhesion">Adhesion</option>
+                  <option value="emprunt">Emprunt</option>
+                  <option value="relance">Relance</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" id="filter-canal">
+                  <option value="">Tous les canaux</option>
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                  <option value="both">Email + SMS</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="triggers-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Declencheur -->
+  <div class="modal fade" id="modalTrigger" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTriggerTitle">Nouveau declencheur</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formTrigger">
+            <input type="hidden" id="trigger_id">
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="trigger_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="trigger_nom" required placeholder="Ex: Rappel retour J-3">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="trigger_evenement" class="form-label">Evenement declencheur <span class="text-danger">*</span></label>
+                  <select class="form-select" id="trigger_evenement" onchange="updateEventOptions()">
+                    <optgroup label="Adhesion">
+                      <option value="nouvelle_adhesion">Nouvelle adhesion</option>
+                      <option value="adhesion_expire_bientot">Adhesion expire bientot</option>
+                      <option value="adhesion_expiree">Adhesion expiree</option>
+                      <option value="renouvellement">Renouvellement</option>
+                    </optgroup>
+                    <optgroup label="Emprunt">
+                      <option value="nouvel_emprunt">Nouvel emprunt</option>
+                      <option value="retour_proche">Retour proche</option>
+                      <option value="retard">Retard de retour</option>
+                      <option value="retour_effectue">Retour effectue</option>
+                    </optgroup>
+                    <optgroup label="Autre">
+                      <option value="anniversaire">Anniversaire</option>
+                      <option value="inactivite">Inactivite prolongee</option>
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="trigger_categorie" class="form-label">Categorie</label>
+                  <select class="form-select" id="trigger_categorie">
+                    <option value="adhesion">Adhesion</option>
+                    <option value="emprunt">Emprunt</option>
+                    <option value="relance">Relance</option>
+                    <option value="notification">Notification</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="delai-container">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="trigger_delai_valeur" class="form-label">Delai</label>
+                  <input type="number" class="form-control" id="trigger_delai_valeur" min="0" value="0">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="trigger_delai_unite" class="form-label">Unite</label>
+                  <select class="form-select" id="trigger_delai_unite">
+                    <option value="jours">Jours</option>
+                    <option value="heures">Heures</option>
+                    <option value="semaines">Semaines</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="trigger_delai_moment" class="form-label">Moment</label>
+                  <select class="form-select" id="trigger_delai_moment">
+                    <option value="avant">Avant</option>
+                    <option value="apres">Apres</option>
+                    <option value="le_jour">Le jour meme</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="mb-3">Canal de communication</h6>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="trigger_canal" class="form-label">Canal <span class="text-danger">*</span></label>
+                  <select class="form-select" id="trigger_canal" onchange="updateCanalOptions()">
+                    <option value="email">Email uniquement</option>
+                    <option value="sms">SMS uniquement</option>
+                    <option value="both">Email + SMS</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="template-email-row">
+              <div class="col-md-12">
+                <div class="mb-3">
+                  <label for="trigger_template_email" class="form-label">Template Email</label>
+                  <select class="form-select" id="trigger_template_email">
+                    <option value="">-- Selectionner --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row" id="template-sms-row" style="display: none;">
+              <div class="col-md-12">
+                <div class="mb-3">
+                  <label for="trigger_template_sms" class="form-label">Template SMS</label>
+                  <select class="form-select" id="trigger_template_sms">
+                    <option value="">-- Selectionner --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="trigger_actif" checked>
+              <label class="form-check-label" for="trigger_actif">Declencheur actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveTrigger()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let triggers = [];
+    let templates = [];
+    let modalTrigger;
+
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('communication', 'declencheurs');
+      modalTrigger = new bootstrap.Modal(document.getElementById('modalTrigger'));
+
+      loadTriggers();
+      loadTemplates();
+
+      document.getElementById('filter-categorie').addEventListener('change', renderTriggers);
+      document.getElementById('filter-canal').addEventListener('change', renderTriggers);
+    });
+
+    async function loadTriggers() {
+      try {
+        const response = await fetch('/api/event-triggers', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Erreur');
+        triggers = await response.json();
+        renderTriggers();
+      } catch (error) {
+        document.getElementById('triggers-container').innerHTML = `<div class="alert alert-danger">Erreur de chargement</div>`;
+      }
+    }
+
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/parametres/templates-messages', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Erreur');
+        templates = await response.json();
+        populateTemplateSelects();
+      } catch (error) {
+        console.error('Erreur templates:', error);
+      }
+    }
+
+    function populateTemplateSelects() {
+      const emailSelect = document.getElementById('trigger_template_email');
+      const smsSelect = document.getElementById('trigger_template_sms');
+
+      const emailTemplates = templates.filter(t => t.type === 'email' && t.actif);
+      const smsTemplates = templates.filter(t => t.type === 'sms' && t.actif);
+
+      emailSelect.innerHTML = '<option value="">-- Selectionner --</option>' +
+        emailTemplates.map(t => `<option value="${t.id}">${t.nom} (${t.code})</option>`).join('');
+
+      smsSelect.innerHTML = '<option value="">-- Selectionner --</option>' +
+        smsTemplates.map(t => `<option value="${t.id}">${t.nom} (${t.code})</option>`).join('');
+    }
+
+    function renderTriggers() {
+      const container = document.getElementById('triggers-container');
+      const filterCategorie = document.getElementById('filter-categorie').value;
+      const filterCanal = document.getElementById('filter-canal').value;
+
+      let filtered = [...triggers];
+      if (filterCategorie) filtered = filtered.filter(t => t.categorie === filterCategorie);
+      if (filterCanal) filtered = filtered.filter(t => t.canal === filterCanal);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-lightning" style="font-size: 3rem; color: #dee2e6;"></i>
+            <h5 class="mt-3">Aucun declencheur configure</h5>
+            <p class="text-muted">Configurez des envois automatiques</p>
+            <button class="btn btn-primary" onclick="openAddModal()"><i class="bi bi-plus"></i> Ajouter</button>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="row g-4">${filtered.map(t => {
+        const canalIcon = t.canal === 'email' ? 'envelope' : t.canal === 'sms' ? 'phone' : 'send';
+        const delaiText = formatDelai(t);
+
+        return `
+          <div class="col-md-6">
+            <div class="card trigger-card h-100 ${t.actif ? '' : 'inactive'}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="card-title mb-0">${t.nom}</h6>
+                  <div>
+                    ${!t.actif ? '<span class="badge bg-warning">Inactif</span>' : ''}
+                  </div>
+                </div>
+                <p class="text-muted small mb-2">
+                  <i class="bi bi-lightning"></i> ${formatEvenement(t.evenement)}
+                </p>
+                ${delaiText ? `<p class="small mb-2"><i class="bi bi-clock"></i> ${delaiText}</p>` : ''}
+                <div class="d-flex gap-2 mb-3">
+                  <span class="badge bg-${t.canal === 'email' ? 'primary' : t.canal === 'sms' ? 'success' : 'info'}">
+                    <i class="bi bi-${canalIcon}"></i> ${t.canal === 'both' ? 'Email + SMS' : t.canal.toUpperCase()}
+                  </span>
+                  <span class="badge bg-secondary">${t.categorie || 'autre'}</span>
+                </div>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-primary" onclick="editTrigger(${t.id})"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-sm btn-outline-${t.actif ? 'warning' : 'success'}" onclick="toggleTrigger(${t.id})">
+                    <i class="bi bi-${t.actif ? 'pause' : 'play'}"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteTrigger(${t.id})"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}</div>`;
+    }
+
+    function formatEvenement(evenement) {
+      const labels = {
+        'nouvelle_adhesion': 'Nouvelle adhesion',
+        'adhesion_expire_bientot': 'Adhesion expire bientot',
+        'adhesion_expiree': 'Adhesion expiree',
+        'renouvellement': 'Renouvellement',
+        'nouvel_emprunt': 'Nouvel emprunt',
+        'retour_proche': 'Retour proche',
+        'retard': 'Retard de retour',
+        'retour_effectue': 'Retour effectue',
+        'anniversaire': 'Anniversaire',
+        'inactivite': 'Inactivite'
+      };
+      return labels[evenement] || evenement;
+    }
+
+    function formatDelai(trigger) {
+      if (!trigger.delai_valeur || trigger.delai_valeur === 0) return '';
+      const moment = trigger.delai_moment === 'avant' ? 'avant' : trigger.delai_moment === 'apres' ? 'apres' : '';
+      return `${trigger.delai_valeur} ${trigger.delai_unite || 'jours'} ${moment}`;
+    }
+
+    function updateEventOptions() {
+      // Ajuster les options de delai selon l'evenement
+    }
+
+    function updateCanalOptions() {
+      const canal = document.getElementById('trigger_canal').value;
+      document.getElementById('template-email-row').style.display = (canal === 'email' || canal === 'both') ? '' : 'none';
+      document.getElementById('template-sms-row').style.display = (canal === 'sms' || canal === 'both') ? '' : 'none';
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTriggerTitle').textContent = 'Nouveau declencheur';
+      document.getElementById('formTrigger').reset();
+      document.getElementById('trigger_id').value = '';
+      document.getElementById('trigger_actif').checked = true;
+      updateCanalOptions();
+      modalTrigger.show();
+    }
+
+    function editTrigger(id) {
+      const t = triggers.find(x => x.id === id);
+      if (!t) return;
+      document.getElementById('modalTriggerTitle').textContent = 'Modifier le declencheur';
+      document.getElementById('trigger_id').value = t.id;
+      document.getElementById('trigger_nom').value = t.nom || '';
+      document.getElementById('trigger_evenement').value = t.evenement || '';
+      document.getElementById('trigger_categorie').value = t.categorie || 'notification';
+      document.getElementById('trigger_delai_valeur').value = t.delai_valeur || 0;
+      document.getElementById('trigger_delai_unite').value = t.delai_unite || 'jours';
+      document.getElementById('trigger_delai_moment').value = t.delai_moment || 'avant';
+      document.getElementById('trigger_canal').value = t.canal || 'email';
+      document.getElementById('trigger_template_email').value = t.template_email_id || '';
+      document.getElementById('trigger_template_sms').value = t.template_sms_id || '';
+      document.getElementById('trigger_actif').checked = t.actif !== false;
+      updateCanalOptions();
+      modalTrigger.show();
+    }
+
+    async function saveTrigger() {
+      const id = document.getElementById('trigger_id').value;
+      const data = {
+        nom: document.getElementById('trigger_nom').value,
+        evenement: document.getElementById('trigger_evenement').value,
+        categorie: document.getElementById('trigger_categorie').value,
+        delai_valeur: parseInt(document.getElementById('trigger_delai_valeur').value) || 0,
+        delai_unite: document.getElementById('trigger_delai_unite').value,
+        delai_moment: document.getElementById('trigger_delai_moment').value,
+        canal: document.getElementById('trigger_canal').value,
+        template_email_id: document.getElementById('trigger_template_email').value || null,
+        template_sms_id: document.getElementById('trigger_template_sms').value || null,
+        actif: document.getElementById('trigger_actif').checked
+      };
+
+      try {
+        const url = id ? `/api/event-triggers/${id}` : '/api/event-triggers';
+        const response = await fetch(url, {
+          method: id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Erreur');
+        modalTrigger.hide();
+        showToast('Declencheur enregistre', 'success');
+        loadTriggers();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    async function toggleTrigger(id) {
+      try {
+        await fetch(`/api/event-triggers/${id}/toggle`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        loadTriggers();
+      } catch (error) {
+        showToast('Erreur', 'error');
+      }
+    }
+
+    async function deleteTrigger(id) {
+      if (!confirm('Supprimer ce declencheur?')) return;
+      try {
+        await fetch(`/api/event-triggers/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        showToast('Declencheur supprime', 'success');
+        loadTriggers();
+      } catch (error) {
+        showToast('Erreur', 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container') || (() => {
+        const c = document.createElement('div');
+        c.id = 'toast-container';
+        c.className = 'toast-container position-fixed top-0 end-0 p-3';
+        c.style.zIndex = '1100';
+        document.body.appendChild(c);
+        return c;
+      })();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+      container.appendChild(toast);
+      new bootstrap.Toast(toast).show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+  </script>
+</body>
+</html>

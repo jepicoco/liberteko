@@ -32,7 +32,9 @@
     "setup-email-config": "node database/seeds/seedEmailConfig.js",
     "test-email-system": "node database/diagnostics/test-email-system.js",
     "job-email-reminders": "node backend/jobs/emailReminders.js",
-    "migrate-utf8mb4": "node database/migrations/convertUtf8mb4.js"
+    "migrate-utf8mb4": "node database/migrations/convertUtf8mb4.js",
+    "migrate-multi-sites": "node database/migrations/addMultiSites.js",
+    "migrate-horaires-vacances": "node database/migrations/addHorairesVacances.js"
   },
   "keywords": [
     "ludotheque",

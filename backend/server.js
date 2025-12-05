@@ -80,6 +80,9 @@ app.use('/api/event-triggers', require('./routes/eventTriggers'));
 app.use('/api/configurations-sms', require('./routes/configurationsSMS'));
 app.use('/api/archives', require('./routes/archives'));
 app.use('/api/import', require('./routes/import'));
+app.use('/api/sites', require('./routes/sites'));
+app.use('/api/comptes-bancaires', require('./routes/comptesBancaires'));
+app.use('/api/calendrier', require('./routes/calendrier'));
 
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {

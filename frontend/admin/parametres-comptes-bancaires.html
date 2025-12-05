@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comptes bancaires - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+    .section-card .card-header {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .compte-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .compte-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .compte-card.default {
+      border-color: #198754;
+      border-width: 2px;
+    }
+    .compte-card.inactive {
+      opacity: 0.6;
+    }
+    .iban-display {
+      font-family: monospace;
+      font-size: 1rem;
+      letter-spacing: 0.5px;
+      background: #f8f9fa;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+    }
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+    .bank-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-bank"></i> Comptes bancaires</h1>
+            <p class="text-muted mb-0">Gestion des RIB/IBAN pour les encaissements</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="bi bi-plus"></i> Ajouter un compte
+          </button>
+        </div>
+
+        <!-- Info -->
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          Vous pouvez configurer plusieurs comptes bancaires pour recevoir les paiements.
+          Le compte marque comme "par defaut" sera utilise pour les virements et prelèvements.
+          Chaque site peut etre associe a un compte specifique.
+        </div>
+
+        <!-- Liste des comptes -->
+        <div id="comptes-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0">Chargement des comptes bancaires...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Compte -->
+  <div class="modal fade" id="modalCompte" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCompteTitle">Ajouter un compte bancaire</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCompte">
+            <input type="hidden" id="compte_id">
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="compte_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="compte_libelle" required placeholder="Ex: Compte principal">
+                  <div class="form-text">Nom pour identifier ce compte</div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="compte_banque" class="form-label">Banque <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="compte_banque" required placeholder="Ex: Credit Agricole">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="compte_titulaire" class="form-label">Titulaire du compte</label>
+                  <input type="text" class="form-control" id="compte_titulaire" placeholder="Nom du titulaire">
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="mb-3">Coordonnees bancaires</h6>
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="compte_iban" class="form-label">IBAN <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="text" class="form-control font-monospace" id="compte_iban" required
+                           placeholder="FR76 XXXX XXXX XXXX XXXX XXXX XXX"
+                           oninput="formatIbanInput(this)">
+                    <button class="btn btn-outline-secondary" type="button" onclick="validateIban()">
+                      <i class="bi bi-check-circle"></i> Verifier
+                    </button>
+                  </div>
+                  <div class="form-text" id="iban-feedback"></div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="compte_bic" class="form-label">BIC/SWIFT</label>
+                  <input type="text" class="form-control font-monospace" id="compte_bic"
+                         placeholder="XXXXXXXX" maxlength="11" style="text-transform: uppercase;">
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="mb-3">RIB (format francais)</h6>
+
+            <div class="row">
+              <div class="col-md-3">
+                <div class="mb-3">
+                  <label for="compte_code_banque" class="form-label">Code banque</label>
+                  <input type="text" class="form-control font-monospace" id="compte_code_banque"
+                         placeholder="XXXXX" maxlength="5">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <div class="mb-3">
+                  <label for="compte_code_guichet" class="form-label">Code guichet</label>
+                  <input type="text" class="form-control font-monospace" id="compte_code_guichet"
+                         placeholder="XXXXX" maxlength="5">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="compte_numero" class="form-label">N° de compte</label>
+                  <input type="text" class="form-control font-monospace" id="compte_numero"
+                         placeholder="XXXXXXXXXXX" maxlength="11">
+                </div>
+              </div>
+              <div class="col-md-2">
+                <div class="mb-3">
+                  <label for="compte_cle" class="form-label">Cle RIB</label>
+                  <input type="text" class="form-control font-monospace" id="compte_cle"
+                         placeholder="XX" maxlength="2">
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="compte_par_defaut">
+              <label class="form-check-label" for="compte_par_defaut">
+                <strong>Compte par defaut</strong>
+              </label>
+              <div class="form-text">Ce compte sera utilise pour les paiements si aucun autre n'est specifie</div>
+            </div>
+
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="compte_actif" checked>
+              <label class="form-check-label" for="compte_actif">Compte actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveCompte()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let comptes = [];
+    let modalCompte;
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('comptabilite', 'comptes-bancaires');
+
+      modalCompte = new bootstrap.Modal(document.getElementById('modalCompte'));
+
+      loadComptes();
+    });
+
+    async function loadComptes() {
+      try {
+        const response = await fetch('/api/comptes-bancaires', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        comptes = await response.json();
+        renderComptes();
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('comptes-container').innerHTML = `
+          <div class="alert alert-danger">Erreur lors du chargement des comptes bancaires</div>
+        `;
+      }
+    }
+
+    function renderComptes() {
+      const container = document.getElementById('comptes-container');
+
+      if (comptes.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5">
+            <div class="bank-icon mx-auto mb-3">
+              <i class="bi bi-bank"></i>
+            </div>
+            <h5>Aucun compte bancaire configure</h5>
+            <p class="text-muted">Ajoutez votre premier compte pour recevoir les paiements</p>
+            <button class="btn btn-primary" onclick="openAddModal()">
+              <i class="bi bi-plus"></i> Ajouter un compte
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="row g-4">
+          ${comptes.map(compte => `
+            <div class="col-md-6">
+              <div class="card compte-card h-100 ${compte.par_defaut ? 'default' : ''} ${compte.actif ? '' : 'inactive'}">
+                <div class="card-body">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center">
+                      <div class="bank-icon me-3">
+                        <i class="bi bi-bank"></i>
+                      </div>
+                      <div>
+                        <h5 class="card-title mb-0">${compte.libelle}</h5>
+                        <small class="text-muted">${compte.banque}</small>
+                      </div>
+                    </div>
+                    <div>
+                      ${compte.par_defaut ? '<span class="badge bg-success">Par defaut</span>' : ''}
+                      ${!compte.actif ? '<span class="badge bg-warning">Inactif</span>' : ''}
+                    </div>
+                  </div>
+
+                  ${compte.titulaire ? `<p class="mb-2"><small class="text-muted">Titulaire:</small> ${compte.titulaire}</p>` : ''}
+
+                  <div class="iban-display mb-3">
+                    <small class="text-muted d-block">IBAN</small>
+                    ${formatIbanDisplay(compte.iban)}
+                  </div>
+
+                  ${compte.bic ? `
+                    <p class="mb-2">
+                      <small class="text-muted">BIC:</small>
+                      <span class="font-monospace">${compte.bic}</span>
+                    </p>
+                  ` : ''}
+
+                  <div class="d-flex gap-2 mt-3">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editCompte(${compte.id})">
+                      <i class="bi bi-pencil"></i> Modifier
+                    </button>
+                    ${!compte.par_defaut ? `
+                      <button class="btn btn-sm btn-outline-success" onclick="setDefault(${compte.id})">
+                        <i class="bi bi-star"></i> Par defaut
+                      </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteCompte(${compte.id})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function formatIbanDisplay(iban) {
+      if (!iban) return '-';
+      // Formater en groupes de 4 caracteres
+      return iban.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
+    }
+
+    function formatIbanInput(input) {
+      // Supprimer tout sauf lettres et chiffres
+      let value = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      // Ajouter des espaces tous les 4 caracteres
+      value = value.replace(/(.{4})/g, '$1 ').trim();
+      input.value = value;
+    }
+
+    async function validateIban() {
+      const iban = document.getElementById('compte_iban').value.replace(/\s/g, '');
+      const feedback = document.getElementById('iban-feedback');
+
+      if (iban.length < 15) {
+        feedback.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle"></i> IBAN trop court</span>';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/comptes-bancaires/format-iban', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ iban })
+        });
+
+        const data = await response.json();
+
+        if (data.valid) {
+          feedback.innerHTML = `<span class="text-success"><i class="bi bi-check-circle"></i> IBAN valide (${data.pays || 'Pays inconnu'})</span>`;
+        } else {
+          feedback.innerHTML = `<span class="text-danger"><i class="bi bi-x-circle"></i> IBAN invalide</span>`;
+        }
+      } catch (error) {
+        feedback.innerHTML = '<span class="text-muted">Verification non disponible</span>';
+      }
+    }
+
+    function openAddModal() {
+      document.getElementById('modalCompteTitle').textContent = 'Ajouter un compte bancaire';
+      document.getElementById('formCompte').reset();
+      document.getElementById('compte_id').value = '';
+      document.getElementById('compte_actif').checked = true;
+      document.getElementById('iban-feedback').innerHTML = '';
+      modalCompte.show();
+    }
+
+    function editCompte(id) {
+      const compte = comptes.find(c => c.id === id);
+      if (!compte) return;
+
+      document.getElementById('modalCompteTitle').textContent = 'Modifier le compte bancaire';
+      document.getElementById('compte_id').value = compte.id;
+      document.getElementById('compte_libelle').value = compte.libelle || '';
+      document.getElementById('compte_banque').value = compte.banque || '';
+      document.getElementById('compte_titulaire').value = compte.titulaire || '';
+      document.getElementById('compte_iban').value = formatIbanDisplay(compte.iban) || '';
+      document.getElementById('compte_bic').value = compte.bic || '';
+      document.getElementById('compte_code_banque').value = compte.code_banque || '';
+      document.getElementById('compte_code_guichet').value = compte.code_guichet || '';
+      document.getElementById('compte_numero').value = compte.numero_compte || '';
+      document.getElementById('compte_cle').value = compte.cle_rib || '';
+      document.getElementById('compte_par_defaut').checked = compte.par_defaut || false;
+      document.getElementById('compte_actif').checked = compte.actif !== false;
+      document.getElementById('iban-feedback').innerHTML = '';
+
+      modalCompte.show();
+    }
+
+    async function saveCompte() {
+      const id = document.getElementById('compte_id').value;
+      const data = {
+        libelle: document.getElementById('compte_libelle').value,
+        banque: document.getElementById('compte_banque').value,
+        titulaire: document.getElementById('compte_titulaire').value || null,
+        iban: document.getElementById('compte_iban').value.replace(/\s/g, ''),
+        bic: document.getElementById('compte_bic').value || null,
+        code_banque: document.getElementById('compte_code_banque').value || null,
+        code_guichet: document.getElementById('compte_code_guichet').value || null,
+        numero_compte: document.getElementById('compte_numero').value || null,
+        cle_rib: document.getElementById('compte_cle').value || null,
+        par_defaut: document.getElementById('compte_par_defaut').checked,
+        actif: document.getElementById('compte_actif').checked
+      };
+
+      try {
+        const url = id ? `/api/comptes-bancaires/${id}` : '/api/comptes-bancaires';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Erreur');
+        }
+
+        modalCompte.hide();
+        showToast('Compte bancaire enregistre', 'success');
+        loadComptes();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    async function setDefault(id) {
+      try {
+        const response = await fetch(`/api/comptes-bancaires/${id}/default`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('Compte defini par defaut', 'success');
+        loadComptes();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteCompte(id) {
+      const compte = comptes.find(c => c.id === id);
+      if (compte && compte.par_defaut) {
+        showToast('Impossible de supprimer le compte par defaut', 'error');
+        return;
+      }
+
+      if (!confirm('Supprimer ce compte bancaire ?')) return;
+
+      try {
+        const response = await fetch(`/api/comptes-bancaires/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('Compte bancaire supprime', 'success');
+        loadComptes();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la suppression', 'error');
+      }
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

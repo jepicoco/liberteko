@@ -1,0 +1,243 @@
+const { DataTypes } = require('sequelize');
+
+module.exports = (sequelize) => {
+  const ParametresFront = sequelize.define('ParametresFront', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    // === Identite du site ===
+    nom_site: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: 'Ludotheque',
+      comment: 'Nom du site affiche en public'
+    },
+    logo_url: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'URL du logo principal'
+    },
+    favicon_url: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'URL du favicon'
+    },
+
+    // === SEO ===
+    meta_description: {
+      type: DataTypes.STRING(300),
+      allowNull: true,
+      comment: 'Meta description pour le referencement (max 160 caracteres recommande)'
+    },
+    meta_keywords: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'Mots-cles separes par des virgules'
+    },
+    meta_author: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Auteur du site (meta author)'
+    },
+    og_image_url: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      comment: 'Image par defaut pour Open Graph (partage reseaux sociaux)'
+    },
+    google_analytics_id: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      comment: 'ID Google Analytics (ex: G-XXXXXXXXXX)'
+    },
+    google_site_verification: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      comment: 'Code de verification Google Search Console'
+    },
+    robots_txt: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Contenu personnalise du fichier robots.txt'
+    },
+
+    // === Mode de fonctionnement ===
+    mode_fonctionnement: {
+      type: DataTypes.ENUM('catalogue', 'complet'),
+      allowNull: false,
+      defaultValue: 'complet',
+      comment: 'catalogue = lecture seule, complet = gestion complete'
+    },
+
+    // === Modules actifs ===
+    module_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Module jeux de societe actif'
+    },
+    module_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Module livres actif'
+    },
+    module_inscriptions: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Inscriptions en ligne actives'
+    },
+    module_reservations: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Reservations en ligne actives'
+    },
+    module_paiement_en_ligne: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Paiement en ligne actif'
+    },
+
+    // === Pages legales ===
+    cgv: {
+      type: DataTypes.TEXT('long'),
+      allowNull: true,
+      comment: 'Conditions Generales de Vente (HTML)'
+    },
+    cgu: {
+      type: DataTypes.TEXT('long'),
+      allowNull: true,
+      comment: 'Conditions Generales d\'Utilisation (HTML)'
+    },
+    politique_confidentialite: {
+      type: DataTypes.TEXT('long'),
+      allowNull: true,
+      comment: 'Politique de confidentialite (HTML)'
+    },
+    mentions_legales: {
+      type: DataTypes.TEXT('long'),
+      allowNull: true,
+      comment: 'Mentions legales (HTML)'
+    },
+
+    // === Contact ===
+    email_contact: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      validate: {
+        isEmail: true
+      },
+      comment: 'Email de contact public'
+    },
+    telephone_contact: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      comment: 'Telephone de contact public'
+    },
+    adresse_contact: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Adresse affichee sur le site'
+    },
+
+    // === Reseaux sociaux ===
+    facebook_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    instagram_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    twitter_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    youtube_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+
+    // === Personnalisation ===
+    couleur_primaire: {
+      type: DataTypes.STRING(7),
+      allowNull: true,
+      defaultValue: '#0d6efd',
+      comment: 'Couleur primaire (hex)'
+    },
+    couleur_secondaire: {
+      type: DataTypes.STRING(7),
+      allowNull: true,
+      defaultValue: '#6c757d',
+      comment: 'Couleur secondaire (hex)'
+    },
+    css_personnalise: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'CSS personnalise injecte dans le site'
+    },
+
+    // === Maintenance ===
+    mode_maintenance: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Site en mode maintenance'
+    },
+    message_maintenance: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Message affiche en mode maintenance'
+    }
+  }, {
+    tableName: 'parametres_front',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at'
+  });
+
+  // Methode statique pour recuperer les parametres (il n'y a qu'une seule ligne)
+  ParametresFront.getParametres = async function() {
+    let params = await this.findOne();
+    if (!params) {
+      // Creer les parametres par defaut
+      params = await this.create({});
+    }
+    return params;
+  };
+
+  // Methode pour obtenir les donnees publiques (sans infos sensibles)
+  ParametresFront.prototype.toPublicJSON = function() {
+    return {
+      nom_site: this.nom_site,
+      logo_url: this.logo_url,
+      favicon_url: this.favicon_url,
+      meta_description: this.meta_description,
+      meta_keywords: this.meta_keywords,
+      meta_author: this.meta_author,
+      og_image_url: this.og_image_url,
+      mode_fonctionnement: this.mode_fonctionnement,
+      module_ludotheque: this.module_ludotheque,
+      module_bibliotheque: this.module_bibliotheque,
+      module_inscriptions: this.module_inscriptions,
+      module_reservations: this.module_reservations,
+      email_contact: this.email_contact,
+      telephone_contact: this.telephone_contact,
+      adresse_contact: this.adresse_contact,
+      facebook_url: this.facebook_url,
+      instagram_url: this.instagram_url,
+      twitter_url: this.twitter_url,
+      youtube_url: this.youtube_url,
+      couleur_primaire: this.couleur_primaire,
+      couleur_secondaire: this.couleur_secondaire,
+      mode_maintenance: this.mode_maintenance,
+      message_maintenance: this.message_maintenance
+    };
+  };
+
+  return ParametresFront;
+};

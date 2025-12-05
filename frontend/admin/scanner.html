@@ -335,8 +335,30 @@
         padding: 10px;
       }
 
+      .scanner-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+      }
+
       .scanner-header h1 {
         font-size: 1.2rem;
+      }
+
+      .header-buttons {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .header-buttons .btn-scanner {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+
+      /* Masquer le texte des boutons sur petits ecrans, garder icones */
+      .header-buttons .btn-scanner span.btn-text {
+        display: none;
       }
 
       .adherent-info {
@@ -346,6 +368,69 @@
 
       .btn-clear-adherent {
         margin: 10px auto 0;
+        width: 100%;
+        max-width: 250px;
+      }
+
+      .search-buttons {
+        flex-direction: column;
+      }
+
+      .search-buttons .btn-search {
+        width: 100%;
+      }
+
+      /* Scanner zone plus compacte */
+      .scanner-zone {
+        padding: 15px;
+      }
+
+      #reader {
+        max-width: 100%;
+      }
+
+      /* Historique plus compact */
+      .history-list {
+        max-height: 200px;
+      }
+
+      .history-item {
+        padding: 10px;
+        gap: 8px;
+      }
+
+      .history-icon {
+        font-size: 1.2rem;
+      }
+
+      .history-content .action {
+        font-size: 0.9rem;
+      }
+
+      .history-content .details {
+        font-size: 0.75rem;
+      }
+    }
+
+    /* Tres petits ecrans (iPhone SE, etc.) */
+    @media (max-width: 375px) {
+      .scanner-header h1 {
+        font-size: 1rem;
+      }
+
+      .header-buttons .btn-scanner {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+
+      .adherent-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+      }
+
+      .adherent-details h4 {
+        font-size: 1rem;
       }
     }
 

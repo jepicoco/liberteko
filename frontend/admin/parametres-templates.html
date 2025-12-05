@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Templates de messages - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    .section-card { margin-bottom: 1.5rem; }
+    .section-card .card-header { background-color: #f8f9fa; font-weight: 600; }
+    .template-card { transition: transform 0.2s; cursor: pointer; }
+    .template-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .template-card.inactive { opacity: 0.6; }
+    .sub-nav { background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #e9ecef; }
+    .type-badge { font-size: 0.75rem; }
+    .type-email { background-color: #0d6efd; }
+    .type-sms { background-color: #198754; }
+    .variable-tag { display: inline-block; background: #e9ecef; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.8rem; margin: 0.1rem; cursor: pointer; }
+    .variable-tag:hover { background: #dee2e6; }
+    .ql-container { min-height: 200px; }
+    .preview-container { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; min-height: 150px; }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-file-text"></i> Templates de messages</h1>
+            <p class="text-muted mb-0">Modeles d'emails et SMS personnalisables</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="bi bi-plus"></i> Nouveau template
+          </button>
+        </div>
+
+        <!-- Filtres -->
+        <div class="card section-card">
+          <div class="card-body py-2">
+            <div class="row align-items-center">
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" id="filter-type">
+                  <option value="">Tous les types</option>
+                  <option value="email">Email</option>
+                  <option value="sms">SMS</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select form-select-sm" id="filter-categorie">
+                  <option value="">Toutes les categories</option>
+                  <option value="adhesion">Adhesion</option>
+                  <option value="emprunt">Emprunt</option>
+                  <option value="relance">Relance</option>
+                  <option value="notification">Notification</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <input type="text" class="form-control form-control-sm" id="search-template" placeholder="Rechercher...">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="templates-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Template -->
+  <div class="modal fade" id="modalTemplate" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTemplateTitle">Nouveau template</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formTemplate">
+            <input type="hidden" id="template_id">
+
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="template_code" class="form-label">Code <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control font-monospace" id="template_code" required placeholder="WELCOME_EMAIL" style="text-transform: uppercase;">
+                  <div class="form-text">Identifiant unique du template</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="template_type" class="form-label">Type <span class="text-danger">*</span></label>
+                  <select class="form-select" id="template_type" onchange="updateTypeUI()">
+                    <option value="email">Email</option>
+                    <option value="sms">SMS</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="template_categorie" class="form-label">Categorie</label>
+                  <select class="form-select" id="template_categorie">
+                    <option value="adhesion">Adhesion</option>
+                    <option value="emprunt">Emprunt</option>
+                    <option value="relance">Relance</option>
+                    <option value="notification">Notification</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="template_nom" class="form-label">Nom du template <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="template_nom" required placeholder="Ex: Email de bienvenue">
+            </div>
+
+            <div class="mb-3" id="sujet-container">
+              <label for="template_sujet" class="form-label">Sujet <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="template_sujet" placeholder="Bienvenue {{prenom}} !">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Variables disponibles</label>
+              <div id="variables-list" class="mb-2">
+                <span class="variable-tag" onclick="insertVariable('{{prenom}}')">{{prenom}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{nom}}')">{{nom}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{email}}')">{{email}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{telephone}}')">{{telephone}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{code_adherent}}')">{{code_adherent}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{date_fin_adhesion}}')">{{date_fin_adhesion}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{titre_jeu}}')">{{titre_jeu}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{date_retour}}')">{{date_retour}}</span>
+                <span class="variable-tag" onclick="insertVariable('{{nom_site}}')">{{nom_site}}</span>
+              </div>
+              <div class="form-text">Cliquez sur une variable pour l'inserer</div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Contenu <span class="text-danger">*</span></label>
+                  <div id="editor-email">
+                    <div id="editor-container"></div>
+                  </div>
+                  <textarea class="form-control" id="template_contenu_sms" rows="4" style="display: none;" placeholder="Bonjour {{prenom}}, votre jeu {{titre_jeu}} est a retourner avant le {{date_retour}}."></textarea>
+                  <div class="form-text" id="sms-counter" style="display: none;">
+                    <span id="char-count">0</span>/160 caracteres
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Apercu</label>
+                  <div class="preview-container" id="preview-container">
+                    <em class="text-muted">L'apercu s'affiche ici...</em>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="template_actif" checked>
+              <label class="form-check-label" for="template_actif">Template actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-info" onclick="previewTemplate()">
+            <i class="bi bi-eye"></i> Rafraichir apercu
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveTemplate()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let templates = [];
+    let modalTemplate;
+    let quillEditor;
+
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('communication', 'templates');
+      modalTemplate = new bootstrap.Modal(document.getElementById('modalTemplate'));
+
+      // Init Quill
+      quillEditor = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            ['link'],
+            ['clean']
+          ]
+        },
+        placeholder: 'Contenu du message...'
+      });
+
+      loadTemplates();
+
+      // Filtres
+      document.getElementById('filter-type').addEventListener('change', renderTemplates);
+      document.getElementById('filter-categorie').addEventListener('change', renderTemplates);
+      document.getElementById('search-template').addEventListener('input', renderTemplates);
+
+      // SMS counter
+      document.getElementById('template_contenu_sms').addEventListener('input', updateSMSCounter);
+    });
+
+    async function loadTemplates() {
+      try {
+        const response = await fetch('/api/parametres/templates-messages', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Erreur');
+        templates = await response.json();
+        renderTemplates();
+      } catch (error) {
+        document.getElementById('templates-container').innerHTML = `<div class="alert alert-danger">Erreur de chargement</div>`;
+      }
+    }
+
+    function renderTemplates() {
+      const container = document.getElementById('templates-container');
+      const filterType = document.getElementById('filter-type').value;
+      const filterCategorie = document.getElementById('filter-categorie').value;
+      const searchTerm = document.getElementById('search-template').value.toLowerCase();
+
+      let filtered = [...templates];
+      if (filterType) filtered = filtered.filter(t => t.type === filterType);
+      if (filterCategorie) filtered = filtered.filter(t => t.categorie === filterCategorie);
+      if (searchTerm) filtered = filtered.filter(t =>
+        t.nom.toLowerCase().includes(searchTerm) ||
+        t.code.toLowerCase().includes(searchTerm)
+      );
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-file-text" style="font-size: 3rem; color: #dee2e6;"></i>
+            <h5 class="mt-3">Aucun template trouve</h5>
+            <button class="btn btn-primary" onclick="openAddModal()"><i class="bi bi-plus"></i> Creer un template</button>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="row g-3">${filtered.map(t => `
+        <div class="col-md-4">
+          <div class="card template-card h-100 ${t.actif ? '' : 'inactive'}" onclick="editTemplate(${t.id})">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge type-badge type-${t.type}">${t.type.toUpperCase()}</span>
+                ${!t.actif ? '<span class="badge bg-warning">Inactif</span>' : ''}
+              </div>
+              <h6 class="card-title">${t.nom}</h6>
+              <p class="card-text small text-muted mb-1"><code>${t.code}</code></p>
+              ${t.sujet ? `<p class="card-text small">${t.sujet.substring(0, 50)}${t.sujet.length > 50 ? '...' : ''}</p>` : ''}
+              <span class="badge bg-secondary">${t.categorie || 'autre'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    function updateTypeUI() {
+      const type = document.getElementById('template_type').value;
+      const isEmail = type === 'email';
+
+      document.getElementById('sujet-container').style.display = isEmail ? '' : 'none';
+      document.getElementById('editor-email').style.display = isEmail ? '' : 'none';
+      document.getElementById('template_contenu_sms').style.display = isEmail ? 'none' : '';
+      document.getElementById('sms-counter').style.display = isEmail ? 'none' : '';
+    }
+
+    function updateSMSCounter() {
+      const text = document.getElementById('template_contenu_sms').value;
+      document.getElementById('char-count').textContent = text.length;
+    }
+
+    function insertVariable(variable) {
+      const type = document.getElementById('template_type').value;
+      if (type === 'email') {
+        const range = quillEditor.getSelection(true);
+        quillEditor.insertText(range.index, variable);
+      } else {
+        const textarea = document.getElementById('template_contenu_sms');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const text = textarea.value;
+        textarea.value = text.substring(0, start) + variable + text.substring(end);
+        textarea.focus();
+        textarea.selectionStart = textarea.selectionEnd = start + variable.length;
+        updateSMSCounter();
+      }
+    }
+
+    function previewTemplate() {
+      const type = document.getElementById('template_type').value;
+      let content = type === 'email' ? quillEditor.root.innerHTML : document.getElementById('template_contenu_sms').value;
+
+      // Remplacer les variables par des exemples
+      const examples = {
+        '{{prenom}}': 'Marie',
+        '{{nom}}': 'Dupont',
+        '{{email}}': 'marie.dupont@email.fr',
+        '{{telephone}}': '06 12 34 56 78',
+        '{{code_adherent}}': 'ADH00000042',
+        '{{date_fin_adhesion}}': '31/12/2025',
+        '{{titre_jeu}}': 'Catan',
+        '{{date_retour}}': '15/01/2025',
+        '{{nom_site}}': 'Ma Ludotheque'
+      };
+
+      Object.entries(examples).forEach(([key, value]) => {
+        content = content.replace(new RegExp(key.replace(/[{}]/g, '\\$&'), 'g'), value);
+      });
+
+      document.getElementById('preview-container').innerHTML = content || '<em class="text-muted">Aucun contenu</em>';
+    }
+
+    function openAddModal() {
+      document.getElementById('modalTemplateTitle').textContent = 'Nouveau template';
+      document.getElementById('formTemplate').reset();
+      document.getElementById('template_id').value = '';
+      document.getElementById('template_actif').checked = true;
+      quillEditor.root.innerHTML = '';
+      updateTypeUI();
+      document.getElementById('preview-container').innerHTML = '<em class="text-muted">L\'apercu s\'affiche ici...</em>';
+      modalTemplate.show();
+    }
+
+    function editTemplate(id) {
+      const t = templates.find(x => x.id === id);
+      if (!t) return;
+      document.getElementById('modalTemplateTitle').textContent = 'Modifier le template';
+      document.getElementById('template_id').value = t.id;
+      document.getElementById('template_code').value = t.code || '';
+      document.getElementById('template_type').value = t.type || 'email';
+      document.getElementById('template_categorie').value = t.categorie || 'autre';
+      document.getElementById('template_nom').value = t.nom || '';
+      document.getElementById('template_sujet').value = t.sujet || '';
+      document.getElementById('template_actif').checked = t.actif !== false;
+
+      updateTypeUI();
+
+      if (t.type === 'email') {
+        quillEditor.root.innerHTML = t.contenu || '';
+      } else {
+        document.getElementById('template_contenu_sms').value = t.contenu || '';
+        updateSMSCounter();
+      }
+
+      previewTemplate();
+      modalTemplate.show();
+    }
+
+    async function saveTemplate() {
+      const id = document.getElementById('template_id').value;
+      const type = document.getElementById('template_type').value;
+      const data = {
+        code: document.getElementById('template_code').value.toUpperCase(),
+        type,
+        categorie: document.getElementById('template_categorie').value,
+        nom: document.getElementById('template_nom').value,
+        sujet: type === 'email' ? document.getElementById('template_sujet').value : null,
+        contenu: type === 'email' ? quillEditor.root.innerHTML : document.getElementById('template_contenu_sms').value,
+        actif: document.getElementById('template_actif').checked
+      };
+
+      try {
+        const url = id ? `/api/parametres/templates-messages/${id}` : '/api/parametres/templates-messages';
+        const response = await fetch(url, {
+          method: id ? 'PUT' : 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
+          body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error((await response.json()).error || 'Erreur');
+        modalTemplate.hide();
+        showToast('Template enregistre', 'success');
+        loadTemplates();
+      } catch (error) {
+        showToast(error.message, 'error');
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container') || (() => {
+        const c = document.createElement('div');
+        c.id = 'toast-container';
+        c.className = 'toast-container position-fixed top-0 end-0 p-3';
+        c.style.zIndex = '1100';
+        document.body.appendChild(c);
+        return c;
+      })();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+      container.appendChild(toast);
+      new bootstrap.Toast(toast).show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+  </script>
+</body>
+</html>
