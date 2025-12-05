@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Listes & Categories - Parametres - Ludotheque Admin</title>
+  <title>Listes & Referentiels - Parametres - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -46,12 +46,6 @@
       font-size: 0.7rem;
       margin-left: 0.5rem;
     }
-    .sub-nav {
-      background: #f8f9fa;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      border: 1px solid #e9ecef;
-    }
     .color-dot {
       width: 16px;
       height: 16px;
@@ -59,6 +53,49 @@
       display: inline-block;
       margin-right: 0.5rem;
       border: 1px solid rgba(0,0,0,0.1);
+    }
+    .ref-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    .ref-stat-card {
+      padding: 1rem;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border-radius: 0.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 2px solid transparent;
+    }
+    .ref-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .ref-stat-card.active {
+      border-color: var(--bs-primary);
+      background: linear-gradient(135deg, #e7f1ff 0%, #cfe2ff 100%);
+    }
+    .ref-stat-card h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--bs-primary);
+    }
+    .ref-stat-card small {
+      color: #6c757d;
+    }
+    .search-box {
+      position: relative;
+    }
+    .search-box .bi-search {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+    }
+    .search-box input {
+      padding-left: 36px;
     }
   </style>
 </head>
@@ -77,20 +114,35 @@
         <div id="sub-nav-container"></div>
 
         <div class="mb-4">
-          <h1><i class="bi bi-list-ul"></i> Listes & Categories</h1>
-          <p class="text-muted mb-0">Gestion des modes de paiement et categories de jeux</p>
+          <h1><i class="bi bi-list-ul"></i> Listes & Referentiels</h1>
+          <p class="text-muted mb-0">Gestion des modes de paiement, categories, themes, editeurs et autres referentiels</p>
+        </div>
+
+        <!-- Stats des referentiels -->
+        <div class="card section-card">
+          <div class="card-header">
+            <i class="bi bi-bar-chart"></i> Vue d'ensemble des referentiels
+          </div>
+          <div class="card-body">
+            <div id="ref-stats" class="ref-stats">
+              <div class="text-center py-4 w-100">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span class="ms-2">Chargement...</span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-4" id="listesTabs" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="paiements-tab" data-bs-toggle="tab" data-bs-target="#paiements" type="button">
-              <i class="bi bi-credit-card"></i> Modes de paiement
+              <i class="bi bi-credit-card"></i> Paiements
             </button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button">
-              <i class="bi bi-tags"></i> Categories de jeux
+            <button class="nav-link" id="referentiels-tab" data-bs-toggle="tab" data-bs-target="#referentiels" type="button">
+              <i class="bi bi-tags"></i> Referentiels Jeux
             </button>
           </li>
         </ul>
@@ -126,41 +178,55 @@
           </div>
 
           <!-- ======================== -->
-          <!-- Categories Tab          -->
+          <!-- Referentiels Jeux Tab   -->
           <!-- ======================== -->
-          <div class="tab-pane fade" id="categories" role="tabpanel">
-            <div class="card section-card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-tags"></i> Categories de jeux</span>
-                <button class="btn btn-primary btn-sm" onclick="openAddCategorieModal()">
+          <div class="tab-pane fade" id="referentiels" role="tabpanel">
+            <!-- Selecteur de type de referentiel -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Type de referentiel</label>
+                <select class="form-select" id="refType" onchange="onRefTypeChange()">
+                  <option value="categories">Categories</option>
+                  <option value="themes">Themes</option>
+                  <option value="mecanismes">Mecanismes</option>
+                  <option value="editeurs">Editeurs</option>
+                  <option value="auteurs">Auteurs</option>
+                  <option value="illustrateurs">Illustrateurs</option>
+                  <option value="langues">Langues</option>
+                  <option value="gammes">Gammes</option>
+                  <option value="emplacements">Emplacements</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Rechercher</label>
+                <div class="search-box">
+                  <i class="bi bi-search"></i>
+                  <input type="text" class="form-control" id="refSearch" placeholder="Filtrer..." oninput="onRefSearch()">
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check me-3">
+                  <input class="form-check-input" type="checkbox" id="showInactifs" onchange="loadCurrentRef()">
+                  <label class="form-check-label" for="showInactifs">Afficher inactifs</label>
+                </div>
+                <button class="btn btn-primary" onclick="openAddRefModal()">
                   <i class="bi bi-plus"></i> Ajouter
                 </button>
               </div>
-              <div class="card-body">
-                <div class="alert alert-info">
-                  <i class="bi bi-info-circle"></i>
-                  Les categories permettent de classer les jeux par type (Strategie, Ambiance, Enfants, etc.).
-                  Elles sont utilisees pour le filtrage dans le catalogue.
-                </div>
+            </div>
 
-                <div id="categories-list">
+            <!-- Liste des elements -->
+            <div class="card section-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="refListTitle"><i class="bi bi-tags"></i> Categories</span>
+                <span class="badge bg-secondary" id="refCount">0</span>
+              </div>
+              <div class="card-body">
+                <div id="ref-list">
                   <!-- Charge dynamiquement -->
                   <div class="text-center py-4">
                     <div class="spinner-border spinner-border-sm" role="status"></div>
                     <span class="ms-2">Chargement...</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card section-card">
-              <div class="card-header">
-                <i class="bi bi-bar-chart"></i> Utilisation des categories
-              </div>
-              <div class="card-body">
-                <div id="categories-stats">
-                  <div class="text-center py-3 text-muted">
-                    Selectionnez l'onglet pour voir les statistiques
                   </div>
                 </div>
               </div>
@@ -220,48 +286,109 @@
     </div>
   </div>
 
-  <!-- Modal Ajouter/Modifier Categorie -->
-  <div class="modal fade" id="modalCategorie" tabindex="-1">
+  <!-- Modal Ajouter/Modifier Referentiel Generique -->
+  <div class="modal fade" id="modalRef" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalCategorieTitle">Ajouter une categorie</h5>
+          <h5 class="modal-title" id="modalRefTitle">Ajouter</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <form id="formCategorie">
-            <input type="hidden" id="categorie_id">
-            <div class="mb-3">
-              <label for="categorie_nom" class="form-label">Nom <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="categorie_nom" required placeholder="Ex: Strategie">
+          <form id="formRef">
+            <input type="hidden" id="ref_id">
+
+            <!-- Champ nom (commun a tous) -->
+            <div class="mb-3" id="fieldNom">
+              <label for="ref_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_nom" required>
             </div>
-            <div class="mb-3">
-              <label for="categorie_description" class="form-label">Description</label>
-              <textarea class="form-control" id="categorie_description" rows="2" placeholder="Description optionnelle"></textarea>
+
+            <!-- Champ libelle (pour emplacements) -->
+            <div class="mb-3 d-none" id="fieldLibelle">
+              <label for="ref_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_libelle">
             </div>
-            <div class="mb-3">
-              <label for="categorie_couleur" class="form-label">Couleur</label>
+
+            <!-- Champ code (langues, emplacements) -->
+            <div class="mb-3 d-none" id="fieldCode">
+              <label for="ref_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="ref_code" maxlength="20">
+              <div class="form-text">Code court (ISO pour langues)</div>
+            </div>
+
+            <!-- Champs prenom/nationalite (auteurs, illustrateurs) -->
+            <div class="mb-3 d-none" id="fieldPrenom">
+              <label for="ref_prenom" class="form-label">Prenom</label>
+              <input type="text" class="form-control" id="ref_prenom">
+            </div>
+
+            <div class="mb-3 d-none" id="fieldNationalite">
+              <label for="ref_nationalite" class="form-label">Nationalite</label>
+              <input type="text" class="form-control" id="ref_nationalite">
+            </div>
+
+            <!-- Champ pays (editeurs) -->
+            <div class="mb-3 d-none" id="fieldPays">
+              <label for="ref_pays" class="form-label">Pays</label>
+              <input type="text" class="form-control" id="ref_pays">
+            </div>
+
+            <!-- Champ site_web (editeurs, illustrateurs) -->
+            <div class="mb-3 d-none" id="fieldSiteWeb">
+              <label for="ref_site_web" class="form-label">Site web</label>
+              <input type="url" class="form-control" id="ref_site_web" placeholder="https://...">
+            </div>
+
+            <!-- Champ description -->
+            <div class="mb-3 d-none" id="fieldDescription">
+              <label for="ref_description" class="form-label">Description</label>
+              <textarea class="form-control" id="ref_description" rows="2"></textarea>
+            </div>
+
+            <!-- Champs couleur/icone (categories, themes) -->
+            <div class="mb-3 d-none" id="fieldCouleur">
+              <label for="ref_couleur" class="form-label">Couleur</label>
               <div class="d-flex gap-2">
-                <input type="color" class="form-control form-control-color" id="categorie_couleur" value="#0d6efd">
-                <input type="text" class="form-control" id="categorie_couleur_text" value="#0d6efd" style="max-width: 100px;">
+                <input type="color" class="form-control form-control-color" id="ref_couleur" value="#0d6efd">
+                <input type="text" class="form-control" id="ref_couleur_text" value="#0d6efd" style="max-width: 100px;">
               </div>
             </div>
-            <div class="mb-3">
-              <label for="categorie_icone" class="form-label">Icone Bootstrap</label>
+
+            <div class="mb-3 d-none" id="fieldIcone">
+              <label for="ref_icone" class="form-label">Icone Bootstrap</label>
               <div class="input-group">
-                <span class="input-group-text" id="categorie_icone_preview"><i class="bi bi-tag"></i></span>
-                <input type="text" class="form-control" id="categorie_icone" placeholder="tag" value="tag">
+                <span class="input-group-text" id="ref_icone_preview"><i class="bi bi-tag"></i></span>
+                <input type="text" class="form-control" id="ref_icone" placeholder="tag" value="tag">
               </div>
             </div>
+
+            <!-- Champ editeur_id (gammes) -->
+            <div class="mb-3 d-none" id="fieldEditeur">
+              <label for="ref_editeur_id" class="form-label">Editeur</label>
+              <select class="form-select" id="ref_editeur_id">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+
+            <!-- Champ site_id (emplacements) -->
+            <div class="mb-3 d-none" id="fieldSite">
+              <label for="ref_site_id" class="form-label">Site</label>
+              <select class="form-select" id="ref_site_id">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+
+            <!-- Actif -->
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="categorie_actif" checked>
-              <label class="form-check-label" for="categorie_actif">Active</label>
+              <input class="form-check-input" type="checkbox" id="ref_actif" checked>
+              <label class="form-check-label" for="ref_actif">Actif</label>
             </div>
           </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="button" class="btn btn-primary" onclick="saveCategorie()">Enregistrer</button>
+          <button type="button" class="btn btn-primary" onclick="saveRef()">Enregistrer</button>
         </div>
       </div>
     </div>
@@ -276,8 +403,116 @@
   <script src="js/parametres-nav.js"></script>
   <script>
     let modesPaiement = [];
-    let categories = [];
-    let modalModePaiement, modalCategorie;
+    let currentRefItems = [];
+    let currentRefType = 'categories';
+    let searchTimeout = null;
+    let modalModePaiement, modalRef;
+    let editeurs = []; // Cache pour le select des gammes
+    let sites = [];    // Cache pour le select des emplacements
+
+    // Configuration des referentiels
+    const REF_CONFIG = {
+      categories: {
+        label: 'Categories',
+        labelSingular: 'categorie',
+        icon: 'tags',
+        fields: ['nom', 'description', 'couleur', 'icone'],
+        api: referentielsAPI.getCategories,
+        apiCreate: referentielsAPI.createCategorie,
+        apiUpdate: referentielsAPI.updateCategorie,
+        apiDelete: referentielsAPI.deleteCategorie,
+        apiToggle: referentielsAPI.toggleCategorie
+      },
+      themes: {
+        label: 'Themes',
+        labelSingular: 'theme',
+        icon: 'bookmark',
+        fields: ['nom', 'description', 'icone'],
+        api: referentielsAPI.getThemes,
+        apiCreate: referentielsAPI.createTheme,
+        apiUpdate: referentielsAPI.updateTheme,
+        apiDelete: referentielsAPI.deleteTheme,
+        apiToggle: referentielsAPI.toggleTheme
+      },
+      mecanismes: {
+        label: 'Mecanismes',
+        labelSingular: 'mecanisme',
+        icon: 'gear',
+        fields: ['nom', 'description'],
+        api: referentielsAPI.getMecanismes,
+        apiCreate: referentielsAPI.createMecanisme,
+        apiUpdate: referentielsAPI.updateMecanisme,
+        apiDelete: referentielsAPI.deleteMecanisme,
+        apiToggle: referentielsAPI.toggleMecanisme
+      },
+      editeurs: {
+        label: 'Editeurs',
+        labelSingular: 'editeur',
+        icon: 'building',
+        fields: ['nom', 'pays', 'site_web'],
+        api: referentielsAPI.getEditeurs,
+        apiCreate: referentielsAPI.createEditeur,
+        apiUpdate: referentielsAPI.updateEditeur,
+        apiDelete: referentielsAPI.deleteEditeur,
+        apiToggle: referentielsAPI.toggleEditeur
+      },
+      auteurs: {
+        label: 'Auteurs',
+        labelSingular: 'auteur',
+        icon: 'person',
+        fields: ['nom', 'prenom', 'nationalite'],
+        api: referentielsAPI.getAuteurs,
+        apiCreate: referentielsAPI.createAuteur,
+        apiUpdate: referentielsAPI.updateAuteur,
+        apiDelete: referentielsAPI.deleteAuteur,
+        apiToggle: referentielsAPI.toggleAuteur
+      },
+      illustrateurs: {
+        label: 'Illustrateurs',
+        labelSingular: 'illustrateur',
+        icon: 'palette',
+        fields: ['nom', 'prenom', 'site_web'],
+        api: referentielsAPI.getIllustrateurs,
+        apiCreate: referentielsAPI.createIllustrateur,
+        apiUpdate: referentielsAPI.updateIllustrateur,
+        apiDelete: referentielsAPI.deleteIllustrateur,
+        apiToggle: referentielsAPI.toggleIllustrateur
+      },
+      langues: {
+        label: 'Langues',
+        labelSingular: 'langue',
+        icon: 'translate',
+        fields: ['nom', 'code'],
+        api: referentielsAPI.getLangues,
+        apiCreate: referentielsAPI.createLangue,
+        apiUpdate: referentielsAPI.updateLangue,
+        apiDelete: referentielsAPI.deleteLangue,
+        apiToggle: referentielsAPI.toggleLangue
+      },
+      gammes: {
+        label: 'Gammes',
+        labelSingular: 'gamme',
+        icon: 'collection',
+        fields: ['nom', 'description', 'editeur'],
+        api: referentielsAPI.getGammes,
+        apiCreate: referentielsAPI.createGamme,
+        apiUpdate: referentielsAPI.updateGamme,
+        apiDelete: referentielsAPI.deleteGamme,
+        apiToggle: referentielsAPI.toggleGamme
+      },
+      emplacements: {
+        label: 'Emplacements',
+        labelSingular: 'emplacement',
+        icon: 'geo-alt',
+        fields: ['libelle', 'code', 'description', 'site'],
+        useLibelle: true,
+        api: referentielsAPI.getEmplacements,
+        apiCreate: referentielsAPI.createEmplacement,
+        apiUpdate: referentielsAPI.updateEmplacement,
+        apiDelete: referentielsAPI.deleteEmplacement,
+        apiToggle: referentielsAPI.toggleEmplacement
+      }
+    };
 
     // Initialisation
     initTemplate('parametres');
@@ -286,16 +521,16 @@
       renderSubNav('general', 'listes');
 
       modalModePaiement = new bootstrap.Modal(document.getElementById('modalModePaiement'));
-      modalCategorie = new bootstrap.Modal(document.getElementById('modalCategorie'));
+      modalRef = new bootstrap.Modal(document.getElementById('modalRef'));
 
       // Charger les donnees
       loadModesPaiement();
+      loadRefStats();
 
-      // Charger les categories quand on clique sur l'onglet
-      document.getElementById('categories-tab').addEventListener('shown.bs.tab', () => {
-        if (categories.length === 0) {
-          loadCategories();
-          loadCategoriesStats();
+      // Charger les referentiels quand on clique sur l'onglet
+      document.getElementById('referentiels-tab').addEventListener('shown.bs.tab', () => {
+        if (currentRefItems.length === 0) {
+          loadCurrentRef();
         }
       });
 
@@ -305,22 +540,78 @@
         document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
       });
 
-      // Preview icone categorie
-      document.getElementById('categorie_icone').addEventListener('input', (e) => {
+      // Preview icone referentiel
+      document.getElementById('ref_icone').addEventListener('input', (e) => {
         const icon = e.target.value || 'tag';
-        document.getElementById('categorie_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+        document.getElementById('ref_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
       });
 
-      // Sync couleur categorie
-      document.getElementById('categorie_couleur').addEventListener('input', (e) => {
-        document.getElementById('categorie_couleur_text').value = e.target.value;
+      // Sync couleur
+      document.getElementById('ref_couleur').addEventListener('input', (e) => {
+        document.getElementById('ref_couleur_text').value = e.target.value;
       });
-      document.getElementById('categorie_couleur_text').addEventListener('input', (e) => {
+      document.getElementById('ref_couleur_text').addEventListener('input', (e) => {
         if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
-          document.getElementById('categorie_couleur').value = e.target.value;
+          document.getElementById('ref_couleur').value = e.target.value;
         }
       });
     });
+
+    // ========================
+    // Stats des referentiels
+    // ========================
+
+    async function loadRefStats() {
+      try {
+        const stats = await referentielsAPI.getStats();
+        renderRefStats(stats);
+      } catch (error) {
+        console.error('Erreur stats:', error);
+        document.getElementById('ref-stats').innerHTML = '<div class="text-muted">Stats non disponibles</div>';
+      }
+    }
+
+    function renderRefStats(stats) {
+      const container = document.getElementById('ref-stats');
+      const items = [
+        { key: 'categories', label: 'Categories', icon: 'tags' },
+        { key: 'themes', label: 'Themes', icon: 'bookmark' },
+        { key: 'mecanismes', label: 'Mecanismes', icon: 'gear' },
+        { key: 'editeurs', label: 'Editeurs', icon: 'building' },
+        { key: 'auteurs', label: 'Auteurs', icon: 'person' },
+        { key: 'illustrateurs', label: 'Illustrateurs', icon: 'palette' },
+        { key: 'langues', label: 'Langues', icon: 'translate' },
+        { key: 'gammes', label: 'Gammes', icon: 'collection' },
+        { key: 'emplacements', label: 'Emplacements', icon: 'geo-alt' }
+      ];
+
+      container.innerHTML = items.map(item => `
+        <div class="ref-stat-card ${currentRefType === item.key ? 'active' : ''}" onclick="selectRefType('${item.key}')">
+          <i class="bi bi-${item.icon} fs-4 text-primary"></i>
+          <h3>${stats[item.key] || 0}</h3>
+          <small>${item.label}</small>
+        </div>
+      `).join('');
+    }
+
+    function selectRefType(type) {
+      currentRefType = type;
+      document.getElementById('refType').value = type;
+
+      // Activer l'onglet referentiels si pas deja actif
+      const tab = document.getElementById('referentiels-tab');
+      if (!tab.classList.contains('active')) {
+        bootstrap.Tab.getOrCreateInstance(tab).show();
+      }
+
+      loadCurrentRef();
+      loadRefStats().then(() => {
+        // Mettre a jour la classe active
+        document.querySelectorAll('.ref-stat-card').forEach(card => {
+          card.classList.toggle('active', card.getAttribute('onclick').includes(type));
+        });
+      });
+    }
 
     // ========================
     // Modes de paiement
@@ -510,128 +801,297 @@
     }
 
     // ========================
-    // Categories de jeux
+    // Referentiels generiques
     // ========================
 
-    async function loadCategories() {
+    function onRefTypeChange() {
+      currentRefType = document.getElementById('refType').value;
+      document.getElementById('refSearch').value = '';
+      loadCurrentRef();
+    }
+
+    function onRefSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => loadCurrentRef(), 300);
+    }
+
+    async function loadCurrentRef() {
+      const config = REF_CONFIG[currentRefType];
+      if (!config) return;
+
+      const container = document.getElementById('ref-list');
+      container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Chargement...</div>';
+
+      // Mettre a jour le titre
+      document.getElementById('refListTitle').innerHTML = `<i class="bi bi-${config.icon}"></i> ${config.label}`;
+
       try {
-        // Note: API categories a implementer cote backend
-        // Pour l'instant, on extrait les categories uniques des jeux
-        const response = await fetch('/api/jeux?limit=1000', {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-        if (!response.ok) throw new Error('Erreur chargement');
+        const params = {};
+        const search = document.getElementById('refSearch').value;
+        if (search) params.search = search;
+        if (!document.getElementById('showInactifs').checked) params.actif = 'true';
 
-        const data = await response.json();
-        const jeux = data.rows || data;
+        const result = await config.api.call(referentielsAPI, params);
+        currentRefItems = result.items || result;
 
-        // Extraire les categories uniques
-        const catsSet = new Set();
-        jeux.forEach(jeu => {
-          if (jeu.categorie) catsSet.add(jeu.categorie);
-        });
-
-        categories = Array.from(catsSet).sort().map((cat, index) => ({
-          id: index + 1,
-          nom: cat,
-          nbJeux: jeux.filter(j => j.categorie === cat).length
-        }));
-
-        renderCategories();
+        document.getElementById('refCount').textContent = currentRefItems.length;
+        renderRefList();
       } catch (error) {
         console.error('Erreur:', error);
-        document.getElementById('categories-list').innerHTML = `
-          <div class="alert alert-danger">Erreur lors du chargement des categories</div>
-        `;
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
       }
     }
 
-    function renderCategories() {
-      const container = document.getElementById('categories-list');
+    function renderRefList() {
+      const config = REF_CONFIG[currentRefType];
+      const container = document.getElementById('ref-list');
 
-      if (categories.length === 0) {
+      if (currentRefItems.length === 0) {
         container.innerHTML = `
           <div class="text-center py-4 text-muted">
             <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-            <p class="mt-2">Aucune categorie trouvee</p>
-            <p class="small">Les categories sont extraites automatiquement des jeux existants</p>
+            <p class="mt-2">Aucun element trouve</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddRefModal()">
+              <i class="bi bi-plus"></i> Ajouter
+            </button>
           </div>
         `;
         return;
       }
 
-      container.innerHTML = categories.map(cat => `
-        <div class="list-item" data-id="${cat.id}">
-          <div class="item-content">
-            <i class="bi bi-tag me-2"></i>
-            <strong>${cat.nom}</strong>
-            <span class="badge bg-info ms-2">${cat.nbJeux} jeu${cat.nbJeux > 1 ? 'x' : ''}</span>
+      container.innerHTML = currentRefItems.map(item => {
+        const label = config.useLibelle ? item.libelle : item.nom;
+        const extraInfo = getRefExtraInfo(item, config);
+
+        return `
+          <div class="list-item ${item.actif ? '' : 'inactive'}" data-id="${item.id}">
+            <div class="item-content">
+              ${item.couleur ? `<span class="color-dot" style="background-color:${item.couleur}"></span>` : ''}
+              ${item.icone ? `<i class="bi bi-${item.icone} me-2"></i>` : `<i class="bi bi-${config.icon} me-2 text-muted"></i>`}
+              <strong>${label}</strong>
+              ${!item.actif ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
+              ${extraInfo ? `<br><small class="text-muted">${extraInfo}</small>` : ''}
+            </div>
+            <div class="item-actions">
+              <button class="btn btn-sm btn-outline-secondary" onclick="editRef(${item.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-${item.actif ? 'warning' : 'success'}" onclick="toggleRef(${item.id})" title="${item.actif ? 'Desactiver' : 'Activer'}">
+                <i class="bi bi-${item.actif ? 'eye-slash' : 'eye'}"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteRef(${item.id})" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           </div>
-          <div class="item-actions">
-            <button class="btn btn-sm btn-outline-secondary" onclick="editCategorie('${cat.nom}')" title="Renommer">
-              <i class="bi bi-pencil"></i>
-            </button>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    async function loadCategoriesStats() {
-      try {
-        const response = await fetch('/api/stats', {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-        if (!response.ok) return;
+    function getRefExtraInfo(item, config) {
+      const parts = [];
+      if (item.code) parts.push(`Code: ${item.code}`);
+      if (item.prenom) parts.push(item.prenom);
+      if (item.nationalite) parts.push(item.nationalite);
+      if (item.pays) parts.push(item.pays);
+      if (item.site_web) parts.push(`<a href="${item.site_web}" target="_blank">Site web</a>`);
+      if (item.description) parts.push(item.description.substring(0, 60) + (item.description.length > 60 ? '...' : ''));
+      return parts.join(' - ');
+    }
 
-        const stats = await response.json();
+    async function openAddRefModal() {
+      const config = REF_CONFIG[currentRefType];
 
-        // Afficher les stats si disponibles
-        if (stats.categories) {
-          const container = document.getElementById('categories-stats');
-          container.innerHTML = `
-            <div class="row text-center">
-              <div class="col-4">
-                <h3 class="mb-0">${categories.length}</h3>
-                <small class="text-muted">Categories</small>
-              </div>
-              <div class="col-4">
-                <h3 class="mb-0">${stats.totalJeux || '-'}</h3>
-                <small class="text-muted">Jeux total</small>
-              </div>
-              <div class="col-4">
-                <h3 class="mb-0">${Math.round((stats.totalJeux || 0) / (categories.length || 1))}</h3>
-                <small class="text-muted">Jeux/categorie</small>
-              </div>
-            </div>
-          `;
+      document.getElementById('modalRefTitle').textContent = `Ajouter un(e) ${config.labelSingular}`;
+      document.getElementById('formRef').reset();
+      document.getElementById('ref_id').value = '';
+      document.getElementById('ref_actif').checked = true;
+
+      // Reset couleur et icone
+      document.getElementById('ref_couleur').value = '#0d6efd';
+      document.getElementById('ref_couleur_text').value = '#0d6efd';
+      document.getElementById('ref_icone').value = 'tag';
+      document.getElementById('ref_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+
+      // Afficher/masquer les champs selon le type
+      setupRefFormFields(config);
+
+      // Charger les listes si necessaire
+      if (config.fields.includes('editeur')) await loadEditeursSelect();
+      if (config.fields.includes('site')) await loadSitesSelect();
+
+      modalRef.show();
+    }
+
+    async function editRef(id) {
+      const config = REF_CONFIG[currentRefType];
+      const item = currentRefItems.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('modalRefTitle').textContent = `Modifier ${config.labelSingular}`;
+      document.getElementById('ref_id').value = item.id;
+
+      // Remplir les champs
+      document.getElementById('ref_nom').value = item.nom || '';
+      document.getElementById('ref_libelle').value = item.libelle || '';
+      document.getElementById('ref_code').value = item.code || '';
+      document.getElementById('ref_prenom').value = item.prenom || '';
+      document.getElementById('ref_nationalite').value = item.nationalite || '';
+      document.getElementById('ref_pays').value = item.pays || '';
+      document.getElementById('ref_site_web').value = item.site_web || '';
+      document.getElementById('ref_description').value = item.description || '';
+      document.getElementById('ref_couleur').value = item.couleur || '#0d6efd';
+      document.getElementById('ref_couleur_text').value = item.couleur || '#0d6efd';
+      document.getElementById('ref_icone').value = item.icone || 'tag';
+      document.getElementById('ref_icone_preview').innerHTML = `<i class="bi bi-${item.icone || 'tag'}"></i>`;
+      document.getElementById('ref_actif').checked = item.actif;
+
+      // Afficher/masquer les champs
+      setupRefFormFields(config);
+
+      // Charger les listes si necessaire
+      if (config.fields.includes('editeur')) {
+        await loadEditeursSelect();
+        document.getElementById('ref_editeur_id').value = item.editeur_id || '';
+      }
+      if (config.fields.includes('site')) {
+        await loadSitesSelect();
+        document.getElementById('ref_site_id').value = item.site_id || '';
+      }
+
+      modalRef.show();
+    }
+
+    function setupRefFormFields(config) {
+      // Masquer tous les champs optionnels
+      ['fieldNom', 'fieldLibelle', 'fieldCode', 'fieldPrenom', 'fieldNationalite',
+       'fieldPays', 'fieldSiteWeb', 'fieldDescription', 'fieldCouleur', 'fieldIcone',
+       'fieldEditeur', 'fieldSite'].forEach(id => {
+        document.getElementById(id).classList.add('d-none');
+      });
+
+      // Afficher selon config
+      if (config.useLibelle) {
+        document.getElementById('fieldLibelle').classList.remove('d-none');
+        document.getElementById('ref_libelle').required = true;
+        document.getElementById('ref_nom').required = false;
+      } else {
+        document.getElementById('fieldNom').classList.remove('d-none');
+        document.getElementById('ref_nom').required = true;
+        document.getElementById('ref_libelle').required = false;
+      }
+
+      config.fields.forEach(field => {
+        switch(field) {
+          case 'code': document.getElementById('fieldCode').classList.remove('d-none'); break;
+          case 'prenom': document.getElementById('fieldPrenom').classList.remove('d-none'); break;
+          case 'nationalite': document.getElementById('fieldNationalite').classList.remove('d-none'); break;
+          case 'pays': document.getElementById('fieldPays').classList.remove('d-none'); break;
+          case 'site_web': document.getElementById('fieldSiteWeb').classList.remove('d-none'); break;
+          case 'description': document.getElementById('fieldDescription').classList.remove('d-none'); break;
+          case 'couleur': document.getElementById('fieldCouleur').classList.remove('d-none'); break;
+          case 'icone': document.getElementById('fieldIcone').classList.remove('d-none'); break;
+          case 'editeur': document.getElementById('fieldEditeur').classList.remove('d-none'); break;
+          case 'site': document.getElementById('fieldSite').classList.remove('d-none'); break;
         }
+      });
+    }
+
+    async function loadEditeursSelect() {
+      try {
+        const result = await referentielsAPI.getEditeurs({ actif: 'true' });
+        editeurs = result.items || result;
+        const select = document.getElementById('ref_editeur_id');
+        select.innerHTML = '<option value="">-- Aucun --</option>' +
+          editeurs.map(e => `<option value="${e.id}">${e.nom}</option>`).join('');
       } catch (error) {
-        console.error('Erreur stats:', error);
+        console.error('Erreur chargement editeurs:', error);
       }
     }
 
-    function openAddCategorieModal() {
-      document.getElementById('modalCategorieTitle').textContent = 'Ajouter une categorie';
-      document.getElementById('formCategorie').reset();
-      document.getElementById('categorie_id').value = '';
-      document.getElementById('categorie_couleur').value = '#0d6efd';
-      document.getElementById('categorie_couleur_text').value = '#0d6efd';
-      document.getElementById('categorie_icone').value = 'tag';
-      document.getElementById('categorie_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
-      document.getElementById('categorie_actif').checked = true;
-      modalCategorie.show();
+    async function loadSitesSelect() {
+      try {
+        const response = await fetch('/api/sites', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (response.ok) {
+          sites = await response.json();
+          const select = document.getElementById('ref_site_id');
+          select.innerHTML = '<option value="">-- Aucun --</option>' +
+            sites.map(s => `<option value="${s.id}">${s.nom}</option>`).join('');
+        }
+      } catch (error) {
+        console.error('Erreur chargement sites:', error);
+      }
     }
 
-    function editCategorie(nom) {
-      // Pour l'instant, renommer une categorie n'est pas supporte
-      // car il faudrait mettre a jour tous les jeux
-      showToast('Pour renommer une categorie, modifiez les jeux individuellement', 'info');
+    async function saveRef() {
+      const config = REF_CONFIG[currentRefType];
+      const id = document.getElementById('ref_id').value;
+
+      // Construire les donnees selon les champs visibles
+      const data = {
+        actif: document.getElementById('ref_actif').checked
+      };
+
+      if (config.useLibelle) {
+        data.libelle = document.getElementById('ref_libelle').value;
+      } else {
+        data.nom = document.getElementById('ref_nom').value;
+      }
+
+      if (config.fields.includes('code')) data.code = document.getElementById('ref_code').value || null;
+      if (config.fields.includes('prenom')) data.prenom = document.getElementById('ref_prenom').value || null;
+      if (config.fields.includes('nationalite')) data.nationalite = document.getElementById('ref_nationalite').value || null;
+      if (config.fields.includes('pays')) data.pays = document.getElementById('ref_pays').value || null;
+      if (config.fields.includes('site_web')) data.site_web = document.getElementById('ref_site_web').value || null;
+      if (config.fields.includes('description')) data.description = document.getElementById('ref_description').value || null;
+      if (config.fields.includes('couleur')) data.couleur = document.getElementById('ref_couleur').value;
+      if (config.fields.includes('icone')) data.icone = document.getElementById('ref_icone').value || null;
+      if (config.fields.includes('editeur')) data.editeur_id = document.getElementById('ref_editeur_id').value || null;
+      if (config.fields.includes('site')) data.site_id = document.getElementById('ref_site_id').value || null;
+
+      try {
+        if (id) {
+          await config.apiUpdate.call(referentielsAPI, id, data);
+        } else {
+          await config.apiCreate.call(referentielsAPI, data);
+        }
+
+        modalRef.hide();
+        showToast(`${config.labelSingular} enregistre(e)`, 'success');
+        loadCurrentRef();
+        loadRefStats();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement', 'error');
+      }
     }
 
-    async function saveCategorie() {
-      // TODO: Implementer quand le backend supportera les categories
-      showToast('Fonctionnalite en cours de developpement', 'info');
-      modalCategorie.hide();
+    async function toggleRef(id) {
+      const config = REF_CONFIG[currentRefType];
+      try {
+        await config.apiToggle.call(referentielsAPI, id);
+        loadCurrentRef();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteRef(id) {
+      const config = REF_CONFIG[currentRefType];
+      if (!confirm(`Supprimer ce ${config.labelSingular} ?`)) return;
+
+      try {
+        await config.apiDelete.call(referentielsAPI, id);
+        showToast(`${config.labelSingular} supprime(e)`, 'success');
+        loadCurrentRef();
+        loadRefStats();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Impossible de supprimer (element utilise)', 'error');
+      }
     }
 
     // ========================

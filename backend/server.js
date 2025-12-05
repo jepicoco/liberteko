@@ -83,6 +83,10 @@ app.use('/api/import', require('./routes/import'));
 app.use('/api/sites', require('./routes/sites'));
 app.use('/api/comptes-bancaires', require('./routes/comptesBancaires'));
 app.use('/api/calendrier', require('./routes/calendrier'));
+app.use('/api/referentiels', require('./routes/referentiels'));
+app.use('/api/livres', require('./routes/livres'));
+app.use('/api/films', require('./routes/films'));
+app.use('/api/disques', require('./routes/disques'));
 
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {

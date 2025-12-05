@@ -455,6 +455,7 @@ const importAPI = {
     formData.append('file', file);
     formData.append('separator', options.separator || ';');
     formData.append('skipDuplicates', options.skipDuplicates ? 'true' : 'false');
+    formData.append('updateExisting', options.updateExisting ? 'true' : 'false');
     if (options.mapping) {
       formData.append('mapping', JSON.stringify(options.mapping));
     }
@@ -503,6 +504,398 @@ const lookupAPI = {
     return await apiRequest('/jeux/lookup-ean', {
       method: 'POST',
       body: JSON.stringify({ title })
+    });
+  }
+};
+
+// ============ REFERENTIELS API ============
+
+/**
+ * API pour la gestion des tables de reference (categories, themes, editeurs, etc.)
+ */
+const referentielsAPI = {
+  // ---- Helper generique ----
+  async _getAll(type, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest(`/referentiels/${type}${query ? '?' + query : ''}`);
+  },
+
+  async _getById(type, id) {
+    return await apiRequest(`/referentiels/${type}/${id}`);
+  },
+
+  async _create(type, data) {
+    return await apiRequest(`/referentiels/${type}`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async _update(type, id, data) {
+    return await apiRequest(`/referentiels/${type}/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async _delete(type, id) {
+    return await apiRequest(`/referentiels/${type}/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async _toggle(type, id) {
+    return await apiRequest(`/referentiels/${type}/${id}/toggle`, {
+      method: 'PATCH'
+    });
+  },
+
+  async _search(type, query, limit = 20) {
+    return await apiRequest(`/referentiels/${type}/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+  },
+
+  // ---- Stats globales ----
+  async getStats() {
+    return await apiRequest('/referentiels/stats');
+  },
+
+  // ---- Categories ----
+  async getCategories(params = {}) { return this._getAll('categories', params); },
+  async getCategorieById(id) { return this._getById('categories', id); },
+  async createCategorie(data) { return this._create('categories', data); },
+  async updateCategorie(id, data) { return this._update('categories', id, data); },
+  async deleteCategorie(id) { return this._delete('categories', id); },
+  async toggleCategorie(id) { return this._toggle('categories', id); },
+  async searchCategories(q) { return this._search('categories', q); },
+
+  // ---- Themes ----
+  async getThemes(params = {}) { return this._getAll('themes', params); },
+  async getThemeById(id) { return this._getById('themes', id); },
+  async createTheme(data) { return this._create('themes', data); },
+  async updateTheme(id, data) { return this._update('themes', id, data); },
+  async deleteTheme(id) { return this._delete('themes', id); },
+  async toggleTheme(id) { return this._toggle('themes', id); },
+  async searchThemes(q) { return this._search('themes', q); },
+
+  // ---- Mecanismes ----
+  async getMecanismes(params = {}) { return this._getAll('mecanismes', params); },
+  async getMecanismeById(id) { return this._getById('mecanismes', id); },
+  async createMecanisme(data) { return this._create('mecanismes', data); },
+  async updateMecanisme(id, data) { return this._update('mecanismes', id, data); },
+  async deleteMecanisme(id) { return this._delete('mecanismes', id); },
+  async toggleMecanisme(id) { return this._toggle('mecanismes', id); },
+  async searchMecanismes(q) { return this._search('mecanismes', q); },
+
+  // ---- Langues ----
+  async getLangues(params = {}) { return this._getAll('langues', params); },
+  async getLangueById(id) { return this._getById('langues', id); },
+  async createLangue(data) { return this._create('langues', data); },
+  async updateLangue(id, data) { return this._update('langues', id, data); },
+  async deleteLangue(id) { return this._delete('langues', id); },
+  async toggleLangue(id) { return this._toggle('langues', id); },
+  async searchLangues(q) { return this._search('langues', q); },
+
+  // ---- Editeurs ----
+  async getEditeurs(params = {}) { return this._getAll('editeurs', params); },
+  async getEditeurById(id) { return this._getById('editeurs', id); },
+  async createEditeur(data) { return this._create('editeurs', data); },
+  async updateEditeur(id, data) { return this._update('editeurs', id, data); },
+  async deleteEditeur(id) { return this._delete('editeurs', id); },
+  async toggleEditeur(id) { return this._toggle('editeurs', id); },
+  async searchEditeurs(q) { return this._search('editeurs', q); },
+
+  // ---- Auteurs ----
+  async getAuteurs(params = {}) { return this._getAll('auteurs', params); },
+  async getAuteurById(id) { return this._getById('auteurs', id); },
+  async createAuteur(data) { return this._create('auteurs', data); },
+  async updateAuteur(id, data) { return this._update('auteurs', id, data); },
+  async deleteAuteur(id) { return this._delete('auteurs', id); },
+  async toggleAuteur(id) { return this._toggle('auteurs', id); },
+  async searchAuteurs(q) { return this._search('auteurs', q); },
+
+  // ---- Illustrateurs ----
+  async getIllustrateurs(params = {}) { return this._getAll('illustrateurs', params); },
+  async getIllustrateurById(id) { return this._getById('illustrateurs', id); },
+  async createIllustrateur(data) { return this._create('illustrateurs', data); },
+  async updateIllustrateur(id, data) { return this._update('illustrateurs', id, data); },
+  async deleteIllustrateur(id) { return this._delete('illustrateurs', id); },
+  async toggleIllustrateur(id) { return this._toggle('illustrateurs', id); },
+  async searchIllustrateurs(q) { return this._search('illustrateurs', q); },
+
+  // ---- Gammes ----
+  async getGammes(params = {}) { return this._getAll('gammes', params); },
+  async getGammeById(id) { return this._getById('gammes', id); },
+  async createGamme(data) { return this._create('gammes', data); },
+  async updateGamme(id, data) { return this._update('gammes', id, data); },
+  async deleteGamme(id) { return this._delete('gammes', id); },
+  async toggleGamme(id) { return this._toggle('gammes', id); },
+  async searchGammes(q) { return this._search('gammes', q); },
+
+  // ---- Emplacements ----
+  async getEmplacements(params = {}) { return this._getAll('emplacements', params); },
+  async getEmplacementById(id) { return this._getById('emplacements', id); },
+  async createEmplacement(data) { return this._create('emplacements', data); },
+  async updateEmplacement(id, data) { return this._update('emplacements', id, data); },
+  async deleteEmplacement(id) { return this._delete('emplacements', id); },
+  async toggleEmplacement(id) { return this._toggle('emplacements', id); },
+  async searchEmplacements(q) { return this._search('emplacements', q); },
+
+  // ---- Helpers pour affichage ----
+
+  /**
+   * Extrait les IDs d'un tableau d'objets
+   */
+  extractIds(items) {
+    if (!items || !Array.isArray(items)) return [];
+    return items.map(item => item.id);
+  },
+
+  /**
+   * Formate un tableau d'objets en string (noms separes par virgule)
+   */
+  formatNames(items, field = 'nom') {
+    if (!items || !Array.isArray(items)) return '';
+    return items.map(item => item[field]).filter(n => n).join(', ');
+  },
+
+  /**
+   * Genere les badges HTML pour une liste d'items
+   */
+  formatBadges(items, colorField = 'couleur', defaultColor = '#6c757d') {
+    if (!items || !Array.isArray(items) || items.length === 0) return '-';
+    return items.map(item => {
+      const color = item[colorField] || defaultColor;
+      const icon = item.icone ? `<i class="bi bi-${item.icone} me-1"></i>` : '';
+      return `<span class="badge" style="background-color:${color}">${icon}${item.nom}</span>`;
+    }).join(' ');
+  },
+
+  /**
+   * Méthode générique pour obtenir tous les items d'un type
+   */
+  async getAll(type, params = {}) {
+    return this._getAll(type, params);
+  }
+};
+
+// ============ LIVRES API ============
+
+const livresAPI = {
+  async getAll(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest(`/livres${query ? '?' + query : ''}`);
+  },
+
+  async getById(id) {
+    return await apiRequest(`/livres/${id}`);
+  },
+
+  async create(livreData) {
+    return await apiRequest('/livres', {
+      method: 'POST',
+      body: JSON.stringify(livreData)
+    });
+  },
+
+  async update(id, updates) {
+    return await apiRequest(`/livres/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  async delete(id) {
+    return await apiRequest(`/livres/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  // Référentiels spécifiques aux livres
+  async getGenres() {
+    return await apiRequest('/livres/genres');
+  },
+
+  async getFormats() {
+    return await apiRequest('/livres/formats');
+  },
+
+  async getCollections() {
+    return await apiRequest('/livres/collections');
+  },
+
+  async getEmplacements() {
+    return await apiRequest('/livres/emplacements');
+  },
+
+  async getStats() {
+    return await apiRequest('/livres/stats');
+  }
+};
+
+// ============ FILMS API ============
+
+const filmsAPI = {
+  async getAll(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest(`/films${query ? '?' + query : ''}`);
+  },
+
+  async getById(id) {
+    return await apiRequest(`/films/${id}`);
+  },
+
+  async create(filmData) {
+    return await apiRequest('/films', {
+      method: 'POST',
+      body: JSON.stringify(filmData)
+    });
+  },
+
+  async update(id, updates) {
+    return await apiRequest(`/films/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  async delete(id) {
+    return await apiRequest(`/films/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  // Référentiels spécifiques aux films
+  async getGenres() {
+    return await apiRequest('/films/referentiels/genres');
+  },
+
+  async getSupports() {
+    return await apiRequest('/films/referentiels/supports');
+  },
+
+  async getEmplacements() {
+    return await apiRequest('/films/referentiels/emplacements');
+  },
+
+  async getRealisateurs(search = '') {
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    return await apiRequest(`/films/referentiels/realisateurs${params}`);
+  },
+
+  async getActeurs(search = '') {
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    return await apiRequest(`/films/referentiels/acteurs${params}`);
+  },
+
+  async getStudios() {
+    return await apiRequest('/films/referentiels/studios');
+  },
+
+  async getStats() {
+    return await apiRequest('/films/stats');
+  },
+
+  // CRUD pour les référentiels
+  async createGenre(data) {
+    return await apiRequest('/films/referentiels/genres', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createRealisateur(data) {
+    return await apiRequest('/films/referentiels/realisateurs', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createActeur(data) {
+    return await apiRequest('/films/referentiels/acteurs', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createStudio(data) {
+    return await apiRequest('/films/referentiels/studios', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+};
+
+// ============ DISQUES API ============
+
+const disquesAPI = {
+  async getAll(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    return await apiRequest(`/disques${query ? '?' + query : ''}`);
+  },
+
+  async getById(id) {
+    return await apiRequest(`/disques/${id}`);
+  },
+
+  async create(disqueData) {
+    return await apiRequest('/disques', {
+      method: 'POST',
+      body: JSON.stringify(disqueData)
+    });
+  },
+
+  async update(id, updates) {
+    return await apiRequest(`/disques/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  },
+
+  async delete(id) {
+    return await apiRequest(`/disques/${id}`, {
+      method: 'DELETE'
+    });
+  },
+
+  // Referentiels specifiques aux disques
+  async getGenres() {
+    return await apiRequest('/disques/referentiels/genres');
+  },
+
+  async getFormats() {
+    return await apiRequest('/disques/referentiels/formats');
+  },
+
+  async getLabels(search = '') {
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    return await apiRequest(`/disques/referentiels/labels${params}`);
+  },
+
+  async getEmplacements() {
+    return await apiRequest('/disques/referentiels/emplacements');
+  },
+
+  async getArtistes(search = '') {
+    const params = search ? `?search=${encodeURIComponent(search)}` : '';
+    return await apiRequest(`/disques/referentiels/artistes${params}`);
+  },
+
+  async getStats() {
+    return await apiRequest('/disques/stats');
+  },
+
+  // CRUD pour les referentiels
+  async createArtiste(data) {
+    return await apiRequest('/disques/referentiels/artistes', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async createLabel(data) {
+    return await apiRequest('/disques/referentiels/labels', {
+      method: 'POST',
+      body: JSON.stringify(data)
     });
   }
 };

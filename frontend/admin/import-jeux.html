@@ -283,16 +283,34 @@
               </table>
             </div>
 
-            <div class="mt-4 d-flex justify-content-between">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="skipDuplicates" checked>
-                <label class="form-check-label" for="skipDuplicates">
-                  Ignorer les jeux deja existants (meme titre)
-                </label>
+            <div class="mt-4">
+              <div class="row">
+                <div class="col-md-8">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="duplicateAction" id="skipDuplicates" value="skip" checked>
+                    <label class="form-check-label" for="skipDuplicates">
+                      <strong>Ignorer les doublons</strong> - Les jeux existants (meme EAN ou titre) ne seront pas modifies
+                    </label>
+                  </div>
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="duplicateAction" id="updateExisting" value="update">
+                    <label class="form-check-label" for="updateExisting">
+                      <strong>Mettre a jour</strong> - Les jeux existants seront mis a jour avec les nouvelles donnees
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="duplicateAction" id="createDuplicates" value="create">
+                    <label class="form-check-label" for="createDuplicates">
+                      <strong>Creer des doublons</strong> - Importer tous les jeux meme s'ils existent deja
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-end">
+                  <button class="btn btn-success btn-lg" onclick="startImport()">
+                    <i class="bi bi-cloud-upload"></i> Importer <span id="totalCount">0</span> jeux
+                  </button>
+                </div>
               </div>
-              <button class="btn btn-success btn-lg" onclick="startImport()">
-                <i class="bi bi-cloud-upload"></i> Importer <span id="totalCount">0</span> jeux
-              </button>
             </div>
           </div>
         </div>
@@ -337,25 +355,68 @@
         <!-- Help Section -->
         <div class="card">
           <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-question-circle"></i> Aide</h5>
+            <h5 class="mb-0"><i class="bi bi-question-circle"></i> Aide - Import MyLudo</h5>
           </div>
           <div class="card-body">
-            <h6>Format MyLudo</h6>
-            <p>L'export MyLudo utilise le separateur point-virgule (;). Allez dans <strong>Options > Exporter</strong> pour obtenir votre fichier CSV.</p>
+            <div class="row">
+              <div class="col-md-6">
+                <h6><i class="bi bi-file-earmark-spreadsheet"></i> Format MyLudo</h6>
+                <p>L'export MyLudo utilise le separateur point-virgule (;). Allez dans <strong>Options > Exporter</strong> pour obtenir votre fichier CSV.</p>
 
-            <h6>Colonnes reconnues automatiquement</h6>
-            <ul class="small">
-              <li><strong>Titre</strong> → Titre du jeu (obligatoire)</li>
-              <li><strong>Editeur(s)</strong> → Editeur</li>
-              <li><strong>Auteur(s)</strong> → Auteur</li>
-              <li><strong>Joueur(s)</strong> → Nombre de joueurs (ex: "2 - 4")</li>
-              <li><strong>Duree</strong> → Duree en minutes</li>
-              <li><strong>Age(s)</strong> → Age minimum (ex: "10+")</li>
-              <li><strong>Categorie(s)</strong> → Categorie</li>
-              <li><strong>Edition</strong> → Annee de sortie</li>
-              <li><strong>Date d'acquisition</strong> → Date d'acquisition</li>
-              <li><strong>Emplacement</strong> → Emplacement dans la ludotheque</li>
-            </ul>
+                <h6 class="mt-4"><i class="bi bi-check-circle text-success"></i> Colonnes reconnues automatiquement</h6>
+                <div class="row small">
+                  <div class="col-6">
+                    <ul class="list-unstyled">
+                      <li><i class="bi bi-arrow-right text-primary"></i> <strong>Titre</strong> (obligatoire)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Sous-titre</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Type (base/extension)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> EAN</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Edition (annee)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Editeur(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Auteur(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Illustrateur(s)</li>
+                    </ul>
+                  </div>
+                  <div class="col-6">
+                    <ul class="list-unstyled">
+                      <li><i class="bi bi-arrow-right text-primary"></i> Joueur(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Duree</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Age(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Categorie(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Theme(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Mecanisme(s)</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Langues</li>
+                      <li><i class="bi bi-arrow-right text-primary"></i> Univers / Gamme</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <h6><i class="bi bi-box-seam"></i> Gestion de collection</h6>
+                <ul class="small list-unstyled">
+                  <li><i class="bi bi-arrow-right text-success"></i> Date d'acquisition</li>
+                  <li><i class="bi bi-arrow-right text-success"></i> Prix indicatif / Prix d'achat</li>
+                  <li><i class="bi bi-arrow-right text-success"></i> Emplacement</li>
+                  <li><i class="bi bi-arrow-right text-success"></i> Etat (neuf, bon, etc.)</li>
+                  <li><i class="bi bi-arrow-right text-success"></i> Proprietaire</li>
+                  <li><i class="bi bi-arrow-right text-success"></i> Dimensions / Poids</li>
+                </ul>
+
+                <h6 class="mt-3"><i class="bi bi-flag"></i> Options de collection</h6>
+                <ul class="small list-unstyled">
+                  <li><i class="bi bi-arrow-right text-warning"></i> Gratuit / Cadeau</li>
+                  <li><i class="bi bi-arrow-right text-warning"></i> Prive / Protege</li>
+                  <li><i class="bi bi-arrow-right text-warning"></i> Organise / Personnalise</li>
+                  <li><i class="bi bi-arrow-right text-warning"></i> Figurines peintes</li>
+                  <li><i class="bi bi-arrow-right text-warning"></i> Commentaire</li>
+                  <li><i class="bi bi-arrow-right text-warning"></i> Reference / Referent</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="alert alert-info mt-3 mb-0">
+              <i class="bi bi-lightbulb"></i> <strong>Astuce :</strong> Les jeux existants sont detectes par leur code EAN ou leur titre. Choisissez "Mettre a jour" pour synchroniser votre collection.
+            </div>
           </div>
         </div>
       </div>

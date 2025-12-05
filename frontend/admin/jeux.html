@@ -3,18 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestion des Jeux - Ludothèque Admin</title>
+  <title>Gestion des Jeux - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <style>
+    .badge-ref { font-size: 0.75rem; margin-right: 0.25rem; margin-bottom: 0.25rem; }
+    .ts-wrapper { min-width: 100%; }
+    .ts-control { min-height: 38px; }
+    .jeu-row td { vertical-align: middle; }
+    .jeu-badges { max-width: 200px; }
+  </style>
 </head>
 <body>
-  <!-- Navigation (généré par JS) -->
+  <!-- Navigation (genere par JS) -->
   <nav id="admin-navbar"></nav>
 
   <div class="container-fluid mt-4">
     <div class="row">
-      <!-- Sidebar (généré par JS) -->
+      <!-- Sidebar (genere par JS) -->
       <div id="admin-sidebar" class="col-md-2 bg-light"></div>
 
       <!-- Main Content -->
@@ -26,7 +34,7 @@
         <!-- Actions Bar -->
         <div class="card mb-3">
           <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
               <div class="d-flex gap-2">
                 <button class="btn btn-primary" onclick="openCreateModal()">
                   <i class="bi bi-plus-circle"></i> Nouveau jeu
@@ -38,22 +46,22 @@
                   <i class="bi bi-arrow-clockwise"></i> Actualiser
                 </button>
               </div>
-              <div class="d-flex gap-2">
+              <div class="d-flex gap-2 flex-wrap">
                 <input
                   type="text"
                   id="searchInput"
                   class="form-control"
                   placeholder="Rechercher..."
-                  style="width: 250px;"
+                  style="width: 200px;"
                   onkeyup="handleSearch()"
                 >
                 <select id="categorieFilter" class="form-select" onchange="loadJeux()" style="width: 150px;">
-                  <option value="">Toutes catégories</option>
+                  <option value="">Toutes categories</option>
                 </select>
-                <select id="statutFilter" class="form-select" onchange="loadJeux()" style="width: 150px;">
-                  <option value="">Tous les statuts</option>
+                <select id="statutFilter" class="form-select" onchange="loadJeux()" style="width: 140px;">
+                  <option value="">Tous statuts</option>
                   <option value="disponible">Disponible</option>
-                  <option value="emprunte">Emprunté</option>
+                  <option value="emprunte">Emprunte</option>
                   <option value="maintenance">Maintenance</option>
                   <option value="perdu">Perdu</option>
                 </select>
@@ -81,7 +89,7 @@
 
   <!-- Create/Edit Modal -->
   <div class="modal fade" id="jeuModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="modalTitle">Nouveau jeu</h5>
@@ -91,78 +99,116 @@
           <form id="jeuForm">
             <input type="hidden" id="jeuId">
 
+            <!-- Titre -->
             <div class="mb-3">
               <label for="titre" class="form-label">Titre *</label>
               <input type="text" id="titre" class="form-control" required>
             </div>
 
+            <!-- Infos de base -->
             <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="editeur" class="form-label">Éditeur</label>
-                <input type="text" id="editeur" class="form-control">
-              </div>
-              <div class="col-md-6">
-                <label for="auteur" class="form-label">Auteur</label>
-                <input type="text" id="auteur" class="form-control">
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="annee_sortie" class="form-label">Année</label>
+              <div class="col-md-4">
+                <label for="annee_sortie" class="form-label">Annee</label>
                 <input type="number" id="annee_sortie" class="form-control" min="1900" max="2100">
               </div>
-              <div class="col-md-6">
-                <label for="age_min" class="form-label">Âge min</label>
+              <div class="col-md-4">
+                <label for="age_min" class="form-label">Age min</label>
                 <input type="number" id="age_min" class="form-control" min="0">
               </div>
-            </div>
-
-            <div class="row mb-3">
               <div class="col-md-4">
-                <label for="nb_joueurs_min" class="form-label">Joueurs min</label>
-                <input type="number" id="nb_joueurs_min" class="form-control" min="1">
-              </div>
-              <div class="col-md-4">
-                <label for="nb_joueurs_max" class="form-label">Joueurs max</label>
-                <input type="number" id="nb_joueurs_max" class="form-control" min="1">
-              </div>
-              <div class="col-md-4">
-                <label for="duree_partie" class="form-label">Durée (min)</label>
+                <label for="duree_partie" class="form-label">Duree (min)</label>
                 <input type="number" id="duree_partie" class="form-control" min="0">
               </div>
             </div>
 
-            <div class="mb-3">
-              <label for="categorie" class="form-label">Catégorie</label>
-              <input type="text" id="categorie" class="form-control" list="categoriesList">
-              <datalist id="categoriesList"></datalist>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="nb_joueurs_min" class="form-label">Joueurs min</label>
+                <input type="number" id="nb_joueurs_min" class="form-control" min="1">
+              </div>
+              <div class="col-md-6">
+                <label for="nb_joueurs_max" class="form-label">Joueurs max</label>
+                <input type="number" id="nb_joueurs_max" class="form-control" min="1">
+              </div>
             </div>
 
+            <hr>
+            <h6 class="text-muted mb-3"><i class="bi bi-tags"></i> Referentiels</h6>
+
+            <!-- Categories (multi-select) -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="select_categories" class="form-label">Categories</label>
+                <select id="select_categories" multiple placeholder="Selectionnez..."></select>
+              </div>
+              <div class="col-md-6">
+                <label for="select_themes" class="form-label">Themes</label>
+                <select id="select_themes" multiple placeholder="Selectionnez..."></select>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="select_mecanismes" class="form-label">Mecanismes</label>
+                <select id="select_mecanismes" multiple placeholder="Selectionnez..."></select>
+              </div>
+              <div class="col-md-6">
+                <label for="select_langues" class="form-label">Langues</label>
+                <select id="select_langues" multiple placeholder="Selectionnez..."></select>
+              </div>
+            </div>
+
+            <!-- Editeurs, Auteurs, Illustrateurs -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="select_editeurs" class="form-label">Editeurs</label>
+                <select id="select_editeurs" multiple placeholder="Selectionnez..."></select>
+              </div>
+              <div class="col-md-4">
+                <label for="select_auteurs" class="form-label">Auteurs</label>
+                <select id="select_auteurs" multiple placeholder="Selectionnez..."></select>
+              </div>
+              <div class="col-md-4">
+                <label for="select_illustrateurs" class="form-label">Illustrateurs</label>
+                <select id="select_illustrateurs" multiple placeholder="Selectionnez..."></select>
+              </div>
+            </div>
+
+            <!-- Gamme et Emplacement -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="select_gamme" class="form-label">Gamme</label>
+                <select id="select_gamme" placeholder="Selectionnez..."></select>
+              </div>
+              <div class="col-md-6">
+                <label for="select_emplacement" class="form-label">Emplacement</label>
+                <select id="select_emplacement" placeholder="Selectionnez..."></select>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Description -->
             <div class="mb-3">
               <label for="description" class="form-label">Description</label>
               <textarea id="description" class="form-control" rows="3"></textarea>
             </div>
 
+            <!-- Statut et notes -->
             <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="emplacement" class="form-label">Emplacement</label>
-                <input type="text" id="emplacement" class="form-control">
-              </div>
               <div class="col-md-6">
                 <label for="statut" class="form-label">Statut *</label>
                 <select id="statut" class="form-select" required>
                   <option value="disponible">Disponible</option>
-                  <option value="emprunte">Emprunté</option>
+                  <option value="emprunte">Emprunte</option>
                   <option value="maintenance">Maintenance</option>
                   <option value="perdu">Perdu</option>
                 </select>
               </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="notes" class="form-label">Notes</label>
-              <textarea id="notes" class="form-control" rows="2"></textarea>
+              <div class="col-md-6">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea id="notes" class="form-control" rows="2"></textarea>
+              </div>
             </div>
           </form>
         </div>
@@ -285,6 +331,7 @@
 
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
@@ -294,16 +341,34 @@
     let searchTimeout = null;
     let modalInstance = null;
 
-    // Load jeux
+    // Tom-Select instances
+    let tsCategories, tsThemes, tsMecanismes, tsLangues;
+    let tsEditeurs, tsAuteurs, tsIllustrateurs;
+    let tsGamme, tsEmplacement;
+
+    // Referentiels cache
+    let refCache = {
+      categories: [],
+      themes: [],
+      mecanismes: [],
+      langues: [],
+      editeurs: [],
+      auteurs: [],
+      illustrateurs: [],
+      gammes: [],
+      emplacements: []
+    };
+
+    // Load jeux avec referentiels
     async function loadJeux() {
       try {
         const statut = document.getElementById('statutFilter').value;
-        const categorie = document.getElementById('categorieFilter').value;
+        const categorieId = document.getElementById('categorieFilter').value;
         const search = document.getElementById('searchInput').value;
 
-        const params = {};
+        const params = { include_refs: true };
         if (statut) params.statut = statut;
-        if (categorie) params.categorie = categorie;
+        if (categorieId) params.categorie_id = categorieId;
         if (search) params.search = search;
 
         const data = await jeuxAPI.getAll(params);
@@ -319,21 +384,52 @@
       }
     }
 
-    async function loadCategories() {
+    // Charger les categories pour le filtre
+    async function loadCategoriesFilter() {
       try {
-        const data = await jeuxAPI.getCategories();
-        const select = document.getElementById('categorieFilter');
-        const datalist = document.getElementById('categoriesList');
+        const result = await referentielsAPI.getCategories({ actif: 'true' });
+        const categories = result.items || result;
+        refCache.categories = categories;
 
-        data.categories.forEach(cat => {
+        const select = document.getElementById('categorieFilter');
+        select.innerHTML = '<option value="">Toutes categories</option>';
+        categories.forEach(cat => {
           const option = document.createElement('option');
-          option.value = cat;
-          option.textContent = cat;
-          select.appendChild(option.cloneNode(true));
-          datalist.appendChild(option);
+          option.value = cat.id;
+          option.textContent = cat.nom;
+          select.appendChild(option);
         });
       } catch (error) {
         console.error('Error loading categories:', error);
+      }
+    }
+
+    // Charger tous les referentiels pour le formulaire
+    async function loadAllReferentiels() {
+      try {
+        const [cats, themes, mecas, langues, editeurs, auteurs, illus, gammes, emps] = await Promise.all([
+          referentielsAPI.getCategories({ actif: 'true' }),
+          referentielsAPI.getThemes({ actif: 'true' }),
+          referentielsAPI.getMecanismes({ actif: 'true' }),
+          referentielsAPI.getLangues({ actif: 'true' }),
+          referentielsAPI.getEditeurs({ actif: 'true' }),
+          referentielsAPI.getAuteurs({ actif: 'true' }),
+          referentielsAPI.getIllustrateurs({ actif: 'true' }),
+          referentielsAPI.getGammes({ actif: 'true' }),
+          referentielsAPI.getEmplacements({ actif: 'true' })
+        ]);
+
+        refCache.categories = cats.items || cats;
+        refCache.themes = themes.items || themes;
+        refCache.mecanismes = mecas.items || mecas;
+        refCache.langues = langues.items || langues;
+        refCache.editeurs = editeurs.items || editeurs;
+        refCache.auteurs = auteurs.items || auteurs;
+        refCache.illustrateurs = illus.items || illus;
+        refCache.gammes = gammes.items || gammes;
+        refCache.emplacements = emps.items || emps;
+      } catch (error) {
+        console.error('Error loading referentiels:', error);
       }
     }
 
@@ -343,47 +439,40 @@
       if (!list || list.length === 0) {
         container.innerHTML = `
           <p class="text-center text-secondary p-4">
-            Aucun jeu trouvé
+            Aucun jeu trouve
           </p>
         `;
         return;
       }
 
       container.innerHTML = `
+        <div class="table-responsive">
         <table class="table table-hover">
           <thead>
             <tr>
-              <th>Code-barre</th>
+              <th>Code</th>
               <th>Titre</th>
-              <th>Catégorie</th>
+              <th>Categories</th>
               <th>Joueurs</th>
-              <th>Âge</th>
-              <th>Durée</th>
+              <th>Age</th>
+              <th>Duree</th>
               <th>Statut</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             ${list.map(jeu => `
-              <tr>
-                <td><strong>${jeu.code_barre || 'N/A'}</strong></td>
+              <tr class="jeu-row">
+                <td><code>${jeu.code_barre || '-'}</code></td>
                 <td>
                   <strong>${jeu.titre}</strong><br>
-                  <small class="text-secondary">${jeu.editeur || 'N/A'}</small>
+                  <small class="text-secondary">${formatEditeurs(jeu)}</small>
                 </td>
-                <td>${jeu.categorie || 'N/A'}</td>
+                <td class="jeu-badges">${formatCategoriesBadges(jeu)}</td>
                 <td>${jeu.nb_joueurs_min || '?'}-${jeu.nb_joueurs_max || '?'}</td>
                 <td>${jeu.age_min || '?'}+</td>
                 <td>${jeu.duree_partie || '?'} min</td>
-                <td>
-                  ${jeu.statut === 'disponible'
-                    ? '<span class="badge bg-success">Disponible</span>'
-                    : jeu.statut === 'emprunte'
-                    ? '<span class="badge bg-warning">Emprunté</span>'
-                    : jeu.statut === 'maintenance'
-                    ? '<span class="badge bg-info">Maintenance</span>'
-                    : '<span class="badge bg-danger">Perdu</span>'}
-                </td>
+                <td>${formatStatut(jeu.statut)}</td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <button class="btn btn-outline-primary" onclick="viewJeu(${jeu.id})" title="Voir">
@@ -404,7 +493,40 @@
             `).join('')}
           </tbody>
         </table>
+        </div>
       `;
+    }
+
+    function formatEditeurs(jeu) {
+      if (jeu.editeursRef && jeu.editeursRef.length > 0) {
+        return jeu.editeursRef.map(e => e.nom).join(', ');
+      }
+      return jeu.editeur || 'N/A';
+    }
+
+    function formatCategoriesBadges(jeu) {
+      if (jeu.categoriesRef && jeu.categoriesRef.length > 0) {
+        return jeu.categoriesRef.map(cat =>
+          `<span class="badge badge-ref" style="background-color:${cat.couleur || '#6c757d'}">${cat.nom}</span>`
+        ).join('');
+      }
+      // Fallback anciens champs texte
+      if (jeu.categories) {
+        return jeu.categories.split(',').map(c =>
+          `<span class="badge badge-ref bg-secondary">${c.trim()}</span>`
+        ).join('');
+      }
+      return '-';
+    }
+
+    function formatStatut(statut) {
+      const map = {
+        'disponible': '<span class="badge bg-success">Disponible</span>',
+        'emprunte': '<span class="badge bg-warning text-dark">Emprunte</span>',
+        'maintenance': '<span class="badge bg-info">Maintenance</span>',
+        'perdu': '<span class="badge bg-danger">Perdu</span>'
+      };
+      return map[statut] || statut;
     }
 
     function handleSearch() {
@@ -414,11 +536,89 @@
       }, 500);
     }
 
-    // Modal functions
-    function openCreateModal() {
+    // ========== Tom-Select initialization ==========
+
+    function initTomSelects() {
+      // Multi-selects
+      tsCategories = new TomSelect('#select_categories', {
+        plugins: ['remove_button'],
+        options: refCache.categories.map(c => ({ value: c.id, text: c.nom, color: c.couleur })),
+        render: {
+          option: (data, escape) => `<div><span class="badge me-2" style="background-color:${data.color || '#6c757d'}">&nbsp;</span>${escape(data.text)}</div>`,
+          item: (data, escape) => `<div class="badge me-1" style="background-color:${data.color || '#6c757d'}">${escape(data.text)}</div>`
+        }
+      });
+
+      tsThemes = new TomSelect('#select_themes', {
+        plugins: ['remove_button'],
+        options: refCache.themes.map(t => ({ value: t.id, text: t.nom }))
+      });
+
+      tsMecanismes = new TomSelect('#select_mecanismes', {
+        plugins: ['remove_button'],
+        options: refCache.mecanismes.map(m => ({ value: m.id, text: m.nom }))
+      });
+
+      tsLangues = new TomSelect('#select_langues', {
+        plugins: ['remove_button'],
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') }))
+      });
+
+      tsEditeurs = new TomSelect('#select_editeurs', {
+        plugins: ['remove_button'],
+        create: true,
+        createOnBlur: true,
+        options: refCache.editeurs.map(e => ({ value: e.id, text: e.nom }))
+      });
+
+      tsAuteurs = new TomSelect('#select_auteurs', {
+        plugins: ['remove_button'],
+        create: true,
+        createOnBlur: true,
+        options: refCache.auteurs.map(a => ({ value: a.id, text: a.prenom ? `${a.prenom} ${a.nom}` : a.nom }))
+      });
+
+      tsIllustrateurs = new TomSelect('#select_illustrateurs', {
+        plugins: ['remove_button'],
+        create: true,
+        createOnBlur: true,
+        options: refCache.illustrateurs.map(i => ({ value: i.id, text: i.prenom ? `${i.prenom} ${i.nom}` : i.nom }))
+      });
+
+      // Single selects
+      tsGamme = new TomSelect('#select_gamme', {
+        options: [{ value: '', text: '-- Aucune --' }, ...refCache.gammes.map(g => ({ value: g.id, text: g.nom }))],
+        allowEmptyOption: true
+      });
+
+      tsEmplacement = new TomSelect('#select_emplacement', {
+        options: [{ value: '', text: '-- Aucun --' }, ...refCache.emplacements.map(e => ({ value: e.id, text: e.libelle }))],
+        allowEmptyOption: true
+      });
+    }
+
+    function destroyTomSelects() {
+      [tsCategories, tsThemes, tsMecanismes, tsLangues, tsEditeurs, tsAuteurs, tsIllustrateurs, tsGamme, tsEmplacement].forEach(ts => {
+        if (ts) ts.destroy();
+      });
+    }
+
+    function clearTomSelects() {
+      [tsCategories, tsThemes, tsMecanismes, tsLangues, tsEditeurs, tsAuteurs, tsIllustrateurs].forEach(ts => {
+        if (ts) ts.clear();
+      });
+      if (tsGamme) tsGamme.setValue('');
+      if (tsEmplacement) tsEmplacement.setValue('');
+    }
+
+    // ========== Modal functions ==========
+
+    async function openCreateModal() {
       document.getElementById('modalTitle').textContent = 'Nouveau jeu';
       document.getElementById('jeuForm').reset();
       document.getElementById('jeuId').value = '';
+
+      clearTomSelects();
 
       if (!modalInstance) {
         modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
@@ -440,18 +640,27 @@
         document.getElementById('modalTitle').textContent = 'Modifier le jeu';
         document.getElementById('jeuId').value = jeu.id;
         document.getElementById('titre').value = jeu.titre || '';
-        document.getElementById('editeur').value = jeu.editeur || '';
-        document.getElementById('auteur').value = jeu.auteur || '';
         document.getElementById('annee_sortie').value = jeu.annee_sortie || '';
         document.getElementById('age_min').value = jeu.age_min || '';
         document.getElementById('nb_joueurs_min').value = jeu.nb_joueurs_min || '';
         document.getElementById('nb_joueurs_max').value = jeu.nb_joueurs_max || '';
         document.getElementById('duree_partie').value = jeu.duree_partie || '';
-        document.getElementById('categorie').value = jeu.categorie || '';
         document.getElementById('description').value = jeu.description || '';
-        document.getElementById('emplacement').value = jeu.emplacement || '';
         document.getElementById('statut').value = jeu.statut || 'disponible';
         document.getElementById('notes').value = jeu.notes || '';
+
+        // Remplir les Tom-Selects avec les referentiels
+        clearTomSelects();
+
+        if (jeu.categoriesRef) tsCategories.setValue(jeu.categoriesRef.map(c => c.id));
+        if (jeu.themesRef) tsThemes.setValue(jeu.themesRef.map(t => t.id));
+        if (jeu.mecanismesRef) tsMecanismes.setValue(jeu.mecanismesRef.map(m => m.id));
+        if (jeu.languesRef) tsLangues.setValue(jeu.languesRef.map(l => l.id));
+        if (jeu.editeursRef) tsEditeurs.setValue(jeu.editeursRef.map(e => e.id));
+        if (jeu.auteursRef) tsAuteurs.setValue(jeu.auteursRef.map(a => a.id));
+        if (jeu.illustrateursRef) tsIllustrateurs.setValue(jeu.illustrateursRef.map(i => i.id));
+        if (jeu.gamme_id) tsGamme.setValue(jeu.gamme_id);
+        if (jeu.emplacement_id) tsEmplacement.setValue(jeu.emplacement_id);
 
         if (!modalInstance) {
           modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
@@ -467,18 +676,21 @@
         const data = await jeuxAPI.getById(id);
         const jeu = data.jeu;
 
+        const cats = jeu.categoriesRef ? jeu.categoriesRef.map(c => c.nom).join(', ') : jeu.categories || 'N/A';
+        const editeurs = jeu.editeursRef ? jeu.editeursRef.map(e => e.nom).join(', ') : jeu.editeur || 'N/A';
+        const auteurs = jeu.auteursRef ? jeu.auteursRef.map(a => a.nom).join(', ') : jeu.auteur || 'N/A';
+
         alert(`
 Jeu: ${jeu.titre}
 Code-barre: ${jeu.code_barre}
-Éditeur: ${jeu.editeur || 'N/A'}
-Auteur: ${jeu.auteur || 'N/A'}
-Année: ${jeu.annee_sortie || 'N/A'}
-Catégorie: ${jeu.categorie || 'N/A'}
+Editeur: ${editeurs}
+Auteur: ${auteurs}
+Annee: ${jeu.annee_sortie || 'N/A'}
+Categories: ${cats}
 Joueurs: ${jeu.nb_joueurs_min || '?'} - ${jeu.nb_joueurs_max || '?'}
-Âge minimum: ${jeu.age_min || 'N/A'}+
-Durée: ${jeu.duree_partie || 'N/A'} minutes
+Age minimum: ${jeu.age_min || 'N/A'}+
+Duree: ${jeu.duree_partie || 'N/A'} minutes
 Statut: ${jeu.statut}
-Emplacement: ${jeu.emplacement || 'N/A'}
         `);
       } catch (error) {
         alert('Erreur: ' + error.message);
@@ -490,13 +702,13 @@ Emplacement: ${jeu.emplacement || 'N/A'}
     }
 
     async function deleteJeu(id) {
-      if (!confirm('Êtes-vous sûr de vouloir supprimer ce jeu ?')) {
+      if (!confirm('Etes-vous sur de vouloir supprimer ce jeu ?')) {
         return;
       }
 
       try {
         await jeuxAPI.delete(id);
-        alert('Jeu supprimé avec succès');
+        alert('Jeu supprime avec succes');
         loadJeux();
       } catch (error) {
         alert('Erreur lors de la suppression: ' + error.message);
@@ -513,30 +725,37 @@ Emplacement: ${jeu.emplacement || 'N/A'}
 
       try {
         const id = document.getElementById('jeuId').value;
+
+        // Collecter les IDs des referentiels selectionnes
         const formData = {
           titre: document.getElementById('titre').value,
-          editeur: document.getElementById('editeur').value || null,
-          auteur: document.getElementById('auteur').value || null,
           annee_sortie: document.getElementById('annee_sortie').value || null,
           age_min: document.getElementById('age_min').value || null,
           nb_joueurs_min: document.getElementById('nb_joueurs_min').value || null,
           nb_joueurs_max: document.getElementById('nb_joueurs_max').value || null,
           duree_partie: document.getElementById('duree_partie').value || null,
-          categorie: document.getElementById('categorie').value || null,
           description: document.getElementById('description').value || null,
-          emplacement: document.getElementById('emplacement').value || null,
           statut: document.getElementById('statut').value,
-          notes: document.getElementById('notes').value || null
+          notes: document.getElementById('notes').value || null,
+
+          // Nouveaux champs normalises
+          categorie_ids: tsCategories.getValue().map(Number),
+          theme_ids: tsThemes.getValue().map(Number),
+          mecanisme_ids: tsMecanismes.getValue().map(Number),
+          langue_ids: tsLangues.getValue().map(Number),
+          editeur_ids: tsEditeurs.getValue().map(Number),
+          auteur_ids: tsAuteurs.getValue().map(Number),
+          illustrateur_ids: tsIllustrateurs.getValue().map(Number),
+          gamme_id: tsGamme.getValue() ? Number(tsGamme.getValue()) : null,
+          emplacement_id: tsEmplacement.getValue() ? Number(tsEmplacement.getValue()) : null
         };
 
         if (!id) {
-          // Create
           await jeuxAPI.create(formData);
-          alert('Jeu créé avec succès !');
+          alert('Jeu cree avec succes !');
         } else {
-          // Update
           await jeuxAPI.update(id, formData);
-          alert('Jeu modifié avec succès !');
+          alert('Jeu modifie avec succes !');
         }
 
         closeModal();
@@ -550,13 +769,15 @@ Emplacement: ${jeu.emplacement || 'N/A'}
     });
 
     // Load on page load
-    document.addEventListener('DOMContentLoaded', () => {
-      // Initialiser le template (navbar + sidebar)
+    document.addEventListener('DOMContentLoaded', async () => {
       initTemplate('jeux');
-      setTimeout(() => {
-        loadJeux();
-        loadCategories();
-      }, 500);
+
+      // Charger les referentiels d'abord
+      await loadAllReferentiels();
+      initTomSelects();
+
+      loadCategoriesFilter();
+      loadJeux();
     });
 
     // =========== EAN LOOKUP ===========
@@ -607,7 +828,6 @@ Emplacement: ${jeu.emplacement || 'N/A'}
 
       try {
         let result;
-        // Determiner si c'est un EAN (uniquement chiffres) ou un titre
         if (/^\d+$/.test(input)) {
           result = await lookupAPI.byEAN(input);
         } else {
@@ -648,7 +868,6 @@ Emplacement: ${jeu.emplacement || 'N/A'}
         : '';
       document.getElementById('lookupDescription').textContent = jeu.description || 'Pas de description';
 
-      // Image
       const img = document.getElementById('lookupImage');
       if (jeu.image_url) {
         img.src = jeu.image_url;
@@ -665,25 +884,26 @@ Emplacement: ${jeu.emplacement || 'N/A'}
     function useResults() {
       if (!currentLookupResult) return;
 
-      // Fermer la modal lookup
       lookupModalInstance.hide();
 
-      // Ouvrir la modal de creation avec les donnees pre-remplies
       document.getElementById('modalTitle').textContent = 'Nouveau jeu (depuis EAN)';
       document.getElementById('jeuForm').reset();
       document.getElementById('jeuId').value = '';
 
-      // Pre-remplir les champs
+      // Pre-remplir les champs de base
       document.getElementById('titre').value = currentLookupResult.titre || '';
-      document.getElementById('editeur').value = currentLookupResult.editeur || '';
-      document.getElementById('auteur').value = currentLookupResult.auteur || '';
       document.getElementById('annee_sortie').value = currentLookupResult.annee_sortie || '';
       document.getElementById('age_min').value = currentLookupResult.age_min || '';
       document.getElementById('nb_joueurs_min').value = currentLookupResult.nb_joueurs_min || '';
       document.getElementById('nb_joueurs_max').value = currentLookupResult.nb_joueurs_max || '';
       document.getElementById('duree_partie').value = currentLookupResult.duree_partie || '';
-      document.getElementById('categorie').value = currentLookupResult.categorie || '';
       document.getElementById('description').value = currentLookupResult.description || '';
+
+      clearTomSelects();
+
+      // Note: Les champs texte de BGG (editeur, auteur, categorie) restent en texte
+      // L'utilisateur devra selectionner/creer les referentiels manuellement
+      // ou une future evolution pourra matcher automatiquement
 
       if (!modalInstance) {
         modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
@@ -722,10 +942,7 @@ Emplacement: ${jeu.emplacement || 'N/A'}
     }
 
     async function onCameraScanSuccess(decodedText) {
-      // Arreter le scanner
       await stopCameraScan();
-
-      // Mettre le code dans l'input et lancer la recherche
       document.getElementById('lookupInput').value = decodedText;
       doLookup();
     }
@@ -743,7 +960,6 @@ Emplacement: ${jeu.emplacement || 'N/A'}
       document.getElementById('cameraSection').classList.add('d-none');
     }
 
-    // Cleanup camera on modal close
     document.getElementById('lookupModal').addEventListener('hidden.bs.modal', () => {
       stopCameraScan();
     });

@@ -172,19 +172,37 @@ function renderMappingTable() {
   const tbody = document.getElementById('mappingTableBody');
   const rawPreview = previewData.rawPreview[0] || {};
 
+  // Grouper les champs par groupe pour l'affichage
+  const groupedFields = {};
+  availableFields.forEach(field => {
+    const group = field.group || 'Autre';
+    if (!groupedFields[group]) groupedFields[group] = [];
+    groupedFields[group].push(field);
+  });
+
   tbody.innerHTML = previewData.columns.map(col => {
     const example = rawPreview[col] || '';
     const currentField = currentMapping[col] || 'ignore';
 
-    const options = availableFields.map(field => {
-      const selected = field.id === currentField ? 'selected' : '';
-      const required = field.required ? ' *' : '';
-      return `<option value="${field.id}" ${selected}>${field.label}${required}</option>`;
-    }).join('');
+    // Generer les options groupees
+    let options = '';
+    Object.entries(groupedFields).forEach(([group, fields]) => {
+      options += `<optgroup label="${group}">`;
+      fields.forEach(field => {
+        const selected = field.id === currentField ? 'selected' : '';
+        const required = field.required ? ' *' : '';
+        options += `<option value="${field.id}" ${selected}>${field.label}${required}</option>`;
+      });
+      options += '</optgroup>';
+    });
+
+    // Verifier si c'est une colonne auto-mappee
+    const autoMapped = currentMapping[col] && currentMapping[col] !== 'ignore';
+    const rowClass = autoMapped ? 'table-success' : '';
 
     return `
-      <tr>
-        <td><strong>${col}</strong></td>
+      <tr class="${rowClass}">
+        <td><strong>${col}</strong> ${autoMapped ? '<i class="bi bi-check-circle text-success" title="Auto-detecte"></i>' : ''}</td>
         <td class="text-muted small">${truncate(example, 50)}</td>
         <td>
           <select class="form-select form-select-sm" onchange="updateMapping('${escapeHtml(col)}', this.value)">
@@ -194,6 +212,17 @@ function renderMappingTable() {
       </tr>
     `;
   }).join('');
+
+  // Afficher le nombre de colonnes mappees
+  const mappedCount = Object.keys(currentMapping).length;
+  const totalCount = previewData.columns.length;
+  const mappingInfo = document.createElement('div');
+  mappingInfo.className = 'alert alert-info mt-2';
+  mappingInfo.innerHTML = `<i class="bi bi-info-circle"></i> ${mappedCount} colonnes sur ${totalCount} sont mappees automatiquement (surbrillance verte)`;
+
+  const existingInfo = tbody.parentElement.parentElement.querySelector('.alert-info');
+  if (existingInfo) existingInfo.remove();
+  tbody.parentElement.parentElement.insertBefore(mappingInfo, tbody.parentElement);
 }
 
 function updateMapping(column, field) {
@@ -214,26 +243,51 @@ function renderPreviewTable() {
     <tr>
       <th>#</th>
       <th>Titre</th>
+      <th>Type</th>
       <th>Editeur</th>
       <th>Joueurs</th>
       <th>Duree</th>
       <th>Age</th>
-      <th>Categorie</th>
+      <th>Categories</th>
+      <th>EAN</th>
     </tr>
   `;
 
   // Donnees
-  tbody.innerHTML = previewData.preview.map((jeu, idx) => `
-    <tr>
-      <td>${idx + 1}</td>
-      <td>${jeu.titre || '<em class="text-muted">-</em>'}</td>
-      <td>${jeu.editeur || '-'}</td>
-      <td>${jeu.nb_joueurs_min ? `${jeu.nb_joueurs_min}${jeu.nb_joueurs_max ? '-' + jeu.nb_joueurs_max : '+'}` : '-'}</td>
-      <td>${jeu.duree_partie ? jeu.duree_partie + ' min' : '-'}</td>
-      <td>${jeu.age_min ? jeu.age_min + '+' : '-'}</td>
-      <td>${jeu.categorie || '-'}</td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = previewData.preview.map((jeu, idx) => {
+    // Type badge
+    const typeMap = {
+      'basegame': '<span class="badge bg-primary">Base</span>',
+      'extension': '<span class="badge bg-info">Extension</span>',
+      'standalone': '<span class="badge bg-secondary">Standalone</span>',
+      'accessoire': '<span class="badge bg-warning">Accessoire</span>'
+    };
+    const typeBadge = typeMap[jeu.type_jeu] || '<span class="badge bg-primary">Base</span>';
+
+    // Formater les categories (prendre les 2 premieres)
+    let categories = '-';
+    if (jeu.categories) {
+      const cats = jeu.categories.split(',').map(c => c.trim()).slice(0, 2);
+      categories = cats.join(', ') + (jeu.categories.split(',').length > 2 ? '...' : '');
+    }
+
+    return `
+      <tr>
+        <td>${idx + 1}</td>
+        <td>
+          <strong>${jeu.titre || '<em class="text-muted">-</em>'}</strong>
+          ${jeu.sous_titre ? '<br><small class="text-muted">' + jeu.sous_titre + '</small>' : ''}
+        </td>
+        <td>${typeBadge}</td>
+        <td>${jeu.editeur || '-'}</td>
+        <td>${jeu.nb_joueurs_min ? `${jeu.nb_joueurs_min}${jeu.nb_joueurs_max ? '-' + jeu.nb_joueurs_max : '+'}` : '-'}</td>
+        <td>${jeu.duree_partie ? jeu.duree_partie + ' min' : '-'}</td>
+        <td>${jeu.age_min ? jeu.age_min + '+' : '-'}</td>
+        <td><small>${categories}</small></td>
+        <td><small class="text-muted">${jeu.ean || '-'}</small></td>
+      </tr>
+    `;
+  }).join('');
 }
 
 // ==================== IMPORT ====================
@@ -241,11 +295,24 @@ function renderPreviewTable() {
 async function startImport() {
   if (!selectedFile) return;
 
-  const skipDuplicates = document.getElementById('skipDuplicates').checked;
+  // Determiner l'action pour les doublons
+  const duplicateAction = document.querySelector('input[name="duplicateAction"]:checked')?.value || 'skip';
+  const skipDuplicates = duplicateAction === 'skip';
+  const updateExisting = duplicateAction === 'update';
+
+  // Message de confirmation adapte
+  let confirmText = `Vous allez importer ${previewData.totalRows} jeux.`;
+  if (updateExisting) {
+    confirmText += ' Les jeux existants seront mis a jour.';
+  } else if (skipDuplicates) {
+    confirmText += ' Les doublons seront ignores.';
+  } else {
+    confirmText += ' Attention: des doublons peuvent etre crees.';
+  }
 
   const result = await Swal.fire({
     title: 'Confirmer l\'import',
-    text: `Vous allez importer ${previewData.totalRows} jeux. Continuer ?`,
+    text: confirmText,
     icon: 'question',
     showCancelButton: true,
     confirmButtonText: 'Importer',
@@ -257,17 +324,19 @@ async function startImport() {
   // Afficher le loader
   Swal.fire({
     title: 'Import en cours...',
-    html: 'Veuillez patienter...',
+    html: `<div class="progress" style="height: 20px;">
+      <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+    </div>
+    <p class="mt-2">Traitement de ${previewData.totalRows} jeux...</p>`,
     allowOutsideClick: false,
-    didOpen: () => {
-      Swal.showLoading();
-    }
+    showConfirmButton: false
   });
 
   try {
     const importResult = await importAPI.importJeux(selectedFile, {
       separator: document.getElementById('separator').value,
       skipDuplicates,
+      updateExisting,
       mapping: currentMapping
     });
 
@@ -292,6 +361,10 @@ function showResults(results) {
     <div class="result-card success">
       <div class="number">${results.imported}</div>
       <div class="label">Jeux importes</div>
+    </div>
+    <div class="result-card" style="background: #cfe2ff; color: #084298;">
+      <div class="number">${results.updated || 0}</div>
+      <div class="label">Mis a jour</div>
     </div>
     <div class="result-card warning">
       <div class="number">${results.skipped}</div>

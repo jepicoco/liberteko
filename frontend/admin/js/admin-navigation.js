@@ -11,7 +11,8 @@ const MENU_ITEMS = [
         icon: 'upc-scan',
         href: 'scanner.html',
         highlight: true,  // Met en evidence ce bouton
-        floatingButton: true  // Affiche comme bouton flottant sur mobile
+        floatingButton: true,  // Affiche comme bouton flottant sur mobile
+        module: 'scanner'
     },
     {
         id: 'dashboard',
@@ -27,9 +28,35 @@ const MENU_ITEMS = [
     },
     {
         id: 'jeux',
-        label: 'Jeux',
+        label: 'Ludothèque',
         icon: 'dice-6',
-        href: 'jeux.html'
+        href: 'jeux.html',
+        color: '#FFE5B4',  // Pastel pêche
+        module: 'ludotheque'
+    },
+    {
+        id: 'livres',
+        label: 'Bibliothèque',
+        icon: 'book',
+        href: 'livres.html',
+        color: '#B4D8E7',  // Pastel bleu
+        module: 'bibliotheque'
+    },
+    {
+        id: 'films',
+        label: 'Filmothèque',
+        icon: 'film',
+        href: 'films.html',
+        color: '#E7B4D8',  // Pastel rose
+        module: 'filmotheque'
+    },
+    {
+        id: 'disques',
+        label: 'Discothèque',
+        icon: 'vinyl',
+        href: 'disques.html',
+        color: '#B4E7C4',  // Pastel vert
+        module: 'discotheque'
     },
     {
         id: 'emprunts',
@@ -53,7 +80,8 @@ const MENU_ITEMS = [
         id: 'historique-communications',
         label: 'Communications',
         icon: 'send',
-        href: 'historique-communications.html'
+        href: 'historique-communications.html',
+        module: 'communications'
     },
     {
         id: 'parametres',

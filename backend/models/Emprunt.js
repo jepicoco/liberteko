@@ -19,9 +19,39 @@ module.exports = (sequelize) => {
     },
     jeu_id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,  // Changé en nullable pour permettre emprunts d'autres types
       references: {
         model: 'jeux',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'RESTRICT'
+    },
+    livre_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'livres',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'RESTRICT'
+    },
+    film_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'films',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'RESTRICT'
+    },
+    cd_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'cds',
         key: 'id'
       },
       onUpdate: 'CASCADE',
@@ -67,6 +97,15 @@ module.exports = (sequelize) => {
         fields: ['jeu_id']
       },
       {
+        fields: ['livre_id']
+      },
+      {
+        fields: ['film_id']
+      },
+      {
+        fields: ['cd_id']
+      },
+      {
         fields: ['statut']
       },
       {
@@ -100,13 +139,47 @@ module.exports = (sequelize) => {
     this.statut = 'retourne';
     await this.save();
 
-    // Update game status to available
-    const jeu = await sequelize.models.Jeu.findByPk(this.jeu_id);
-    if (jeu) {
-      await jeu.changerStatut('disponible');
+    // Update item status to available based on type
+    if (this.jeu_id) {
+      const jeu = await sequelize.models.Jeu.findByPk(this.jeu_id);
+      if (jeu) {
+        await jeu.changerStatut('disponible');
+      }
+    } else if (this.livre_id) {
+      const livre = await sequelize.models.Livre.findByPk(this.livre_id);
+      if (livre) {
+        livre.statut = 'disponible';
+        await livre.save();
+      }
+    } else if (this.film_id && sequelize.models.Film) {
+      const film = await sequelize.models.Film.findByPk(this.film_id);
+      if (film) {
+        film.statut = 'disponible';
+        await film.save();
+      }
+    } else if (this.cd_id && sequelize.models.Cd) {
+      const cd = await sequelize.models.Cd.findByPk(this.cd_id);
+      if (cd) {
+        cd.statut = 'disponible';
+        await cd.save();
+      }
     }
 
     return this;
+  };
+
+  // Helper pour obtenir le type d'item emprunté
+  Emprunt.prototype.getItemType = function() {
+    if (this.jeu_id) return 'jeu';
+    if (this.livre_id) return 'livre';
+    if (this.film_id) return 'film';
+    if (this.cd_id) return 'cd';
+    return null;
+  };
+
+  // Helper pour obtenir l'ID de l'item emprunté
+  Emprunt.prototype.getItemId = function() {
+    return this.jeu_id || this.livre_id || this.film_id || this.cd_id;
   };
 
   // Class method to update overdue loans

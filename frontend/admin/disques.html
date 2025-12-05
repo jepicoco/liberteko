@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Disques - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <style>
+    .badge-ref { font-size: 0.75rem; margin-right: 0.25rem; margin-bottom: 0.25rem; }
+    .ts-wrapper { min-width: 100%; }
+    .ts-control { min-height: 38px; }
+    .disque-row td { vertical-align: middle; }
+    .disque-cover {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .disque-cover-placeholder {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+    }
+    .format-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+    }
+    .format-vinyl { background-color: #212121; color: white; }
+    .format-cd { background-color: #2196f3; color: white; }
+    .format-cassette { background-color: #795548; color: white; }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1><i class="bi bi-vinyl me-2"></i>Gestion des Disques</h1>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                  <i class="bi bi-plus-circle"></i> Nouveau disque
+                </button>
+                <button class="btn btn-secondary" onclick="loadDisques()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualiser
+                </button>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="form-control"
+                  placeholder="Rechercher..."
+                  style="width: 200px;"
+                  onkeyup="handleSearch()"
+                >
+                <select id="genreFilter" class="form-select" onchange="loadDisques()" style="width: 150px;">
+                  <option value="">Tous genres</option>
+                </select>
+                <select id="formatFilter" class="form-select" onchange="loadDisques()" style="width: 140px;">
+                  <option value="">Tous formats</option>
+                </select>
+                <select id="statutFilter" class="form-select" onchange="loadDisques()" style="width: 140px;">
+                  <option value="">Tous statuts</option>
+                  <option value="disponible">Disponible</option>
+                  <option value="emprunte">Emprunte</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="perdu">Perdu</option>
+                  <option value="archive">Archive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disques List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="disquesList">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des disques...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="disqueModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouveau disque</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="disqueForm">
+            <input type="hidden" id="disqueId">
+
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs mb-3" role="tablist">
+              <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
+                  <i class="bi bi-info-circle me-1"></i>General
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-artistes" type="button">
+                  <i class="bi bi-people me-1"></i>Artistes
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-classification" type="button">
+                  <i class="bi bi-tags me-1"></i>Classification
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button">
+                  <i class="bi bi-gear me-1"></i>Gestion
+                </button>
+              </li>
+            </ul>
+
+            <!-- Tab content -->
+            <div class="tab-content">
+              <!-- Tab General -->
+              <div class="tab-pane fade show active" id="tab-general">
+                <div class="row mb-3">
+                  <div class="col-md-8">
+                    <label class="form-label">Titre *</label>
+                    <input type="text" class="form-control" id="titre" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Annee de sortie</label>
+                    <input type="number" class="form-control" id="annee_sortie" min="1900" max="2100">
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-8">
+                    <label class="form-label">Titre original</label>
+                    <input type="text" class="form-control" id="titre_original">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Nb pistes</label>
+                    <input type="number" class="form-control" id="nb_pistes" min="1">
+                  </div>
+                  <div class="col-md-2">
+                    <label class="form-label">Duree (min)</label>
+                    <input type="number" class="form-control" id="duree_totale" min="1">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Description</label>
+                  <textarea class="form-control" id="description" rows="3"></textarea>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Code-barres interne</label>
+                    <input type="text" class="form-control" id="code_barre" readonly placeholder="Genere automatiquement">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">EAN (code-barres commercial)</label>
+                    <input type="text" class="form-control" id="ean" placeholder="Ex: 3700301033512">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">N catalogue</label>
+                    <input type="text" class="form-control" id="catalogue_number" placeholder="Ref. du label">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">URL de la pochette</label>
+                  <input type="url" class="form-control" id="image_url" placeholder="https://...">
+                </div>
+              </div>
+
+              <!-- Tab Artistes -->
+              <div class="tab-pane fade" id="tab-artistes">
+                <div class="mb-3">
+                  <label class="form-label">Artiste(s)</label>
+                  <div id="artistesContainer">
+                    <!-- Dynamic artiste rows -->
+                  </div>
+                  <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addArtisteRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter un artiste
+                  </button>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Label</label>
+                    <select id="select_label" placeholder="Selectionnez ou creez..."></select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Classification -->
+              <div class="tab-pane fade" id="tab-classification">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Genres musicaux</label>
+                    <select id="select_genres" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Format</label>
+                    <select class="form-select" id="format_id">
+                      <option value="">-- Selectionner --</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Gestion -->
+              <div class="tab-pane fade" id="tab-gestion">
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Emplacement</label>
+                    <select class="form-select" id="emplacement_id">
+                      <option value="">-- Selectionner --</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" id="statut">
+                      <option value="disponible">Disponible</option>
+                      <option value="emprunte">Emprunte</option>
+                      <option value="maintenance">En maintenance</option>
+                      <option value="perdu">Perdu</option>
+                      <option value="archive">Archive</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Etat</label>
+                    <select class="form-select" id="etat">
+                      <option value="neuf">Neuf</option>
+                      <option value="tres_bon">Tres bon</option>
+                      <option value="bon" selected>Bon</option>
+                      <option value="acceptable">Acceptable</option>
+                      <option value="mauvais">Mauvais</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Date d'acquisition</label>
+                    <input type="date" class="form-control" id="date_acquisition">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Prix indicatif</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" id="prix_indicatif" step="0.01" min="0">
+                      <span class="input-group-text">EUR</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Prix d'achat</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" id="prix_achat" step="0.01" min="0">
+                      <span class="input-group-text">EUR</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Notes internes</label>
+                  <textarea class="form-control" id="notes" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="disqueForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Disque Modal -->
+  <div class="modal fade" id="viewDisqueModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Details du disque</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="viewDisqueContent">
+          <!-- Content loaded dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary" id="btnEditFromView">
+            <i class="bi bi-pencil me-1"></i>Modifier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmer la suppression</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Etes-vous sur de vouloir supprimer le disque "<strong id="deleteDisqueTitle"></strong>" ?</p>
+          <p class="text-muted small mb-0">Cette action est irreversible.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDelete">
+            <i class="bi bi-trash me-1"></i>Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let disques = [];
+    let searchTimeout = null;
+    let modalInstance = null;
+    let viewModalInstance = null;
+    let deleteModalInstance = null;
+    let disqueToDelete = null;
+
+    // Tom-Select instances
+    let tsGenres, tsLabel;
+
+    // Referentiels cache
+    let refCache = {
+      genres: [],
+      formats: [],
+      labels: [],
+      emplacements: [],
+      artistes: []
+    };
+
+    // Load disques
+    async function loadDisques() {
+      try {
+        const statut = document.getElementById('statutFilter').value;
+        const genreId = document.getElementById('genreFilter').value;
+        const formatId = document.getElementById('formatFilter').value;
+        const search = document.getElementById('searchInput').value;
+
+        const params = {};
+        if (statut) params.statut = statut;
+        if (genreId) params.genre_id = genreId;
+        if (formatId) params.format_id = formatId;
+        if (search) params.search = search;
+
+        const data = await disquesAPI.getAll(params);
+        disques = data.disques || [];
+        renderDisques(disques);
+      } catch (error) {
+        console.error('Error loading disques:', error);
+        document.getElementById('disquesList').innerHTML = `
+          <div class="alert alert-danger">
+            Erreur lors du chargement des disques: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Load référentiels
+    async function loadReferentiels() {
+      try {
+        const [genres, formats, labels, emplacements, artistes] = await Promise.all([
+          disquesAPI.getGenres(),
+          disquesAPI.getFormats(),
+          disquesAPI.getLabels(),
+          disquesAPI.getEmplacements(),
+          disquesAPI.getArtistes()
+        ]);
+
+        refCache.genres = genres.genres || genres || [];
+        refCache.formats = formats.formats || formats || [];
+        refCache.labels = labels.labels || labels || [];
+        refCache.emplacements = emplacements.emplacements || emplacements || [];
+        refCache.artistes = artistes.artistes || artistes || [];
+
+        populateFilters();
+        populateFormSelects();
+      } catch (error) {
+        console.error('Error loading referentiels:', error);
+      }
+    }
+
+    function populateFilters() {
+      const genreSelect = document.getElementById('genreFilter');
+      genreSelect.innerHTML = '<option value="">Tous genres</option>';
+      refCache.genres.forEach(g => {
+        genreSelect.innerHTML += `<option value="${g.id}">${g.nom}</option>`;
+      });
+
+      const formatSelect = document.getElementById('formatFilter');
+      formatSelect.innerHTML = '<option value="">Tous formats</option>';
+      refCache.formats.forEach(f => {
+        formatSelect.innerHTML += `<option value="${f.id}">${f.nom}</option>`;
+      });
+    }
+
+    function populateFormSelects() {
+      const formatSelect = document.getElementById('format_id');
+      formatSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+      refCache.formats.forEach(f => {
+        formatSelect.innerHTML += `<option value="${f.id}">${f.nom}</option>`;
+      });
+
+      const emplacementSelect = document.getElementById('emplacement_id');
+      emplacementSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+      refCache.emplacements.forEach(e => {
+        emplacementSelect.innerHTML += `<option value="${e.id}">${e.libelle}</option>`;
+      });
+    }
+
+    function initTomSelects() {
+      tsGenres = new TomSelect('#select_genres', {
+        plugins: ['remove_button'],
+        options: refCache.genres.map(g => ({ value: g.id, text: g.nom }))
+      });
+
+      tsLabel = new TomSelect('#select_label', {
+        create: true,
+        createOnBlur: true,
+        options: refCache.labels.map(l => ({ value: l.id, text: l.nom }))
+      });
+    }
+
+    function clearTomSelects() {
+      if (tsGenres) tsGenres.clear();
+      if (tsLabel) tsLabel.clear();
+    }
+
+    function renderDisques(list) {
+      const container = document.getElementById('disquesList');
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-secondary p-4">
+            <i class="bi bi-vinyl fs-1 d-block mb-2"></i>
+            Aucun disque trouve
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th style="width:60px;"></th>
+              <th>Titre</th>
+              <th>Artiste(s)</th>
+              <th>Annee</th>
+              <th>Format</th>
+              <th>Genres</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(disque => `
+              <tr class="disque-row">
+                <td>
+                  ${disque.image_url
+                    ? `<img src="${disque.image_url}" alt="${escapeHtml(disque.titre)}" class="disque-cover" onerror="this.outerHTML='<div class=disque-cover-placeholder><i class=bi bi-vinyl></i></div>'">`
+                    : '<div class="disque-cover-placeholder"><i class="bi bi-vinyl"></i></div>'
+                  }
+                </td>
+                <td>
+                  <strong>${escapeHtml(disque.titre)}</strong>
+                  ${disque.titre_original && disque.titre_original !== disque.titre
+                    ? `<br><small class="text-muted">${escapeHtml(disque.titre_original)}</small>`
+                    : ''}
+                </td>
+                <td>
+                  ${disque.artistesRef?.length
+                    ? disque.artistesRef.map(a => a.nom_scene || (a.prenom ? `${a.prenom} ${a.nom}` : a.nom)).join(', ')
+                    : '-'}
+                </td>
+                <td>${disque.annee_sortie || '-'}</td>
+                <td>
+                  ${disque.formatRef
+                    ? `<span class="badge format-badge ${getFormatClass(disque.formatRef.nom)}">${disque.formatRef.nom}</span>`
+                    : '-'}
+                </td>
+                <td>
+                  ${disque.genresRef?.length
+                    ? disque.genresRef.slice(0, 2).map(g => `<span class="badge bg-info badge-ref">${g.nom}</span>`).join('') + (disque.genresRef.length > 2 ? `<span class="badge bg-secondary badge-ref">+${disque.genresRef.length - 2}</span>` : '')
+                    : '-'}
+                </td>
+                <td>${formatStatut(disque.statut)}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewDisque(${disque.id})" title="Voir">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editDisque(${disque.id})" title="Modifier">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteDisque(${disque.id}, '${escapeHtml(disque.titre).replace(/'/g, "\\'")}' )" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function getFormatClass(formatName) {
+      if (!formatName) return '';
+      const lower = formatName.toLowerCase();
+      if (lower.includes('vinyl') || lower.includes('33') || lower.includes('45') || lower.includes('78')) return 'format-vinyl';
+      if (lower.includes('cd')) return 'format-cd';
+      if (lower.includes('cassette') || lower.includes('k7')) return 'format-cassette';
+      return '';
+    }
+
+    function formatStatut(statut) {
+      const map = {
+        'disponible': '<span class="badge bg-success">Disponible</span>',
+        'emprunte': '<span class="badge bg-warning text-dark">Emprunte</span>',
+        'maintenance': '<span class="badge bg-info">Maintenance</span>',
+        'perdu': '<span class="badge bg-danger">Perdu</span>',
+        'archive': '<span class="badge bg-secondary">Archive</span>'
+      };
+      return map[statut] || statut;
+    }
+
+    function getEtatLabel(etat) {
+      const labels = {
+        'neuf': 'Neuf',
+        'tres_bon': 'Tres bon',
+        'bon': 'Bon',
+        'acceptable': 'Acceptable',
+        'mauvais': 'Mauvais'
+      };
+      return labels[etat] || etat;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadDisques();
+      }, 500);
+    }
+
+    // ========== Artistes management ==========
+
+    function addArtisteRow(artisteId = '', role = '') {
+      const container = document.getElementById('artistesContainer');
+      const rowId = Date.now();
+
+      const row = document.createElement('div');
+      row.className = 'row mb-2 artiste-row';
+      row.id = `artiste-row-${rowId}`;
+      row.innerHTML = `
+        <div class="col-md-6">
+          <select class="form-select artiste-select">
+            <option value="">Selectionner un artiste</option>
+            ${refCache.artistes.map(a => `
+              <option value="${a.id}" ${a.id == artisteId ? 'selected' : ''}>
+                ${a.nom_scene || (a.prenom ? `${a.prenom} ${a.nom}` : a.nom)}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <input type="text" class="form-control artiste-role" placeholder="Role (principal, featuring...)" value="${escapeHtml(role)}">
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-outline-danger" onclick="removeArtisteRow(${rowId})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `;
+
+      container.appendChild(row);
+    }
+
+    function removeArtisteRow(rowId) {
+      const row = document.getElementById(`artiste-row-${rowId}`);
+      if (row) row.remove();
+    }
+
+    function getArtistesFromForm() {
+      const artistes = [];
+      document.querySelectorAll('.artiste-row').forEach(row => {
+        const select = row.querySelector('.artiste-select');
+        const roleInput = row.querySelector('.artiste-role');
+
+        if (select.value) {
+          artistes.push({
+            id: parseInt(select.value),
+            role: roleInput.value || 'principal'
+          });
+        }
+      });
+      return artistes;
+    }
+
+    // ========== Modal functions ==========
+
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Nouveau disque';
+      document.getElementById('disqueForm').reset();
+      document.getElementById('disqueId').value = '';
+
+      clearTomSelects();
+      document.getElementById('artistesContainer').innerHTML = '';
+      addArtisteRow();
+
+      // Show first tab
+      const firstTab = document.querySelector('#disqueModal .nav-link');
+      bootstrap.Tab.getOrCreateInstance(firstTab).show();
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('disqueModal'));
+      }
+      modalInstance.show();
+    }
+
+    function closeModal() {
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    async function viewDisque(id) {
+      try {
+        const disque = await disquesAPI.getById(id);
+
+        const content = document.getElementById('viewDisqueContent');
+        content.innerHTML = `
+          <div class="row">
+            <div class="col-md-4 text-center">
+              ${disque.image_url
+                ? `<img src="${disque.image_url}" alt="${escapeHtml(disque.titre)}" class="img-fluid rounded mb-3" style="max-height: 250px;">`
+                : '<div class="bg-secondary rounded d-flex align-items-center justify-content-center mb-3" style="height: 250px; width: 250px; margin: 0 auto;"><i class="bi bi-vinyl text-white" style="font-size: 4rem;"></i></div>'
+              }
+            </div>
+            <div class="col-md-8">
+              <h4>${escapeHtml(disque.titre)}</h4>
+              ${disque.titre_original && disque.titre_original !== disque.titre
+                ? `<p class="text-muted fst-italic">${escapeHtml(disque.titre_original)}</p>`
+                : ''}
+
+              ${disque.artistesRef?.length ? `
+                <p class="mb-2">
+                  <strong><i class="bi bi-person-fill me-1"></i>Artiste(s):</strong>
+                  ${disque.artistesRef.map(a => a.nom_scene || (a.prenom ? `${a.prenom} ${a.nom}` : a.nom)).join(', ')}
+                </p>
+              ` : ''}
+
+              <div class="mb-3">
+                ${disque.annee_sortie ? `<span class="badge bg-secondary me-2">${disque.annee_sortie}</span>` : ''}
+                ${disque.nb_pistes ? `<span class="badge bg-secondary me-2">${disque.nb_pistes} pistes</span>` : ''}
+                ${disque.duree_totale ? `<span class="badge bg-secondary me-2">${disque.duree_totale} min</span>` : ''}
+                ${disque.formatRef ? `<span class="badge format-badge ${getFormatClass(disque.formatRef.nom)}">${disque.formatRef.nom}</span>` : ''}
+              </div>
+
+              ${disque.description ? `<p>${escapeHtml(disque.description)}</p>` : ''}
+
+              ${disque.genresRef?.length ? `
+                <p><strong><i class="bi bi-tags me-1"></i>Genres:</strong>
+                  ${disque.genresRef.map(g => `<span class="badge bg-info me-1">${g.nom}</span>`).join('')}
+                </p>
+              ` : ''}
+
+              ${disque.labelRef ? `
+                <p><strong><i class="bi bi-building me-1"></i>Label:</strong> ${disque.labelRef.nom}</p>
+              ` : ''}
+
+              <hr>
+
+              <div class="row small text-muted">
+                <div class="col-6">
+                  <p class="mb-1"><strong>Emplacement:</strong> ${disque.emplacementRef?.libelle || '-'}</p>
+                  <p class="mb-1"><strong>Code-barres:</strong> ${disque.code_barre || '-'}</p>
+                  <p class="mb-1"><strong>N catalogue:</strong> ${disque.catalogue_number || '-'}</p>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1"><strong>Statut:</strong> ${formatStatut(disque.statut)}</p>
+                  <p class="mb-1"><strong>Etat:</strong> ${getEtatLabel(disque.etat)}</p>
+                  <p class="mb-1"><strong>Emprunts:</strong> ${disque.nb_emprunts || 0}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('btnEditFromView').onclick = () => {
+          if (viewModalInstance) viewModalInstance.hide();
+          editDisque(id);
+        };
+
+        if (!viewModalInstance) {
+          viewModalInstance = new bootstrap.Modal(document.getElementById('viewDisqueModal'));
+        }
+        viewModalInstance.show();
+      } catch (error) {
+        console.error('Error viewing disque:', error);
+        showToast('Erreur lors du chargement du disque', 'danger');
+      }
+    }
+
+    async function editDisque(id) {
+      try {
+        const disque = await disquesAPI.getById(id);
+
+        document.getElementById('modalTitle').textContent = 'Modifier le disque';
+        document.getElementById('disqueId').value = disque.id;
+
+        // General info
+        document.getElementById('titre').value = disque.titre || '';
+        document.getElementById('titre_original').value = disque.titre_original || '';
+        document.getElementById('annee_sortie').value = disque.annee_sortie || '';
+        document.getElementById('nb_pistes').value = disque.nb_pistes || '';
+        document.getElementById('duree_totale').value = disque.duree_totale || '';
+        document.getElementById('description').value = disque.description || '';
+        document.getElementById('code_barre').value = disque.code_barre || '';
+        document.getElementById('ean').value = disque.ean || '';
+        document.getElementById('catalogue_number').value = disque.catalogue_number || '';
+        document.getElementById('image_url').value = disque.image_url || '';
+
+        // Classification
+        document.getElementById('format_id').value = disque.format_id || '';
+
+        // Gestion
+        document.getElementById('emplacement_id').value = disque.emplacement_id || '';
+        document.getElementById('statut').value = disque.statut || 'disponible';
+        document.getElementById('etat').value = disque.etat || 'bon';
+        document.getElementById('date_acquisition').value = disque.date_acquisition || '';
+        document.getElementById('prix_indicatif').value = disque.prix_indicatif || '';
+        document.getElementById('prix_achat').value = disque.prix_achat || '';
+        document.getElementById('notes').value = disque.notes || '';
+
+        // Tom Selects
+        clearTomSelects();
+        if (disque.genresRef) tsGenres.setValue(disque.genresRef.map(g => g.id));
+        if (disque.label_id) tsLabel.setValue(disque.label_id);
+
+        // Artistes
+        const container = document.getElementById('artistesContainer');
+        container.innerHTML = '';
+        if (disque.artistesRef?.length) {
+          disque.artistesRef.forEach(a => {
+            addArtisteRow(a.id, a.DisqueArtiste?.role || 'principal');
+          });
+        } else {
+          addArtisteRow();
+        }
+
+        // Show first tab
+        const firstTab = document.querySelector('#disqueModal .nav-link');
+        bootstrap.Tab.getOrCreateInstance(firstTab).show();
+
+        if (!modalInstance) {
+          modalInstance = new bootstrap.Modal(document.getElementById('disqueModal'));
+        }
+        modalInstance.show();
+      } catch (error) {
+        console.error('Error loading disque for edit:', error);
+        showToast('Erreur lors du chargement du disque', 'danger');
+      }
+    }
+
+    function deleteDisque(id, title) {
+      disqueToDelete = id;
+      document.getElementById('deleteDisqueTitle').textContent = title;
+      if (!deleteModalInstance) {
+        deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteModal'));
+      }
+      deleteModalInstance.show();
+    }
+
+    async function confirmDelete() {
+      if (!disqueToDelete) return;
+
+      try {
+        await disquesAPI.delete(disqueToDelete);
+        showToast('Disque supprime avec succes', 'success');
+
+        if (deleteModalInstance) deleteModalInstance.hide();
+        disqueToDelete = null;
+        loadDisques();
+      } catch (error) {
+        console.error('Error deleting disque:', error);
+        showToast('Erreur lors de la suppression', 'danger');
+      }
+    }
+
+    // Form submission
+    document.getElementById('disqueForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement...';
+
+      try {
+        const id = document.getElementById('disqueId').value;
+
+        const formData = {
+          titre: document.getElementById('titre').value,
+          titre_original: document.getElementById('titre_original').value || null,
+          annee_sortie: document.getElementById('annee_sortie').value || null,
+          nb_pistes: document.getElementById('nb_pistes').value || null,
+          duree_totale: document.getElementById('duree_totale').value || null,
+          description: document.getElementById('description').value || null,
+          ean: document.getElementById('ean').value || null,
+          catalogue_number: document.getElementById('catalogue_number').value || null,
+          image_url: document.getElementById('image_url').value || null,
+          format_id: document.getElementById('format_id').value || null,
+          label_id: tsLabel.getValue() || null,
+          emplacement_id: document.getElementById('emplacement_id').value || null,
+          statut: document.getElementById('statut').value,
+          etat: document.getElementById('etat').value,
+          date_acquisition: document.getElementById('date_acquisition').value || null,
+          prix_indicatif: document.getElementById('prix_indicatif').value || null,
+          prix_achat: document.getElementById('prix_achat').value || null,
+          notes: document.getElementById('notes').value || null,
+          genres: tsGenres.getValue().map(Number),
+          artistes: getArtistesFromForm()
+        };
+
+        if (!id) {
+          await disquesAPI.create(formData);
+          showToast('Disque cree avec succes', 'success');
+        } else {
+          await disquesAPI.update(id, formData);
+          showToast('Disque modifie avec succes', 'success');
+        }
+
+        closeModal();
+        loadDisques();
+      } catch (error) {
+        console.error('Error saving disque:', error);
+        showToast('Erreur: ' + error.message, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    });
+
+    // Delete confirmation handler
+    document.getElementById('btnConfirmDelete').addEventListener('click', confirmDelete);
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type} position-fixed shadow`;
+      toast.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 250px; animation: slideIn 0.3s ease;';
+      toast.innerHTML = `
+        <div class="d-flex align-items-center">
+          <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTemplate('disques');
+      await loadReferentiels();
+      initTomSelects();
+      loadDisques();
+    });
+  </script>
+</body>
+</html>

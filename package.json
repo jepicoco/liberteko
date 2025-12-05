@@ -34,7 +34,18 @@
     "job-email-reminders": "node backend/jobs/emailReminders.js",
     "migrate-utf8mb4": "node database/migrations/convertUtf8mb4.js",
     "migrate-multi-sites": "node database/migrations/addMultiSites.js",
-    "migrate-horaires-vacances": "node database/migrations/addHorairesVacances.js"
+    "migrate-horaires-vacances": "node database/migrations/addHorairesVacances.js",
+    "migrate-jeux-fields": "node database/migrations/addJeuxFields.js",
+    "migrate-jeux-normalization": "node database/migrations/addJeuxNormalization.js",
+    "migrate-jeux-data": "node database/migrations/migrateJeuxData.js",
+    "setup-jeux-normalization": "npm run migrate-jeux-normalization && npm run migrate-jeux-data",
+    "migrate-livres": "node database/migrations/addLivresNormalization.js",
+    "migrate-emprunts-multi": "node database/migrations/addEmpruntsMultiTypes.js",
+    "setup-livres": "npm run migrate-livres && npm run migrate-emprunts-multi",
+    "migrate-films": "node database/migrations/addFilmsNormalization.js",
+    "setup-films": "npm run migrate-films",
+    "migrate-disques": "node database/migrations/addDisquesNormalization.js",
+    "setup-disques": "npm run migrate-disques"
   },
   "keywords": [
     "ludotheque",

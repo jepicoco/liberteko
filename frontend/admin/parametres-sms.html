@@ -98,6 +98,9 @@
                     <label for="config_api_token" class="form-label">Token API <span class="text-danger">*</span></label>
                     <input type="password" class="form-control" id="config_api_token" placeholder="Votre token SMSFactor">
                     <div class="form-text">Disponible dans votre espace client SMSFactor</div>
+                    <small id="token_help_smsfactor" class="form-text text-warning" style="display: none;">
+                      <i class="bi bi-info-circle"></i> Requis pour tester la connexion
+                    </small>
                   </div>
                 </div>
               </div>
@@ -132,6 +135,9 @@
                   </div>
                 </div>
               </div>
+              <small id="token_help_ovh" class="form-text text-warning" style="display: none;">
+                <i class="bi bi-info-circle"></i> Secrets requis pour tester la connexion
+              </small>
             </div>
 
             <div id="fields-twilio" style="display: none;">
@@ -149,6 +155,9 @@
                   </div>
                 </div>
               </div>
+              <small id="token_help_twilio" class="form-text text-warning" style="display: none;">
+                <i class="bi bi-info-circle"></i> Token requis pour tester la connexion
+              </small>
             </div>
 
             <hr>
@@ -323,6 +332,9 @@
       document.getElementById('formConfig').reset();
       document.getElementById('config_id').value = '';
       document.getElementById('config_actif').checked = true;
+      document.getElementById('token_help_smsfactor').style.display = 'none';
+      document.getElementById('token_help_ovh').style.display = 'none';
+      document.getElementById('token_help_twilio').style.display = 'none';
       updateFormFields();
       modalConfig.show();
     }
@@ -337,6 +349,10 @@
       document.getElementById('config_expediteur').value = config.expediteur || '';
       document.getElementById('config_par_defaut').checked = config.par_defaut || false;
       document.getElementById('config_actif').checked = config.actif !== false;
+      // Afficher les messages d'aide pour les tokens
+      document.getElementById('token_help_smsfactor').style.display = 'block';
+      document.getElementById('token_help_ovh').style.display = 'block';
+      document.getElementById('token_help_twilio').style.display = 'block';
       updateFormFields();
       modalConfig.show();
     }
@@ -375,8 +391,50 @@
     }
 
     async function testConnection() {
-      showToast('Test de connexion...', 'info');
-      // Implementation selon le fournisseur
+      const configId = document.getElementById('config_id').value;
+      const fournisseur = document.getElementById('config_fournisseur').value;
+
+      // Verifier si les tokens sont remplis
+      let hasCredentials = false;
+      if (fournisseur === 'smsfactor') {
+        hasCredentials = !!document.getElementById('config_api_token').value;
+      } else if (fournisseur === 'ovh') {
+        hasCredentials = !!document.getElementById('config_ovh_as').value && !!document.getElementById('config_ovh_ck').value;
+      } else if (fournisseur === 'twilio') {
+        hasCredentials = !!document.getElementById('config_twilio_token').value;
+      }
+
+      // Si on edite une config existante et pas de nouveaux credentials
+      if (configId && !hasCredentials) {
+        showToast('Entrez les credentials pour tester la connexion', 'error');
+        return;
+      }
+
+      // Si nouvelle config, on doit d'abord sauvegarder
+      if (!configId) {
+        if (!hasCredentials) {
+          showToast('Remplissez les identifiants API', 'error');
+          return;
+        }
+        showToast('Sauvegardez d\'abord la configuration, puis testez', 'info');
+        return;
+      }
+
+      // Tester avec l'ID existant
+      try {
+        showToast('Test de connexion...', 'info');
+        const response = await fetch(`/api/parametres/configurations-sms/${configId}/test`, {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        const result = await response.json();
+        if (result.success) {
+          showToast('Connexion reussie! Credits: ' + (result.credits || '-'), 'success');
+        } else {
+          showToast('Echec: ' + (result.message || result.error || 'Erreur'), 'error');
+        }
+      } catch (error) {
+        showToast('Erreur de test', 'error');
+      }
     }
 
     function openTestModal(id) {
@@ -393,7 +451,7 @@
         const response = await fetch(`/api/parametres/configurations-sms/${currentTestConfigId}/send-test`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
-          body: JSON.stringify({ telephone: phone })
+          body: JSON.stringify({ numero: phone })
         });
         const result = await response.json();
         document.getElementById('test-result').innerHTML = result.success

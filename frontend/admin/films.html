@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Films - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <style>
+    .badge-ref { font-size: 0.75rem; margin-right: 0.25rem; margin-bottom: 0.25rem; }
+    .ts-wrapper { min-width: 100%; }
+    .ts-control { min-height: 38px; }
+    .film-row td { vertical-align: middle; }
+    .film-badges { max-width: 200px; }
+    .film-poster {
+      width: 50px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .film-poster-placeholder {
+      width: 50px;
+      height: 70px;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.2rem;
+    }
+    .classification-badge {
+      font-size: 0.7rem;
+      padding: 2px 6px;
+    }
+    .classification-TP { background-color: #28a745; color: white; }
+    .classification--10 { background-color: #17a2b8; color: white; }
+    .classification--12 { background-color: #ffc107; color: black; }
+    .classification--16 { background-color: #fd7e14; color: white; }
+    .classification--18 { background-color: #dc3545; color: white; }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1><i class="bi bi-film me-2"></i>Gestion des Films</h1>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                  <i class="bi bi-plus-circle"></i> Nouveau film
+                </button>
+                <button class="btn btn-secondary" onclick="loadFilms()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualiser
+                </button>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="form-control"
+                  placeholder="Rechercher..."
+                  style="width: 200px;"
+                  onkeyup="handleSearch()"
+                >
+                <select id="genreFilter" class="form-select" onchange="loadFilms()" style="width: 150px;">
+                  <option value="">Tous genres</option>
+                </select>
+                <select id="supportFilter" class="form-select" onchange="loadFilms()" style="width: 140px;">
+                  <option value="">Tous supports</option>
+                </select>
+                <select id="statutFilter" class="form-select" onchange="loadFilms()" style="width: 140px;">
+                  <option value="">Tous statuts</option>
+                  <option value="disponible">Disponible</option>
+                  <option value="emprunte">Emprunte</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="perdu">Perdu</option>
+                  <option value="archive">Archive</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Films List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="filmsList">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des films...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="filmModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouveau film</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="filmForm">
+            <input type="hidden" id="filmId">
+
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs mb-3" role="tablist">
+              <li class="nav-item">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
+                  <i class="bi bi-info-circle me-1"></i>General
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-casting" type="button">
+                  <i class="bi bi-people me-1"></i>Casting
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-classification" type="button">
+                  <i class="bi bi-tags me-1"></i>Classification
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button">
+                  <i class="bi bi-gear me-1"></i>Gestion
+                </button>
+              </li>
+            </ul>
+
+            <!-- Tab content -->
+            <div class="tab-content">
+              <!-- Tab General -->
+              <div class="tab-pane fade show active" id="tab-general">
+                <div class="row mb-3">
+                  <div class="col-md-8">
+                    <label class="form-label">Titre *</label>
+                    <input type="text" class="form-control" id="titre" required>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Annee de sortie</label>
+                    <input type="number" class="form-control" id="annee_sortie" min="1895" max="2100">
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-8">
+                    <label class="form-label">Titre original</label>
+                    <input type="text" class="form-control" id="titre_original">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Duree (minutes)</label>
+                    <input type="number" class="form-control" id="duree" min="1">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Synopsis</label>
+                  <textarea class="form-control" id="synopsis" rows="4"></textarea>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Code-barres interne</label>
+                    <input type="text" class="form-control" id="code_barre" readonly placeholder="Genere automatiquement">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">EAN (code-barres commercial)</label>
+                    <input type="text" class="form-control" id="ean" placeholder="Ex: 3700301033512">
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">URL de l'affiche</label>
+                    <input type="url" class="form-control" id="image_url" placeholder="https://...">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">URL bande-annonce</label>
+                    <input type="url" class="form-control" id="bande_annonce_url" placeholder="https://youtube.com/...">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Casting -->
+              <div class="tab-pane fade" id="tab-casting">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Realisateur(s)</label>
+                    <select id="select_realisateurs" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Studio(s)</label>
+                    <select id="select_studios" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Acteurs</label>
+                  <div id="acteursContainer">
+                    <!-- Dynamic acteur rows -->
+                  </div>
+                  <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addActeurRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter un acteur
+                  </button>
+                </div>
+              </div>
+
+              <!-- Tab Classification -->
+              <div class="tab-pane fade" id="tab-classification">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Genres</label>
+                    <select id="select_genres" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Themes</label>
+                    <select id="select_themes" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Langues audio</label>
+                    <select id="select_langues" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Sous-titres</label>
+                    <select id="select_soustitres" multiple placeholder="Selectionnez..."></select>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Classification</label>
+                    <select class="form-select" id="classification">
+                      <option value="TP">Tout Public</option>
+                      <option value="-10">-10 ans</option>
+                      <option value="-12">-12 ans</option>
+                      <option value="-16">-16 ans</option>
+                      <option value="-18">-18 ans</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab Gestion -->
+              <div class="tab-pane fade" id="tab-gestion">
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Support</label>
+                    <select class="form-select" id="support_id">
+                      <option value="">-- Selectionner --</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Emplacement</label>
+                    <select class="form-select" id="emplacement_id">
+                      <option value="">-- Selectionner --</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" id="statut">
+                      <option value="disponible">Disponible</option>
+                      <option value="emprunte">Emprunte</option>
+                      <option value="maintenance">En maintenance</option>
+                      <option value="perdu">Perdu</option>
+                      <option value="archive">Archive</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Etat</label>
+                    <select class="form-select" id="etat">
+                      <option value="neuf">Neuf</option>
+                      <option value="tres_bon">Tres bon</option>
+                      <option value="bon" selected>Bon</option>
+                      <option value="acceptable">Acceptable</option>
+                      <option value="mauvais">Mauvais</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Date d'acquisition</label>
+                    <input type="date" class="form-control" id="date_acquisition">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label">Nombre d'emprunts</label>
+                    <input type="number" class="form-control" id="nb_emprunts" readonly>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Prix indicatif</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" id="prix_indicatif" step="0.01" min="0">
+                      <span class="input-group-text">€</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Prix d'achat</label>
+                    <div class="input-group">
+                      <input type="number" class="form-control" id="prix_achat" step="0.01" min="0">
+                      <span class="input-group-text">€</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">Notes internes</label>
+                  <textarea class="form-control" id="notes" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="filmForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Film Modal -->
+  <div class="modal fade" id="viewFilmModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Details du film</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="viewFilmContent">
+          <!-- Content loaded dynamically -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary" id="btnEditFromView">
+            <i class="bi bi-pencil me-1"></i>Modifier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmer la suppression</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Etes-vous sur de vouloir supprimer le film "<strong id="deleteFilmTitle"></strong>" ?</p>
+          <p class="text-muted small mb-0">Cette action est irreversible.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDelete">
+            <i class="bi bi-trash me-1"></i>Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let films = [];
+    let searchTimeout = null;
+    let modalInstance = null;
+    let viewModalInstance = null;
+    let deleteModalInstance = null;
+    let filmToDelete = null;
+
+    // Tom-Select instances
+    let tsGenres, tsThemes, tsLangues, tsSousTitres, tsRealisateurs, tsStudios;
+
+    // Referentiels cache
+    let refCache = {
+      genres: [],
+      themes: [],
+      langues: [],
+      supports: [],
+      emplacements: [],
+      realisateurs: [],
+      acteurs: [],
+      studios: []
+    };
+
+    // Load films
+    async function loadFilms() {
+      try {
+        const statut = document.getElementById('statutFilter').value;
+        const genreId = document.getElementById('genreFilter').value;
+        const supportId = document.getElementById('supportFilter').value;
+        const search = document.getElementById('searchInput').value;
+
+        const params = {};
+        if (statut) params.statut = statut;
+        if (genreId) params.genre_id = genreId;
+        if (supportId) params.support_id = supportId;
+        if (search) params.search = search;
+
+        const data = await filmsAPI.getAll(params);
+        films = data.films || [];
+        renderFilms(films);
+      } catch (error) {
+        console.error('Error loading films:', error);
+        document.getElementById('filmsList').innerHTML = `
+          <div class="alert alert-danger">
+            Erreur lors du chargement des films: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Charger les genres pour le filtre
+    async function loadGenresFilter() {
+      try {
+        const genres = await filmsAPI.getGenres();
+        refCache.genres = genres;
+
+        const select = document.getElementById('genreFilter');
+        select.innerHTML = '<option value="">Tous genres</option>';
+        genres.forEach(g => {
+          const option = document.createElement('option');
+          option.value = g.id;
+          option.textContent = g.nom;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading genres:', error);
+      }
+    }
+
+    // Charger les supports pour le filtre
+    async function loadSupportsFilter() {
+      try {
+        const supports = await filmsAPI.getSupports();
+        refCache.supports = supports;
+
+        const select = document.getElementById('supportFilter');
+        select.innerHTML = '<option value="">Tous supports</option>';
+        supports.forEach(s => {
+          const option = document.createElement('option');
+          option.value = s.id;
+          option.textContent = s.nom;
+          select.appendChild(option);
+        });
+
+        // Aussi remplir le select du formulaire
+        const formSelect = document.getElementById('support_id');
+        formSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+        supports.forEach(s => {
+          const option = document.createElement('option');
+          option.value = s.id;
+          option.textContent = s.nom;
+          formSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading supports:', error);
+      }
+    }
+
+    // Charger tous les referentiels pour le formulaire
+    async function loadAllReferentiels() {
+      try {
+        const [genres, themes, langues, supports, emplacements, realisateurs, acteurs, studios] = await Promise.all([
+          filmsAPI.getGenres(),
+          referentielsAPI.getThemes({ actif: 'true' }),
+          referentielsAPI.getLangues({ actif: 'true' }),
+          filmsAPI.getSupports(),
+          filmsAPI.getEmplacements(),
+          filmsAPI.getRealisateurs(),
+          filmsAPI.getActeurs(),
+          filmsAPI.getStudios()
+        ]);
+
+        refCache.genres = genres;
+        refCache.themes = themes.items || themes;
+        refCache.langues = langues.items || langues;
+        refCache.supports = supports;
+        refCache.emplacements = emplacements;
+        refCache.realisateurs = realisateurs;
+        refCache.acteurs = acteurs;
+        refCache.studios = studios;
+
+        // Remplir les selects du formulaire
+        const emplacementSelect = document.getElementById('emplacement_id');
+        emplacementSelect.innerHTML = '<option value="">-- Selectionner --</option>';
+        emplacements.forEach(e => {
+          const option = document.createElement('option');
+          option.value = e.id;
+          option.textContent = e.libelle;
+          emplacementSelect.appendChild(option);
+        });
+      } catch (error) {
+        console.error('Error loading referentiels:', error);
+      }
+    }
+
+    function renderFilms(list) {
+      const container = document.getElementById('filmsList');
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-secondary p-4">
+            <i class="bi bi-film fs-1 d-block mb-2"></i>
+            Aucun film trouve
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th style="width:60px;"></th>
+              <th>Titre</th>
+              <th>Annee</th>
+              <th>Duree</th>
+              <th>Support</th>
+              <th>Classification</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(film => `
+              <tr class="film-row">
+                <td>
+                  ${film.image_url
+                    ? `<img src="${film.image_url}" alt="${escapeHtml(film.titre)}" class="film-poster" onerror="this.outerHTML='<div class=film-poster-placeholder><i class=bi bi-film></i></div>'">`
+                    : '<div class="film-poster-placeholder"><i class="bi bi-film"></i></div>'
+                  }
+                </td>
+                <td>
+                  <strong>${escapeHtml(film.titre)}</strong>
+                  ${film.titre_original && film.titre_original !== film.titre
+                    ? `<br><small class="text-muted">${escapeHtml(film.titre_original)}</small>`
+                    : ''}
+                  ${film.realisateursRef?.length
+                    ? `<br><small class="text-secondary"><i class="bi bi-camera-reels"></i> ${film.realisateursRef.map(r => r.prenom ? `${r.prenom} ${r.nom}` : r.nom).join(', ')}</small>`
+                    : ''}
+                </td>
+                <td>${film.annee_sortie || '-'}</td>
+                <td>${film.duree ? `${film.duree} min` : '-'}</td>
+                <td>${film.supportRef?.nom || '-'}</td>
+                <td>
+                  <span class="badge classification-badge classification-${film.classification || 'TP'}">
+                    ${getClassificationLabel(film.classification)}
+                  </span>
+                </td>
+                <td>${formatStatut(film.statut)}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewFilm(${film.id})" title="Voir">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editFilm(${film.id})" title="Modifier">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteFilm(${film.id}, '${escapeHtml(film.titre).replace(/'/g, "\\'")}' )" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function formatStatut(statut) {
+      const map = {
+        'disponible': '<span class="badge bg-success">Disponible</span>',
+        'emprunte': '<span class="badge bg-warning text-dark">Emprunte</span>',
+        'maintenance': '<span class="badge bg-info">Maintenance</span>',
+        'perdu': '<span class="badge bg-danger">Perdu</span>',
+        'archive': '<span class="badge bg-secondary">Archive</span>'
+      };
+      return map[statut] || statut;
+    }
+
+    function getClassificationLabel(classification) {
+      const labels = {
+        'TP': 'Tout Public',
+        '-10': '-10 ans',
+        '-12': '-12 ans',
+        '-16': '-16 ans',
+        '-18': '-18 ans'
+      };
+      return labels[classification] || 'Tout Public';
+    }
+
+    function getEtatLabel(etat) {
+      const labels = {
+        'neuf': 'Neuf',
+        'tres_bon': 'Tres bon',
+        'bon': 'Bon',
+        'acceptable': 'Acceptable',
+        'mauvais': 'Mauvais'
+      };
+      return labels[etat] || etat;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        loadFilms();
+      }, 500);
+    }
+
+    // ========== Tom-Select initialization ==========
+
+    function initTomSelects() {
+      tsGenres = new TomSelect('#select_genres', {
+        plugins: ['remove_button'],
+        options: refCache.genres.map(g => ({ value: g.id, text: g.nom }))
+      });
+
+      tsThemes = new TomSelect('#select_themes', {
+        plugins: ['remove_button'],
+        options: refCache.themes.map(t => ({ value: t.id, text: t.nom }))
+      });
+
+      tsLangues = new TomSelect('#select_langues', {
+        plugins: ['remove_button'],
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') }))
+      });
+
+      tsSousTitres = new TomSelect('#select_soustitres', {
+        plugins: ['remove_button'],
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom + (l.code ? ` (${l.code})` : '') }))
+      });
+
+      tsRealisateurs = new TomSelect('#select_realisateurs', {
+        plugins: ['remove_button'],
+        create: true,
+        createOnBlur: true,
+        options: refCache.realisateurs.map(r => ({
+          value: r.id,
+          text: r.prenom ? `${r.prenom} ${r.nom}` : r.nom
+        }))
+      });
+
+      tsStudios = new TomSelect('#select_studios', {
+        plugins: ['remove_button'],
+        create: true,
+        createOnBlur: true,
+        options: refCache.studios.map(s => ({ value: s.id, text: s.nom }))
+      });
+    }
+
+    function clearTomSelects() {
+      [tsGenres, tsThemes, tsLangues, tsSousTitres, tsRealisateurs, tsStudios].forEach(ts => {
+        if (ts) ts.clear();
+      });
+    }
+
+    // ========== Acteurs management ==========
+
+    function addActeurRow(acteurId = '', role = '') {
+      const container = document.getElementById('acteursContainer');
+      const rowId = Date.now();
+
+      const row = document.createElement('div');
+      row.className = 'row mb-2 acteur-row';
+      row.id = `acteur-row-${rowId}`;
+      row.innerHTML = `
+        <div class="col-md-5">
+          <select class="form-select acteur-select">
+            <option value="">Selectionner un acteur</option>
+            ${refCache.acteurs.map(a => `
+              <option value="${a.id}" ${a.id == acteurId ? 'selected' : ''}>
+                ${a.prenom ? `${a.prenom} ${a.nom}` : a.nom}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+        <div class="col-md-5">
+          <input type="text" class="form-control acteur-role" placeholder="Role (ex: John Doe)" value="${escapeHtml(role)}">
+        </div>
+        <div class="col-md-2">
+          <button type="button" class="btn btn-outline-danger" onclick="removeActeurRow(${rowId})">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `;
+
+      container.appendChild(row);
+    }
+
+    function removeActeurRow(rowId) {
+      const row = document.getElementById(`acteur-row-${rowId}`);
+      if (row) row.remove();
+    }
+
+    function getActeursFromForm() {
+      const acteurs = [];
+      document.querySelectorAll('.acteur-row').forEach(row => {
+        const select = row.querySelector('.acteur-select');
+        const roleInput = row.querySelector('.acteur-role');
+
+        if (select.value) {
+          acteurs.push({
+            id: parseInt(select.value),
+            role: roleInput.value || null
+          });
+        }
+      });
+      return acteurs;
+    }
+
+    // ========== Modal functions ==========
+
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Nouveau film';
+      document.getElementById('filmForm').reset();
+      document.getElementById('filmId').value = '';
+
+      clearTomSelects();
+      document.getElementById('acteursContainer').innerHTML = '';
+      addActeurRow();
+
+      // Show first tab
+      const firstTab = document.querySelector('#filmModal .nav-link');
+      bootstrap.Tab.getOrCreateInstance(firstTab).show();
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('filmModal'));
+      }
+      modalInstance.show();
+    }
+
+    function closeModal() {
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    }
+
+    async function viewFilm(id) {
+      try {
+        const film = await filmsAPI.getById(id);
+
+        const content = document.getElementById('viewFilmContent');
+        content.innerHTML = `
+          <div class="row">
+            <div class="col-md-4 text-center">
+              ${film.image_url
+                ? `<img src="${film.image_url}" alt="${escapeHtml(film.titre)}" class="img-fluid rounded mb-3" style="max-height: 300px;">`
+                : '<div class="bg-secondary rounded d-flex align-items-center justify-content-center mb-3" style="height: 300px;"><i class="bi bi-film text-white" style="font-size: 4rem;"></i></div>'
+              }
+              ${film.bande_annonce_url
+                ? `<a href="${film.bande_annonce_url}" target="_blank" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-play-circle me-1"></i>Bande-annonce
+                  </a>`
+                : ''}
+            </div>
+            <div class="col-md-8">
+              <h4>${escapeHtml(film.titre)}</h4>
+              ${film.titre_original && film.titre_original !== film.titre
+                ? `<p class="text-muted fst-italic">${escapeHtml(film.titre_original)}</p>`
+                : ''}
+
+              <div class="mb-3">
+                ${film.annee_sortie ? `<span class="badge bg-secondary me-2">${film.annee_sortie}</span>` : ''}
+                ${film.duree ? `<span class="badge bg-secondary me-2">${film.duree} min</span>` : ''}
+                <span class="badge classification-badge classification-${film.classification || 'TP'}">${getClassificationLabel(film.classification)}</span>
+                <span class="badge bg-${getStatutColor(film.statut)} ms-2">${getStatutLabel(film.statut)}</span>
+              </div>
+
+              ${film.synopsis ? `<p>${escapeHtml(film.synopsis)}</p>` : ''}
+
+              ${film.realisateursRef?.length ? `
+                <p><strong><i class="bi bi-camera-reels me-1"></i>Realisateur(s):</strong>
+                  ${film.realisateursRef.map(r => r.prenom ? `${r.prenom} ${r.nom}` : r.nom).join(', ')}
+                </p>
+              ` : ''}
+
+              ${film.acteursRef?.length ? `
+                <p><strong><i class="bi bi-people me-1"></i>Casting:</strong></p>
+                <ul class="list-unstyled ps-3">
+                  ${film.acteursRef.map(a => `
+                    <li>
+                      ${a.prenom ? `${a.prenom} ${a.nom}` : a.nom}
+                      ${a.FilmActeur?.role ? `<span class="text-muted fst-italic"> - ${a.FilmActeur.role}</span>` : ''}
+                    </li>
+                  `).join('')}
+                </ul>
+              ` : ''}
+
+              ${film.genresRef?.length ? `
+                <p><strong><i class="bi bi-tags me-1"></i>Genres:</strong>
+                  ${film.genresRef.map(g => `<span class="badge bg-info me-1">${g.nom}</span>`).join('')}
+                </p>
+              ` : ''}
+
+              ${film.studiosRef?.length ? `
+                <p><strong><i class="bi bi-building me-1"></i>Studios:</strong>
+                  ${film.studiosRef.map(s => s.nom).join(', ')}
+                </p>
+              ` : ''}
+
+              <hr>
+
+              <div class="row small text-muted">
+                <div class="col-6">
+                  <p class="mb-1"><strong>Support:</strong> ${film.supportRef?.nom || '-'}</p>
+                  <p class="mb-1"><strong>Emplacement:</strong> ${film.emplacementRef?.libelle || '-'}</p>
+                  <p class="mb-1"><strong>Code-barres:</strong> ${film.code_barre || '-'}</p>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1"><strong>Etat:</strong> ${getEtatLabel(film.etat)}</p>
+                  <p class="mb-1"><strong>Emprunts:</strong> ${film.nb_emprunts || 0}</p>
+                  <p class="mb-1"><strong>Acquisition:</strong> ${film.date_acquisition || '-'}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('btnEditFromView').onclick = () => {
+          if (viewModalInstance) viewModalInstance.hide();
+          editFilm(id);
+        };
+
+        if (!viewModalInstance) {
+          viewModalInstance = new bootstrap.Modal(document.getElementById('viewFilmModal'));
+        }
+        viewModalInstance.show();
+      } catch (error) {
+        console.error('Error viewing film:', error);
+        showToast('Erreur lors du chargement du film', 'danger');
+      }
+    }
+
+    function getStatutColor(statut) {
+      const colors = {
+        'disponible': 'success',
+        'emprunte': 'warning',
+        'maintenance': 'info',
+        'perdu': 'danger',
+        'archive': 'secondary'
+      };
+      return colors[statut] || 'secondary';
+    }
+
+    function getStatutLabel(statut) {
+      const labels = {
+        'disponible': 'Disponible',
+        'emprunte': 'Emprunte',
+        'maintenance': 'Maintenance',
+        'perdu': 'Perdu',
+        'archive': 'Archive'
+      };
+      return labels[statut] || statut;
+    }
+
+    async function editFilm(id) {
+      try {
+        const film = await filmsAPI.getById(id);
+
+        document.getElementById('modalTitle').textContent = 'Modifier le film';
+        document.getElementById('filmId').value = film.id;
+
+        // General info
+        document.getElementById('titre').value = film.titre || '';
+        document.getElementById('titre_original').value = film.titre_original || '';
+        document.getElementById('annee_sortie').value = film.annee_sortie || '';
+        document.getElementById('duree').value = film.duree || '';
+        document.getElementById('synopsis').value = film.synopsis || '';
+        document.getElementById('code_barre').value = film.code_barre || '';
+        document.getElementById('ean').value = film.ean || '';
+        document.getElementById('image_url').value = film.image_url || '';
+        document.getElementById('bande_annonce_url').value = film.bande_annonce_url || '';
+
+        // Classification
+        document.getElementById('classification').value = film.classification || 'TP';
+
+        // Gestion
+        document.getElementById('support_id').value = film.support_id || '';
+        document.getElementById('emplacement_id').value = film.emplacement_id || '';
+        document.getElementById('statut').value = film.statut || 'disponible';
+        document.getElementById('etat').value = film.etat || 'bon';
+        document.getElementById('date_acquisition').value = film.date_acquisition || '';
+        document.getElementById('nb_emprunts').value = film.nb_emprunts || 0;
+        document.getElementById('prix_indicatif').value = film.prix_indicatif || '';
+        document.getElementById('prix_achat').value = film.prix_achat || '';
+        document.getElementById('notes').value = film.notes || '';
+
+        // Tom Selects
+        clearTomSelects();
+        if (film.genresRef) tsGenres.setValue(film.genresRef.map(g => g.id));
+        if (film.themesRef) tsThemes.setValue(film.themesRef.map(t => t.id));
+        if (film.languesRef) tsLangues.setValue(film.languesRef.map(l => l.id));
+        if (film.sousTitresRef) tsSousTitres.setValue(film.sousTitresRef.map(l => l.id));
+        if (film.realisateursRef) tsRealisateurs.setValue(film.realisateursRef.map(r => r.id));
+        if (film.studiosRef) tsStudios.setValue(film.studiosRef.map(s => s.id));
+
+        // Acteurs
+        const container = document.getElementById('acteursContainer');
+        container.innerHTML = '';
+        if (film.acteursRef?.length) {
+          film.acteursRef.forEach(a => {
+            addActeurRow(a.id, a.FilmActeur?.role || '');
+          });
+        } else {
+          addActeurRow();
+        }
+
+        // Show first tab
+        const firstTab = document.querySelector('#filmModal .nav-link');
+        bootstrap.Tab.getOrCreateInstance(firstTab).show();
+
+        if (!modalInstance) {
+          modalInstance = new bootstrap.Modal(document.getElementById('filmModal'));
+        }
+        modalInstance.show();
+      } catch (error) {
+        console.error('Error loading film for edit:', error);
+        showToast('Erreur lors du chargement du film', 'danger');
+      }
+    }
+
+    function deleteFilm(id, title) {
+      filmToDelete = id;
+      document.getElementById('deleteFilmTitle').textContent = title;
+      if (!deleteModalInstance) {
+        deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteModal'));
+      }
+      deleteModalInstance.show();
+    }
+
+    async function confirmDelete() {
+      if (!filmToDelete) return;
+
+      try {
+        await filmsAPI.delete(filmToDelete);
+        showToast('Film supprimé avec succès', 'success');
+
+        if (deleteModalInstance) deleteModalInstance.hide();
+        filmToDelete = null;
+        loadFilms();
+      } catch (error) {
+        console.error('Error deleting film:', error);
+        showToast('Erreur lors de la suppression', 'danger');
+      }
+    }
+
+    // Form submission
+    document.getElementById('filmForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement...';
+
+      try {
+        const id = document.getElementById('filmId').value;
+
+        const formData = {
+          titre: document.getElementById('titre').value,
+          titre_original: document.getElementById('titre_original').value || null,
+          annee_sortie: document.getElementById('annee_sortie').value || null,
+          duree: document.getElementById('duree').value || null,
+          synopsis: document.getElementById('synopsis').value || null,
+          ean: document.getElementById('ean').value || null,
+          image_url: document.getElementById('image_url').value || null,
+          bande_annonce_url: document.getElementById('bande_annonce_url').value || null,
+          classification: document.getElementById('classification').value,
+          support_id: document.getElementById('support_id').value || null,
+          emplacement_id: document.getElementById('emplacement_id').value || null,
+          statut: document.getElementById('statut').value,
+          etat: document.getElementById('etat').value,
+          date_acquisition: document.getElementById('date_acquisition').value || null,
+          prix_indicatif: document.getElementById('prix_indicatif').value || null,
+          prix_achat: document.getElementById('prix_achat').value || null,
+          notes: document.getElementById('notes').value || null,
+          genres: tsGenres.getValue().map(Number),
+          themes: tsThemes.getValue().map(Number),
+          langues: tsLangues.getValue().map(Number),
+          sous_titres: tsSousTitres.getValue().map(Number),
+          realisateurs: tsRealisateurs.getValue().map(Number),
+          studios: tsStudios.getValue().map(Number),
+          acteurs: getActeursFromForm()
+        };
+
+        if (!id) {
+          await filmsAPI.create(formData);
+          showToast('Film créé avec succès', 'success');
+        } else {
+          await filmsAPI.update(id, formData);
+          showToast('Film modifié avec succès', 'success');
+        }
+
+        closeModal();
+        loadFilms();
+      } catch (error) {
+        console.error('Error saving film:', error);
+        showToast('Erreur: ' + error.message, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    });
+
+    // Delete confirmation handler
+    document.getElementById('btnConfirmDelete').addEventListener('click', confirmDelete);
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type} position-fixed shadow`;
+      toast.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 250px; animation: slideIn 0.3s ease;';
+      toast.innerHTML = `
+        <div class="d-flex align-items-center">
+          <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Load on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTemplate('films');
+
+      // Charger les referentiels d'abord
+      await loadAllReferentiels();
+      initTomSelects();
+
+      loadGenresFilter();
+      loadSupportsFilter();
+      loadFilms();
+    });
+  </script>
+</body>
+</html>

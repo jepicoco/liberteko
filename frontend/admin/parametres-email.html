@@ -111,6 +111,9 @@
                 <div class="mb-3">
                   <label for="config_password" class="form-label">Mot de passe</label>
                   <input type="password" class="form-control" id="config_password" placeholder="••••••••">
+                  <small id="password_help" class="form-text text-warning" style="display: none;">
+                    <i class="bi bi-info-circle"></i> Requis pour tester la connexion
+                  </small>
                 </div>
               </div>
             </div>
@@ -248,8 +251,8 @@
                   ${!config.actif ? '<span class="badge bg-warning">Inactif</span>' : ''}
                 </div>
               </div>
-              <p class="mb-2"><i class="bi bi-envelope"></i> ${config.from_email}</p>
-              ${config.from_name ? `<p class="mb-2 text-muted small">${config.from_name}</p>` : ''}
+              <p class="mb-2"><i class="bi bi-envelope"></i> ${config.email_expediteur || ''}</p>
+              ${config.nom_expediteur && config.nom_expediteur !== 'undefined' ? `<p class="mb-2 text-muted small">${config.nom_expediteur}</p>` : ''}
               <div class="d-flex gap-2 mt-3">
                 <button class="btn btn-sm btn-outline-primary" onclick="editConfig(${config.id})"><i class="bi bi-pencil"></i></button>
                 <button class="btn btn-sm btn-outline-info" onclick="openTestModal(${config.id})"><i class="bi bi-send"></i> Test</button>
@@ -268,6 +271,7 @@
       document.getElementById('config_id').value = '';
       document.getElementById('config_actif').checked = true;
       document.getElementById('config_secure').checked = true;
+      document.getElementById('password_help').style.display = 'none';
       modalConfig.show();
     }
 
@@ -282,10 +286,11 @@
       document.getElementById('config_user').value = config.smtp_user || '';
       document.getElementById('config_password').value = '';
       document.getElementById('config_secure').checked = config.smtp_secure !== false;
-      document.getElementById('config_from_email').value = config.from_email || '';
-      document.getElementById('config_from_name').value = config.from_name || '';
+      document.getElementById('config_from_email').value = config.email_expediteur || '';
+      document.getElementById('config_from_name').value = config.nom_expediteur || '';
       document.getElementById('config_par_defaut').checked = config.par_defaut || false;
       document.getElementById('config_actif').checked = config.actif !== false;
+      document.getElementById('password_help').style.display = 'block';
       modalConfig.show();
     }
 
@@ -297,8 +302,8 @@
         smtp_port: parseInt(document.getElementById('config_port').value),
         smtp_user: document.getElementById('config_user').value || null,
         smtp_secure: document.getElementById('config_secure').checked,
-        from_email: document.getElementById('config_from_email').value,
-        from_name: document.getElementById('config_from_name').value || null,
+        email_expediteur: document.getElementById('config_from_email').value,
+        nom_expediteur: document.getElementById('config_from_name').value || null,
         par_defaut: document.getElementById('config_par_defaut').checked,
         actif: document.getElementById('config_actif').checked
       };
@@ -322,13 +327,28 @@
     }
 
     async function testConnection() {
+      const configId = document.getElementById('config_id').value;
+      const password = document.getElementById('config_password').value;
+
+      // Si on édite une config existante et pas de nouveau mot de passe, avertir
+      if (configId && !password) {
+        showToast('Entrez le mot de passe pour tester la connexion', 'error');
+        return;
+      }
+
       const data = {
         smtp_host: document.getElementById('config_host').value,
         smtp_port: parseInt(document.getElementById('config_port').value),
         smtp_user: document.getElementById('config_user').value || null,
-        smtp_password: document.getElementById('config_password').value || null,
+        smtp_password: password || null,
         smtp_secure: document.getElementById('config_secure').checked
       };
+
+      if (!data.smtp_host || !data.smtp_user || !data.smtp_password) {
+        showToast('Remplissez les champs SMTP (serveur, utilisateur, mot de passe)', 'error');
+        return;
+      }
+
       try {
         const response = await fetch('/api/parametres/configurations-email/test-connection', {
           method: 'POST',
@@ -339,7 +359,7 @@
         if (result.success) {
           showToast('Connexion reussie!', 'success');
         } else {
-          showToast('Echec: ' + (result.error || 'Erreur inconnue'), 'error');
+          showToast('Echec: ' + (result.message || result.error || 'Erreur inconnue'), 'error');
         }
       } catch (error) {
         showToast('Erreur de test', 'error');
@@ -360,7 +380,7 @@
         const response = await fetch(`/api/parametres/configurations-email/${currentTestConfigId}/send-test`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getAuthToken()}` },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({ destinataire: email })
         });
         const result = await response.json();
         document.getElementById('test-result').innerHTML = result.success

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Livres - Ludothèque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+  <style>
+    .badge-ref { font-size: 0.75rem; margin-right: 0.25rem; margin-bottom: 0.25rem; }
+    .ts-wrapper { min-width: 100%; }
+    .ts-control { min-height: 38px; }
+    .livre-row td { vertical-align: middle; }
+    .livre-cover {
+      width: 50px;
+      height: 70px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .livre-cover-placeholder {
+      width: 50px;
+      height: 70px;
+      background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (généré par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (généré par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="mb-4">
+          <h1><i class="bi bi-book me-2"></i>Gestion des Livres</h1>
+        </div>
+
+        <!-- Actions Bar -->
+        <div class="card mb-3">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+              <div class="d-flex gap-2">
+                <button class="btn btn-primary" onclick="openCreateModal()">
+                  <i class="bi bi-plus-circle"></i> Nouveau livre
+                </button>
+                <button class="btn btn-success" onclick="openLookupModal()">
+                  <i class="bi bi-upc-scan"></i> Scanner ISBN
+                </button>
+                <button class="btn btn-secondary" onclick="loadLivres()">
+                  <i class="bi bi-arrow-clockwise"></i> Actualiser
+                </button>
+              </div>
+              <div class="d-flex gap-2 flex-wrap">
+                <input
+                  type="text"
+                  id="searchInput"
+                  class="form-control"
+                  placeholder="Rechercher..."
+                  style="width: 200px;"
+                  onkeyup="handleSearch()"
+                >
+                <select id="genreFilter" class="form-select" onchange="loadLivres()" style="width: 150px;">
+                  <option value="">Tous genres</option>
+                </select>
+                <select id="formatFilter" class="form-select" onchange="loadLivres()" style="width: 140px;">
+                  <option value="">Tous formats</option>
+                </select>
+                <select id="statutFilter" class="form-select" onchange="loadLivres()" style="width: 140px;">
+                  <option value="">Tous statuts</option>
+                  <option value="disponible">Disponible</option>
+                  <option value="emprunte">Emprunté</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="perdu">Perdu</option>
+                  <option value="archive">Archivé</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Livres List -->
+        <div class="card">
+          <div class="card-body">
+            <div id="livresList">
+              <div class="text-center p-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2">Chargement des livres...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal fade" id="livreModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouveau livre</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="livreForm">
+            <input type="hidden" id="livreId">
+
+            <!-- Titre -->
+            <div class="mb-3">
+              <label for="titre" class="form-label">Titre *</label>
+              <input type="text" id="titre" class="form-control" required>
+            </div>
+
+            <!-- Sous-titre et Tome -->
+            <div class="row mb-3">
+              <div class="col-md-8">
+                <label for="sous_titre" class="form-label">Sous-titre</label>
+                <input type="text" id="sous_titre" class="form-control">
+              </div>
+              <div class="col-md-4">
+                <label for="tome" class="form-label">Tome</label>
+                <input type="number" id="tome" class="form-control" min="1">
+              </div>
+            </div>
+
+            <!-- Infos de base -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="annee_publication" class="form-label">Année de publication</label>
+                <input type="number" id="annee_publication" class="form-control" min="1000" max="2100">
+              </div>
+              <div class="col-md-4">
+                <label for="nb_pages" class="form-label">Nombre de pages</label>
+                <input type="number" id="nb_pages" class="form-control" min="1">
+              </div>
+              <div class="col-md-4">
+                <label for="isbn" class="form-label">ISBN</label>
+                <input type="text" id="isbn" class="form-control" placeholder="978-...">
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="text-muted mb-3"><i class="bi bi-tags"></i> Classification</h6>
+
+            <!-- Auteurs et Éditeurs -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="select_auteurs" class="form-label">Auteur(s)</label>
+                <select id="select_auteurs" multiple placeholder="Sélectionnez..."></select>
+              </div>
+              <div class="col-md-6">
+                <label for="select_editeurs" class="form-label">Éditeur(s)</label>
+                <select id="select_editeurs" multiple placeholder="Sélectionnez..."></select>
+              </div>
+            </div>
+
+            <!-- Genres et Thèmes -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="select_genres" class="form-label">Genres</label>
+                <select id="select_genres" multiple placeholder="Sélectionnez..."></select>
+              </div>
+              <div class="col-md-6">
+                <label for="select_themes" class="form-label">Thèmes</label>
+                <select id="select_themes" multiple placeholder="Sélectionnez..."></select>
+              </div>
+            </div>
+
+            <!-- Langues et Collection -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="select_langues" class="form-label">Langues</label>
+                <select id="select_langues" multiple placeholder="Sélectionnez..."></select>
+              </div>
+              <div class="col-md-4">
+                <label for="select_collection" class="form-label">Collection</label>
+                <select id="select_collection" placeholder="Sélectionnez..."></select>
+              </div>
+              <div class="col-md-4">
+                <label for="format_id" class="form-label">Format</label>
+                <select id="format_id" class="form-select">
+                  <option value="">-- Sélectionner --</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Emplacement -->
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="emplacement_id" class="form-label">Emplacement</label>
+                <select id="emplacement_id" class="form-select">
+                  <option value="">-- Sélectionner --</option>
+                </select>
+              </div>
+            </div>
+
+            <hr>
+
+            <!-- Résumé -->
+            <div class="mb-3">
+              <label for="resume" class="form-label">Résumé</label>
+              <textarea id="resume" class="form-control" rows="3"></textarea>
+            </div>
+
+            <!-- Statut et notes -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label for="statut" class="form-label">Statut *</label>
+                <select id="statut" class="form-select" required>
+                  <option value="disponible">Disponible</option>
+                  <option value="emprunte">Emprunté</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="perdu">Perdu</option>
+                  <option value="archive">Archivé</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="etat" class="form-label">État</label>
+                <select id="etat" class="form-select">
+                  <option value="neuf">Neuf</option>
+                  <option value="tres_bon">Très bon</option>
+                  <option value="bon" selected>Bon</option>
+                  <option value="acceptable">Acceptable</option>
+                  <option value="mauvais">Mauvais</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="date_acquisition" class="form-label">Date d'acquisition</label>
+                <input type="date" id="date_acquisition" class="form-control">
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="notes" class="form-label">Notes</label>
+                <textarea id="notes" class="form-control" rows="2"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label for="image_url" class="form-label">URL de la couverture</label>
+                <input type="url" id="image_url" class="form-control" placeholder="https://...">
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" form="livreForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISBN Lookup Modal -->
+  <div class="modal fade" id="lookupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="bi bi-upc-scan"></i> Recherche par ISBN</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <label class="form-label">Code ISBN ou Titre du livre</label>
+              <div class="input-group">
+                <input type="text" id="lookupInput" class="form-control form-control-lg"
+                       placeholder="Ex: 978-2-07-036822-8 ou Le Petit Prince"
+                       onkeyup="handleLookupKeyup(event)">
+                <button class="btn btn-success" type="button" onclick="doLookup()">
+                  <i class="bi bi-search"></i> Rechercher
+                </button>
+              </div>
+              <small class="text-muted">Scannez un code-barres ISBN ou saisissez le titre</small>
+            </div>
+          </div>
+
+          <div id="lookupLoading" class="d-none text-center py-4">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Recherche en cours...</p>
+          </div>
+
+          <div id="lookupResults" class="d-none">
+            <div class="alert alert-success mb-3">
+              <i class="bi bi-check-circle"></i> Livre trouvé !
+            </div>
+            <div class="card">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3 text-center">
+                    <img id="lookupImage" src="" alt="Couverture" class="img-fluid rounded" style="max-height: 150px;">
+                  </div>
+                  <div class="col-md-9">
+                    <h4 id="lookupTitre" class="mb-2"></h4>
+                    <p class="text-muted mb-2">
+                      <i class="bi bi-person"></i> <span id="lookupAuteur">-</span> |
+                      <i class="bi bi-building"></i> <span id="lookupEditeur">-</span> |
+                      <i class="bi bi-calendar"></i> <span id="lookupAnnee">-</span>
+                    </p>
+                    <p id="lookupDescription" class="small" style="max-height: 100px; overflow-y: auto;"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="lookupNotFound" class="d-none">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i> Aucun résultat trouvé.
+            </div>
+          </div>
+
+          <div id="lookupError" class="d-none">
+            <div class="alert alert-danger">
+              <i class="bi bi-x-circle"></i> <span id="lookupErrorMsg"></span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary d-none" id="btnUseResults" onclick="useResults()">
+            <i class="bi bi-plus-circle"></i> Utiliser ces infos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let livres = [];
+    let searchTimeout = null;
+    let modalInstance = null;
+
+    // Tom-Select instances
+    let tsGenres, tsThemes, tsLangues, tsAuteurs, tsEditeurs, tsCollection;
+
+    // Référentiels cache
+    let refCache = {
+      genres: [],
+      themes: [],
+      langues: [],
+      auteurs: [],
+      editeurs: [],
+      formats: [],
+      collections: [],
+      emplacements: []
+    };
+
+    // Load livres
+    async function loadLivres() {
+      try {
+        const statut = document.getElementById('statutFilter').value;
+        const genreId = document.getElementById('genreFilter').value;
+        const formatId = document.getElementById('formatFilter').value;
+        const search = document.getElementById('searchInput').value;
+
+        const params = {};
+        if (statut) params.statut = statut;
+        if (genreId) params.genre_id = genreId;
+        if (formatId) params.format_id = formatId;
+        if (search) params.search = search;
+
+        const data = await livresAPI.getAll(params);
+        livres = data.livres || [];
+        renderLivres(livres);
+      } catch (error) {
+        console.error('Error loading livres:', error);
+        document.getElementById('livresList').innerHTML = `
+          <div class="alert alert-danger">
+            Erreur lors du chargement des livres: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    // Load référentiels
+    async function loadReferentiels() {
+      try {
+        const [genres, themes, langues, auteurs, editeurs, formats, collections, emplacements] = await Promise.all([
+          livresAPI.getGenres(),
+          referentielsAPI.getThemes(),
+          referentielsAPI.getLangues(),
+          referentielsAPI.getAuteurs(),
+          referentielsAPI.getEditeurs(),
+          livresAPI.getFormats(),
+          livresAPI.getCollections(),
+          livresAPI.getEmplacements()
+        ]);
+
+        refCache.genres = genres.genres || genres || [];
+        refCache.themes = themes.items || themes || [];
+        refCache.langues = langues.items || langues || [];
+        refCache.auteurs = auteurs.items || auteurs || [];
+        refCache.editeurs = editeurs.items || editeurs || [];
+        refCache.formats = formats.formats || formats || [];
+        refCache.collections = collections.collections || collections || [];
+        refCache.emplacements = emplacements.emplacements || emplacements || [];
+
+        populateFilters();
+        populateFormSelects();
+      } catch (error) {
+        console.error('Error loading référentiels:', error);
+      }
+    }
+
+    function populateFilters() {
+      const genreSelect = document.getElementById('genreFilter');
+      genreSelect.innerHTML = '<option value="">Tous genres</option>';
+      refCache.genres.forEach(g => {
+        genreSelect.innerHTML += `<option value="${g.id}">${g.nom}</option>`;
+      });
+
+      const formatSelect = document.getElementById('formatFilter');
+      formatSelect.innerHTML = '<option value="">Tous formats</option>';
+      refCache.formats.forEach(f => {
+        formatSelect.innerHTML += `<option value="${f.id}">${f.nom}</option>`;
+      });
+    }
+
+    function populateFormSelects() {
+      const formatSelect = document.getElementById('format_id');
+      formatSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+      refCache.formats.forEach(f => {
+        formatSelect.innerHTML += `<option value="${f.id}">${f.nom}</option>`;
+      });
+
+      const emplacementSelect = document.getElementById('emplacement_id');
+      emplacementSelect.innerHTML = '<option value="">-- Sélectionner --</option>';
+      refCache.emplacements.forEach(e => {
+        emplacementSelect.innerHTML += `<option value="${e.id}">${e.libelle}</option>`;
+      });
+    }
+
+    function initTomSelects() {
+      tsGenres = new TomSelect('#select_genres', {
+        plugins: ['remove_button'],
+        options: refCache.genres.map(g => ({ value: g.id, text: g.nom }))
+      });
+
+      tsThemes = new TomSelect('#select_themes', {
+        plugins: ['remove_button'],
+        options: refCache.themes.map(t => ({ value: t.id, text: t.nom }))
+      });
+
+      tsLangues = new TomSelect('#select_langues', {
+        plugins: ['remove_button'],
+        options: refCache.langues.map(l => ({ value: l.id, text: l.nom }))
+      });
+
+      tsAuteurs = new TomSelect('#select_auteurs', {
+        plugins: ['remove_button'],
+        create: true,
+        options: refCache.auteurs.map(a => ({ value: a.id, text: a.prenom ? `${a.prenom} ${a.nom}` : a.nom }))
+      });
+
+      tsEditeurs = new TomSelect('#select_editeurs', {
+        plugins: ['remove_button'],
+        create: true,
+        options: refCache.editeurs.map(e => ({ value: e.id, text: e.nom }))
+      });
+
+      tsCollection = new TomSelect('#select_collection', {
+        options: [{ value: '', text: '-- Aucune --' }, ...refCache.collections.map(c => ({ value: c.id, text: c.nom }))],
+        allowEmptyOption: true
+      });
+    }
+
+    function clearTomSelects() {
+      [tsGenres, tsThemes, tsLangues, tsAuteurs, tsEditeurs].forEach(ts => {
+        if (ts) ts.clear();
+      });
+      if (tsCollection) tsCollection.setValue('');
+    }
+
+    function renderLivres(list) {
+      const container = document.getElementById('livresList');
+
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <p class="text-center text-secondary p-4">
+            <i class="bi bi-book fs-1 d-block mb-2"></i>
+            Aucun livre trouvé
+          </p>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th style="width: 60px;"></th>
+              <th>Titre</th>
+              <th>Auteur(s)</th>
+              <th>Année</th>
+              <th>Format</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(livre => `
+              <tr class="livre-row">
+                <td>
+                  ${livre.image_url
+                    ? `<img src="${livre.image_url}" alt="${escapeHtml(livre.titre)}" class="livre-cover" onerror="this.parentElement.innerHTML='<div class=livre-cover-placeholder><i class=bi bi-book></i></div>'">`
+                    : '<div class="livre-cover-placeholder"><i class="bi bi-book"></i></div>'
+                  }
+                </td>
+                <td>
+                  <strong>${escapeHtml(livre.titre)}</strong>
+                  ${livre.tome ? `<span class="badge bg-secondary ms-1">T.${livre.tome}</span>` : ''}
+                  ${livre.sous_titre ? `<br><small class="text-muted">${escapeHtml(livre.sous_titre)}</small>` : ''}
+                </td>
+                <td>${formatAuteurs(livre)}</td>
+                <td>${livre.annee_publication || '-'}</td>
+                <td>${livre.formatRef?.nom || '-'}</td>
+                <td>${formatStatut(livre.statut)}</td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary" onclick="viewLivre(${livre.id})" title="Voir">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="editLivre(${livre.id})" title="Modifier">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteLivre(${livre.id})" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>
+      `;
+    }
+
+    function formatAuteurs(livre) {
+      if (livre.auteursRef && livre.auteursRef.length > 0) {
+        return livre.auteursRef.map(a => a.prenom ? `${a.prenom} ${a.nom}` : a.nom).join(', ');
+      }
+      return '-';
+    }
+
+    function formatStatut(statut) {
+      const map = {
+        'disponible': '<span class="badge bg-success">Disponible</span>',
+        'emprunte': '<span class="badge bg-warning text-dark">Emprunté</span>',
+        'maintenance': '<span class="badge bg-info">Maintenance</span>',
+        'perdu': '<span class="badge bg-danger">Perdu</span>',
+        'archive': '<span class="badge bg-secondary">Archivé</span>'
+      };
+      return map[statut] || statut;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function handleSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => loadLivres(), 500);
+    }
+
+    // Modal functions
+    function openCreateModal() {
+      document.getElementById('modalTitle').textContent = 'Nouveau livre';
+      document.getElementById('livreForm').reset();
+      document.getElementById('livreId').value = '';
+      clearTomSelects();
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('livreModal'));
+      }
+      modalInstance.show();
+    }
+
+    async function editLivre(id) {
+      try {
+        const livre = await livresAPI.getById(id);
+
+        document.getElementById('modalTitle').textContent = 'Modifier le livre';
+        document.getElementById('livreId').value = livre.id;
+        document.getElementById('titre').value = livre.titre || '';
+        document.getElementById('sous_titre').value = livre.sous_titre || '';
+        document.getElementById('tome').value = livre.tome || '';
+        document.getElementById('annee_publication').value = livre.annee_publication || '';
+        document.getElementById('nb_pages').value = livre.nb_pages || '';
+        document.getElementById('isbn').value = livre.isbn || '';
+        document.getElementById('resume').value = livre.resume || '';
+        document.getElementById('format_id').value = livre.format_id || '';
+        document.getElementById('emplacement_id').value = livre.emplacement_id || '';
+        document.getElementById('statut').value = livre.statut || 'disponible';
+        document.getElementById('etat').value = livre.etat || 'bon';
+        document.getElementById('date_acquisition').value = livre.date_acquisition || '';
+        document.getElementById('notes').value = livre.notes || '';
+        document.getElementById('image_url').value = livre.image_url || '';
+
+        clearTomSelects();
+        if (livre.genresRef) tsGenres.setValue(livre.genresRef.map(g => g.id));
+        if (livre.themesRef) tsThemes.setValue(livre.themesRef.map(t => t.id));
+        if (livre.languesRef) tsLangues.setValue(livre.languesRef.map(l => l.id));
+        if (livre.auteursRef) tsAuteurs.setValue(livre.auteursRef.map(a => a.id));
+        if (livre.editeursRef) tsEditeurs.setValue(livre.editeursRef.map(e => e.id));
+        if (livre.collection_id) tsCollection.setValue(livre.collection_id);
+
+        if (!modalInstance) {
+          modalInstance = new bootstrap.Modal(document.getElementById('livreModal'));
+        }
+        modalInstance.show();
+      } catch (error) {
+        showToast('Erreur lors du chargement: ' + error.message, 'danger');
+      }
+    }
+
+    async function viewLivre(id) {
+      try {
+        const livre = await livresAPI.getById(id);
+        // TODO: Implement view modal like films.html
+        editLivre(id);
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    async function deleteLivre(id) {
+      if (!confirm('Êtes-vous sûr de vouloir supprimer ce livre ?')) return;
+
+      try {
+        await livresAPI.delete(id);
+        showToast('Livre supprimé avec succès', 'success');
+        loadLivres();
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    // Form submission
+    document.getElementById('livreForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Enregistrement...';
+
+      try {
+        const id = document.getElementById('livreId').value;
+
+        const formData = {
+          titre: document.getElementById('titre').value,
+          sous_titre: document.getElementById('sous_titre').value || null,
+          tome: document.getElementById('tome').value || null,
+          annee_publication: document.getElementById('annee_publication').value || null,
+          nb_pages: document.getElementById('nb_pages').value || null,
+          isbn: document.getElementById('isbn').value || null,
+          resume: document.getElementById('resume').value || null,
+          image_url: document.getElementById('image_url').value || null,
+          format_id: document.getElementById('format_id').value || null,
+          collection_id: tsCollection.getValue() || null,
+          emplacement_id: document.getElementById('emplacement_id').value || null,
+          statut: document.getElementById('statut').value,
+          etat: document.getElementById('etat').value,
+          date_acquisition: document.getElementById('date_acquisition').value || null,
+          notes: document.getElementById('notes').value || null,
+          genres: tsGenres.getValue().map(Number),
+          themes: tsThemes.getValue().map(Number),
+          langues: tsLangues.getValue().map(Number),
+          auteurs: tsAuteurs.getValue().map(Number),
+          editeurs: tsEditeurs.getValue().map(Number)
+        };
+
+        if (!id) {
+          await livresAPI.create(formData);
+          showToast('Livre créé avec succès', 'success');
+        } else {
+          await livresAPI.update(id, formData);
+          showToast('Livre modifié avec succès', 'success');
+        }
+
+        modalInstance.hide();
+        loadLivres();
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'danger');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Enregistrer';
+      }
+    });
+
+    // ISBN Lookup
+    let lookupModalInstance = null;
+    let currentLookupResult = null;
+
+    function openLookupModal() {
+      resetLookupUI();
+      if (!lookupModalInstance) {
+        lookupModalInstance = new bootstrap.Modal(document.getElementById('lookupModal'));
+      }
+      lookupModalInstance.show();
+      document.getElementById('lookupInput').focus();
+    }
+
+    function resetLookupUI() {
+      document.getElementById('lookupInput').value = '';
+      document.getElementById('lookupLoading').classList.add('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+      currentLookupResult = null;
+    }
+
+    function handleLookupKeyup(event) {
+      if (event.key === 'Enter') doLookup();
+    }
+
+    async function doLookup() {
+      const input = document.getElementById('lookupInput').value.trim();
+      if (!input) {
+        showToast('Veuillez saisir un ISBN ou un titre', 'warning');
+        return;
+      }
+
+      document.getElementById('lookupLoading').classList.remove('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+
+      try {
+        // TODO: Implement Open Library lookup
+        document.getElementById('lookupLoading').classList.add('d-none');
+        document.getElementById('lookupNotFound').classList.remove('d-none');
+      } catch (error) {
+        document.getElementById('lookupLoading').classList.add('d-none');
+        document.getElementById('lookupError').classList.remove('d-none');
+        document.getElementById('lookupErrorMsg').textContent = error.message;
+      }
+    }
+
+    function useResults() {
+      if (!currentLookupResult) return;
+      lookupModalInstance.hide();
+      openCreateModal();
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `alert alert-${type} position-fixed shadow`;
+      toast.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 250px; animation: slideIn 0.3s ease;';
+      toast.innerHTML = `
+        <div class="d-flex align-items-center">
+          <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'x-circle' : 'info-circle'} me-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTemplate('livres');
+      await loadReferentiels();
+      initTomSelects();
+      loadLivres();
+    });
+  </script>
+</body>
+</html>

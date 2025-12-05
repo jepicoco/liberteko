@@ -1,12 +1,47 @@
 /**
  * Import Controller
  * Gestion de l'import de jeux depuis des fichiers CSV (MyLudo, etc.)
+ * Support de la base normalisee (referentiels)
  */
 
-const { Jeu } = require('../models');
+const {
+  Jeu,
+  Categorie,
+  Theme,
+  Mecanisme,
+  Langue,
+  Editeur,
+  Auteur,
+  Illustrateur,
+  Gamme,
+  EmplacementJeu,
+  JeuCategorie,
+  JeuTheme,
+  JeuMecanisme,
+  JeuLangue,
+  JeuEditeur,
+  JeuAuteur,
+  JeuIllustrateur
+} = require('../models');
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
+
+// Mapping des codes de langue vers noms complets
+const LANGUE_MAPPING = {
+  'fr': 'Francais',
+  'en': 'Anglais',
+  'de': 'Allemand',
+  'es': 'Espagnol',
+  'it': 'Italien',
+  'nl': 'Neerlandais',
+  'pt': 'Portugais',
+  'pl': 'Polonais',
+  'ru': 'Russe',
+  'ja': 'Japonais',
+  'zh': 'Chinois',
+  'ko': 'Coreen'
+};
 
 /**
  * Parse le contenu CSV et retourne les donnees
@@ -40,40 +75,94 @@ function parseCSV(filePath, separator = ';') {
 }
 
 /**
- * Suggere un mapping automatique des colonnes MyLudo vers le modele Jeu
+ * Mapping des colonnes CSV MyLudo vers les champs du modele Jeu
+ */
+const CSV_TO_JEU_MAPPING = {
+  // Identifiants
+  'ID': 'id_externe',
+  'EAN': 'ean',
+
+  // Informations de base
+  'Titre': 'titre',
+  'Sous-titre': 'sous_titre',
+  'Type': 'type_jeu',
+  'Édition': 'annee_sortie',
+  'Edition': 'annee_sortie',
+
+  // Personnes
+  'Éditeur(s)': 'editeur',
+  'Editeur(s)': 'editeur',
+  'Auteur(s)': 'auteur',
+  'Illustrateur(s)': 'illustrateur',
+
+  // Caracteristiques de jeu
+  'Joueur(s)': 'joueurs',
+  'Durée': 'duree_partie',
+  'Duree': 'duree_partie',
+  'Age(s)': 'age_min',
+
+  // Multi-valeurs
+  'Langues': 'langues',
+  'Catégorie(s)': 'categories',
+  'Categorie(s)': 'categories',
+  'Thème(s)': 'themes',
+  'Theme(s)': 'themes',
+  'Mécanisme(s)': 'mecanismes',
+  'Mecanisme(s)': 'mecanismes',
+  'Univers': 'univers',
+  'Gamme(s)': 'gamme',
+
+  // Physique
+  'Dimensions': 'dimensions',
+  'Poids': 'poids',
+
+  // Prix
+  'Prix indicatif': 'prix_indicatif',
+  'Prix d\'achat': 'prix_achat',
+  'Gratuit': 'gratuit',
+
+  // Gestion
+  'Date d\'acquisition': 'date_acquisition',
+  'Propriétaire': 'proprietaire',
+  'Proprietaire': 'proprietaire',
+  'Cadeaux': 'cadeau',
+  'Emplacement': 'emplacement',
+  'État': 'etat',
+  'Etat': 'etat',
+
+  // Flags
+  'Privé': 'prive',
+  'Prive': 'prive',
+  'Protégé': 'protege',
+  'Protege': 'protege',
+  'Organisé': 'organise',
+  'Organise': 'organise',
+  'Personnalisé': 'personnalise',
+  'Personnalise': 'personnalise',
+  'Figurines peintes': 'figurines_peintes',
+
+  // Notes et references
+  'Commentaire': 'notes',
+  'Référence': 'reference',
+  'Reference': 'reference',
+  'Référent': 'referent',
+  'Referent': 'referent',
+
+  // Statistiques
+  'Dernière partie': 'derniere_partie',
+  'Derniere partie': 'derniere_partie'
+};
+
+/**
+ * Suggere un mapping automatique des colonnes CSV vers le modele Jeu
  */
 function suggestMapping(columns) {
   const mapping = {};
-  const suggestions = {
-    'Titre': 'titre',
-    'Éditeur(s)': 'editeur',
-    'Editeur(s)': 'editeur',
-    'Auteur(s)': 'auteur',
-    'Joueur(s)': 'joueurs',
-    'Durée': 'duree_partie',
-    'Duree': 'duree_partie',
-    'Age(s)': 'age_min',
-    'Catégorie(s)': 'categorie',
-    'Categorie(s)': 'categorie',
-    'Thème(s)': 'themes',
-    'Theme(s)': 'themes',
-    'Date d\'acquisition': 'date_acquisition',
-    'Prix d\'achat': 'prix_achat',
-    'Emplacement': 'emplacement',
-    'Commentaire': 'notes',
-    'EAN': 'ean',
-    'Édition': 'annee_sortie',
-    'Edition': 'annee_sortie',
-    'Sous-titre': 'sous_titre',
-    'Dimensions': 'dimensions',
-    'Univers': 'univers',
-    'Langues': 'langues'
-  };
 
   columns.forEach(col => {
     const normalized = col.trim();
-    if (suggestions[normalized]) {
-      mapping[normalized] = suggestions[normalized];
+    if (CSV_TO_JEU_MAPPING[normalized]) {
+      mapping[normalized] = CSV_TO_JEU_MAPPING[normalized];
     }
   });
 
@@ -172,6 +261,305 @@ function parseDate(value) {
 }
 
 /**
+ * Parse un booleen depuis CSV (oui/non, true/false, 0/1)
+ */
+function parseBoolean(value) {
+  if (!value) return false;
+  const str = value.toString().trim().toLowerCase();
+  return str === 'oui' || str === 'true' || str === '1' || str === 'yes';
+}
+
+/**
+ * Parse le prix (gere les virgules comme separateur decimal)
+ */
+function parsePrix(value) {
+  if (!value) return null;
+  const str = value.toString().trim().replace(',', '.').replace(/[^\d.]/g, '');
+  const prix = parseFloat(str);
+  return isNaN(prix) ? null : prix;
+}
+
+/**
+ * Parse le type de jeu
+ */
+function parseTypeJeu(value) {
+  if (!value) return 'basegame';
+  const str = value.toString().trim().toLowerCase();
+
+  const mapping = {
+    'basegame': 'basegame',
+    'base': 'basegame',
+    'jeu de base': 'basegame',
+    'extension': 'extension',
+    'ext': 'extension',
+    'standalone': 'standalone',
+    'stand-alone': 'standalone',
+    'accessoire': 'accessoire',
+    'accessory': 'accessoire'
+  };
+
+  return mapping[str] || 'basegame';
+}
+
+/**
+ * Parse l'etat du jeu
+ */
+function parseEtat(value) {
+  if (!value) return null;
+  const str = value.toString().trim().toLowerCase();
+
+  const mapping = {
+    'neuf': 'neuf',
+    'new': 'neuf',
+    'tres bon': 'tres_bon',
+    'très bon': 'tres_bon',
+    'tres_bon': 'tres_bon',
+    'excellent': 'tres_bon',
+    'bon': 'bon',
+    'good': 'bon',
+    'acceptable': 'acceptable',
+    'correct': 'acceptable',
+    'mauvais': 'mauvais',
+    'bad': 'mauvais',
+    'poor': 'mauvais'
+  };
+
+  return mapping[str] || null;
+}
+
+/**
+ * Parse une chaine multi-valeurs (separees par virgules)
+ */
+function parseMultiValue(value) {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(v => v.trim())
+    .filter(v => v && v.length > 0);
+}
+
+/**
+ * Trouve ou cree un element dans une table de reference
+ */
+async function findOrCreateRef(Model, nom, extraData = {}) {
+  if (!nom || nom.trim().length === 0) return null;
+
+  const cleanNom = nom.trim();
+
+  try {
+    const [instance] = await Model.findOrCreate({
+      where: { nom: cleanNom },
+      defaults: { nom: cleanNom, actif: true, ...extraData }
+    });
+    return instance;
+  } catch (error) {
+    // En cas d'erreur (ex: contrainte unique), essayer de retrouver
+    const existing = await Model.findOne({ where: { nom: cleanNom } });
+    return existing;
+  }
+}
+
+/**
+ * Trouve ou cree une langue (gere les codes et noms)
+ */
+async function findOrCreateLangue(value) {
+  if (!value || value.trim().length === 0) return null;
+
+  let nom = value.trim().toLowerCase();
+  let code = null;
+
+  // Verifier si c'est un code
+  if (LANGUE_MAPPING[nom]) {
+    code = nom;
+    nom = LANGUE_MAPPING[nom];
+  } else {
+    // Chercher si c'est un nom qui correspond a un code
+    for (const [c, n] of Object.entries(LANGUE_MAPPING)) {
+      if (n.toLowerCase() === nom) {
+        code = c;
+        nom = n;
+        break;
+      }
+    }
+  }
+
+  // Capitaliser le nom
+  nom = nom.charAt(0).toUpperCase() + nom.slice(1);
+
+  try {
+    const [instance] = await Langue.findOrCreate({
+      where: { nom },
+      defaults: { nom, code, actif: true }
+    });
+    return instance;
+  } catch (error) {
+    const existing = await Langue.findOne({ where: { nom } });
+    return existing;
+  }
+}
+
+/**
+ * Trouve ou cree un emplacement
+ */
+async function findOrCreateEmplacement(libelle) {
+  if (!libelle || libelle.trim().length === 0) return null;
+
+  const cleanLibelle = libelle.trim();
+
+  try {
+    const [instance] = await EmplacementJeu.findOrCreate({
+      where: { libelle: cleanLibelle },
+      defaults: { libelle: cleanLibelle, actif: true }
+    });
+    return instance;
+  } catch (error) {
+    const existing = await EmplacementJeu.findOne({ where: { libelle: cleanLibelle } });
+    return existing;
+  }
+}
+
+/**
+ * Trouve ou cree une gamme
+ */
+async function findOrCreateGamme(nom) {
+  if (!nom || nom.trim().length === 0) return null;
+
+  const cleanNom = nom.trim();
+
+  try {
+    const [instance] = await Gamme.findOrCreate({
+      where: { nom: cleanNom },
+      defaults: { nom: cleanNom, actif: true }
+    });
+    return instance;
+  } catch (error) {
+    const existing = await Gamme.findOne({ where: { nom: cleanNom } });
+    return existing;
+  }
+}
+
+/**
+ * Cree les relations many-to-many pour un jeu
+ */
+async function createJeuRelations(jeu, rawData, mapping) {
+  // Categories
+  const categoriesField = Object.keys(mapping).find(k => mapping[k] === 'categories');
+  if (categoriesField && rawData[categoriesField]) {
+    const values = parseMultiValue(rawData[categoriesField]);
+    for (const catNom of values) {
+      const categorie = await findOrCreateRef(Categorie, catNom);
+      if (categorie) {
+        await JeuCategorie.findOrCreate({
+          where: { jeu_id: jeu.id, categorie_id: categorie.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Themes
+  const themesField = Object.keys(mapping).find(k => mapping[k] === 'themes');
+  if (themesField && rawData[themesField]) {
+    const values = parseMultiValue(rawData[themesField]);
+    for (const themeNom of values) {
+      const theme = await findOrCreateRef(Theme, themeNom);
+      if (theme) {
+        await JeuTheme.findOrCreate({
+          where: { jeu_id: jeu.id, theme_id: theme.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Mecanismes
+  const mecanismesField = Object.keys(mapping).find(k => mapping[k] === 'mecanismes');
+  if (mecanismesField && rawData[mecanismesField]) {
+    const values = parseMultiValue(rawData[mecanismesField]);
+    for (const mecaNom of values) {
+      const mecanisme = await findOrCreateRef(Mecanisme, mecaNom);
+      if (mecanisme) {
+        await JeuMecanisme.findOrCreate({
+          where: { jeu_id: jeu.id, mecanisme_id: mecanisme.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Langues
+  const languesField = Object.keys(mapping).find(k => mapping[k] === 'langues');
+  if (languesField && rawData[languesField]) {
+    const values = parseMultiValue(rawData[languesField]);
+    for (const langueNom of values) {
+      const langue = await findOrCreateLangue(langueNom);
+      if (langue) {
+        await JeuLangue.findOrCreate({
+          where: { jeu_id: jeu.id, langue_id: langue.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Editeurs
+  const editeurField = Object.keys(mapping).find(k => mapping[k] === 'editeur');
+  if (editeurField && rawData[editeurField]) {
+    const values = parseMultiValue(rawData[editeurField]);
+    for (const editeurNom of values) {
+      const editeur = await findOrCreateRef(Editeur, editeurNom);
+      if (editeur) {
+        await JeuEditeur.findOrCreate({
+          where: { jeu_id: jeu.id, editeur_id: editeur.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Auteurs
+  const auteurField = Object.keys(mapping).find(k => mapping[k] === 'auteur');
+  if (auteurField && rawData[auteurField]) {
+    const values = parseMultiValue(rawData[auteurField]);
+    for (const auteurNom of values) {
+      const auteur = await findOrCreateRef(Auteur, auteurNom);
+      if (auteur) {
+        await JeuAuteur.findOrCreate({
+          where: { jeu_id: jeu.id, auteur_id: auteur.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Illustrateurs
+  const illustrateurField = Object.keys(mapping).find(k => mapping[k] === 'illustrateur');
+  if (illustrateurField && rawData[illustrateurField]) {
+    const values = parseMultiValue(rawData[illustrateurField]);
+    for (const illusNom of values) {
+      const illustrateur = await findOrCreateRef(Illustrateur, illusNom);
+      if (illustrateur) {
+        await JeuIllustrateur.findOrCreate({
+          where: { jeu_id: jeu.id, illustrateur_id: illustrateur.id }
+        }).catch(() => {});
+      }
+    }
+  }
+
+  // Gamme (N:1)
+  const gammeField = Object.keys(mapping).find(k => mapping[k] === 'gamme');
+  if (gammeField && rawData[gammeField] && !jeu.gamme_id) {
+    const gamme = await findOrCreateGamme(rawData[gammeField]);
+    if (gamme) {
+      await jeu.update({ gamme_id: gamme.id });
+    }
+  }
+
+  // Emplacement (N:1)
+  const emplacementField = Object.keys(mapping).find(k => mapping[k] === 'emplacement');
+  if (emplacementField && rawData[emplacementField] && !jeu.emplacement_id) {
+    const emplacement = await findOrCreateEmplacement(rawData[emplacementField]);
+    if (emplacement) {
+      await jeu.update({ emplacement_id: emplacement.id });
+    }
+  }
+}
+
+/**
  * Transforme une ligne CSV en objet Jeu selon le mapping
  */
 function transformRow(row, mapping) {
@@ -184,8 +572,23 @@ function transformRow(row, mapping) {
     if (!value || value.toString().trim() === '') return;
 
     switch (jeuField) {
+      // Identifiants
+      case 'id_externe':
+        const idExt = parseInt(value);
+        if (!isNaN(idExt)) jeu.id_externe = idExt;
+        break;
+
+      case 'ean':
+        jeu.ean = value.toString().trim();
+        break;
+
+      // Texte simple
       case 'titre':
         jeu.titre = value.toString().trim();
+        break;
+
+      case 'sous_titre':
+        jeu.sous_titre = value.toString().trim();
         break;
 
       case 'editeur':
@@ -194,6 +597,68 @@ function transformRow(row, mapping) {
 
       case 'auteur':
         jeu.auteur = value.toString().trim();
+        break;
+
+      case 'illustrateur':
+        jeu.illustrateur = value.toString().trim();
+        break;
+
+      case 'univers':
+        jeu.univers = value.toString().trim();
+        break;
+
+      case 'gamme':
+        jeu.gamme = value.toString().trim();
+        break;
+
+      case 'emplacement':
+        jeu.emplacement = value.toString().trim();
+        break;
+
+      case 'proprietaire':
+        jeu.proprietaire = value.toString().trim();
+        break;
+
+      case 'reference':
+        jeu.reference = value.toString().trim();
+        break;
+
+      case 'referent':
+        jeu.referent = value.toString().trim();
+        break;
+
+      case 'notes':
+        jeu.notes = value.toString().trim();
+        break;
+
+      case 'dimensions':
+        jeu.dimensions = value.toString().trim();
+        break;
+
+      case 'poids':
+        jeu.poids = value.toString().trim();
+        break;
+
+      // Multi-valeurs (stockes tels quels)
+      case 'langues':
+        jeu.langues = value.toString().trim();
+        break;
+
+      case 'categories':
+        jeu.categories = value.toString().trim();
+        break;
+
+      case 'themes':
+        jeu.themes = value.toString().trim();
+        break;
+
+      case 'mecanismes':
+        jeu.mecanismes = value.toString().trim();
+        break;
+
+      // Parsing special
+      case 'type_jeu':
+        jeu.type_jeu = parseTypeJeu(value);
         break;
 
       case 'joueurs':
@@ -212,12 +677,6 @@ function transformRow(row, mapping) {
         if (age !== null) jeu.age_min = age;
         break;
 
-      case 'categorie':
-        // Prendre la premiere categorie si plusieurs
-        const cats = value.toString().split(',');
-        jeu.categorie = cats[0].trim();
-        break;
-
       case 'annee_sortie':
         const year = parseInt(value);
         if (year >= 1900 && year <= new Date().getFullYear() + 1) {
@@ -226,31 +685,59 @@ function transformRow(row, mapping) {
         break;
 
       case 'date_acquisition':
-        const date = parseDate(value);
-        if (date) jeu.date_acquisition = date;
+        const dateAcq = parseDate(value);
+        if (dateAcq) jeu.date_acquisition = dateAcq;
+        break;
+
+      case 'derniere_partie':
+        const datePart = parseDate(value);
+        if (datePart) jeu.derniere_partie = datePart;
+        break;
+
+      // Prix
+      case 'prix_indicatif':
+        const prixInd = parsePrix(value);
+        if (prixInd !== null) jeu.prix_indicatif = prixInd;
         break;
 
       case 'prix_achat':
-        const prix = parseFloat(value.toString().replace(',', '.'));
-        if (!isNaN(prix)) jeu.prix_achat = prix;
+        const prixAch = parsePrix(value);
+        if (prixAch !== null) jeu.prix_achat = prixAch;
         break;
 
-      case 'emplacement':
-        jeu.emplacement = value.toString().trim();
+      // Booleens
+      case 'gratuit':
+        jeu.gratuit = parseBoolean(value);
         break;
 
-      case 'notes':
-        jeu.notes = value.toString().trim();
+      case 'cadeau':
+        jeu.cadeau = parseBoolean(value);
         break;
 
-      // Champs ignores mais utiles pour reference
-      case 'ean':
-      case 'sous_titre':
-      case 'themes':
-      case 'dimensions':
-      case 'univers':
-      case 'langues':
-        // Stocker dans notes si pas d'autre champ
+      case 'prive':
+        jeu.prive = parseBoolean(value);
+        break;
+
+      case 'protege':
+        jeu.protege = parseBoolean(value);
+        break;
+
+      case 'organise':
+        jeu.organise = parseBoolean(value);
+        break;
+
+      case 'personnalise':
+        jeu.personnalise = parseBoolean(value);
+        break;
+
+      case 'figurines_peintes':
+        jeu.figurines_peintes = parseBoolean(value);
+        break;
+
+      // Enums
+      case 'etat':
+        const etat = parseEtat(value);
+        if (etat) jeu.etat = etat;
         break;
     }
   });
@@ -323,6 +810,7 @@ const importJeux = async (req, res) => {
     const separator = req.body.separator || ';';
     const customMapping = req.body.mapping ? JSON.parse(req.body.mapping) : null;
     const skipDuplicates = req.body.skipDuplicates === 'true';
+    const updateExisting = req.body.updateExisting === 'true';
 
     const { columns, rows } = await parseCSV(req.file.path, separator);
 
@@ -332,6 +820,7 @@ const importJeux = async (req, res) => {
     const results = {
       total: rows.length,
       imported: 0,
+      updated: 0,
       skipped: 0,
       errors: []
     };
@@ -354,21 +843,40 @@ const importJeux = async (req, res) => {
           continue;
         }
 
-        // Verifier les doublons si demande
-        if (skipDuplicates) {
-          const existing = await Jeu.findOne({
-            where: { titre: jeuData.titre }
-          });
-
-          if (existing) {
-            results.skipped++;
-            continue;
-          }
+        // Chercher un jeu existant (par EAN ou titre)
+        let existing = null;
+        if (jeuData.ean) {
+          existing = await Jeu.findOne({ where: { ean: jeuData.ean } });
+        }
+        if (!existing) {
+          existing = await Jeu.findOne({ where: { titre: jeuData.titre } });
         }
 
-        // Creer le jeu
-        await Jeu.create(jeuData);
-        results.imported++;
+        let jeuInstance = null;
+
+        if (existing) {
+          if (updateExisting) {
+            // Mettre a jour le jeu existant
+            await existing.update(jeuData);
+            jeuInstance = existing;
+            results.updated++;
+          } else if (skipDuplicates) {
+            results.skipped++;
+          } else {
+            // Creer quand meme (doublon)
+            jeuInstance = await Jeu.create(jeuData);
+            results.imported++;
+          }
+        } else {
+          // Creer le jeu
+          jeuInstance = await Jeu.create(jeuData);
+          results.imported++;
+        }
+
+        // Creer les relations many-to-many avec les referentiels
+        if (jeuInstance) {
+          await createJeuRelations(jeuInstance, row, mapping);
+        }
 
       } catch (error) {
         results.errors.push({
@@ -408,21 +916,69 @@ const importJeux = async (req, res) => {
  */
 const getAvailableFields = async (req, res) => {
   const fields = [
-    { id: 'titre', label: 'Titre', required: true },
-    { id: 'editeur', label: 'Editeur' },
-    { id: 'auteur', label: 'Auteur' },
-    { id: 'annee_sortie', label: 'Annee de sortie' },
-    { id: 'joueurs', label: 'Nombre de joueurs (min-max)' },
-    { id: 'duree_partie', label: 'Duree (minutes)' },
-    { id: 'age_min', label: 'Age minimum' },
-    { id: 'categorie', label: 'Categorie' },
-    { id: 'description', label: 'Description' },
-    { id: 'date_acquisition', label: 'Date d\'acquisition' },
-    { id: 'prix_achat', label: 'Prix d\'achat' },
-    { id: 'emplacement', label: 'Emplacement' },
-    { id: 'notes', label: 'Notes' },
-    { id: 'ean', label: 'Code EAN (non importe)' },
-    { id: 'ignore', label: '-- Ignorer cette colonne --' }
+    // Obligatoire
+    { id: 'titre', label: 'Titre', required: true, group: 'Informations de base' },
+
+    // Identifiants
+    { id: 'id_externe', label: 'ID externe (source)', group: 'Identifiants' },
+    { id: 'ean', label: 'Code EAN', group: 'Identifiants' },
+
+    // Informations de base
+    { id: 'sous_titre', label: 'Sous-titre', group: 'Informations de base' },
+    { id: 'type_jeu', label: 'Type (basegame/extension)', group: 'Informations de base' },
+    { id: 'annee_sortie', label: 'Annee de sortie', group: 'Informations de base' },
+
+    // Personnes
+    { id: 'editeur', label: 'Editeur(s)', group: 'Personnes' },
+    { id: 'auteur', label: 'Auteur(s)', group: 'Personnes' },
+    { id: 'illustrateur', label: 'Illustrateur(s)', group: 'Personnes' },
+
+    // Caracteristiques
+    { id: 'joueurs', label: 'Nombre de joueurs', group: 'Caracteristiques' },
+    { id: 'duree_partie', label: 'Duree (minutes)', group: 'Caracteristiques' },
+    { id: 'age_min', label: 'Age minimum', group: 'Caracteristiques' },
+    { id: 'langues', label: 'Langues', group: 'Caracteristiques' },
+
+    // Classification
+    { id: 'categories', label: 'Categories', group: 'Classification' },
+    { id: 'themes', label: 'Themes', group: 'Classification' },
+    { id: 'mecanismes', label: 'Mecanismes', group: 'Classification' },
+    { id: 'univers', label: 'Univers', group: 'Classification' },
+    { id: 'gamme', label: 'Gamme/Collection', group: 'Classification' },
+
+    // Physique
+    { id: 'dimensions', label: 'Dimensions', group: 'Physique' },
+    { id: 'poids', label: 'Poids', group: 'Physique' },
+
+    // Prix
+    { id: 'prix_indicatif', label: 'Prix indicatif', group: 'Prix' },
+    { id: 'prix_achat', label: 'Prix d\'achat', group: 'Prix' },
+    { id: 'gratuit', label: 'Gratuit (oui/non)', group: 'Prix' },
+
+    // Gestion
+    { id: 'date_acquisition', label: 'Date d\'acquisition', group: 'Gestion' },
+    { id: 'emplacement', label: 'Emplacement', group: 'Gestion' },
+    { id: 'etat', label: 'Etat (neuf/bon/etc)', group: 'Gestion' },
+    { id: 'proprietaire', label: 'Proprietaire', group: 'Gestion' },
+    { id: 'cadeau', label: 'Cadeau/Don (oui/non)', group: 'Gestion' },
+
+    // Flags
+    { id: 'prive', label: 'Prive (oui/non)', group: 'Flags' },
+    { id: 'protege', label: 'Protege (oui/non)', group: 'Flags' },
+    { id: 'organise', label: 'Organise (oui/non)', group: 'Flags' },
+    { id: 'personnalise', label: 'Personnalise (oui/non)', group: 'Flags' },
+    { id: 'figurines_peintes', label: 'Figurines peintes (oui/non)', group: 'Flags' },
+
+    // Notes
+    { id: 'notes', label: 'Notes/Commentaire', group: 'Notes' },
+    { id: 'reference', label: 'Reference', group: 'Notes' },
+    { id: 'referent', label: 'Referent', group: 'Notes' },
+
+    // Stats
+    { id: 'derniere_partie', label: 'Derniere partie', group: 'Statistiques' },
+
+    // Special
+    { id: 'ignore', label: '-- Ignorer cette colonne --', group: 'Autre' }
   ];
 
   res.json({ fields });

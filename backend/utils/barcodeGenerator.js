@@ -19,29 +19,60 @@ const generateJeuCode = (id) => {
 };
 
 /**
+ * Generate livre barcode string from ID
+ * Format: LIV00000001
+ */
+const generateLivreCode = (id) => {
+  const paddedId = String(id).padStart(8, '0');
+  return `LIV${paddedId}`;
+};
+
+/**
+ * Generate film barcode string from ID
+ * Format: FLM00000001
+ */
+const generateFilmCode = (id) => {
+  const paddedId = String(id).padStart(8, '0');
+  return `FLM${paddedId}`;
+};
+
+/**
+ * Generate CD barcode string from ID
+ * Format: MUS00000001
+ */
+const generateCdCode = (id) => {
+  const paddedId = String(id).padStart(8, '0');
+  return `MUS${paddedId}`;
+};
+
+/**
  * Decode a barcode string to extract type and ID
- * @param {string} code - The barcode string (e.g., "ADH00000001" or "JEU00000123")
- * @returns {Object} - { type: 'adherent'|'jeu', id: number } or null if invalid
+ * @param {string} code - The barcode string (e.g., "ADH00000001", "JEU00000123", "LIV00000001")
+ * @returns {Object} - { type: 'adherent'|'jeu'|'livre'|'film'|'cd', id: number } or null if invalid
  */
 const decodeBarcode = (code) => {
   if (!code || typeof code !== 'string') {
     return null;
   }
 
-  const adherentMatch = code.match(/^ADH(\d{8})$/);
-  if (adherentMatch) {
-    return {
-      type: 'adherent',
-      id: parseInt(adherentMatch[1], 10)
-    };
-  }
+  // Configuration des patterns par type
+  const patterns = {
+    ADH: { type: 'adherent', model: 'Adherent' },
+    JEU: { type: 'jeu', model: 'Jeu' },
+    LIV: { type: 'livre', model: 'Livre' },
+    FLM: { type: 'film', model: 'Film' },
+    MUS: { type: 'cd', model: 'Cd' }
+  };
 
-  const jeuMatch = code.match(/^JEU(\d{8})$/);
-  if (jeuMatch) {
-    return {
-      type: 'jeu',
-      id: parseInt(jeuMatch[1], 10)
-    };
+  // Vérifier chaque pattern
+  for (const [prefix, info] of Object.entries(patterns)) {
+    const match = code.match(new RegExp(`^${prefix}(\\d{8})$`));
+    if (match) {
+      return {
+        ...info,
+        id: parseInt(match[1], 10)
+      };
+    }
   }
 
   return null;
@@ -112,19 +143,44 @@ const calculateEAN13CheckDigit = (code) => {
 /**
  * Generate EAN-13 barcode from ID
  * Format: 200[type][8-digit-id][check]
- * type: 1 for adherent, 2 for jeu
+ * type: 1=adherent, 2=jeu, 3=livre, 4=film, 5=cd
  */
 const generateEAN13Code = (id, type) => {
-  const typeCode = type === 'adherent' ? '1' : '2';
+  const typeCodes = {
+    adherent: '1',
+    jeu: '2',
+    livre: '3',
+    film: '4',
+    cd: '5'
+  };
+  const typeCode = typeCodes[type] || '0';
   const paddedId = String(id).padStart(8, '0');
   const code12 = `200${typeCode}${paddedId}`;
   const checkDigit = calculateEAN13CheckDigit(code12);
   return `${code12}${checkDigit}`;
 };
 
+/**
+ * Generate barcode code based on type
+ */
+const generateCode = (id, type) => {
+  switch (type) {
+    case 'adherent': return generateAdherentCode(id);
+    case 'jeu': return generateJeuCode(id);
+    case 'livre': return generateLivreCode(id);
+    case 'film': return generateFilmCode(id);
+    case 'cd': return generateCdCode(id);
+    default: throw new Error(`Unknown barcode type: ${type}`);
+  }
+};
+
 module.exports = {
   generateAdherentCode,
   generateJeuCode,
+  generateLivreCode,
+  generateFilmCode,
+  generateCdCode,
+  generateCode,
   decodeBarcode,
   generateBarcodeImage,
   generateBarcodeBase64,

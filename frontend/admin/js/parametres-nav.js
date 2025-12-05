@@ -11,7 +11,8 @@ const PARAMETRES_CATEGORIES = {
       { id: 'site-web', label: 'Site web', href: 'parametres-site-web.html', icon: 'bi-globe' },
       { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
       { id: 'sites', label: 'Sites', href: 'parametres-sites.html', icon: 'bi-building' },
-      { id: 'utilisateurs', label: 'Utilisateurs', href: 'parametres-utilisateurs.html', icon: 'bi-people' }
+      { id: 'utilisateurs', label: 'Utilisateurs', href: 'parametres-utilisateurs.html', icon: 'bi-people' },
+      { id: 'holodeck', label: 'Holodeck', href: 'parametres-holodeck.html', icon: 'bi-grid-3x3-gap', adminOnly: true }
     ]
   },
   comptabilite: {
@@ -61,6 +62,15 @@ function renderSubNav(category, currentPageId) {
     return;
   }
 
+  // Filtrer les pages adminOnly si l'utilisateur n'est pas admin
+  const userRole = localStorage.getItem('userRole') || 'usager';
+  const filteredPages = cat.pages.filter(page => {
+    if (page.adminOnly && userRole !== 'administrateur') {
+      return false;
+    }
+    return true;
+  });
+
   const html = `
     <div class="sub-nav mb-4">
       <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -68,7 +78,7 @@ function renderSubNav(category, currentPageId) {
           <span class="text-muted me-2">
             <i class="bi ${cat.icon}"></i> ${cat.label}:
           </span>
-          ${cat.pages.map(page => {
+          ${filteredPages.map(page => {
             const isActive = page.id === currentPageId;
             return `
               <a href="${page.href}"

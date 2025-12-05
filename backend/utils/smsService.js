@@ -336,6 +336,21 @@ function calculateSegments(text) {
 }
 
 /**
+ * Vérifie si le module communications est actif
+ * @returns {Promise<boolean>}
+ */
+async function isModuleActive() {
+  try {
+    const { ModuleActif } = require('../models');
+    return await ModuleActif.isActif('communications');
+  } catch (error) {
+    // En cas d'erreur (table non créée), considérer comme actif (fail-safe)
+    console.warn('Impossible de vérifier le module communications:', error.message);
+    return true;
+  }
+}
+
+/**
  * Envoie un SMS
  * @param {number} configurationId - ID de la configuration SMS
  * @param {Object} options - Options d'envoi
@@ -349,6 +364,12 @@ async function sendSMS(configurationId, options) {
   let smsLog = null;
 
   try {
+    // Vérifier si le module communications est actif
+    const moduleActif = await isModuleActive();
+    if (!moduleActif) {
+      throw new Error('Module Communications désactivé - L\'envoi de SMS est suspendu');
+    }
+
     // Charger la configuration
     const { ConfigurationSMS } = require('../models');
     const configuration = await ConfigurationSMS.findByPk(configurationId);
@@ -555,5 +576,6 @@ module.exports = {
   sendSMS,
   sendSMSFromTemplate,
   calculateSegments,
+  isModuleActive,
   DEFAULT_API_URLS
 };

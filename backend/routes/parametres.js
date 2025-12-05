@@ -10,6 +10,26 @@ const tarifsController = require('../controllers/tarifsController');
 const configurationsEmailController = require('../controllers/configurationsEmailController');
 const configurationsSMSController = require('../controllers/configurationsSMSController');
 const templatesMessagesController = require('../controllers/templatesMessagesController');
+const modulesActifsController = require('../controllers/modulesActifsController');
+
+// ============================================
+// Routes pour les modules actifs
+// ============================================
+
+// Récupérer les modules actifs (pour le frontend - gestionnaire+)
+router.get('/modules-actifs', verifyToken, isGestionnaire(), modulesActifsController.getActifs);
+
+// Récupérer tous les modules avec détails (admin seulement)
+router.get('/modules-actifs/all', verifyToken, isAdmin(), modulesActifsController.getAll);
+
+// Vérifier si un module est actif
+router.get('/modules-actifs/:code/check', verifyToken, isGestionnaire(), modulesActifsController.checkModule);
+
+// Activer/désactiver un module (admin seulement)
+router.patch('/modules-actifs/:code/toggle', verifyToken, isAdmin(), modulesActifsController.toggle);
+
+// Mettre à jour plusieurs modules (admin seulement)
+router.put('/modules-actifs', verifyToken, isAdmin(), modulesActifsController.updateAll);
 
 // ============================================
 // Routes pour les paramètres de la structure

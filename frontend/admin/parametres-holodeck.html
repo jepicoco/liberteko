@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Holodeck - Modules - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .module-card {
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+    .module-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    .module-card.disabled {
+      opacity: 0.5;
+      filter: grayscale(0.8);
+    }
+    .module-card .card-header {
+      border-radius: 10px 10px 0 0;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .module-card .card-header i {
+      font-size: 1.4rem;
+    }
+    .module-card .module-description {
+      color: #6c757d;
+      font-size: 0.9rem;
+      min-height: 48px;
+    }
+    .module-toggle {
+      transform: scale(1.4);
+    }
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #495057;
+      margin: 2rem 0 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #dee2e6;
+    }
+    .section-title i {
+      margin-right: 0.5rem;
+    }
+
+    /* Couleurs pastel pour les collections */
+    .module-ludotheque .card-header { background: linear-gradient(135deg, #FFE5B4, #FFD699); color: #8B4513; }
+    .module-bibliotheque .card-header { background: linear-gradient(135deg, #B4D8E7, #95C8DD); color: #1E4D6B; }
+    .module-filmotheque .card-header { background: linear-gradient(135deg, #E7B4D8, #D899C4); color: #6B1E4D; }
+    .module-discotheque .card-header { background: linear-gradient(135deg, #B4E7C4, #95D8AB); color: #1E6B3A; }
+
+    /* Couleurs pour les autres modules */
+    .module-scanner .card-header { background: linear-gradient(135deg, #d4edda, #c3e6cb); color: #155724; }
+    .module-comptabilite .card-header { background: linear-gradient(135deg, #fff3cd, #ffe8a1); color: #856404; }
+    .module-communications .card-header { background: linear-gradient(135deg, #cce5ff, #b8daff); color: #004085; }
+    .module-outils .card-header { background: linear-gradient(135deg, #e2e3e5, #d6d8db); color: #383d41; }
+
+    .cache-info {
+      background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .cache-info code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .holodeck-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+    .holodeck-header h1 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .holodeck-header .subtitle {
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+    .holodeck-header .badge {
+      font-size: 0.7rem;
+      vertical-align: middle;
+    }
+
+    .warning-box {
+      background: linear-gradient(135deg, #fff3cd, #ffe8a1);
+      border-left: 4px solid #ffc107;
+      padding: 1rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 1.5rem;
+    }
+    .warning-box i {
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header Holodeck -->
+        <div class="holodeck-header">
+          <h1>
+            <i class="bi bi-grid-3x3-gap"></i>
+            Holodeck
+            <span class="badge bg-warning text-dark">Admin</span>
+          </h1>
+          <p class="subtitle mb-0">
+            Panneau de controle des modules - Activez ou desactivez les fonctionnalites de l'application
+          </p>
+        </div>
+
+        <!-- Warning Box -->
+        <div class="warning-box">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Attention :</strong> Desactiver un module masque ses fonctionnalites dans toute l'application.
+          Les donnees ne sont pas supprimees et reapparaitront lors de la reactivation.
+        </div>
+
+        <!-- Section Collections -->
+        <div class="section-title">
+          <i class="bi bi-collection"></i> Collections
+        </div>
+        <div class="row" id="modules-collections">
+          <div class="col-12 text-center py-4">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Chargement des modules...</p>
+          </div>
+        </div>
+
+        <!-- Section Fonctionnalites -->
+        <div class="section-title">
+          <i class="bi bi-tools"></i> Fonctionnalites
+        </div>
+        <div class="row" id="modules-fonctionnalites">
+          <!-- Charge dynamiquement -->
+        </div>
+
+        <!-- Section Parametres -->
+        <div class="section-title">
+          <i class="bi bi-gear"></i> Onglets Parametres
+        </div>
+        <div class="row" id="modules-parametres">
+          <!-- Charge dynamiquement -->
+        </div>
+
+        <!-- Cache Management -->
+        <div class="section-title">
+          <i class="bi bi-hdd"></i> Cache
+        </div>
+        <div class="cache-info">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <p class="mb-1">
+                <strong>Cache des modules actifs</strong>
+              </p>
+              <p class="mb-0 text-muted small">
+                Les modules actifs sont mis en cache dans le navigateur pendant <code>5 minutes</code>
+                pour optimiser les performances. Utilisez le bouton pour forcer le rechargement.
+              </p>
+              <p class="mb-0 mt-2" id="cache-status">
+                <span class="text-muted">Verification du cache...</span>
+              </p>
+            </div>
+            <div class="col-md-4 text-end">
+              <button class="btn btn-outline-secondary" onclick="purgeAndReload()">
+                <i class="bi bi-arrow-clockwise"></i> Purger le cache
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spacer -->
+        <div style="height: 3rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let modules = [];
+
+    // Categories de modules
+    const MODULE_CATEGORIES = {
+      collections: ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'],
+      fonctionnalites: ['scanner', 'communications'],
+      parametres: ['comptabilite', 'outils']
+    };
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSubNav('general', 'holodeck');
+
+      // Verifier que l'utilisateur est admin
+      const userRole = localStorage.getItem('userRole');
+      if (userRole !== 'administrateur') {
+        document.querySelector('.col-md-10').innerHTML = `
+          <div class="alert alert-danger mt-4">
+            <i class="bi bi-shield-exclamation"></i>
+            <strong>Acces refuse</strong> - Cette page est reservee aux administrateurs.
+          </div>
+        `;
+        return;
+      }
+
+      await loadModules();
+      updateCacheStatus();
+    });
+
+    async function loadModules() {
+      try {
+        const token = localStorage.getItem('authToken');
+
+        if (!token) {
+          throw new Error('Session expirée - Veuillez vous reconnecter');
+        }
+
+        const response = await fetch('/api/parametres/modules-actifs/all', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (response.status === 401) {
+          // Token invalide ou expiré
+          throw new Error('Session expirée - Veuillez vous reconnecter');
+        }
+
+        if (response.status === 403) {
+          const data = await response.json();
+          throw new Error(data.message || 'Accès refusé - Permissions insuffisantes');
+        }
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || data.message || 'Erreur lors du chargement des modules');
+        }
+
+        modules = await response.json();
+        renderModules();
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('modules-collections').innerHTML = `
+          <div class="col-12">
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle"></i> ${error.message}
+              ${error.message.includes('reconnecter') ? '<br><a href="login.html" class="btn btn-primary btn-sm mt-2">Se reconnecter</a>' : ''}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function renderModules() {
+      // Rendre chaque categorie
+      renderModuleCategory('collections', 'modules-collections');
+      renderModuleCategory('fonctionnalites', 'modules-fonctionnalites');
+      renderModuleCategory('parametres', 'modules-parametres');
+    }
+
+    function renderModuleCategory(category, containerId) {
+      const container = document.getElementById(containerId);
+      const moduleCodes = MODULE_CATEGORIES[category];
+      const categoryModules = modules.filter(m => moduleCodes.includes(m.code));
+
+      if (categoryModules.length === 0) {
+        container.innerHTML = '<div class="col-12 text-muted">Aucun module dans cette categorie</div>';
+        return;
+      }
+
+      container.innerHTML = categoryModules.map(module => `
+        <div class="col-md-6 col-lg-3 mb-4">
+          <div class="card module-card module-${module.code} ${module.actif ? '' : 'disabled'}">
+            <div class="card-header">
+              <i class="bi bi-${module.icone || 'box'}"></i>
+              ${module.libelle}
+            </div>
+            <div class="card-body">
+              <p class="module-description">${module.description || 'Aucune description'}</p>
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="badge ${module.actif ? 'bg-success' : 'bg-secondary'}">
+                  ${module.actif ? 'Actif' : 'Desactive'}
+                </span>
+                <div class="form-check form-switch">
+                  <input
+                    class="form-check-input module-toggle"
+                    type="checkbox"
+                    id="toggle-${module.code}"
+                    ${module.actif ? 'checked' : ''}
+                    onchange="toggleModule('${module.code}')"
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function toggleModule(code) {
+      const toggle = document.getElementById(`toggle-${code}`);
+      const originalState = !toggle.checked; // Etat avant le toggle
+
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error('Session expirée - Veuillez vous reconnecter');
+        }
+
+        const response = await fetch(`/api/parametres/modules-actifs/${code}/toggle`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || errorData.error || `Erreur ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Mettre a jour l'affichage
+        const module = modules.find(m => m.code === code);
+        if (module) {
+          module.actif = result.module.actif;
+        }
+
+        // Re-rendre les modules
+        renderModules();
+
+        // Purger le cache pour que les changements soient visibles immediatement
+        purgeModulesCache();
+        updateCacheStatus();
+
+        // Afficher un message
+        showToast(result.message, 'success');
+      } catch (error) {
+        console.error('Erreur:', error);
+        // Revenir a l'etat original
+        toggle.checked = originalState;
+        showToast('Erreur lors de la modification du module', 'error');
+      }
+    }
+
+    function updateCacheStatus() {
+      const statusEl = document.getElementById('cache-status');
+      const cachedModules = localStorage.getItem('activeModules');
+      const cachedTimestamp = localStorage.getItem('activeModulesTimestamp');
+
+      if (cachedModules && cachedTimestamp) {
+        const age = Date.now() - parseInt(cachedTimestamp);
+        const ageMinutes = Math.floor(age / 60000);
+        const ageSeconds = Math.floor((age % 60000) / 1000);
+
+        const isExpired = age > 5 * 60 * 1000;
+
+        statusEl.innerHTML = `
+          <i class="bi bi-${isExpired ? 'x-circle text-warning' : 'check-circle text-success'}"></i>
+          Cache ${isExpired ? 'expire' : 'valide'} -
+          Age: ${ageMinutes}m ${ageSeconds}s -
+          ${JSON.parse(cachedModules).length} module(s) en cache
+        `;
+      } else {
+        statusEl.innerHTML = `
+          <i class="bi bi-dash-circle text-muted"></i>
+          Aucun cache (sera cree a la prochaine navigation)
+        `;
+      }
+    }
+
+    function purgeAndReload() {
+      purgeModulesCache();
+      updateCacheStatus();
+      showToast('Cache purge avec succes', 'success');
+    }
+
+    // ========================
+    // Utils
+    // ========================
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

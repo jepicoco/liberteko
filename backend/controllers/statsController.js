@@ -120,7 +120,7 @@ const getPopularGames = async (req, res) => {
       include: [{
         model: Jeu,
         as: 'jeu',
-        attributes: ['id', 'titre', 'editeur', 'categorie', 'statut', 'image_url']
+        attributes: ['id', 'titre', 'editeur', 'statut', 'image_url']
       }],
       group: ['jeu_id'],
       order: [[Emprunt.sequelize.literal('emprunt_count'), 'DESC']],

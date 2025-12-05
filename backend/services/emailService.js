@@ -1,6 +1,6 @@
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
-const { ConfigurationEmail, TemplateMessage, EmailLog } = require('../models');
+const { ConfigurationEmail, TemplateMessage, EmailLog, ModuleActif } = require('../models');
 
 // Configuration du chiffrement AES-256-CBC pour les mots de passe SMTP
 const ENCRYPTION_ALGORITHM = 'aes-256-cbc';
@@ -154,9 +154,29 @@ class EmailService {
   }
 
   /**
+   * Vérifie si le module communications est actif
+   * @returns {Promise<boolean>}
+   */
+  async isModuleActive() {
+    try {
+      return await ModuleActif.isActif('communications');
+    } catch (error) {
+      // En cas d'erreur (table non créée), considérer comme actif (fail-safe)
+      console.warn('Impossible de vérifier le module communications:', error.message);
+      return true;
+    }
+  }
+
+  /**
    * Envoie un email
    */
   async sendEmail({ to, subject, html, from = null, templateCode = null, metadata = null, adherentId = null, empruntId = null, cotisationId = null }) {
+    // Vérifier si le module communications est actif
+    const moduleActif = await this.isModuleActive();
+    if (!moduleActif) {
+      throw new Error('Module Communications désactivé - L\'envoi d\'emails est suspendu');
+    }
+
     if (!this.transporter) {
       await this.initialize();
     }
