@@ -32,12 +32,6 @@ const MENU_ITEMS = [
         href: 'jeux.html'
     },
     {
-        id: 'import-jeux',
-        label: 'Import Jeux',
-        icon: 'upload',
-        href: 'import-jeux.html'
-    },
-    {
         id: 'emprunts',
         label: 'Emprunts',
         icon: 'arrow-left-right',
