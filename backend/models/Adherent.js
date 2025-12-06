@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 module.exports = (sequelize) => {
   const Adherent = sequelize.define('Adherent', {
@@ -103,6 +104,22 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: 'usager',
       comment: 'Rôle de l\'utilisateur dans le système'
+    },
+    password_reset_token: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      comment: 'Token de reinitialisation de mot de passe'
+    },
+    password_reset_expires: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Date expiration du token reset'
+    },
+    password_created: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Mot de passe deja cree par usager'
     }
   }, {
     tableName: 'adherents',
@@ -153,7 +170,32 @@ module.exports = (sequelize) => {
   Adherent.prototype.toJSON = function() {
     const values = Object.assign({}, this.get());
     delete values.password;
+    delete values.password_reset_token;
+    delete values.password_reset_expires;
     return values;
+  };
+
+  // Genere un token de reset password valide 24h
+  Adherent.prototype.generatePasswordResetToken = async function() {
+    const token = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    this.password_reset_token = hashedToken;
+    this.password_reset_expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    await this.save({ hooks: false });
+
+    return token; // Retourne le token non-hashe pour l'email
+  };
+
+  // Verifie si le token de reset est valide
+  Adherent.findByResetToken = async function(token) {
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+    return await this.findOne({
+      where: {
+        password_reset_token: hashedToken,
+        password_reset_expires: { [sequelize.Sequelize.Op.gt]: new Date() }
+      }
+    });
   };
 
   return Adherent;

@@ -11,6 +11,7 @@ const configurationsEmailController = require('../controllers/configurationsEmai
 const configurationsSMSController = require('../controllers/configurationsSMSController');
 const templatesMessagesController = require('../controllers/templatesMessagesController');
 const modulesActifsController = require('../controllers/modulesActifsController');
+const ipAutoriseesController = require('../controllers/ipAutoriseesController');
 
 // ============================================
 // Routes pour les modules actifs
@@ -276,5 +277,31 @@ router.post('/templates-messages/:id/preview', verifyToken, isGestionnaire(), te
 
 // Dupliquer un template (admin seulement)
 router.post('/templates-messages/:id/duplicate', verifyToken, isAdmin(), templatesMessagesController.duplicateTemplate);
+
+// ============================================
+// Routes pour les IPs autorisées (maintenance)
+// ============================================
+
+// Récupérer toutes les IPs autorisées (admin seulement)
+router.get('/ip-autorisees', verifyToken, isAdmin(), ipAutoriseesController.getAll);
+
+// Ajouter une IP autorisée (admin seulement)
+router.post('/ip-autorisees', verifyToken, isAdmin(), ipAutoriseesController.create);
+
+// Ajouter l'IP actuelle de l'admin (admin seulement)
+router.post('/ip-autorisees/current', verifyToken, isAdmin(), ipAutoriseesController.addCurrentIp);
+
+// Mettre à jour le paramètre autoriser_ip_locales (admin seulement)
+// IMPORTANT: Cette route doit être AVANT /ip-autorisees/:id sinon :id capture "locales"
+router.put('/ip-autorisees/locales', verifyToken, isAdmin(), ipAutoriseesController.updateAutoriserLocales);
+
+// Modifier une IP autorisée (admin seulement)
+router.put('/ip-autorisees/:id', verifyToken, isAdmin(), ipAutoriseesController.update);
+
+// Supprimer une IP autorisée (admin seulement)
+router.delete('/ip-autorisees/:id', verifyToken, isAdmin(), ipAutoriseesController.delete);
+
+// Activer/désactiver une IP (admin seulement)
+router.patch('/ip-autorisees/:id/toggle', verifyToken, isAdmin(), ipAutoriseesController.toggle);
 
 module.exports = router;

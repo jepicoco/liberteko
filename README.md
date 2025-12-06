@@ -24,6 +24,23 @@ Application complète de gestion de ludothèque (bibliothèque de jeux de socié
 - Suivi des dates de retour
 - Détection automatique des retards
 - Historique complet des emprunts
+- Système de prolongation (automatique et manuelle)
+
+### Espace Usager (Adhérents)
+- Interface dédiée aux adhérents (/usager/)
+- Connexion par email ou code-barre
+- Tableau de bord personnel avec statistiques
+- Consultation des emprunts en cours et historique
+- Demande de prolongation en ligne
+- Création de mot de passe par email (premier accès)
+- Réinitialisation de mot de passe
+
+### Système de Prolongation
+- Configuration par module (ludothèque, bibliothèque, filmothèque, discothèque)
+- Nombre de jours par prolongation (configurable)
+- Prolongations automatiques (nombre max configurable)
+- Prolongations manuelles soumises à validation admin
+- Message d'avertissement si item réservé (désactivable)
 
 ### Gestion des Cotisations
 - Tarifs personnalisables (année civile, scolaire, date à date)
@@ -150,13 +167,18 @@ ludotheque/
 │   ├── controllers/      # Logique métier
 │   ├── models/          # Modèles Sequelize
 │   ├── routes/          # Routes API
-│   ├── middleware/      # Middleware (auth, etc.)
+│   ├── middleware/      # Middleware (auth, usagerAuth, maintenance)
 │   ├── services/        # Services (email, event triggers)
 │   └── server.js        # Point d'entrée
 ├── frontend/
-│   └── admin/           # Interface admin
-│       ├── css/
-│       ├── js/
+│   ├── admin/           # Interface admin
+│   │   ├── css/
+│   │   ├── js/
+│   │   └── *.html
+│   └── usager/          # Espace adhérents
+│       ├── login.html
+│       ├── dashboard.html
+│       ├── emprunts.html
 │       └── *.html
 ├── database/
 │   ├── migrations/      # Migrations SQL/JS
@@ -180,6 +202,17 @@ Pages disponibles :
 - Tarifs - Configuration des tarifs
 - Communications - Templates et déclencheurs
 - Statistiques - Rapports détaillés
+- Paramètres Emprunts - Configuration prolongations par module
+
+### Interface Usager (Adhérents)
+
+http://localhost:3000/usager/login.html
+
+Pages disponibles :
+- Login - Connexion (email ou code-barre)
+- Dashboard - Tableau de bord personnel
+- Emprunts - Liste des emprunts avec prolongation
+- Mot de passe oublié - Réinitialisation par email
 
 ### API REST
 
@@ -218,6 +251,26 @@ GET    /api/emprunts
 GET    /api/emprunts/:id
 POST   /api/emprunts
 POST   /api/emprunts/:id/retour
+```
+
+Espace Usager :
+```
+POST   /api/usager/auth/login
+POST   /api/usager/auth/forgot-password
+POST   /api/usager/auth/reset-password
+POST   /api/usager/auth/create-password
+GET    /api/usager/emprunts
+GET    /api/usager/emprunts/en-cours
+GET    /api/usager/emprunts/historique
+POST   /api/usager/emprunts/:id/prolonger
+```
+
+Prolongations (Admin) :
+```
+GET    /api/prolongations
+GET    /api/prolongations/stats
+POST   /api/prolongations/:id/valider
+POST   /api/prolongations/:id/refuser
 ```
 
 Documentation complète : voir CLAUDE.md

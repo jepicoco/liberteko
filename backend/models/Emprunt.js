@@ -51,7 +51,7 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'cds',
+        model: 'disques',
         key: 'id'
       },
       onUpdate: 'CASCADE',
@@ -85,6 +85,17 @@ module.exports = (sequelize) => {
     commentaire: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    nb_prolongations: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Nombre de prolongations effectuees'
+    },
+    date_retour_initiale: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Date de retour initiale avant prolongations'
     }
   }, {
     tableName: 'emprunts',

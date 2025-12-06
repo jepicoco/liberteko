@@ -1,5 +1,6 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { CodeReduction } = require('../../backend/models');
-require('dotenv').config();
 
 async function seedCodesReduction() {
   try {

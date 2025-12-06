@@ -91,6 +91,12 @@ const DisqueGenreModel = require('./DisqueGenre');
 // Import ModuleActif
 const ModuleActifModel = require('./ModuleActif');
 
+// Import IpAutorisee
+const IpAutoriseeModel = require('./IpAutorisee');
+
+// Import Prolongation
+const ProlongationModel = require('./Prolongation');
+
 // Initialize models
 const Adherent = AdherentModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -181,6 +187,12 @@ const DisqueGenre = DisqueGenreModel(sequelize);
 
 // Initialize ModuleActif
 const ModuleActif = ModuleActifModel(sequelize);
+
+// Initialize IpAutorisee
+const IpAutorisee = IpAutoriseeModel(sequelize);
+
+// Initialize Prolongation
+const Prolongation = ProlongationModel(sequelize);
 
 // Define associations
 // Adherent <-> Emprunt (One-to-Many)
@@ -835,6 +847,38 @@ GenreMusical.belongsToMany(Disque, {
   as: 'disques'
 });
 
+// ========================================
+// Associations pour les prolongations
+// ========================================
+
+// Emprunt <-> Prolongation (One-to-Many)
+Emprunt.hasMany(Prolongation, {
+  foreignKey: 'emprunt_id',
+  as: 'prolongations'
+});
+
+Prolongation.belongsTo(Emprunt, {
+  foreignKey: 'emprunt_id',
+  as: 'emprunt'
+});
+
+// Adherent <-> Prolongation (One-to-Many) - demandeur
+Adherent.hasMany(Prolongation, {
+  foreignKey: 'adherent_id',
+  as: 'prolongationsDemandees'
+});
+
+Prolongation.belongsTo(Adherent, {
+  foreignKey: 'adherent_id',
+  as: 'demandeur'
+});
+
+// Adherent <-> Prolongation (One-to-Many) - admin qui traite
+Prolongation.belongsTo(Adherent, {
+  foreignKey: 'traite_par',
+  as: 'traitePar'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -917,5 +961,9 @@ module.exports = {
   DisqueArtiste,
   DisqueGenre,
   // Modules actifs
-  ModuleActif
+  ModuleActif,
+  // IP autorisées (maintenance)
+  IpAutorisee,
+  // Prolongations
+  Prolongation
 };

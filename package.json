@@ -45,7 +45,9 @@
     "migrate-films": "node database/migrations/addFilmsNormalization.js",
     "setup-films": "npm run migrate-films",
     "migrate-disques": "node database/migrations/addDisquesNormalization.js",
-    "setup-disques": "npm run migrate-disques"
+    "setup-disques": "npm run migrate-disques",
+    "seed-sysadmin": "node database/seeds/seedSysadmin.js",
+    "migrate-ip-autorisees": "node database/migrations/addIpAutorisees.js"
   },
   "keywords": [
     "ludotheque",

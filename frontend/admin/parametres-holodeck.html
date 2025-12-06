@@ -194,6 +194,85 @@
           </div>
         </div>
 
+        <!-- IP Autorisees (Maintenance) -->
+        <div class="section-title">
+          <i class="bi bi-shield-check"></i> IPs Autorisees (Mode Maintenance)
+        </div>
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="autoriser-ip-locales" onchange="toggleIpLocales()">
+                  <label class="form-check-label" for="autoriser-ip-locales">
+                    <strong>Autoriser les IPs locales</strong>
+                    <br><small class="text-muted">127.*.*.* et 192.168.*.*</small>
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6 text-end">
+                <button class="btn btn-outline-primary btn-sm" onclick="addCurrentIp()">
+                  <i class="bi bi-plus-circle"></i> Ajouter mon IP actuelle
+                </button>
+                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="showAddIpModal()">
+                  <i class="bi bi-pencil"></i> Ajouter une IP manuellement
+                </button>
+              </div>
+            </div>
+            <div class="mb-3">
+              <small class="text-muted">
+                <i class="bi bi-info-circle"></i>
+                Votre IP actuelle : <code id="current-ip">Chargement...</code>
+              </small>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover" id="ip-table">
+                <thead>
+                  <tr>
+                    <th>Adresse IP</th>
+                    <th>Source</th>
+                    <th>Commentaire</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="ip-table-body">
+                  <tr>
+                    <td colspan="6" class="text-center text-muted">Chargement...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Ajouter IP -->
+        <div class="modal fade" id="addIpModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Ajouter une IP autorisee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="new-ip" class="form-label">Adresse IP</label>
+                  <input type="text" class="form-control" id="new-ip" placeholder="Ex: 192.168.1.100">
+                </div>
+                <div class="mb-3">
+                  <label for="new-ip-comment" class="form-label">Commentaire (optionnel)</label>
+                  <input type="text" class="form-control" id="new-ip-comment" placeholder="Ex: PC de Jean">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="addIpManual()">Ajouter</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Spacer -->
         <div style="height: 3rem;"></div>
       </div>
@@ -435,6 +514,215 @@
       document.body.appendChild(container);
       return container;
     }
+
+    // ========================
+    // Gestion des IPs autorisees
+    // ========================
+
+    let ipAutorisees = [];
+    let autoriserIpLocales = true;
+    let currentIp = '';
+
+    async function loadIpAutorisees() {
+      try {
+        const token = getAuthToken();
+        if (!token) return;
+
+        const response = await fetch('/api/parametres/ip-autorisees', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement IPs');
+
+        const data = await response.json();
+        ipAutorisees = data.ips || [];
+        autoriserIpLocales = data.autoriser_ip_locales;
+        currentIp = data.ip_actuelle || '';
+
+        renderIpTable();
+        document.getElementById('autoriser-ip-locales').checked = autoriserIpLocales;
+        document.getElementById('current-ip').textContent = currentIp;
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('ip-table-body').innerHTML = `
+          <tr><td colspan="6" class="text-center text-danger">Erreur de chargement</td></tr>
+        `;
+      }
+    }
+
+    function renderIpTable() {
+      const tbody = document.getElementById('ip-table-body');
+
+      if (ipAutorisees.length === 0) {
+        tbody.innerHTML = `
+          <tr><td colspan="6" class="text-center text-muted">Aucune IP autorisee</td></tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = ipAutorisees.map(ip => `
+        <tr class="${ip.actif ? '' : 'table-secondary'}">
+          <td><code>${ip.adresse_ip}</code></td>
+          <td>
+            <span class="badge ${ip.source === 'triforce' ? 'bg-warning text-dark' : 'bg-info'}">
+              ${ip.source === 'triforce' ? '<i class="bi bi-triangle"></i> Triforce' : '<i class="bi bi-person"></i> Admin'}
+            </span>
+          </td>
+          <td>${ip.commentaire || '<span class="text-muted">-</span>'}</td>
+          <td><small>${new Date(ip.date_creation).toLocaleString('fr-FR')}</small></td>
+          <td>
+            <span class="badge ${ip.actif ? 'bg-success' : 'bg-secondary'}">
+              ${ip.actif ? 'Active' : 'Inactive'}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-${ip.actif ? 'warning' : 'success'}" onclick="toggleIp(${ip.id})" title="${ip.actif ? 'Desactiver' : 'Activer'}">
+              <i class="bi bi-${ip.actif ? 'pause' : 'play'}"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteIp(${ip.id})" title="Supprimer">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function toggleIpLocales() {
+      try {
+        const token = getAuthToken();
+        const checkbox = document.getElementById('autoriser-ip-locales');
+
+        const response = await fetch('/api/parametres/ip-autorisees/locales', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ autoriser_ip_locales: checkbox.checked })
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('Parametre mis a jour', 'success');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la mise a jour', 'error');
+        // Revenir a l'etat precedent
+        document.getElementById('autoriser-ip-locales').checked = !document.getElementById('autoriser-ip-locales').checked;
+      }
+    }
+
+    async function addCurrentIp() {
+      try {
+        const token = getAuthToken();
+
+        const response = await fetch('/api/parametres/ip-autorisees/current', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ commentaire: 'Ajoutee depuis Holodeck' })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Erreur');
+        }
+
+        showToast('Votre IP a ete ajoutee', 'success');
+        await loadIpAutorisees();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'ajout', 'error');
+      }
+    }
+
+    function showAddIpModal() {
+      document.getElementById('new-ip').value = '';
+      document.getElementById('new-ip-comment').value = '';
+      new bootstrap.Modal(document.getElementById('addIpModal')).show();
+    }
+
+    async function addIpManual() {
+      try {
+        const token = getAuthToken();
+        const adresse_ip = document.getElementById('new-ip').value.trim();
+        const commentaire = document.getElementById('new-ip-comment').value.trim();
+
+        if (!adresse_ip) {
+          showToast('Veuillez saisir une adresse IP', 'error');
+          return;
+        }
+
+        const response = await fetch('/api/parametres/ip-autorisees', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ adresse_ip, commentaire })
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.message || 'Erreur');
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('addIpModal')).hide();
+        showToast('IP ajoutee avec succes', 'success');
+        await loadIpAutorisees();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'ajout', 'error');
+      }
+    }
+
+    async function toggleIp(id) {
+      try {
+        const token = getAuthToken();
+
+        const response = await fetch(`/api/parametres/ip-autorisees/${id}/toggle`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('Statut modifie', 'success');
+        await loadIpAutorisees();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteIp(id) {
+      if (!confirm('Supprimer cette IP autorisee ?')) return;
+
+      try {
+        const token = getAuthToken();
+
+        const response = await fetch(`/api/parametres/ip-autorisees/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('IP supprimee', 'success');
+        await loadIpAutorisees();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la suppression', 'error');
+      }
+    }
+
+    // Charger les IPs au demarrage
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Attendre que les modules soient charges
+      setTimeout(loadIpAutorisees, 500);
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catalogue - Chargement...</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style id="dynamic-styles">
+    :root {
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
+    }
+  </style>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      padding: 1rem 0;
+    }
+
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    /* Search Section */
+    .search-section {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      padding: 2rem 0;
+      color: white;
+    }
+
+    .search-box {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .search-box .form-control {
+      border-radius: 50px 0 0 50px;
+      padding: 0.75rem 1.5rem;
+      border: none;
+    }
+
+    .search-box .btn {
+      border-radius: 0 50px 50px 0;
+      padding: 0.75rem 1.5rem;
+    }
+
+    /* Filters */
+    .filters-section {
+      background: white;
+      padding: 1rem 0;
+      border-bottom: 1px solid #e9ecef;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .filter-btn {
+      border-radius: 50px;
+      padding: 0.5rem 1.25rem;
+      margin: 0.25rem;
+      border: 2px solid #e9ecef;
+      background: white;
+      color: #333;
+      transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+    }
+
+    .filter-btn.active {
+      background: var(--primary-color);
+      border-color: var(--primary-color);
+      color: white;
+    }
+
+    .filter-btn i {
+      margin-right: 0.5rem;
+    }
+
+    /* Results */
+    .results-info {
+      padding: 1rem 0;
+      color: #6c757d;
+    }
+
+    /* Cards */
+    .item-card {
+      background: white;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      transition: all 0.3s ease;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .item-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+
+    .item-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    }
+
+    .item-image-placeholder {
+      width: 100%;
+      height: 200px;
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #adb5bd;
+      font-size: 3rem;
+    }
+
+    .item-body {
+      padding: 1.25rem;
+    }
+
+    .item-type-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-jeu { background: #e8f5e9; color: #2e7d32; }
+    .badge-livre { background: #e3f2fd; color: #1565c0; }
+    .badge-film { background: #fce4ec; color: #c2185b; }
+    .badge-disque { background: #fff3e0; color: #e65100; }
+
+    .item-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.5rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .item-subtitle {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
+    }
+
+    .item-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+
+    .item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .item-status {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .status-disponible { background: #d4edda; color: #155724; }
+    .status-emprunte { background: #f8d7da; color: #721c24; }
+    .status-maintenance { background: #fff3cd; color: #856404; }
+
+    /* Pagination */
+    .pagination-section {
+      padding: 2rem 0;
+    }
+
+    .pagination .page-link {
+      border-radius: 50%;
+      margin: 0 0.25rem;
+      border: none;
+      color: #333;
+    }
+
+    .pagination .page-item.active .page-link {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    /* Loading */
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 4rem;
+    }
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: var(--primary-color);
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #6c757d;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    /* Footer */
+    footer {
+      background: #333;
+      color: white;
+      padding: 2rem 0;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    footer a {
+      color: #20c997;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="/" id="nav-brand">
+        <i class="bi bi-dice-5 me-2" style="font-size: 2rem;"></i>
+        <span id="site-name">Chargement...</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Accueil</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/catalogue.html">Catalogue</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/infos.html">Infos pratiques</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/connexion.html">
+              <i class="bi bi-person-circle"></i> Mon espace
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Search Section -->
+  <section class="search-section">
+    <div class="container">
+      <h1 class="text-center mb-4">Catalogue</h1>
+      <div class="search-box">
+        <form class="input-group" onsubmit="handleSearch(event)">
+          <input type="text" class="form-control" id="search-input" placeholder="Rechercher un titre...">
+          <button class="btn btn-light" type="submit">
+            <i class="bi bi-search"></i>
+          </button>
+        </form>
+      </div>
+      <div class="text-center mt-3" id="stats-display">
+        <!-- Stats loaded dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Filters -->
+  <section class="filters-section">
+    <div class="container">
+      <div class="d-flex flex-wrap justify-content-center" id="filters-container">
+        <button class="filter-btn active" data-type="" onclick="filterByType('')">
+          <i class="bi bi-grid-3x3-gap"></i> Tout
+        </button>
+        <!-- Dynamic filters loaded here -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section class="container py-4">
+    <div class="results-info" id="results-info">
+      <!-- Results count -->
+    </div>
+
+    <div class="row g-4" id="catalogue-grid">
+      <!-- Items loaded dynamically -->
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-spinner" id="loading" style="display: none;">
+      <div class="spinner-border" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" id="empty-state" style="display: none;">
+      <i class="bi bi-search"></i>
+      <h4>Aucun resultat</h4>
+      <p>Essayez avec d'autres termes de recherche</p>
+    </div>
+
+    <!-- Pagination -->
+    <nav class="pagination-section" id="pagination-container">
+      <ul class="pagination justify-content-center">
+        <!-- Pagination loaded dynamically -->
+      </ul>
+    </nav>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p class="mb-2" id="footer-text">&copy; 2025 - Tous droits reserves</p>
+      <p class="mb-0">
+        <a href="/admin/login.html"><i class="bi bi-lock"></i> Administration</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // State
+    let config = null;
+    let currentType = '';
+    let currentSearch = '';
+    let currentPage = 1;
+    const limit = 12;
+
+    // Icons for each type
+    const typeIcons = {
+      jeux: 'bi-controller',
+      livres: 'bi-book',
+      films: 'bi-film',
+      disques: 'bi-disc'
+    };
+
+    const typeLabels = {
+      jeux: 'Jeux',
+      livres: 'Livres',
+      films: 'Films',
+      disques: 'Disques'
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadConfig();
+      await loadStats();
+      await loadCatalogue();
+    });
+
+    // Load site configuration
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/public/config');
+        config = await response.json();
+
+        // Update page title
+        document.title = `Catalogue - ${config.nom_site}`;
+        document.getElementById('site-name').textContent = config.nom_site;
+
+        // Update colors
+        if (config.couleur_primaire || config.couleur_secondaire) {
+          document.getElementById('dynamic-styles').textContent = `
+            :root {
+              --primary-color: ${config.couleur_primaire || '#667eea'};
+              --secondary-color: ${config.couleur_secondaire || '#764ba2'};
+            }
+          `;
+        }
+
+        // Add custom CSS if any
+        if (config.css_personnalise) {
+          const customStyle = document.createElement('style');
+          customStyle.textContent = config.css_personnalise;
+          document.head.appendChild(customStyle);
+        }
+
+        // Build filter buttons based on active modules
+        buildFilters(config.modules);
+
+        // Update footer
+        document.getElementById('footer-text').textContent = `© 2025 ${config.nom_site} - Tous droits reserves`;
+
+      } catch (error) {
+        console.error('Erreur chargement config:', error);
+      }
+    }
+
+    // Build filter buttons
+    function buildFilters(modules) {
+      const container = document.getElementById('filters-container');
+
+      if (modules.ludotheque) {
+        container.innerHTML += `
+          <button class="filter-btn" data-type="jeux" onclick="filterByType('jeux')">
+            <i class="bi ${typeIcons.jeux}"></i> Jeux
+          </button>
+        `;
+      }
+      if (modules.bibliotheque) {
+        container.innerHTML += `
+          <button class="filter-btn" data-type="livres" onclick="filterByType('livres')">
+            <i class="bi ${typeIcons.livres}"></i> Livres
+          </button>
+        `;
+      }
+      if (modules.filmotheque) {
+        container.innerHTML += `
+          <button class="filter-btn" data-type="films" onclick="filterByType('films')">
+            <i class="bi ${typeIcons.films}"></i> Films
+          </button>
+        `;
+      }
+      if (modules.discotheque) {
+        container.innerHTML += `
+          <button class="filter-btn" data-type="disques" onclick="filterByType('disques')">
+            <i class="bi ${typeIcons.disques}"></i> Disques
+          </button>
+        `;
+      }
+    }
+
+    // Load stats
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/public/stats');
+        const stats = await response.json();
+
+        let statsHtml = '<span class="badge bg-light text-dark me-2">';
+        statsHtml += `<i class="bi bi-collection"></i> ${stats.total} items au total</span>`;
+
+        document.getElementById('stats-display').innerHTML = statsHtml;
+      } catch (error) {
+        console.error('Erreur chargement stats:', error);
+      }
+    }
+
+    // Load catalogue
+    async function loadCatalogue() {
+      const grid = document.getElementById('catalogue-grid');
+      const loading = document.getElementById('loading');
+      const emptyState = document.getElementById('empty-state');
+      const resultsInfo = document.getElementById('results-info');
+
+      // Show loading
+      grid.innerHTML = '';
+      loading.style.display = 'flex';
+      emptyState.style.display = 'none';
+
+      try {
+        let url = `/api/public/catalogue?page=${currentPage}&limit=${limit}`;
+        if (currentType) url += `&type=${currentType}`;
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+
+        const response = await fetch(url);
+        const data = await response.json();
+
+        loading.style.display = 'none';
+
+        if (data.items.length === 0) {
+          emptyState.style.display = 'block';
+          resultsInfo.innerHTML = '';
+          document.getElementById('pagination-container').innerHTML = '';
+          return;
+        }
+
+        // Update results info
+        const start = (data.page - 1) * data.limit + 1;
+        const end = Math.min(data.page * data.limit, data.total);
+        resultsInfo.innerHTML = `
+          <span>${start}-${end} sur ${data.total} resultats</span>
+          ${currentSearch ? `<span class="ms-2">pour "<strong>${currentSearch}</strong>"</span>` : ''}
+        `;
+
+        // Render items
+        grid.innerHTML = data.items.map(item => renderItem(item)).join('');
+
+        // Render pagination
+        renderPagination(data.page, data.pages);
+
+      } catch (error) {
+        console.error('Erreur chargement catalogue:', error);
+        loading.style.display = 'none';
+        emptyState.style.display = 'block';
+      }
+    }
+
+    // Render single item card
+    function renderItem(item) {
+      const imageHtml = item.image_url
+        ? `<img src="${item.image_url}" alt="${item.titre}" class="item-image">`
+        : `<div class="item-image-placeholder"><i class="bi ${typeIcons[item.type + 's'] || 'bi-box'}"></i></div>`;
+
+      const statusClass = `status-${item.statut}`;
+      const statusLabel = item.statut === 'disponible' ? 'Disponible'
+        : item.statut === 'emprunte' ? 'Emprunte'
+        : item.statut;
+
+      let metaHtml = '';
+
+      if (item.type === 'jeu') {
+        if (item.nb_joueurs_min) {
+          const joueurs = item.nb_joueurs_max && item.nb_joueurs_max !== item.nb_joueurs_min
+            ? `${item.nb_joueurs_min}-${item.nb_joueurs_max}`
+            : item.nb_joueurs_min;
+          metaHtml += `<span><i class="bi bi-people"></i> ${joueurs}</span>`;
+        }
+        if (item.duree_moyenne) {
+          metaHtml += `<span><i class="bi bi-clock"></i> ${item.duree_moyenne} min</span>`;
+        }
+        if (item.age_minimum) {
+          metaHtml += `<span><i class="bi bi-person"></i> ${item.age_minimum}+</span>`;
+        }
+      }
+
+      if (item.type === 'livre') {
+        if (item.nb_pages) {
+          metaHtml += `<span><i class="bi bi-file-text"></i> ${item.nb_pages} p.</span>`;
+        }
+      }
+
+      if (item.type === 'film') {
+        if (item.duree) {
+          metaHtml += `<span><i class="bi bi-clock"></i> ${item.duree} min</span>`;
+        }
+        if (item.classification) {
+          metaHtml += `<span><i class="bi bi-shield"></i> ${item.classification}</span>`;
+        }
+      }
+
+      if (item.type === 'disque') {
+        if (item.nb_pistes) {
+          metaHtml += `<span><i class="bi bi-music-note-list"></i> ${item.nb_pistes} titres</span>`;
+        }
+        if (item.duree_totale) {
+          metaHtml += `<span><i class="bi bi-clock"></i> ${item.duree_totale} min</span>`;
+        }
+      }
+
+      if (item.annee_sortie || item.annee_publication) {
+        metaHtml += `<span><i class="bi bi-calendar"></i> ${item.annee_sortie || item.annee_publication}</span>`;
+      }
+
+      return `
+        <div class="col-sm-6 col-md-4 col-lg-3">
+          <div class="item-card" onclick="viewItem('${item.type}', ${item.id})">
+            ${imageHtml}
+            <div class="item-body">
+              <span class="item-type-badge badge-${item.type}">${item.type_label}</span>
+              <h5 class="item-title">${item.titre}</h5>
+              ${item.sous_titre ? `<p class="item-subtitle">${item.sous_titre}</p>` : ''}
+              <div class="item-meta">
+                ${metaHtml}
+              </div>
+              <div class="mt-2">
+                <span class="item-status ${statusClass}">${statusLabel}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render pagination
+    function renderPagination(current, total) {
+      if (total <= 1) {
+        document.getElementById('pagination-container').innerHTML = '';
+        return;
+      }
+
+      let html = '<ul class="pagination justify-content-center">';
+
+      // Previous
+      html += `
+        <li class="page-item ${current === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="#" onclick="goToPage(${current - 1}); return false;">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+      `;
+
+      // Page numbers
+      const startPage = Math.max(1, current - 2);
+      const endPage = Math.min(total, current + 2);
+
+      if (startPage > 1) {
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(1); return false;">1</a></li>`;
+        if (startPage > 2) {
+          html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        html += `
+          <li class="page-item ${i === current ? 'active' : ''}">
+            <a class="page-link" href="#" onclick="goToPage(${i}); return false;">${i}</a>
+          </li>
+        `;
+      }
+
+      if (endPage < total) {
+        if (endPage < total - 1) {
+          html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        html += `<li class="page-item"><a class="page-link" href="#" onclick="goToPage(${total}); return false;">${total}</a></li>`;
+      }
+
+      // Next
+      html += `
+        <li class="page-item ${current === total ? 'disabled' : ''}">
+          <a class="page-link" href="#" onclick="goToPage(${current + 1}); return false;">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+      `;
+
+      html += '</ul>';
+
+      document.getElementById('pagination-container').innerHTML = html;
+    }
+
+    // Filter by type
+    function filterByType(type) {
+      currentType = type;
+      currentPage = 1;
+
+      // Update active button
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.type === type) {
+          btn.classList.add('active');
+        }
+      });
+
+      loadCatalogue();
+    }
+
+    // Handle search
+    function handleSearch(event) {
+      event.preventDefault();
+      currentSearch = document.getElementById('search-input').value.trim();
+      currentPage = 1;
+      loadCatalogue();
+    }
+
+    // Go to page
+    function goToPage(page) {
+      currentPage = page;
+      loadCatalogue();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // View item detail
+    function viewItem(type, id) {
+      window.location.href = `/fiche.html?type=${type}&id=${id}`;
+    }
+  </script>
+</body>
+</html>

@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const cors = require('cors');
 const path = require('path');
 const { sequelize } = require('./models');
+const { checkMaintenance } = require('./middleware/maintenance');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,20 +30,13 @@ app.use(express.urlencoded({ extended: true }));
 //   next();
 // });
 
-// Serve static files from frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Routes de base
-app.get('/', (req, res) => {
-  res.json({
-    message: 'Ludothèque API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      api: '/api'
-    }
-  });
+// Route publique avec vérification maintenance (AVANT static pour intercepter /)
+app.get('/', checkMaintenance, (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
+
+// Serve static files from frontend (sans servir index.html automatiquement)
+app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
 
 app.get('/api', (req, res) => {
   res.json({
@@ -87,6 +81,13 @@ app.use('/api/referentiels', require('./routes/referentiels'));
 app.use('/api/livres', require('./routes/livres'));
 app.use('/api/films', require('./routes/films'));
 app.use('/api/disques', require('./routes/disques'));
+app.use('/api/maintenance', require('./routes/maintenance'));
+app.use('/api/public', require('./routes/public'));
+app.use('/api/prolongations', require('./routes/prolongations'));
+
+// Routes espace usager (adherents)
+app.use('/api/usager/auth', require('./routes/usagerAuth'));
+app.use('/api/usager/emprunts', require('./routes/usagerEmprunts'));
 
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {

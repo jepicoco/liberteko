@@ -83,6 +83,18 @@ module.exports = (sequelize) => {
       defaultValue: false,
       comment: 'Module livres actif'
     },
+    module_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Module films actif'
+    },
+    module_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Module disques/musique actif'
+    },
     module_inscriptions: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -192,6 +204,116 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true,
       comment: 'Message affiche en mode maintenance'
+    },
+    autoriser_ip_locales: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Autoriser les IPs locales (127.x.x.x, 192.168.x.x) a outrepasser la maintenance'
+    },
+
+    // === Parametres de prolongation - Ludotheque ===
+    prolongation_jours_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 14,
+      comment: 'Jours par prolongation (jeux)'
+    },
+    prolongation_auto_max_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Nb prolongations auto max (jeux)'
+    },
+    prolongation_manuelle_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Autoriser demande manuelle apres auto (jeux)'
+    },
+    prolongation_msg_reservation_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Afficher message si reserve (jeux)'
+    },
+
+    // === Parametres de prolongation - Bibliotheque ===
+    prolongation_jours_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 14,
+      comment: 'Jours par prolongation (livres)'
+    },
+    prolongation_auto_max_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Nb prolongations auto max (livres)'
+    },
+    prolongation_manuelle_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Autoriser demande manuelle apres auto (livres)'
+    },
+    prolongation_msg_reservation_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Afficher message si reserve (livres)'
+    },
+
+    // === Parametres de prolongation - Filmotheque ===
+    prolongation_jours_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 7,
+      comment: 'Jours par prolongation (films)'
+    },
+    prolongation_auto_max_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Nb prolongations auto max (films)'
+    },
+    prolongation_manuelle_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Autoriser demande manuelle apres auto (films)'
+    },
+    prolongation_msg_reservation_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Afficher message si reserve (films)'
+    },
+
+    // === Parametres de prolongation - Discotheque ===
+    prolongation_jours_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 7,
+      comment: 'Jours par prolongation (disques)'
+    },
+    prolongation_auto_max_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Nb prolongations auto max (disques)'
+    },
+    prolongation_manuelle_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Autoriser demande manuelle apres auto (disques)'
+    },
+    prolongation_msg_reservation_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Afficher message si reserve (disques)'
     }
   }, {
     tableName: 'parametres_front',

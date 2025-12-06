@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Infos pratiques - Chargement...</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style id="dynamic-styles">
+    :root {
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
+    }
+  </style>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      padding: 1rem 0;
+    }
+
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    /* Header */
+    .page-header {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      padding: 3rem 0;
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    /* Sections */
+    .info-section {
+      padding: 3rem 0;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-title i {
+      color: var(--primary-color);
+    }
+
+    /* Site cards */
+    .site-card {
+      background: white;
+      border-radius: 1rem;
+      overflow: hidden;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      margin-bottom: 1.5rem;
+      border-left: 4px solid var(--primary-color);
+    }
+
+    .site-card-header {
+      padding: 1.25rem;
+      border-bottom: 1px solid #e9ecef;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .site-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+
+    .site-name {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+
+    .site-type {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+
+    .site-card-body {
+      padding: 1.25rem;
+    }
+
+    /* Horaires table */
+    .horaires-table {
+      width: 100%;
+      margin-bottom: 1rem;
+    }
+
+    .horaires-table tr {
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .horaires-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .horaires-table td {
+      padding: 0.75rem 0;
+    }
+
+    .horaires-table .jour {
+      font-weight: 500;
+      color: #333;
+      width: 40%;
+    }
+
+    .horaires-table .heures {
+      color: #6c757d;
+    }
+
+    .horaires-table .ferme {
+      color: #dc3545;
+      font-style: italic;
+    }
+
+    .horaires-table .today {
+      background: #e8f5e9;
+      border-radius: 0.25rem;
+    }
+
+    .horaires-table .today .jour {
+      color: #2e7d32;
+    }
+
+    /* Contact info */
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .contact-item:last-child {
+      border-bottom: none;
+    }
+
+    .contact-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .contact-details h6 {
+      margin: 0 0 0.25rem;
+      color: #333;
+    }
+
+    .contact-details p {
+      margin: 0;
+      color: #6c757d;
+    }
+
+    .contact-details a {
+      color: var(--primary-color);
+      text-decoration: none;
+    }
+
+    .contact-details a:hover {
+      text-decoration: underline;
+    }
+
+    /* Fermetures */
+    .fermeture-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem 1rem;
+      background: #fff3cd;
+      border-radius: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .fermeture-item i {
+      color: #856404;
+      font-size: 1.25rem;
+    }
+
+    .fermeture-item .dates {
+      font-weight: 600;
+      color: #856404;
+    }
+
+    .fermeture-item .motif {
+      color: #6c757d;
+      font-size: 0.9rem;
+    }
+
+    /* Social links */
+    .social-links {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .social-link {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: white;
+      border-radius: 50px;
+      text-decoration: none;
+      color: #333;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+
+    .social-link:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+      color: var(--primary-color);
+    }
+
+    .social-link i {
+      font-size: 1.25rem;
+    }
+
+    /* Info card */
+    .info-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      height: 100%;
+    }
+
+    .info-card h5 {
+      color: var(--primary-color);
+      margin-bottom: 1rem;
+    }
+
+    /* Footer */
+    footer {
+      background: #333;
+      color: white;
+      padding: 2rem 0;
+      text-align: center;
+      margin-top: 2rem;
+    }
+
+    footer a {
+      color: #20c997;
+      text-decoration: none;
+    }
+
+    /* Loading */
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      padding: 3rem;
+    }
+
+    .spinner-border {
+      width: 3rem;
+      height: 3rem;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="/" id="nav-brand">
+        <i class="bi bi-dice-5 me-2" style="font-size: 2rem;"></i>
+        <span id="site-name">Chargement...</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Accueil</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/catalogue.html">Catalogue</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/infos.html">Infos pratiques</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/connexion.html">
+              <i class="bi bi-person-circle"></i> Mon espace
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <section class="page-header">
+    <div class="container">
+      <h1>Infos pratiques</h1>
+      <p>Horaires, adresse et contact</p>
+    </div>
+  </section>
+
+  <!-- Main content -->
+  <div class="container">
+    <!-- Sites et horaires -->
+    <section class="info-section">
+      <h2 class="section-title">
+        <i class="bi bi-clock"></i>
+        Horaires d'ouverture
+      </h2>
+
+      <div class="loading-spinner" id="loading-sites">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+      </div>
+
+      <div id="sites-container">
+        <!-- Sites loaded dynamically -->
+      </div>
+    </section>
+
+    <!-- Fermetures a venir -->
+    <section class="info-section" id="fermetures-section" style="display: none;">
+      <h2 class="section-title">
+        <i class="bi bi-calendar-x"></i>
+        Fermetures exceptionnelles
+      </h2>
+
+      <div id="fermetures-container">
+        <!-- Fermetures loaded dynamically -->
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="info-section">
+      <h2 class="section-title">
+        <i class="bi bi-envelope"></i>
+        Contact
+      </h2>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="info-card">
+            <h5><i class="bi bi-geo-alt me-2"></i>Nous contacter</h5>
+            <div id="contact-container">
+              <!-- Contact info loaded dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6" id="social-section" style="display: none;">
+          <div class="info-card">
+            <h5><i class="bi bi-share me-2"></i>Suivez-nous</h5>
+            <div class="social-links" id="social-container">
+              <!-- Social links loaded dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p class="mb-2" id="footer-text">&copy; 2025 - Tous droits reserves</p>
+      <p class="mb-0">
+        <a href="/admin/login.html"><i class="bi bi-lock"></i> Administration</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+    let config = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadConfig();
+      await loadSites();
+    });
+
+    // Load site configuration
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/public/config');
+        config = await response.json();
+
+        document.title = `Infos pratiques - ${config.nom_site}`;
+        document.getElementById('site-name').textContent = config.nom_site;
+
+        if (config.couleur_primaire || config.couleur_secondaire) {
+          document.getElementById('dynamic-styles').textContent = `
+            :root {
+              --primary-color: ${config.couleur_primaire || '#667eea'};
+              --secondary-color: ${config.couleur_secondaire || '#764ba2'};
+            }
+          `;
+        }
+
+        if (config.css_personnalise) {
+          const customStyle = document.createElement('style');
+          customStyle.textContent = config.css_personnalise;
+          document.head.appendChild(customStyle);
+        }
+
+        document.getElementById('footer-text').textContent = `© 2025 ${config.nom_site} - Tous droits reserves`;
+
+        // Render contact info
+        renderContact();
+
+        // Render social links
+        renderSocial();
+
+      } catch (error) {
+        console.error('Erreur chargement config:', error);
+      }
+    }
+
+    // Load sites
+    async function loadSites() {
+      try {
+        const response = await fetch('/api/public/sites');
+        const data = await response.json();
+
+        document.getElementById('loading-sites').style.display = 'none';
+
+        // Render sites
+        const sitesContainer = document.getElementById('sites-container');
+        if (data.sites.length === 0) {
+          sitesContainer.innerHTML = '<p class="text-muted">Aucun site configure.</p>';
+        } else {
+          sitesContainer.innerHTML = data.sites.map(site => renderSite(site)).join('');
+        }
+
+        // Render fermetures
+        if (data.fermetures_a_venir && data.fermetures_a_venir.length > 0) {
+          document.getElementById('fermetures-section').style.display = 'block';
+          document.getElementById('fermetures-container').innerHTML =
+            data.fermetures_a_venir.map(f => renderFermeture(f)).join('');
+        }
+
+      } catch (error) {
+        console.error('Erreur chargement sites:', error);
+        document.getElementById('loading-sites').style.display = 'none';
+      }
+    }
+
+    // Render site card
+    function renderSite(site) {
+      const bgColor = site.couleur || '#667eea';
+      const icon = site.icone || 'building';
+      const typeLabel = site.type === 'mobile' ? 'Site mobile' : 'Site fixe';
+
+      // Group horaires by day
+      const horairesByDay = {};
+      JOURS.forEach((jour, i) => horairesByDay[i] = []);
+
+      if (site.horaires) {
+        site.horaires.forEach(h => {
+          horairesByDay[h.jour_semaine].push(h);
+        });
+      }
+
+      // Get current day (0 = Monday in our system)
+      const today = (new Date().getDay() + 6) % 7;
+
+      let horairesHtml = '<table class="horaires-table">';
+      JOURS.forEach((jour, i) => {
+        const isToday = i === today;
+        const dayHoraires = horairesByDay[i];
+
+        let heuresHtml = '';
+        if (dayHoraires.length === 0) {
+          heuresHtml = '<span class="ferme">Ferme</span>';
+        } else {
+          heuresHtml = dayHoraires.map(h => {
+            const debut = h.heure_debut.substring(0, 5);
+            const fin = h.heure_fin.substring(0, 5);
+            return `${debut} - ${fin}`;
+          }).join(', ');
+        }
+
+        horairesHtml += `
+          <tr class="${isToday ? 'today' : ''}">
+            <td class="jour">${jour}${isToday ? ' (Aujourd\'hui)' : ''}</td>
+            <td class="heures">${heuresHtml}</td>
+          </tr>
+        `;
+      });
+      horairesHtml += '</table>';
+
+      let addressHtml = '';
+      if (site.adresse || site.ville) {
+        addressHtml = `
+          <div class="mt-3 pt-3 border-top">
+            <p class="mb-1"><strong><i class="bi bi-geo-alt me-2"></i>Adresse</strong></p>
+            <p class="text-muted mb-0">
+              ${site.adresse ? site.adresse + '<br>' : ''}
+              ${site.code_postal ? site.code_postal + ' ' : ''}${site.ville || ''}
+            </p>
+          </div>
+        `;
+      }
+
+      let contactHtml = '';
+      if (site.telephone || site.email) {
+        contactHtml = `
+          <div class="mt-3 pt-3 border-top">
+            ${site.telephone ? `<p class="mb-1"><i class="bi bi-telephone me-2"></i><a href="tel:${site.telephone}">${site.telephone}</a></p>` : ''}
+            ${site.email ? `<p class="mb-0"><i class="bi bi-envelope me-2"></i><a href="mailto:${site.email}">${site.email}</a></p>` : ''}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="site-card" style="border-left-color: ${bgColor};">
+          <div class="site-card-header">
+            <div class="site-icon" style="background: ${bgColor};">
+              <i class="bi bi-${icon}"></i>
+            </div>
+            <div>
+              <h4 class="site-name">${site.nom}</h4>
+              <span class="site-type">${typeLabel}</span>
+            </div>
+          </div>
+          <div class="site-card-body">
+            ${horairesHtml}
+            ${addressHtml}
+            ${contactHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    // Render fermeture
+    function renderFermeture(fermeture) {
+      const dateDebut = new Date(fermeture.date_debut).toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+      const dateFin = new Date(fermeture.date_fin).toLocaleDateString('fr-FR', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+
+      const dateStr = fermeture.date_debut === fermeture.date_fin
+        ? dateDebut
+        : `Du ${dateDebut} au ${dateFin}`;
+
+      return `
+        <div class="fermeture-item">
+          <i class="bi bi-exclamation-triangle"></i>
+          <div>
+            <div class="dates">${dateStr}</div>
+            <div class="motif">${fermeture.motif || 'Fermeture exceptionnelle'}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Render contact info
+    function renderContact() {
+      const container = document.getElementById('contact-container');
+      let html = '';
+
+      if (config.adresse_contact) {
+        html += `
+          <div class="contact-item">
+            <div class="contact-icon"><i class="bi bi-geo-alt"></i></div>
+            <div class="contact-details">
+              <h6>Adresse</h6>
+              <p>${config.adresse_contact.replace(/\n/g, '<br>')}</p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (config.telephone_contact) {
+        html += `
+          <div class="contact-item">
+            <div class="contact-icon"><i class="bi bi-telephone"></i></div>
+            <div class="contact-details">
+              <h6>Telephone</h6>
+              <p><a href="tel:${config.telephone_contact}">${config.telephone_contact}</a></p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (config.email_contact) {
+        html += `
+          <div class="contact-item">
+            <div class="contact-icon"><i class="bi bi-envelope"></i></div>
+            <div class="contact-details">
+              <h6>Email</h6>
+              <p><a href="mailto:${config.email_contact}">${config.email_contact}</a></p>
+            </div>
+          </div>
+        `;
+      }
+
+      if (!html) {
+        html = '<p class="text-muted">Aucune information de contact configuree.</p>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    // Render social links
+    function renderSocial() {
+      const socials = config.reseaux_sociaux;
+      if (!socials) return;
+
+      const container = document.getElementById('social-container');
+      let html = '';
+
+      if (socials.facebook) {
+        html += `<a href="${socials.facebook}" target="_blank" class="social-link"><i class="bi bi-facebook"></i> Facebook</a>`;
+      }
+      if (socials.instagram) {
+        html += `<a href="${socials.instagram}" target="_blank" class="social-link"><i class="bi bi-instagram"></i> Instagram</a>`;
+      }
+      if (socials.twitter) {
+        html += `<a href="${socials.twitter}" target="_blank" class="social-link"><i class="bi bi-twitter-x"></i> Twitter</a>`;
+      }
+      if (socials.youtube) {
+        html += `<a href="${socials.youtube}" target="_blank" class="social-link"><i class="bi bi-youtube"></i> YouTube</a>`;
+      }
+
+      if (html) {
+        document.getElementById('social-section').style.display = 'block';
+        container.innerHTML = html;
+      }
+    }
+  </script>
+</body>
+</html>

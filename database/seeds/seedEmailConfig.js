@@ -3,6 +3,8 @@
  * Utilise Mailtrap ou un serveur SMTP de test
  */
 
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 const { ConfigurationEmail } = require('../../backend/models');
 
 async function seedEmailConfig() {

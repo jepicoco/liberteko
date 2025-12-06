@@ -55,9 +55,13 @@ ludotheque/
 **ORM**: Sequelize avec MySQL
 
 **Modèles principaux**:
-- `Adherent` - Membres de la ludothèque
+- `Adherent` - Membres de la ludothèque (+ auth usager avec reset password)
 - `Jeu` - Catalogue de jeux
-- `Emprunt` - Système de prêts
+- `Livre` - Catalogue de livres
+- `Film` - Catalogue de films
+- `Disque` - Catalogue de disques
+- `Emprunt` - Système de prêts (+ prolongations)
+- `Prolongation` - Demandes de prolongation (auto/manuelle)
 - `TarifCotisation` - Tarifs d'adhésion
 - `Cotisation` - Paiements et abonnements
 - `CodeReduction` - Codes promo
@@ -66,10 +70,13 @@ ludotheque/
 - `TemplateMessage` - Templates d'emails/SMS
 - `EventTrigger` - Déclencheurs automatiques
 - `EmailLog` - Historique des envois
+- `ParametresFront` - Paramètres frontend (dont prolongations par module)
+- `IpAutorisee` - IPs autorisées en mode maintenance
 
 **Associations**:
-- `Adherent` 1-N `Emprunt`, `Cotisation`
-- `Jeu` 1-N `Emprunt`
+- `Adherent` 1-N `Emprunt`, `Cotisation`, `Prolongation`
+- `Jeu`, `Livre`, `Film`, `Disque` 1-N `Emprunt`
+- `Emprunt` 1-N `Prolongation`
 - `TarifCotisation` 1-N `Cotisation`
 - Défini dans `backend/models/index.js`
 
@@ -104,6 +111,33 @@ Le fichier `backend/routes/parametres.js` regroupe toutes les routes de configur
 - `/api/parametres/templates-messages` - Templates
 
 **Raison**: Regroupement logique de toutes les "configurations" sous un même endpoint pour faciliter la gestion des permissions et l'organisation.
+
+**C. Routes Espace Usager** (authentification séparée):
+```javascript
+app.use('/api/usager/auth', require('./routes/usagerAuth'));
+app.use('/api/usager/emprunts', require('./routes/usagerEmprunts'));
+app.use('/api/prolongations', require('./routes/prolongations'));
+```
+
+**Routes Usager Auth**:
+- `POST /api/usager/auth/login` - Connexion (email ou code-barre)
+- `POST /api/usager/auth/forgot-password` - Demande reset password
+- `POST /api/usager/auth/reset-password` - Reset avec token
+- `POST /api/usager/auth/create-password` - Création premier mot de passe
+- `GET /api/usager/auth/verify-token/:token` - Vérification token reset
+- `GET /api/usager/auth/me` - Profil usager connecté
+
+**Routes Usager Emprunts**:
+- `GET /api/usager/emprunts` - Liste tous les emprunts
+- `GET /api/usager/emprunts/en-cours` - Emprunts en cours
+- `GET /api/usager/emprunts/historique` - Historique
+- `POST /api/usager/emprunts/:id/prolonger` - Demander prolongation
+
+**Routes Prolongations (Admin)**:
+- `GET /api/prolongations` - Liste des demandes
+- `GET /api/prolongations/stats` - Statistiques
+- `POST /api/prolongations/:id/valider` - Valider une demande
+- `POST /api/prolongations/:id/refuser` - Refuser une demande
 
 ### 4. Services (backend/services/)
 
@@ -203,6 +237,47 @@ Fonction principale: `apiRequest(endpoint, method, data)`
 - `adherents-communications.js` - Envoi email/SMS
 
 **Avantage**: Code modulaire, maintenable, réutilisable
+
+### 4. Interface Espace Usager (frontend/usager/)
+
+**Pages**:
+- `login.html` - Connexion (email ou code-barre)
+- `forgot-password.html` - Mot de passe oublié
+- `reset-password.html` - Création/réinitialisation mot de passe
+- `dashboard.html` - Tableau de bord avec stats et emprunts en cours
+- `emprunts.html` - Liste complète des emprunts avec historique
+
+**Authentification**: JWT séparé de l'admin, stocké dans `localStorage` (`usager_token`)
+
+**Fonctionnalités**:
+- Consultation des emprunts en cours et historique
+- Demande de prolongation (automatique ou manuelle selon config)
+- Message d'avertissement si item réservé par un autre adhérent
+
+---
+
+## Système de Prolongation
+
+### Configuration par Module
+
+Chaque module (ludothèque, bibliothèque, filmothèque, discothèque) dispose de ses propres paramètres:
+
+- `prolongation_jours_[module]` - Nombre de jours par prolongation
+- `prolongation_auto_max_[module]` - Nombre max de prolongations automatiques
+- `prolongation_manuelle_[module]` - Autoriser les demandes manuelles après auto
+- `prolongation_msg_reservation_[module]` - Afficher message si item réservé
+
+### Flux de Prolongation
+
+1. **Prolongation Automatique**: Si `nb_prolongations < auto_max`, la prolongation est validée instantanément
+2. **Prolongation Manuelle**: Si auto épuisé et manuelle autorisée, création d'une demande en attente
+3. **Validation Admin**: Interface admin pour valider/refuser les demandes manuelles
+
+### Interface Admin
+
+Page `parametres-emprunts.html`:
+- Onglet Configuration: Réglages par module
+- Onglet Demandes en attente: Validation/refus des demandes manuelles
 
 ---
 

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git clone:*)",
+      "Bash(ren \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\frontend\\index.html\" \"maintenance.html\")",
+      "Bash(powershell -Command:*)",
+      "Bash(curl:*)",
+      "Bash(node database/migrations/addProlongationParams.js:*)",
+      "Bash(node database/migrations/createProlongationsTable.js:*)",
+      "Bash(node -e:*)",
+      "Bash(ls:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

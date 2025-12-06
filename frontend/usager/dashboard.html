@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon espace - Usager</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --couleur-primaire: #0d6efd;
+      --couleur-secondaire: #6c757d;
+    }
+    body {
+      background-color: #f8f9fa;
+    }
+    .navbar {
+      background: var(--couleur-primaire) !important;
+    }
+    .card-stat {
+      border: none;
+      border-radius: 1rem;
+      transition: transform 0.2s;
+    }
+    .card-stat:hover {
+      transform: translateY(-2px);
+    }
+    .card-stat .card-body {
+      padding: 1.5rem;
+    }
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .stat-icon.primary { background: rgba(13, 110, 253, 0.1); color: var(--couleur-primaire); }
+    .stat-icon.warning { background: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .stat-icon.danger { background: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    .stat-icon.success { background: rgba(25, 135, 84, 0.1); color: #198754; }
+    .emprunt-card {
+      border: none;
+      border-radius: 0.75rem;
+      transition: box-shadow 0.2s;
+    }
+    .emprunt-card:hover {
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .emprunt-card .item-image {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #e9ecef;
+    }
+    .badge-retard {
+      background: #dc3545;
+    }
+    .badge-warning {
+      background: #ffc107;
+      color: #000;
+    }
+    .badge-ok {
+      background: #198754;
+    }
+    .btn-prolonger {
+      font-size: 0.85rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+    }
+    .empty-state i {
+      font-size: 4rem;
+      opacity: 0.3;
+    }
+    .adhesion-alert {
+      border-radius: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="dashboard.html" id="siteName">Mon Espace</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="dashboard.html"><i class="bi bi-house me-1"></i>Accueil</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="emprunts.html"><i class="bi bi-collection me-1"></i>Mes emprunts</a>
+          </li>
+        </ul>
+        <ul class="navbar-nav">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown">
+              <i class="bi bi-person-circle me-1"></i><span id="userName">Mon compte</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="profil.html"><i class="bi bi-person me-2"></i>Mon profil</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item text-danger" href="#" id="btnLogout"><i class="bi bi-box-arrow-right me-2"></i>Deconnexion</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenu -->
+  <div class="container py-4">
+    <!-- Alerte adhesion expiree -->
+    <div class="alert alert-warning adhesion-alert d-none" id="adhesionAlert">
+      <i class="bi bi-exclamation-triangle me-2"></i>
+      <strong>Votre adhesion a expire !</strong>
+      Contactez l'association pour la renouveler.
+    </div>
+
+    <!-- En-tete -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="mb-1">Bonjour <span id="userPrenom"></span> !</h4>
+        <p class="text-muted mb-0">Bienvenue dans votre espace personnel</p>
+      </div>
+      <a href="../index.html" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Retour au site
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3 col-6">
+        <div class="card card-stat shadow-sm">
+          <div class="card-body d-flex align-items-center">
+            <div class="stat-icon primary me-3">
+              <i class="bi bi-book"></i>
+            </div>
+            <div>
+              <div class="h4 mb-0" id="statEnCours">-</div>
+              <small class="text-muted">En cours</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="card card-stat shadow-sm">
+          <div class="card-body d-flex align-items-center">
+            <div class="stat-icon danger me-3">
+              <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div>
+              <div class="h4 mb-0" id="statRetard">-</div>
+              <small class="text-muted">En retard</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="card card-stat shadow-sm">
+          <div class="card-body d-flex align-items-center">
+            <div class="stat-icon warning me-3">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <div>
+              <div class="h4 mb-0" id="statProlongations">-</div>
+              <small class="text-muted">Prolongations</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6">
+        <div class="card card-stat shadow-sm">
+          <div class="card-body d-flex align-items-center">
+            <div class="stat-icon success me-3">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div>
+              <div class="h4 mb-0" id="statTotal">-</div>
+              <small class="text-muted">Total emprunts</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Emprunts en cours -->
+    <div class="card shadow-sm">
+      <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-collection me-2"></i>Mes emprunts en cours</h5>
+        <a href="emprunts.html" class="btn btn-sm btn-outline-primary">Voir tout</a>
+      </div>
+      <div class="card-body" id="empruntsContainer">
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Prolongation -->
+  <div class="modal fade" id="prolongationModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Demander une prolongation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Vous etes sur le point de demander une prolongation pour :</p>
+          <h6 id="prolongationItemTitle" class="mb-3"></h6>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <span id="prolongationInfo"></span>
+          </div>
+          <div class="alert alert-warning d-none" id="prolongationWarning"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmProlongation">
+            <i class="bi bi-check me-1"></i>Confirmer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const API_URL = '/api';
+    let currentEmpruntId = null;
+
+    // Verifier l'authentification
+    function checkAuth() {
+      const token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = 'login.html';
+        return null;
+      }
+      return token;
+    }
+
+    // Headers avec token
+    function getHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('usager_token')}`
+      };
+    }
+
+    // Charger les infos utilisateur
+    function loadUserInfo() {
+      const userInfo = JSON.parse(localStorage.getItem('usager_info') || '{}');
+      document.getElementById('userName').textContent = userInfo.prenom || 'Mon compte';
+      document.getElementById('userPrenom').textContent = userInfo.prenom || '';
+    }
+
+    // Charger les emprunts en cours
+    async function loadEmprunts() {
+      const container = document.getElementById('empruntsContainer');
+
+      try {
+        const response = await fetch(`${API_URL}/usager/emprunts/en-cours`, {
+          headers: getHeaders()
+        });
+
+        if (response.status === 401) {
+          localStorage.removeItem('usager_token');
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const data = await response.json();
+        const emprunts = data.emprunts || [];
+
+        // Stats
+        const enCours = emprunts.filter(e => e.statut === 'en_cours').length;
+        const enRetard = emprunts.filter(e => e.statut === 'en_retard').length;
+        const prolongations = emprunts.reduce((sum, e) => sum + (e.nb_prolongations || 0), 0);
+
+        document.getElementById('statEnCours').textContent = enCours;
+        document.getElementById('statRetard').textContent = enRetard;
+        document.getElementById('statProlongations').textContent = prolongations;
+
+        if (emprunts.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <h6 class="mt-3">Aucun emprunt en cours</h6>
+              <p>Vous n'avez pas d'emprunt en cours actuellement.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = emprunts.map(emprunt => {
+          const joursRestants = emprunt.jours_restants;
+          let badgeClass, badgeText;
+
+          if (emprunt.statut === 'en_retard') {
+            badgeClass = 'badge-retard';
+            badgeText = `${Math.abs(joursRestants)} jour(s) de retard`;
+          } else if (joursRestants <= 3) {
+            badgeClass = 'badge-warning';
+            badgeText = `${joursRestants} jour(s) restant(s)`;
+          } else {
+            badgeClass = 'badge-ok';
+            badgeText = `${joursRestants} jours restants`;
+          }
+
+          const prolongationDisabled = !emprunt.prolongation.possible ||
+            (emprunt.prolongation.auto_restantes === 0 && !emprunt.prolongation.manuelle_possible);
+
+          const prolongationBtn = prolongationDisabled
+            ? `<button class="btn btn-sm btn-outline-secondary btn-prolonger" disabled>
+                <i class="bi bi-lock me-1"></i>Max atteint
+               </button>`
+            : `<button class="btn btn-sm btn-outline-primary btn-prolonger" onclick="openProlongation(${emprunt.id}, '${emprunt.item?.titre?.replace(/'/g, "\\'")}', ${emprunt.prolongation.jours_accordes}, ${emprunt.prolongation.auto_restantes > 0})">
+                <i class="bi bi-arrow-repeat me-1"></i>Prolonger
+               </button>`;
+
+          return `
+            <div class="card emprunt-card mb-3">
+              <div class="card-body d-flex align-items-center">
+                <img src="${emprunt.item?.image_url || '/img/placeholder.png'}" alt="" class="item-image me-3">
+                <div class="flex-grow-1">
+                  <h6 class="mb-1">${emprunt.item?.titre || 'Article'}</h6>
+                  <small class="text-muted">
+                    <i class="bi bi-calendar me-1"></i>Retour prevu : ${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}
+                    ${emprunt.nb_prolongations > 0 ? `<span class="ms-2 badge bg-secondary">${emprunt.nb_prolongations} prolongation(s)</span>` : ''}
+                  </small>
+                </div>
+                <span class="badge ${badgeClass} me-3">${badgeText}</span>
+                ${prolongationBtn}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Erreur chargement emprunts:', error);
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement des emprunts</div>';
+      }
+    }
+
+    // Charger le total des emprunts
+    async function loadTotalEmprunts() {
+      try {
+        const response = await fetch(`${API_URL}/usager/emprunts?limit=1`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+        document.getElementById('statTotal').textContent = data.pagination?.total || 0;
+      } catch (error) {
+        console.error('Erreur chargement total:', error);
+      }
+    }
+
+    // Verifier l'adhesion
+    async function checkAdhesion() {
+      try {
+        const response = await fetch(`${API_URL}/usager/auth/me`, {
+          headers: getHeaders()
+        });
+        const data = await response.json();
+
+        if (data.adhesion_expiree) {
+          document.getElementById('adhesionAlert').classList.remove('d-none');
+        }
+      } catch (error) {
+        console.error('Erreur verification adhesion:', error);
+      }
+    }
+
+    // Ouvrir modal prolongation
+    function openProlongation(empruntId, titre, jours, isAuto) {
+      currentEmpruntId = empruntId;
+      document.getElementById('prolongationItemTitle').textContent = titre;
+      document.getElementById('prolongationInfo').textContent = isAuto
+        ? `Cette prolongation de ${jours} jours sera accordee automatiquement.`
+        : `Cette demande de prolongation (${jours} jours) sera soumise a validation.`;
+
+      new bootstrap.Modal(document.getElementById('prolongationModal')).show();
+    }
+
+    // Confirmer prolongation
+    document.getElementById('btnConfirmProlongation').addEventListener('click', async () => {
+      const btn = document.getElementById('btnConfirmProlongation');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Envoi...';
+
+      try {
+        const response = await fetch(`${API_URL}/usager/emprunts/${currentEmpruntId}/prolonger`, {
+          method: 'POST',
+          headers: getHeaders()
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Erreur lors de la prolongation');
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('prolongationModal')).hide();
+
+        // Afficher un message de succes
+        const alertHtml = `
+          <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>${data.message}
+            ${data.avertissement ? `<br><small class="text-muted">${data.avertissement}</small>` : ''}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        `;
+        document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHtml);
+
+        // Recharger les emprunts
+        loadEmprunts();
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check me-1"></i>Confirmer';
+      }
+    });
+
+    // Deconnexion
+    document.getElementById('btnLogout').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = 'login.html';
+    });
+
+    // Init
+    if (checkAuth()) {
+      loadUserInfo();
+      loadEmprunts();
+      loadTotalEmprunts();
+      checkAdhesion();
+    }
+  </script>
+</body>
+</html>

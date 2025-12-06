@@ -3,200 +3,547 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Médiathèque - Foyer Culturel de Sciez - Site en construction</title>
+  <meta name="description" id="meta-description" content="">
+  <meta name="keywords" id="meta-keywords" content="">
+  <meta property="og:title" id="og-title" content="">
+  <meta property="og:description" id="og-description" content="">
+  <meta property="og:image" id="og-image" content="">
+  <title id="page-title">Chargement...</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-  <style>
+  <style id="dynamic-styles">
     :root {
-      --primary-color: #6f42c1;
-      --secondary-color: #20c997;
+      --primary-color: #667eea;
+      --secondary-color: #764ba2;
     }
-
+  </style>
+  <style>
     body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    .main-content {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    /* Navbar */
+    .navbar {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      padding: 1rem 0;
     }
 
-    .construction-card {
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
+      padding: 4rem 0;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      opacity: 0.9;
+      max-width: 600px;
+      margin: 0 auto 2rem;
+    }
+
+    .hero .btn-light {
+      padding: 0.75rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 50px;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 4rem 0;
+      background: #f8f9fa;
+    }
+
+    .feature-card {
+      text-align: center;
+      padding: 2rem;
       background: white;
       border-radius: 1rem;
-      padding: 3rem;
-      text-align: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      max-width: 500px;
-      width: 90%;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      height: 100%;
+      transition: transform 0.3s ease;
     }
 
-    .logo-container {
-      margin-bottom: 2rem;
+    .feature-card:hover {
+      transform: translateY(-5px);
     }
 
-    .logo-container img {
-      max-width: 120px;
-      height: auto;
-    }
-
-    .logo-placeholder {
-      width: 120px;
-      height: 120px;
-      margin: 0 auto;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    .feature-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: white;
-      font-size: 3rem;
+      margin: 0 auto 1.5rem;
     }
 
-    h1 {
+    .feature-icon i {
+      font-size: 2rem;
+      color: white;
+    }
+
+    .feature-card h3 {
       color: #333;
       margin-bottom: 1rem;
     }
 
-    .subtitle {
-      color: #6c757d;
-      font-size: 1.1rem;
-      margin-bottom: 2rem;
-    }
-
-    .construction-icon {
-      font-size: 4rem;
-      color: #ffc107;
-      margin-bottom: 1rem;
-      animation: bounce 2s infinite;
-    }
-
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    .progress-section {
-      margin: 2rem 0;
-    }
-
-    .progress {
-      height: 10px;
-      border-radius: 5px;
-      background-color: #e9ecef;
-    }
-
-    .progress-bar {
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      animation: progress-animation 2s ease-in-out infinite;
-    }
-
-    @keyframes progress-animation {
-      0% { width: 30%; }
-      50% { width: 70%; }
-      100% { width: 30%; }
-    }
-
-    .admin-link {
-      margin-top: 2rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid #e9ecef;
-    }
-
-    .admin-link a {
-      color: #6c757d;
-      text-decoration: none;
-      font-size: 0.9rem;
-    }
-
-    .admin-link a:hover {
-      color: #764ba2;
-    }
-
-    .features-preview {
-      margin-top: 2rem;
-      text-align: left;
-    }
-
-    .feature-item {
-      display: flex;
-      align-items: center;
-      padding: 0.5rem 0;
+    .feature-card p {
       color: #6c757d;
     }
 
-    .feature-item i {
-      margin-right: 0.75rem;
-      color: #20c997;
+    /* Stats Section */
+    .stats {
+      padding: 3rem 0;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: white;
     }
 
-    footer {
+    .stat-item {
       text-align: center;
-      padding: 1rem;
-      color: rgba(255, 255, 255, 0.8);
-      font-size: 0.9rem;
+    }
+
+    .stat-number {
+      font-size: 3rem;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    /* Info Section */
+    .info-section {
+      padding: 4rem 0;
+    }
+
+    .info-card {
+      background: white;
+      border-radius: 1rem;
+      padding: 2rem;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      height: 100%;
+    }
+
+    .info-card h4 {
+      color: var(--primary-color);
+      margin-bottom: 1.5rem;
+    }
+
+    .info-card i.bi-check-circle {
+      color: #20c997;
+      margin-right: 0.5rem;
+    }
+
+    /* Footer */
+    footer {
+      background: #333;
+      color: white;
+      padding: 2rem 0;
+      text-align: center;
+    }
+
+    footer a {
+      color: #20c997;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .stat-number {
+        font-size: 2rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="main-content">
-    <div class="construction-card">
-      <div class="logo-container">
-        <div class="logo-placeholder">
-          <i class="bi bi-dice-5"></i>
-        </div>
-      </div>
-
-      <div class="construction-icon">
-        <i class="bi bi-tools"></i>
-      </div>
-
-      <h1>Ludothèque - Foyer Culturel de Sciez</h1>
-      <p class="subtitle">Notre site public est en cours de creation</p>
-
-      <div class="progress-section">
-        <div class="progress">
-          <div class="progress-bar" role="progressbar"></div>
-        </div>
-        <small class="text-muted mt-2 d-block">Nous travaillons dur pour vous offrir la meilleure experience</small>
-      </div>
-
-      <div class="features-preview">
-        <h6 class="text-muted mb-3">Bientot disponible :</h6>
-        <div class="feature-item">
-          <i class="bi bi-search"></i>
-          <span>Catalogue des jeux en ligne</span>
-        </div>
-        <div class="feature-item">
-          <i class="bi bi-calendar-check"></i>
-          <span>Reservation de jeux</span>
-        </div>
-        <div class="feature-item">
-          <i class="bi bi-person-circle"></i>
-          <span>Espace adherent personnel</span>
-        </div>
-        <div class="feature-item">
-          <i class="bi bi-clock-history"></i>
-          <span>Historique de vos emprunts</span>
-        </div>
-      </div>
-
-      <div class="admin-link">
-        <a href="/admin/login.html">
-          <i class="bi bi-lock"></i> Acces administration
-        </a>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <i class="bi bi-dice-5 me-2" style="font-size: 2rem;"></i>
+        <span id="site-name">Chargement...</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/">Accueil</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/catalogue.html">Catalogue</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/infos.html">Infos pratiques</a>
+          </li>
+          <li class="nav-item" id="nav-espace" style="display: none;">
+            <a class="nav-link btn btn-light text-dark ms-2 px-3" href="/connexion.html">
+              <i class="bi bi-person-circle"></i> Mon espace
+            </a>
+          </li>
+        </ul>
       </div>
     </div>
-  </div>
+  </nav>
 
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <h1 id="hero-title">Bienvenue</h1>
+      <p id="hero-description">Decouvrez notre collection a emprunter.</p>
+      <a href="/catalogue.html" class="btn btn-light">
+        <i class="bi bi-search"></i> Parcourir le catalogue
+      </a>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features-section">
+    <div class="container">
+      <div class="row g-4" id="features-grid">
+        <!-- Features loaded dynamically based on active modules -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats">
+    <div class="container">
+      <div class="row" id="stats-grid">
+        <!-- Stats loaded dynamically -->
+      </div>
+    </div>
+  </section>
+
+  <!-- Info Section -->
+  <section class="info-section">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="info-card">
+            <h4><i class="bi bi-clock"></i> Horaires d'ouverture</h4>
+            <div id="horaires-container">
+              <p class="text-muted">Chargement...</p>
+            </div>
+            <a href="/infos.html" class="btn btn-outline-primary btn-sm mt-2">
+              Voir tous les horaires
+            </a>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="info-card">
+            <h4><i class="bi bi-geo-alt"></i> Nous trouver</h4>
+            <div id="contact-container">
+              <p class="text-muted">Chargement...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
   <footer>
-    &copy; 2025 Foyer Culturel de Sciez - Tous droits reserves
+    <div class="container">
+      <p class="mb-2" id="footer-text">&copy; 2025 - Tous droits reserves</p>
+      <p class="mb-0">
+        <a href="/admin/login.html"><i class="bi bi-lock"></i> Administration</a>
+      </p>
+    </div>
   </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let config = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadConfig();
+      await loadStats();
+      await loadSites();
+    });
+
+    // Load site configuration
+    async function loadConfig() {
+      try {
+        const response = await fetch('/api/public/config');
+        config = await response.json();
+
+        // Update page title and meta
+        document.getElementById('page-title').textContent = config.nom_site;
+        document.getElementById('site-name').textContent = config.nom_site;
+        document.getElementById('hero-title').textContent = `Bienvenue a ${config.nom_site}`;
+
+        // Meta tags
+        if (config.meta_description) {
+          document.getElementById('meta-description').content = config.meta_description;
+          document.getElementById('og-description').content = config.meta_description;
+          document.getElementById('hero-description').textContent = config.meta_description;
+        }
+        if (config.meta_keywords) {
+          document.getElementById('meta-keywords').content = config.meta_keywords;
+        }
+        document.getElementById('og-title').content = config.nom_site;
+        if (config.og_image_url) {
+          document.getElementById('og-image').content = config.og_image_url;
+        }
+
+        // Update colors
+        if (config.couleur_primaire || config.couleur_secondaire) {
+          document.getElementById('dynamic-styles').textContent = `
+            :root {
+              --primary-color: ${config.couleur_primaire || '#667eea'};
+              --secondary-color: ${config.couleur_secondaire || '#764ba2'};
+            }
+          `;
+        }
+
+        // Add custom CSS
+        if (config.css_personnalise) {
+          const customStyle = document.createElement('style');
+          customStyle.textContent = config.css_personnalise;
+          document.head.appendChild(customStyle);
+        }
+
+        // Show "Mon espace" if inscriptions enabled
+        if (config.modules.inscriptions) {
+          document.getElementById('nav-espace').style.display = 'block';
+        }
+
+        // Build features based on active modules
+        buildFeatures(config.modules);
+
+        // Update footer
+        document.getElementById('footer-text').textContent = `© 2025 ${config.nom_site} - Tous droits reserves`;
+
+        // Update contact info
+        renderContact();
+
+      } catch (error) {
+        console.error('Erreur chargement config:', error);
+      }
+    }
+
+    // Build features section based on active modules
+    function buildFeatures(modules) {
+      const grid = document.getElementById('features-grid');
+      let features = [];
+
+      if (modules.ludotheque) {
+        features.push({
+          icon: 'bi-controller',
+          title: 'Jeux de societe',
+          desc: 'Jeux de plateau, jeux de cartes, jeux d\'ambiance, jeux pour enfants...'
+        });
+      }
+      if (modules.bibliotheque) {
+        features.push({
+          icon: 'bi-book',
+          title: 'Livres',
+          desc: 'Romans, BD, mangas, documentaires et livres jeunesse a decouvrir.'
+        });
+      }
+      if (modules.filmotheque) {
+        features.push({
+          icon: 'bi-film',
+          title: 'Films',
+          desc: 'DVDs et Blu-rays : films, documentaires, series a emprunter.'
+        });
+      }
+      if (modules.discotheque) {
+        features.push({
+          icon: 'bi-disc',
+          title: 'Musique',
+          desc: 'CDs et vinnyls : tous les genres musicaux a votre disposition.'
+        });
+      }
+
+      // Add generic features
+      features.push({
+        icon: 'bi-calendar-check',
+        title: 'Emprunt facile',
+        desc: 'Empruntez facilement pour plusieurs semaines. Prolongation possible.'
+      });
+      features.push({
+        icon: 'bi-people',
+        title: 'Animations',
+        desc: 'Participez a nos evenements et animations tout au long de l\'annee.'
+      });
+
+      // Limit to 3 features
+      features = features.slice(0, 3);
+
+      grid.innerHTML = features.map(f => `
+        <div class="col-md-4">
+          <div class="feature-card">
+            <div class="feature-icon">
+              <i class="bi ${f.icon}"></i>
+            </div>
+            <h3>${f.title}</h3>
+            <p>${f.desc}</p>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Load stats
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/public/stats');
+        const stats = await response.json();
+
+        const grid = document.getElementById('stats-grid');
+        let statsHtml = '';
+
+        if (stats.jeux !== undefined) {
+          statsHtml += createStatItem(stats.jeux, 'Jeux');
+        }
+        if (stats.livres !== undefined) {
+          statsHtml += createStatItem(stats.livres, 'Livres');
+        }
+        if (stats.films !== undefined) {
+          statsHtml += createStatItem(stats.films, 'Films');
+        }
+        if (stats.disques !== undefined) {
+          statsHtml += createStatItem(stats.disques, 'Disques');
+        }
+
+        // If only one type, add total
+        const typeCount = Object.keys(stats).filter(k => k !== 'total').length;
+        if (typeCount === 1 && stats.total > 0) {
+          // Just show total for single module
+          grid.innerHTML = `
+            <div class="col-12">
+              <div class="stat-item">
+                <div class="stat-number">${stats.total}+</div>
+                <div class="stat-label">Items disponibles</div>
+              </div>
+            </div>
+          `;
+        } else {
+          grid.innerHTML = statsHtml;
+        }
+
+      } catch (error) {
+        console.error('Erreur chargement stats:', error);
+      }
+    }
+
+    function createStatItem(count, label) {
+      return `
+        <div class="col-md-3 col-6">
+          <div class="stat-item">
+            <div class="stat-number">${count}+</div>
+            <div class="stat-label">${label}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Load sites for opening hours
+    async function loadSites() {
+      try {
+        const response = await fetch('/api/public/sites');
+        const data = await response.json();
+
+        if (data.sites.length > 0) {
+          const site = data.sites[0]; // First/main site
+          renderHoraires(site.horaires);
+        }
+
+      } catch (error) {
+        console.error('Erreur chargement sites:', error);
+      }
+    }
+
+    // Render opening hours
+    function renderHoraires(horaires) {
+      const container = document.getElementById('horaires-container');
+      const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+      if (!horaires || horaires.length === 0) {
+        container.innerHTML = '<p class="text-muted">Horaires non configures.</p>';
+        return;
+      }
+
+      // Group by day
+      const horairesByDay = {};
+      JOURS.forEach((jour, i) => horairesByDay[i] = []);
+      horaires.forEach(h => horairesByDay[h.jour_semaine].push(h));
+
+      // Get today (0 = Monday)
+      const today = (new Date().getDay() + 6) % 7;
+
+      let html = '<ul class="list-unstyled">';
+      JOURS.forEach((jour, i) => {
+        const dayHoraires = horairesByDay[i];
+        const isToday = i === today;
+        const isClosed = dayHoraires.length === 0;
+
+        let heures = isClosed ? 'Ferme' : dayHoraires.map(h =>
+          `${h.heure_debut.substring(0, 5)} - ${h.heure_fin.substring(0, 5)}`
+        ).join(', ');
+
+        html += `
+          <li class="mb-2 ${isToday ? 'fw-bold' : ''}">
+            <i class="bi ${isClosed ? 'bi-x-circle text-danger' : 'bi-check-circle text-success'}"></i>
+            ${jour}${isToday ? ' (Aujourd\'hui)' : ''} : ${heures}
+          </li>
+        `;
+      });
+      html += '</ul>';
+
+      container.innerHTML = html;
+    }
+
+    // Render contact info
+    function renderContact() {
+      const container = document.getElementById('contact-container');
+      let html = '';
+
+      if (config.adresse_contact) {
+        html += `<p><strong>${config.nom_site}</strong><br>${config.adresse_contact.replace(/\n/g, '<br>')}</p>`;
+      }
+
+      if (config.telephone_contact) {
+        html += `<p class="mb-1"><i class="bi bi-telephone text-success me-2"></i><a href="tel:${config.telephone_contact}">${config.telephone_contact}</a></p>`;
+      }
+
+      if (config.email_contact) {
+        html += `<p class="mb-0"><i class="bi bi-envelope text-success me-2"></i><a href="mailto:${config.email_contact}">${config.email_contact}</a></p>`;
+      }
+
+      if (!html) {
+        html = '<p class="text-muted">Informations de contact non configurees.</p>';
+      }
+
+      container.innerHTML = html;
+    }
+  </script>
 </body>
 </html>
