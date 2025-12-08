@@ -254,11 +254,11 @@
       const searchTerm = document.getElementById('search-template').value.toLowerCase();
 
       let filtered = [...templates];
-      if (filterType) filtered = filtered.filter(t => t.type === filterType);
+      if (filterType) filtered = filtered.filter(t => t.type_message === filterType);
       if (filterCategorie) filtered = filtered.filter(t => t.categorie === filterCategorie);
       if (searchTerm) filtered = filtered.filter(t =>
-        t.nom.toLowerCase().includes(searchTerm) ||
-        t.code.toLowerCase().includes(searchTerm)
+        (t.libelle || '').toLowerCase().includes(searchTerm) ||
+        (t.code || '').toLowerCase().includes(searchTerm)
       );
 
       if (filtered.length === 0) {
@@ -276,12 +276,12 @@
           <div class="card template-card h-100 ${t.actif ? '' : 'inactive'}" onclick="editTemplate(${t.id})">
             <div class="card-body">
               <div class="d-flex justify-content-between align-items-start mb-2">
-                <span class="badge type-badge type-${t.type}">${t.type.toUpperCase()}</span>
+                <span class="badge type-badge type-${t.type_message}">${t.type_message.toUpperCase()}</span>
                 ${!t.actif ? '<span class="badge bg-warning">Inactif</span>' : ''}
               </div>
-              <h6 class="card-title">${t.nom}</h6>
+              <h6 class="card-title">${t.libelle}</h6>
               <p class="card-text small text-muted mb-1"><code>${t.code}</code></p>
-              ${t.sujet ? `<p class="card-text small">${t.sujet.substring(0, 50)}${t.sujet.length > 50 ? '...' : ''}</p>` : ''}
+              ${t.email_objet ? `<p class="card-text small">${t.email_objet.substring(0, 50)}${t.email_objet.length > 50 ? '...' : ''}</p>` : ''}
               <span class="badge bg-secondary">${t.categorie || 'autre'}</span>
             </div>
           </div>
@@ -362,18 +362,19 @@
       document.getElementById('modalTemplateTitle').textContent = 'Modifier le template';
       document.getElementById('template_id').value = t.id;
       document.getElementById('template_code').value = t.code || '';
-      document.getElementById('template_type').value = t.type || 'email';
+      document.getElementById('template_type').value = t.type_message || 'email';
       document.getElementById('template_categorie').value = t.categorie || 'autre';
-      document.getElementById('template_nom').value = t.nom || '';
-      document.getElementById('template_sujet').value = t.sujet || '';
+      document.getElementById('template_nom').value = t.libelle || '';
+      document.getElementById('template_sujet').value = t.email_objet || '';
       document.getElementById('template_actif').checked = t.actif !== false;
 
       updateTypeUI();
 
-      if (t.type === 'email') {
-        quillEditor.root.innerHTML = t.contenu || '';
-      } else {
-        document.getElementById('template_contenu_sms').value = t.contenu || '';
+      if (t.type_message === 'email' || t.type_message === 'both') {
+        quillEditor.root.innerHTML = t.email_corps || '';
+      }
+      if (t.type_message === 'sms' || t.type_message === 'both') {
+        document.getElementById('template_contenu_sms').value = t.sms_corps || '';
         updateSMSCounter();
       }
 
@@ -386,11 +387,12 @@
       const type = document.getElementById('template_type').value;
       const data = {
         code: document.getElementById('template_code').value.toUpperCase(),
-        type,
+        type_message: type,
         categorie: document.getElementById('template_categorie').value,
-        nom: document.getElementById('template_nom').value,
-        sujet: type === 'email' ? document.getElementById('template_sujet').value : null,
-        contenu: type === 'email' ? quillEditor.root.innerHTML : document.getElementById('template_contenu_sms').value,
+        libelle: document.getElementById('template_nom').value,
+        email_objet: (type === 'email' || type === 'both') ? document.getElementById('template_sujet').value : null,
+        email_corps: (type === 'email' || type === 'both') ? quillEditor.root.innerHTML : null,
+        sms_corps: (type === 'sms' || type === 'both') ? document.getElementById('template_contenu_sms').value : null,
         actif: document.getElementById('template_actif').checked
       };
 

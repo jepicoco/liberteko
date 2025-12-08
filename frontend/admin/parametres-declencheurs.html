@@ -54,9 +54,10 @@
               <div class="col-md-3">
                 <select class="form-select form-select-sm" id="filter-categorie">
                   <option value="">Toutes les categories</option>
-                  <option value="adhesion">Adhesion</option>
+                  <option value="adherent">Adherent</option>
                   <option value="emprunt">Emprunt</option>
-                  <option value="relance">Relance</option>
+                  <option value="cotisation">Cotisation</option>
+                  <option value="systeme">Systeme</option>
                 </select>
               </div>
               <div class="col-md-3">
@@ -130,10 +131,10 @@
                 <div class="mb-3">
                   <label for="trigger_categorie" class="form-label">Categorie</label>
                   <select class="form-select" id="trigger_categorie">
-                    <option value="adhesion">Adhesion</option>
+                    <option value="adherent">Adherent</option>
                     <option value="emprunt">Emprunt</option>
-                    <option value="relance">Relance</option>
-                    <option value="notification">Notification</option>
+                    <option value="cotisation">Cotisation</option>
+                    <option value="systeme">Systeme</option>
                   </select>
                 </div>
               </div>
@@ -150,8 +151,9 @@
                 <div class="mb-3">
                   <label for="trigger_delai_unite" class="form-label">Unite</label>
                   <select class="form-select" id="trigger_delai_unite">
-                    <option value="jours">Jours</option>
+                    <option value="minutes">Minutes</option>
                     <option value="heures">Heures</option>
+                    <option value="jours" selected>Jours</option>
                     <option value="semaines">Semaines</option>
                   </select>
                 </div>
@@ -252,7 +254,9 @@
           headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         if (!response.ok) throw new Error('Erreur');
-        triggers = await response.json();
+        const result = await response.json();
+        // L'API renvoie { success: true, data: [...] }
+        triggers = result.data || result;
         renderTriggers();
       } catch (error) {
         document.getElementById('triggers-container').innerHTML = `<div class="alert alert-danger">Erreur de chargement</div>`;
@@ -276,14 +280,15 @@
       const emailSelect = document.getElementById('trigger_template_email');
       const smsSelect = document.getElementById('trigger_template_sms');
 
-      const emailTemplates = templates.filter(t => t.type === 'email' && t.actif);
-      const smsTemplates = templates.filter(t => t.type === 'sms' && t.actif);
+      // type_message peut être 'email', 'sms' ou 'both'
+      const emailTemplates = templates.filter(t => (t.type_message === 'email' || t.type_message === 'both') && t.actif);
+      const smsTemplates = templates.filter(t => (t.type_message === 'sms' || t.type_message === 'both') && t.actif);
 
       emailSelect.innerHTML = '<option value="">-- Selectionner --</option>' +
-        emailTemplates.map(t => `<option value="${t.id}">${t.nom} (${t.code})</option>`).join('');
+        emailTemplates.map(t => `<option value="${t.code}">${t.libelle} (${t.code})</option>`).join('');
 
       smsSelect.innerHTML = '<option value="">-- Selectionner --</option>' +
-        smsTemplates.map(t => `<option value="${t.id}">${t.nom} (${t.code})</option>`).join('');
+        smsTemplates.map(t => `<option value="${t.code}">${t.libelle} (${t.code})</option>`).join('');
     }
 
     function renderTriggers() {
@@ -293,7 +298,14 @@
 
       let filtered = [...triggers];
       if (filterCategorie) filtered = filtered.filter(t => t.categorie === filterCategorie);
-      if (filterCanal) filtered = filtered.filter(t => t.canal === filterCanal);
+      if (filterCanal) {
+        filtered = filtered.filter(t => {
+          if (filterCanal === 'email') return t.email_actif && !t.sms_actif;
+          if (filterCanal === 'sms') return t.sms_actif && !t.email_actif;
+          if (filterCanal === 'both') return t.email_actif && t.sms_actif;
+          return true;
+        });
+      }
 
       if (filtered.length === 0) {
         container.innerHTML = `
@@ -307,33 +319,41 @@
       }
 
       container.innerHTML = `<div class="row g-4">${filtered.map(t => {
-        const canalIcon = t.canal === 'email' ? 'envelope' : t.canal === 'sms' ? 'phone' : 'send';
+        // Determiner le canal en fonction de email_actif et sms_actif
+        const hasEmail = t.email_actif;
+        const hasSms = t.sms_actif;
+        const canal = hasEmail && hasSms ? 'both' : hasEmail ? 'email' : hasSms ? 'sms' : 'none';
+        const canalIcon = canal === 'email' ? 'envelope' : canal === 'sms' ? 'phone' : canal === 'both' ? 'send' : 'x-circle';
+        const isActif = hasEmail || hasSms;
         const delaiText = formatDelai(t);
 
         return `
           <div class="col-md-6">
-            <div class="card trigger-card h-100 ${t.actif ? '' : 'inactive'}">
+            <div class="card trigger-card h-100 ${isActif ? '' : 'inactive'}">
               <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
-                  <h6 class="card-title mb-0">${t.nom}</h6>
+                  <h6 class="card-title mb-0">${t.libelle}</h6>
                   <div>
-                    ${!t.actif ? '<span class="badge bg-warning">Inactif</span>' : ''}
+                    ${!isActif ? '<span class="badge bg-warning">Inactif</span>' : ''}
                   </div>
                 </div>
                 <p class="text-muted small mb-2">
-                  <i class="bi bi-lightning"></i> ${formatEvenement(t.evenement)}
+                  <i class="bi bi-lightning"></i> ${t.code}
                 </p>
                 ${delaiText ? `<p class="small mb-2"><i class="bi bi-clock"></i> ${delaiText}</p>` : ''}
                 <div class="d-flex gap-2 mb-3">
-                  <span class="badge bg-${t.canal === 'email' ? 'primary' : t.canal === 'sms' ? 'success' : 'info'}">
-                    <i class="bi bi-${canalIcon}"></i> ${t.canal === 'both' ? 'Email + SMS' : t.canal.toUpperCase()}
-                  </span>
+                  ${hasEmail ? '<span class="badge bg-primary"><i class="bi bi-envelope"></i> Email</span>' : ''}
+                  ${hasSms ? '<span class="badge bg-success"><i class="bi bi-phone"></i> SMS</span>' : ''}
+                  ${!hasEmail && !hasSms ? '<span class="badge bg-secondary">Aucun canal</span>' : ''}
                   <span class="badge bg-secondary">${t.categorie || 'autre'}</span>
                 </div>
                 <div class="d-flex gap-2">
                   <button class="btn btn-sm btn-outline-primary" onclick="editTrigger(${t.id})"><i class="bi bi-pencil"></i></button>
-                  <button class="btn btn-sm btn-outline-${t.actif ? 'warning' : 'success'}" onclick="toggleTrigger(${t.id})">
-                    <i class="bi bi-${t.actif ? 'pause' : 'play'}"></i>
+                  <button class="btn btn-sm btn-outline-${hasEmail ? 'warning' : 'success'}" onclick="toggleEmailTrigger(${t.id})" title="${hasEmail ? 'Desactiver' : 'Activer'} email">
+                    <i class="bi bi-envelope${hasEmail ? '-fill' : ''}"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-${hasSms ? 'warning' : 'success'}" onclick="toggleSmsTrigger(${t.id})" title="${hasSms ? 'Desactiver' : 'Activer'} SMS">
+                    <i class="bi bi-phone${hasSms ? '-fill' : ''}"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" onclick="deleteTrigger(${t.id})"><i class="bi bi-trash"></i></button>
                 </div>
@@ -361,9 +381,17 @@
     }
 
     function formatDelai(trigger) {
-      if (!trigger.delai_valeur || trigger.delai_valeur === 0) return '';
-      const moment = trigger.delai_moment === 'avant' ? 'avant' : trigger.delai_moment === 'apres' ? 'apres' : '';
-      return `${trigger.delai_valeur} ${trigger.delai_unite || 'jours'} ${moment}`;
+      if (!trigger.delai_envoi || trigger.delai_envoi === 0) return '';
+      // delai_envoi est en minutes
+      if (trigger.delai_envoi < 60) {
+        return `${trigger.delai_envoi} minute${trigger.delai_envoi > 1 ? 's' : ''} apres`;
+      } else if (trigger.delai_envoi < 1440) {
+        const heures = Math.floor(trigger.delai_envoi / 60);
+        return `${heures} heure${heures > 1 ? 's' : ''} apres`;
+      } else {
+        const jours = Math.floor(trigger.delai_envoi / 1440);
+        return `${jours} jour${jours > 1 ? 's' : ''} apres`;
+      }
     }
 
     function updateEventOptions() {
@@ -390,33 +418,58 @@
       if (!t) return;
       document.getElementById('modalTriggerTitle').textContent = 'Modifier le declencheur';
       document.getElementById('trigger_id').value = t.id;
-      document.getElementById('trigger_nom').value = t.nom || '';
-      document.getElementById('trigger_evenement').value = t.evenement || '';
-      document.getElementById('trigger_categorie').value = t.categorie || 'notification';
-      document.getElementById('trigger_delai_valeur').value = t.delai_valeur || 0;
-      document.getElementById('trigger_delai_unite').value = t.delai_unite || 'jours';
-      document.getElementById('trigger_delai_moment').value = t.delai_moment || 'avant';
-      document.getElementById('trigger_canal').value = t.canal || 'email';
-      document.getElementById('trigger_template_email').value = t.template_email_id || '';
-      document.getElementById('trigger_template_sms').value = t.template_sms_id || '';
-      document.getElementById('trigger_actif').checked = t.actif !== false;
+      document.getElementById('trigger_nom').value = t.libelle || '';
+      document.getElementById('trigger_evenement').value = t.code || '';
+      document.getElementById('trigger_categorie').value = t.categorie || 'systeme';
+
+      // Convertir delai_envoi (en minutes) en valeur/unite
+      const delaiMinutes = t.delai_envoi || 0;
+      if (delaiMinutes >= 1440 && delaiMinutes % 1440 === 0) {
+        document.getElementById('trigger_delai_valeur').value = delaiMinutes / 1440;
+        document.getElementById('trigger_delai_unite').value = 'jours';
+      } else if (delaiMinutes >= 60 && delaiMinutes % 60 === 0) {
+        document.getElementById('trigger_delai_valeur').value = delaiMinutes / 60;
+        document.getElementById('trigger_delai_unite').value = 'heures';
+      } else {
+        document.getElementById('trigger_delai_valeur').value = delaiMinutes;
+        document.getElementById('trigger_delai_unite').value = 'minutes';
+      }
+      document.getElementById('trigger_delai_moment').value = 'apres';
+
+      // Determiner le canal
+      const hasEmail = t.email_actif;
+      const hasSms = t.sms_actif;
+      const canal = hasEmail && hasSms ? 'both' : hasEmail ? 'email' : hasSms ? 'sms' : 'email';
+      document.getElementById('trigger_canal').value = canal;
+      document.getElementById('trigger_template_email').value = t.template_email_code || '';
+      document.getElementById('trigger_template_sms').value = t.template_sms_code || '';
+      document.getElementById('trigger_actif').checked = hasEmail || hasSms;
       updateCanalOptions();
       modalTrigger.show();
     }
 
     async function saveTrigger() {
       const id = document.getElementById('trigger_id').value;
+      const canal = document.getElementById('trigger_canal').value;
+      const actif = document.getElementById('trigger_actif').checked;
+
+      // Convertir delai en minutes
+      const delaiValeur = parseInt(document.getElementById('trigger_delai_valeur').value) || 0;
+      const delaiUnite = document.getElementById('trigger_delai_unite').value;
+      let delaiEnMinutes = delaiValeur;
+      if (delaiUnite === 'heures') delaiEnMinutes = delaiValeur * 60;
+      else if (delaiUnite === 'jours') delaiEnMinutes = delaiValeur * 1440;
+      else if (delaiUnite === 'semaines') delaiEnMinutes = delaiValeur * 10080;
+
       const data = {
-        nom: document.getElementById('trigger_nom').value,
-        evenement: document.getElementById('trigger_evenement').value,
+        code: document.getElementById('trigger_evenement').value.toUpperCase(),
+        libelle: document.getElementById('trigger_nom').value,
         categorie: document.getElementById('trigger_categorie').value,
-        delai_valeur: parseInt(document.getElementById('trigger_delai_valeur').value) || 0,
-        delai_unite: document.getElementById('trigger_delai_unite').value,
-        delai_moment: document.getElementById('trigger_delai_moment').value,
-        canal: document.getElementById('trigger_canal').value,
-        template_email_id: document.getElementById('trigger_template_email').value || null,
-        template_sms_id: document.getElementById('trigger_template_sms').value || null,
-        actif: document.getElementById('trigger_actif').checked
+        delai_envoi: delaiEnMinutes,
+        email_actif: actif && (canal === 'email' || canal === 'both'),
+        sms_actif: actif && (canal === 'sms' || canal === 'both'),
+        template_email_code: document.getElementById('trigger_template_email').value || null,
+        template_sms_code: document.getElementById('trigger_template_sms').value || null
       };
 
       try {
@@ -435,10 +488,22 @@
       }
     }
 
-    async function toggleTrigger(id) {
+    async function toggleEmailTrigger(id) {
       try {
-        await fetch(`/api/event-triggers/${id}/toggle`, {
-          method: 'PATCH',
+        await fetch(`/api/event-triggers/${id}/toggle-email`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        loadTriggers();
+      } catch (error) {
+        showToast('Erreur', 'error');
+      }
+    }
+
+    async function toggleSmsTrigger(id) {
+      try {
+        await fetch(`/api/event-triggers/${id}/toggle-sms`, {
+          method: 'POST',
           headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         loadTriggers();
