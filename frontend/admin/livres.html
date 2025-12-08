@@ -686,6 +686,7 @@
             <thead>
               <tr>
                 <th style="width: 60px;"></th>
+                <th>Code</th>
                 <th>Titre</th>
                 <th>Auteur(s)</th>
                 <th>Annee</th>
@@ -703,6 +704,7 @@
                       : '<div class="livre-cover-placeholder"><i class="bi bi-book"></i></div>'
                     }
                   </td>
+                  <td><code class="text-muted small">${livre.code_barre || '-'}</code></td>
                   <td>
                     <strong>${escapeHtml(livre.titre)}</strong>
                     ${livre.tome ? `<span class="badge bg-secondary ms-1">T.${livre.tome}</span>` : ''}

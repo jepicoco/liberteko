@@ -673,6 +673,7 @@
             <thead>
               <tr>
                 <th style="width:60px;"></th>
+                <th>Code</th>
                 <th>Titre</th>
                 <th>Annee</th>
                 <th>Duree</th>
@@ -691,6 +692,7 @@
                       : '<div class="film-poster-placeholder"><i class="bi bi-film"></i></div>'
                     }
                   </td>
+                  <td><code class="text-muted small">${film.code_barre || '-'}</code></td>
                   <td>
                     <strong>${escapeHtml(film.titre)}</strong>
                     ${film.titre_original && film.titre_original !== film.titre

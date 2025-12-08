@@ -620,6 +620,7 @@
             <thead>
               <tr>
                 <th style="width:60px;"></th>
+                <th>Code</th>
                 <th>Titre</th>
                 <th>Artiste(s)</th>
                 <th>Annee</th>
@@ -638,6 +639,7 @@
                       : '<div class="disque-cover-placeholder"><i class="bi bi-vinyl"></i></div>'
                     }
                   </td>
+                  <td><code class="text-muted small">${disque.code_barre || '-'}</code></td>
                   <td>
                     <strong>${escapeHtml(disque.titre)}</strong>
                     ${disque.titre_original && disque.titre_original !== disque.titre
