@@ -708,21 +708,13 @@
                   <i class="bi bi-shield-lock"></i> Acces en maintenance
                 </div>
                 <div class="card-body">
-                  <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="autoriser_ip_locales" checked>
-                    <label class="form-check-label" for="autoriser_ip_locales">
-                      <strong>Autoriser les IPs locales</strong>
-                    </label>
-                  </div>
-                  <p class="text-muted small mb-3">
-                    Permet aux IPs locales (127.x.x.x, 192.168.x.x, ::1) d'acceder au site en mode maintenance.
-                  </p>
-
-                  <hr>
-
                   <div class="alert alert-info mb-0">
                     <i class="bi bi-info-circle"></i>
                     Votre IP actuelle : <strong id="current-ip">Chargement...</strong>
+                    <p class="mb-0 mt-2 small text-muted">
+                      Pour gerer les IPs autorisees en mode maintenance, rendez-vous dans
+                      <a href="parametres-holodeck.html">Parametres &gt; Holodeck</a>.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -975,7 +967,6 @@
       // Maintenance
       document.getElementById('mode_maintenance').checked = data.mode_maintenance || false;
       document.getElementById('message_maintenance').value = data.message_maintenance || '';
-      document.getElementById('autoriser_ip_locales').checked = data.autoriser_ip_locales !== false;
 
       // Update char counters
       updateCharCounter('meta_description', 160);
@@ -1039,8 +1030,7 @@
 
         // Maintenance
         mode_maintenance: document.getElementById('mode_maintenance').checked,
-        message_maintenance: document.getElementById('message_maintenance').value || null,
-        autoriser_ip_locales: document.getElementById('autoriser_ip_locales').checked
+        message_maintenance: document.getElementById('message_maintenance').value || null
       };
     }
 
