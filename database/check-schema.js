@@ -48,13 +48,13 @@ async function checkSchema() {
       check: rows => rows.length > 0
     },
     {
-      name: 'Colonne modules_actifs dans parametres',
-      query: `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'parametres' AND COLUMN_NAME = 'modules_actifs'`,
+      name: 'Table modules_actifs',
+      query: `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'modules_actifs'`,
       check: rows => rows.length > 0
     },
     {
-      name: 'Table compteur_pieces',
-      query: `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'compteur_pieces'`,
+      name: 'Table compteurs_pieces',
+      query: `SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'compteurs_pieces'`,
       check: rows => rows.length > 0
     },
     {
