@@ -1,13 +1,13 @@
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
-const { Adherent } = require('../../backend/models');
+const { Utilisateur } = require('../../backend/models');
 
 async function seedSysadmin() {
   try {
     console.log('🔄 Création du compte sysadmin...');
 
     // Vérifier si le sysadmin existe déjà
-    const existing = await Adherent.findOne({ where: { email: 'sysadmin@assotheque.fr' } });
+    const existing = await Utilisateur.findOne({ where: { email: 'sysadmin@assotheque.fr' } });
 
     if (existing) {
       console.log('ℹ️  Le compte sysadmin existe déjà');
@@ -18,7 +18,7 @@ async function seedSysadmin() {
     }
 
     // Créer le sysadmin
-    const sysadmin = await Adherent.create({
+    const sysadmin = await Utilisateur.create({
       nom: 'Admin',
       prenom: 'System',
       email: 'sysadmin@assotheque.fr',
