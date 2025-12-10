@@ -516,27 +516,67 @@ const importAPI = {
  */
 const lookupAPI = {
   /**
-   * Recherche un jeu par son code EAN
-   * @param {string} ean - Code EAN/UPC
-   * @returns {Promise<Object>} - Infos du jeu trouve
+   * Recherche par code EAN/ISBN
+   * @param {string} code - Code EAN/UPC/ISBN
+   * @param {string} collection - Type de collection ('jeu', 'livre', 'film', 'disque' ou auto)
+   * @returns {Promise<Object>} - Infos de l'article trouve
    */
-  async byEAN(ean) {
-    return await apiRequest('/jeux/lookup-ean', {
+  async byEAN(code, collection = 'jeu') {
+    return await apiRequest('/lookup/ean', {
       method: 'POST',
-      body: JSON.stringify({ ean })
+      body: JSON.stringify({ code, collection })
     });
   },
 
   /**
-   * Recherche un jeu par son titre sur BGG
-   * @param {string} title - Titre du jeu
-   * @returns {Promise<Object>} - Infos du jeu trouve
+   * Recherche par titre
+   * @param {string} title - Titre a rechercher
+   * @param {string} collection - Type de collection ('jeu', 'livre', 'film', 'disque')
+   * @returns {Promise<Object>} - Infos de l'article trouve
    */
-  async byTitle(title) {
-    return await apiRequest('/jeux/lookup-ean', {
+  async byTitle(title, collection = 'jeu') {
+    return await apiRequest('/lookup/title', {
       method: 'POST',
-      body: JSON.stringify({ title })
+      body: JSON.stringify({ title, collection })
     });
+  },
+
+  /**
+   * Recherche automatique (detecte si c'est un code ou un titre)
+   * @param {string} query - Code ou titre a rechercher
+   * @param {string} collection - Type de collection (optionnel)
+   * @returns {Promise<Object>} - Infos de l'article trouve
+   */
+  async search(query, collection = null) {
+    return await apiRequest('/lookup/search', {
+      method: 'POST',
+      body: JSON.stringify({ query, collection })
+    });
+  },
+
+  /**
+   * Detecte le type de code (EAN, ISBN-10, ISBN-13, UPC)
+   * @param {string} code - Code a analyser
+   * @returns {Promise<Object>} - Type detecte et collection suggeree
+   */
+  async detectCode(code) {
+    return await apiRequest(`/lookup/detect/${encodeURIComponent(code)}`);
+  },
+
+  /**
+   * Statistiques du cache (admin)
+   * @returns {Promise<Object>} - Stats du cache
+   */
+  async getCacheStats() {
+    return await apiRequest('/lookup/cache/stats');
+  },
+
+  /**
+   * Vide le cache (admin)
+   * @returns {Promise<Object>} - Confirmation
+   */
+  async clearCache() {
+    return await apiRequest('/lookup/cache', { method: 'DELETE' });
   }
 };
 

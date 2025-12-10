@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Éditeur de Thèmes - Administration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/admin.css" rel="stylesheet">
+  <style>
+    .theme-card {
+      border: 2px solid transparent;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .theme-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .theme-card.active-theme {
+      border-color: #28a745;
+    }
+    .theme-card.active-theme::after {
+      content: '\f26a';
+      font-family: 'bootstrap-icons';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #28a745;
+      color: white;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+    .theme-preview {
+      height: 120px;
+      border-radius: 8px 8px 0 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .theme-preview-header {
+      height: 40px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 8px;
+    }
+    .theme-preview-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      opacity: 0.7;
+    }
+    .theme-preview-content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .theme-preview-btn {
+      padding: 6px 16px;
+      border-radius: 4px;
+      font-size: 11px;
+      border: none;
+      display: inline-block;
+      width: fit-content;
+    }
+    .theme-preview-text {
+      height: 8px;
+      border-radius: 4px;
+      opacity: 0.3;
+    }
+    .badge-system {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+    .badge-custom {
+      background: linear-gradient(135deg, #f093fb, #f5576c);
+    }
+    .color-swatch {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #dee2e6;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .color-swatch:hover {
+      transform: scale(1.1);
+    }
+    .color-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .color-input-group input[type="color"] {
+      width: 50px;
+      height: 38px;
+      padding: 2px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .color-input-group input[type="text"] {
+      width: 100px;
+      font-family: monospace;
+    }
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+    }
+    .color-item {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .color-item label {
+      font-size: 0.85rem;
+      color: #6c757d;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .live-preview {
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      overflow: hidden;
+      background: white;
+    }
+    .live-preview-header {
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .live-preview-content {
+      padding: 20px;
+      min-height: 200px;
+    }
+    .live-preview-btn-primary {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+    }
+    .live-preview-btn-secondary {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 500;
+    }
+    .live-preview-card {
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+    .mode-toggle {
+      display: flex;
+      gap: 5px;
+      background: #f1f3f4;
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .mode-toggle .btn {
+      border-radius: 6px;
+      padding: 6px 16px;
+    }
+    .mode-toggle .btn.active {
+      background: white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .theme-inactive {
+      opacity: 0.5;
+    }
+    .theme-inactive .theme-preview {
+      filter: grayscale(100%);
+    }
+    #importInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="admin-navbar"></div>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div id="admin-sidebar"></div>
+
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h2 mb-1">
+              <i class="bi bi-palette me-2"></i>Éditeur de Thèmes
+            </h1>
+            <p class="text-muted mb-0">Personnalisez l'apparence du site public</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary" onclick="importTheme()">
+              <i class="bi bi-upload me-1"></i>Importer
+            </button>
+            <input type="file" id="importInput" accept=".json" onchange="handleImport(event)">
+            <button class="btn btn-primary" onclick="showCreateModal()">
+              <i class="bi bi-plus-lg me-1"></i>Nouveau thème
+            </button>
+          </div>
+        </div>
+
+        <!-- Thème actif -->
+        <div class="card mb-4 border-success" id="activeThemeCard" style="display: none;">
+          <div class="card-header bg-success text-white">
+            <i class="bi bi-check-circle me-2"></i>Thème actuellement actif
+          </div>
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h5 class="mb-1" id="activeThemeName">-</h5>
+                <p class="text-muted mb-0" id="activeThemeDesc">-</p>
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="d-flex gap-2 justify-content-end">
+                  <div class="color-swatch" id="activeThemePrimary" title="Couleur primaire"></div>
+                  <div class="color-swatch" id="activeThemeSecondary" title="Couleur secondaire"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="card mb-4">
+          <div class="card-body py-3">
+            <div class="row align-items-center">
+              <div class="col-md-4">
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input type="text" class="form-control" id="searchInput" placeholder="Rechercher un thème..." oninput="filterThemes()">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="typeFilter" onchange="filterThemes()">
+                  <option value="">Tous les types</option>
+                  <option value="system">Système</option>
+                  <option value="custom">Personnalisé</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="modeFilter" onchange="filterThemes()">
+                  <option value="">Tous les modes</option>
+                  <option value="light">Clair</option>
+                  <option value="dark">Sombre</option>
+                </select>
+              </div>
+              <div class="col-md-2 text-end">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="showInactive" onchange="filterThemes()">
+                  <label class="form-check-label" for="showInactive">Inactifs</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grille des thèmes -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="themesGrid">
+          <!-- Thèmes chargés dynamiquement -->
+        </div>
+
+        <div id="noThemes" class="text-center py-5" style="display: none;">
+          <i class="bi bi-palette display-1 text-muted"></i>
+          <p class="text-muted mt-3">Aucun thème trouvé</p>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Création/Édition -->
+  <div class="modal fade" id="themeModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTitle">Nouveau thème</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <!-- Colonne gauche : Paramètres -->
+            <div class="col-lg-7">
+              <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item">
+                  <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabGeneral">
+                    <i class="bi bi-gear me-1"></i>Général
+                  </button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabColors">
+                    <i class="bi bi-palette me-1"></i>Couleurs
+                  </button>
+                </li>
+                <li class="nav-item">
+                  <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabAdvanced">
+                    <i class="bi bi-code-slash me-1"></i>Avancé
+                  </button>
+                </li>
+              </ul>
+
+              <div class="tab-content">
+                <!-- Onglet Général -->
+                <div class="tab-pane fade show active" id="tabGeneral">
+                  <div class="mb-3">
+                    <label class="form-label">Nom du thème <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="theme_nom" placeholder="Mon thème personnalisé">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" id="theme_description" rows="2" placeholder="Description du thème..."></textarea>
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Mode</label>
+                        <div class="mode-toggle">
+                          <button type="button" class="btn btn-sm active" id="modeLight" onclick="setMode('light')">
+                            <i class="bi bi-sun me-1"></i>Clair
+                          </button>
+                          <button type="button" class="btn btn-sm" id="modeDark" onclick="setMode('dark')">
+                            <i class="bi bi-moon me-1"></i>Sombre
+                          </button>
+                        </div>
+                        <input type="hidden" id="theme_mode" value="light">
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label class="form-label">Ordre d'affichage</label>
+                        <input type="number" class="form-control" id="theme_ordre" value="0" min="0">
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" id="theme_actif" checked>
+                    <label class="form-check-label" for="theme_actif">Thème actif (visible dans la liste)</label>
+                  </div>
+                </div>
+
+                <!-- Onglet Couleurs -->
+                <div class="tab-pane fade" id="tabColors">
+                  <div class="color-grid">
+                    <div class="color-item">
+                      <label>Couleur primaire</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_primaire" value="#667eea" onchange="updateColorText(this, 'text_primaire'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_primaire" value="#667eea" onchange="updateColorPicker(this, 'color_primaire'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Couleur secondaire</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_secondaire" value="#764ba2" onchange="updateColorText(this, 'text_secondaire'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_secondaire" value="#764ba2" onchange="updateColorPicker(this, 'color_secondaire'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Couleur d'accent</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_accent" value="#f093fb" onchange="updateColorText(this, 'text_accent'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_accent" value="#f093fb" onchange="updateColorPicker(this, 'color_accent'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Couleur de succès</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_succes" value="#10b981" onchange="updateColorText(this, 'text_succes'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_succes" value="#10b981" onchange="updateColorPicker(this, 'color_succes'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Couleur d'erreur</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_erreur" value="#ef4444" onchange="updateColorText(this, 'text_erreur'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_erreur" value="#ef4444" onchange="updateColorPicker(this, 'color_erreur'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Couleur d'avertissement</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_warning" value="#f59e0b" onchange="updateColorText(this, 'text_warning'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_warning" value="#f59e0b" onchange="updateColorPicker(this, 'color_warning'); updatePreview()">
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr class="my-4">
+
+                  <h6 class="mb-3">Fond et texte</h6>
+                  <div class="color-grid">
+                    <div class="color-item">
+                      <label>Fond de page</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_fond_page" value="#f8fafc" onchange="updateColorText(this, 'text_fond_page'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_fond_page" value="#f8fafc" onchange="updateColorPicker(this, 'color_fond_page'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Fond des cartes</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_fond_carte" value="#ffffff" onchange="updateColorText(this, 'text_fond_carte'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_fond_carte" value="#ffffff" onchange="updateColorPicker(this, 'color_fond_carte'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Texte principal</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_texte" value="#1e293b" onchange="updateColorText(this, 'text_texte'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_texte" value="#1e293b" onchange="updateColorPicker(this, 'color_texte'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Texte secondaire</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_texte_secondaire" value="#64748b" onchange="updateColorText(this, 'text_texte_secondaire'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_texte_secondaire" value="#64748b" onchange="updateColorPicker(this, 'color_texte_secondaire'); updatePreview()">
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr class="my-4">
+
+                  <h6 class="mb-3">Header</h6>
+                  <div class="color-grid">
+                    <div class="color-item">
+                      <label>Fond du header</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_header_fond" value="#667eea" onchange="updateColorText(this, 'text_header_fond'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_header_fond" value="#667eea" onchange="updateColorPicker(this, 'color_header_fond'); updatePreview()">
+                      </div>
+                    </div>
+                    <div class="color-item">
+                      <label>Texte du header</label>
+                      <div class="color-input-group">
+                        <input type="color" id="color_header_texte" value="#ffffff" onchange="updateColorText(this, 'text_header_texte'); updatePreview()">
+                        <input type="text" class="form-control form-control-sm" id="text_header_texte" value="#ffffff" onchange="updateColorPicker(this, 'color_header_texte'); updatePreview()">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Onglet Avancé -->
+                <div class="tab-pane fade" id="tabAdvanced">
+                  <div class="mb-3">
+                    <label class="form-label">CSS personnalisé</label>
+                    <textarea class="form-control font-monospace" id="theme_css" rows="12" placeholder="/* Ajoutez votre CSS personnalisé ici */"></textarea>
+                    <small class="text-muted">Ce CSS sera ajouté après les variables de couleur</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Colonne droite : Preview -->
+            <div class="col-lg-5">
+              <div class="sticky-top" style="top: 20px;">
+                <h6 class="mb-3"><i class="bi bi-eye me-2"></i>Aperçu en direct</h6>
+                <div class="live-preview" id="livePreview">
+                  <div class="live-preview-header" id="previewHeader">
+                    <i class="bi bi-box-seam fs-4"></i>
+                    <span class="fw-bold">Ma Ludothèque</span>
+                  </div>
+                  <div class="live-preview-content" id="previewContent">
+                    <h5 id="previewTitle">Bienvenue !</h5>
+                    <p id="previewText" style="font-size: 14px;">Découvrez notre collection de jeux de société.</p>
+                    <div class="d-flex gap-2 mb-3">
+                      <button class="live-preview-btn-primary" id="previewBtnPrimary">Catalogue</button>
+                      <button class="live-preview-btn-secondary" id="previewBtnSecondary">Contact</button>
+                    </div>
+                    <div class="live-preview-card" id="previewCard">
+                      <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-dice-5 fs-5" id="previewCardIcon"></i>
+                        <strong>Jeu exemple</strong>
+                      </div>
+                      <small id="previewCardText">Un super jeu de société pour toute la famille.</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-3">
+                  <small class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Les modifications sont visibles en temps réel
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveTheme()">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Actions -->
+  <div class="modal fade" id="actionsModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Actions</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-success btn-lg text-start" onclick="activateTheme()">
+              <i class="bi bi-check-circle me-2"></i>Activer ce thème
+              <small class="d-block text-muted">Appliquer ce thème au site public</small>
+            </button>
+            <button class="btn btn-outline-primary btn-lg text-start" onclick="editTheme()">
+              <i class="bi bi-pencil me-2"></i>Modifier
+              <small class="d-block text-muted" id="editHint">Personnaliser les couleurs et paramètres</small>
+            </button>
+            <button class="btn btn-outline-secondary btn-lg text-start" onclick="duplicateTheme()">
+              <i class="bi bi-copy me-2"></i>Dupliquer
+              <small class="d-block text-muted">Créer une copie modifiable</small>
+            </button>
+            <button class="btn btn-outline-info btn-lg text-start" onclick="exportTheme()">
+              <i class="bi bi-download me-2"></i>Exporter
+              <small class="d-block text-muted">Télécharger en JSON</small>
+            </button>
+            <button class="btn btn-outline-warning btn-lg text-start" onclick="toggleTheme()">
+              <i class="bi bi-toggle-on me-2" id="toggleIcon"></i><span id="toggleLabel">Désactiver</span>
+              <small class="d-block text-muted" id="toggleHint">Masquer de la liste des thèmes</small>
+            </button>
+            <button class="btn btn-outline-danger btn-lg text-start" onclick="deleteTheme()" id="deleteBtn">
+              <i class="bi bi-trash me-2"></i>Supprimer
+              <small class="d-block text-muted">Supprimer définitivement</small>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let allThemes = [];
+    let currentTheme = null;
+    let activeThemeId = null;
+    let editingThemeId = null;
+    let themeModal, actionsModal;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initTemplate('parametres');
+      themeModal = new bootstrap.Modal(document.getElementById('themeModal'));
+      actionsModal = new bootstrap.Modal(document.getElementById('actionsModal'));
+      loadThemes();
+    });
+
+    async function loadThemes() {
+      try {
+        const response = await apiRequest('/parametres/themes');
+        allThemes = response.themes || [];
+
+        // Charger le thème actif
+        try {
+          const publicTheme = await apiRequest('/public/theme');
+          if (publicTheme.theme) {
+            activeThemeId = publicTheme.theme.id;
+            showActiveTheme(publicTheme.theme);
+          }
+        } catch (e) {
+          console.log('Pas de thème actif');
+        }
+
+        filterThemes();
+      } catch (error) {
+        console.error('Erreur chargement thèmes:', error);
+        showToast('Erreur lors du chargement des thèmes', 'danger');
+      }
+    }
+
+    function showActiveTheme(theme) {
+      const card = document.getElementById('activeThemeCard');
+      const fullTheme = allThemes.find(t => t.id === theme.id);
+
+      if (fullTheme) {
+        document.getElementById('activeThemeName').textContent = fullTheme.nom;
+        document.getElementById('activeThemeDesc').textContent = fullTheme.description || 'Aucune description';
+        document.getElementById('activeThemePrimary').style.backgroundColor = fullTheme.couleur_primaire;
+        document.getElementById('activeThemeSecondary').style.backgroundColor = fullTheme.couleur_secondaire;
+        card.style.display = 'block';
+      }
+    }
+
+    function filterThemes() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const type = document.getElementById('typeFilter').value;
+      const mode = document.getElementById('modeFilter').value;
+      const showInactive = document.getElementById('showInactive').checked;
+
+      let filtered = allThemes.filter(theme => {
+        if (!showInactive && !theme.actif) return false;
+        if (search && !theme.nom.toLowerCase().includes(search) &&
+            !theme.code.toLowerCase().includes(search)) return false;
+        if (type && theme.type !== type) return false;
+        if (mode && theme.mode !== mode) return false;
+        return true;
+      });
+
+      renderThemes(filtered);
+    }
+
+    function renderThemes(themes) {
+      const grid = document.getElementById('themesGrid');
+      const noThemes = document.getElementById('noThemes');
+
+      if (themes.length === 0) {
+        grid.innerHTML = '';
+        noThemes.style.display = 'block';
+        return;
+      }
+
+      noThemes.style.display = 'none';
+
+      grid.innerHTML = themes.map(theme => {
+        const isActive = theme.id === activeThemeId;
+        const isDark = theme.mode === 'dark';
+        const bgColor = isDark ? '#1e293b' : '#f8fafc';
+        const textColor = isDark ? '#f1f5f9' : '#1e293b';
+
+        return `
+          <div class="col">
+            <div class="card theme-card h-100 position-relative ${isActive ? 'active-theme' : ''} ${!theme.actif ? 'theme-inactive' : ''}"
+                 onclick="showActions(${theme.id})">
+              <div class="theme-preview" style="background: ${bgColor};">
+                <div class="theme-preview-header" style="background: ${theme.couleur_primaire}; color: white;">
+                  <span class="theme-preview-dot" style="background: white;"></span>
+                  <span class="theme-preview-dot" style="background: white;"></span>
+                  <span class="theme-preview-dot" style="background: white;"></span>
+                </div>
+                <div class="theme-preview-content">
+                  <div class="theme-preview-btn" style="background: ${theme.couleur_primaire}; color: white;">Bouton</div>
+                  <div class="theme-preview-text" style="background: ${textColor}; width: 80%;"></div>
+                  <div class="theme-preview-text" style="background: ${textColor}; width: 60%;"></div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h6 class="card-title mb-0">${theme.nom}</h6>
+                  <span class="badge ${theme.type === 'system' ? 'badge-system' : 'badge-custom'}">
+                    ${theme.type === 'system' ? 'Système' : 'Custom'}
+                  </span>
+                </div>
+                <p class="card-text small text-muted mb-2">${theme.description || 'Aucune description'}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="d-flex gap-1">
+                    <div class="color-swatch" style="width: 24px; height: 24px; background: ${theme.couleur_primaire};" title="Primaire"></div>
+                    <div class="color-swatch" style="width: 24px; height: 24px; background: ${theme.couleur_secondaire};" title="Secondaire"></div>
+                  </div>
+                  <span class="badge bg-${theme.mode === 'dark' ? 'dark' : 'light'} text-${theme.mode === 'dark' ? 'white' : 'dark'}">
+                    <i class="bi bi-${theme.mode === 'dark' ? 'moon' : 'sun'} me-1"></i>${theme.mode === 'dark' ? 'Sombre' : 'Clair'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function showActions(themeId) {
+      currentTheme = allThemes.find(t => t.id === themeId);
+      if (!currentTheme) return;
+
+      // Adapter les boutons selon le type
+      const deleteBtn = document.getElementById('deleteBtn');
+      const editHint = document.getElementById('editHint');
+      const toggleIcon = document.getElementById('toggleIcon');
+      const toggleLabel = document.getElementById('toggleLabel');
+      const toggleHint = document.getElementById('toggleHint');
+
+      if (currentTheme.type === 'system') {
+        deleteBtn.style.display = 'none';
+        editHint.textContent = 'Seul le CSS personnalisé est modifiable';
+      } else {
+        deleteBtn.style.display = 'block';
+        editHint.textContent = 'Personnaliser les couleurs et paramètres';
+      }
+
+      if (currentTheme.actif) {
+        toggleIcon.className = 'bi bi-toggle-on me-2';
+        toggleLabel.textContent = 'Désactiver';
+        toggleHint.textContent = 'Masquer de la liste des thèmes';
+      } else {
+        toggleIcon.className = 'bi bi-toggle-off me-2';
+        toggleLabel.textContent = 'Activer';
+        toggleHint.textContent = 'Rendre visible dans la liste';
+      }
+
+      actionsModal.show();
+    }
+
+    function showCreateModal() {
+      editingThemeId = null;
+      document.getElementById('modalTitle').textContent = 'Nouveau thème';
+      resetForm();
+      themeModal.show();
+    }
+
+    async function editTheme() {
+      actionsModal.hide();
+
+      try {
+        // Charger les détails complets du thème
+        const theme = await apiRequest(`/parametres/themes/${currentTheme.id}`);
+        editingThemeId = theme.id;
+
+        document.getElementById('modalTitle').textContent =
+          theme.type === 'system' ? `Personnaliser "${theme.nom}"` : `Modifier "${theme.nom}"`;
+
+        // Remplir le formulaire
+        document.getElementById('theme_nom').value = theme.nom;
+        document.getElementById('theme_nom').disabled = theme.type === 'system';
+        document.getElementById('theme_description').value = theme.description || '';
+        document.getElementById('theme_description').disabled = theme.type === 'system';
+        document.getElementById('theme_mode').value = theme.mode;
+        setMode(theme.mode, false);
+        document.getElementById('theme_ordre').value = theme.ordre_affichage || 0;
+        document.getElementById('theme_actif').checked = theme.actif;
+        document.getElementById('theme_css').value = theme.css_personnalise || '';
+
+        // Couleurs
+        const colorFields = [
+          ['primaire', 'couleur_primaire'],
+          ['secondaire', 'couleur_secondaire'],
+          ['accent', 'couleur_accent'],
+          ['succes', 'couleur_succes'],
+          ['erreur', 'couleur_erreur'],
+          ['warning', 'couleur_warning'],
+          ['fond_page', 'couleur_fond_page'],
+          ['fond_carte', 'couleur_fond_carte'],
+          ['texte', 'couleur_texte'],
+          ['texte_secondaire', 'couleur_texte_secondaire'],
+          ['header_fond', 'couleur_header_fond'],
+          ['header_texte', 'couleur_header_texte']
+        ];
+
+        colorFields.forEach(([field, prop]) => {
+          const colorInput = document.getElementById(`color_${field}`);
+          const textInput = document.getElementById(`text_${field}`);
+          const value = theme[prop] || colorInput.value;
+          colorInput.value = value;
+          textInput.value = value;
+          colorInput.disabled = theme.type === 'system';
+          textInput.disabled = theme.type === 'system';
+        });
+
+        // Désactiver les onglets couleurs pour thèmes système
+        const colorsTab = document.querySelector('[data-bs-target="#tabColors"]');
+        if (theme.type === 'system') {
+          colorsTab.classList.add('disabled');
+          colorsTab.style.pointerEvents = 'none';
+          colorsTab.style.opacity = '0.5';
+        } else {
+          colorsTab.classList.remove('disabled');
+          colorsTab.style.pointerEvents = '';
+          colorsTab.style.opacity = '';
+        }
+
+        updatePreview();
+        themeModal.show();
+      } catch (error) {
+        console.error('Erreur chargement thème:', error);
+        showToast('Erreur lors du chargement du thème', 'danger');
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('theme_nom').value = '';
+      document.getElementById('theme_nom').disabled = false;
+      document.getElementById('theme_description').value = '';
+      document.getElementById('theme_description').disabled = false;
+      setMode('light', false);
+      document.getElementById('theme_ordre').value = 0;
+      document.getElementById('theme_actif').checked = true;
+      document.getElementById('theme_css').value = '';
+
+      // Réinitialiser les couleurs par défaut
+      const defaults = {
+        primaire: '#667eea',
+        secondaire: '#764ba2',
+        accent: '#f093fb',
+        succes: '#10b981',
+        erreur: '#ef4444',
+        warning: '#f59e0b',
+        fond_page: '#f8fafc',
+        fond_carte: '#ffffff',
+        texte: '#1e293b',
+        texte_secondaire: '#64748b',
+        header_fond: '#667eea',
+        header_texte: '#ffffff'
+      };
+
+      Object.entries(defaults).forEach(([field, value]) => {
+        const colorInput = document.getElementById(`color_${field}`);
+        const textInput = document.getElementById(`text_${field}`);
+        colorInput.value = value;
+        textInput.value = value;
+        colorInput.disabled = false;
+        textInput.disabled = false;
+      });
+
+      // Réactiver l'onglet couleurs
+      const colorsTab = document.querySelector('[data-bs-target="#tabColors"]');
+      colorsTab.classList.remove('disabled');
+      colorsTab.style.pointerEvents = '';
+      colorsTab.style.opacity = '';
+
+      updatePreview();
+    }
+
+    function setMode(mode, update = true) {
+      document.getElementById('theme_mode').value = mode;
+      document.getElementById('modeLight').classList.toggle('active', mode === 'light');
+      document.getElementById('modeDark').classList.toggle('active', mode === 'dark');
+
+      if (update) {
+        // Appliquer des couleurs par défaut selon le mode
+        if (mode === 'dark') {
+          setColorValue('fond_page', '#0f172a');
+          setColorValue('fond_carte', '#1e293b');
+          setColorValue('texte', '#f1f5f9');
+          setColorValue('texte_secondaire', '#94a3b8');
+        } else {
+          setColorValue('fond_page', '#f8fafc');
+          setColorValue('fond_carte', '#ffffff');
+          setColorValue('texte', '#1e293b');
+          setColorValue('texte_secondaire', '#64748b');
+        }
+        updatePreview();
+      }
+    }
+
+    function setColorValue(field, value) {
+      document.getElementById(`color_${field}`).value = value;
+      document.getElementById(`text_${field}`).value = value;
+    }
+
+    function updateColorText(colorInput, textInputId) {
+      document.getElementById(textInputId).value = colorInput.value;
+    }
+
+    function updateColorPicker(textInput, colorInputId) {
+      const value = textInput.value;
+      if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+        document.getElementById(colorInputId).value = value;
+      }
+    }
+
+    function updatePreview() {
+      const primary = document.getElementById('color_primaire').value;
+      const secondary = document.getElementById('color_secondaire').value;
+      const bgPage = document.getElementById('color_fond_page').value;
+      const bgCard = document.getElementById('color_fond_carte').value;
+      const textMain = document.getElementById('color_texte').value;
+      const textSecondary = document.getElementById('color_texte_secondaire').value;
+      const headerBg = document.getElementById('color_header_fond').value;
+      const headerText = document.getElementById('color_header_texte').value;
+
+      const preview = document.getElementById('livePreview');
+      const header = document.getElementById('previewHeader');
+      const content = document.getElementById('previewContent');
+      const btnPrimary = document.getElementById('previewBtnPrimary');
+      const btnSecondary = document.getElementById('previewBtnSecondary');
+      const card = document.getElementById('previewCard');
+      const title = document.getElementById('previewTitle');
+      const text = document.getElementById('previewText');
+      const cardText = document.getElementById('previewCardText');
+      const cardIcon = document.getElementById('previewCardIcon');
+
+      preview.style.backgroundColor = bgPage;
+      header.style.background = `linear-gradient(135deg, ${primary}, ${secondary})`;
+      header.style.color = headerText;
+      content.style.backgroundColor = bgPage;
+      btnPrimary.style.backgroundColor = primary;
+      btnSecondary.style.backgroundColor = secondary;
+      card.style.backgroundColor = bgCard;
+      card.style.border = `1px solid ${textSecondary}33`;
+      title.style.color = textMain;
+      text.style.color = textSecondary;
+      cardText.style.color = textSecondary;
+      cardIcon.style.color = primary;
+    }
+
+    async function saveTheme() {
+      const nom = document.getElementById('theme_nom').value.trim();
+      if (!nom) {
+        showToast('Le nom du thème est requis', 'warning');
+        return;
+      }
+
+      const data = {
+        nom,
+        description: document.getElementById('theme_description').value.trim(),
+        mode: document.getElementById('theme_mode').value,
+        ordre_affichage: parseInt(document.getElementById('theme_ordre').value) || 0,
+        actif: document.getElementById('theme_actif').checked,
+        css_personnalise: document.getElementById('theme_css').value,
+        couleur_primaire: document.getElementById('color_primaire').value,
+        couleur_secondaire: document.getElementById('color_secondaire').value,
+        couleur_accent: document.getElementById('color_accent').value,
+        couleur_succes: document.getElementById('color_succes').value,
+        couleur_erreur: document.getElementById('color_erreur').value,
+        couleur_warning: document.getElementById('color_warning').value,
+        couleur_fond_page: document.getElementById('color_fond_page').value,
+        couleur_fond_carte: document.getElementById('color_fond_carte').value,
+        couleur_texte: document.getElementById('color_texte').value,
+        couleur_texte_secondaire: document.getElementById('color_texte_secondaire').value,
+        couleur_header_fond: document.getElementById('color_header_fond').value,
+        couleur_header_texte: document.getElementById('color_header_texte').value
+      };
+
+      try {
+        if (editingThemeId) {
+          await apiRequest(`/parametres/themes/${editingThemeId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          });
+          showToast('Thème mis à jour', 'success');
+        } else {
+          await apiRequest('/parametres/themes', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          showToast('Thème créé', 'success');
+        }
+
+        themeModal.hide();
+        loadThemes();
+      } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        showToast(error.message || 'Erreur lors de la sauvegarde', 'danger');
+      }
+    }
+
+    async function activateTheme() {
+      actionsModal.hide();
+
+      try {
+        await apiRequest(`/parametres/themes/${currentTheme.id}/activate`, {
+          method: 'POST'
+        });
+        activeThemeId = currentTheme.id;
+        showToast(`Thème "${currentTheme.nom}" activé`, 'success');
+        loadThemes();
+      } catch (error) {
+        console.error('Erreur activation:', error);
+        showToast(error.message || 'Erreur lors de l\'activation', 'danger');
+      }
+    }
+
+    async function duplicateTheme() {
+      actionsModal.hide();
+
+      const newName = prompt('Nom du nouveau thème:', `${currentTheme.nom} (copie)`);
+      if (!newName) return;
+
+      try {
+        await apiRequest(`/parametres/themes/${currentTheme.id}/duplicate`, {
+          method: 'POST',
+          body: JSON.stringify({ nom: newName })
+        });
+        showToast('Thème dupliqué', 'success');
+        loadThemes();
+      } catch (error) {
+        console.error('Erreur duplication:', error);
+        showToast(error.message || 'Erreur lors de la duplication', 'danger');
+      }
+    }
+
+    async function toggleTheme() {
+      actionsModal.hide();
+
+      try {
+        await apiRequest(`/parametres/themes/${currentTheme.id}/toggle`, {
+          method: 'PATCH'
+        });
+        showToast(`Thème ${currentTheme.actif ? 'désactivé' : 'activé'}`, 'success');
+        loadThemes();
+      } catch (error) {
+        console.error('Erreur toggle:', error);
+        showToast(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function deleteTheme() {
+      if (currentTheme.type === 'system') {
+        showToast('Les thèmes système ne peuvent pas être supprimés', 'warning');
+        return;
+      }
+
+      if (!confirm(`Supprimer définitivement le thème "${currentTheme.nom}" ?`)) return;
+
+      actionsModal.hide();
+
+      try {
+        await apiRequest(`/parametres/themes/${currentTheme.id}`, {
+          method: 'DELETE'
+        });
+        showToast('Thème supprimé', 'success');
+        loadThemes();
+      } catch (error) {
+        console.error('Erreur suppression:', error);
+        showToast(error.message || 'Erreur lors de la suppression', 'danger');
+      }
+    }
+
+    async function exportTheme() {
+      actionsModal.hide();
+
+      try {
+        const response = await fetch(`${window.API_BASE_URL || ''}/api/parametres/themes/${currentTheme.id}/export`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `theme_${currentTheme.code}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        showToast('Thème exporté', 'success');
+      } catch (error) {
+        console.error('Erreur export:', error);
+        showToast('Erreur lors de l\'export', 'danger');
+      }
+    }
+
+    function importTheme() {
+      document.getElementById('importInput').click();
+    }
+
+    async function handleImport(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+
+        await apiRequest('/parametres/themes/import', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+
+        showToast('Thème importé avec succès', 'success');
+        loadThemes();
+      } catch (error) {
+        console.error('Erreur import:', error);
+        showToast(error.message || 'Erreur lors de l\'import', 'danger');
+      }
+
+      event.target.value = '';
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.querySelector('.toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      container.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

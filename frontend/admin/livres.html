@@ -358,7 +358,8 @@
 
           <div id="lookupLoading" class="d-none text-center py-4">
             <div class="spinner-border text-success" role="status"></div>
-            <p class="mt-2">Recherche en cours...</p>
+            <p class="mt-2">Recherche en cours sur les APIs externes...</p>
+            <small class="text-muted">OpenLibrary, Google Books, et autres sources configurees</small>
           </div>
 
           <div id="lookupResults" class="d-none">
@@ -1083,9 +1084,17 @@
       document.getElementById('btnUseResults').classList.add('d-none');
 
       try {
-        // TODO: Implement Open Library lookup
+        // Utilise la nouvelle API generique avec recherche automatique
+        const result = await lookupAPI.search(input, 'livre');
+
         document.getElementById('lookupLoading').classList.add('d-none');
-        document.getElementById('lookupNotFound').classList.remove('d-none');
+
+        if (result.found && result.data) {
+          currentLookupResult = result.data;
+          displayLookupResults(result);
+        } else {
+          document.getElementById('lookupNotFound').classList.remove('d-none');
+        }
       } catch (error) {
         document.getElementById('lookupLoading').classList.add('d-none');
         document.getElementById('lookupError').classList.remove('d-none');
@@ -1093,10 +1102,52 @@
       }
     }
 
+    function displayLookupResults(result) {
+      const data = result.data;
+
+      document.getElementById('lookupTitre').textContent = data.titre || data.title || 'Sans titre';
+      document.getElementById('lookupAuteur').textContent = data.auteur || (Array.isArray(data.authors) ? data.authors.join(', ') : data.authors) || '-';
+      document.getElementById('lookupEditeur').textContent = data.editeur || data.publisher || '-';
+      document.getElementById('lookupAnnee').textContent = data.annee_publication || data.year || '-';
+      document.getElementById('lookupDescription').textContent = data.description || 'Pas de description';
+
+      const img = document.getElementById('lookupImage');
+      if (data.image_url || data.cover) {
+        img.src = data.image_url || data.cover;
+        img.classList.remove('d-none');
+      } else {
+        img.src = '';
+        img.classList.add('d-none');
+      }
+
+      document.getElementById('lookupResults').classList.remove('d-none');
+      document.getElementById('btnUseResults').classList.remove('d-none');
+    }
+
     function useResults() {
       if (!currentLookupResult) return;
       lookupModalInstance.hide();
-      openCreateModal();
+
+      document.getElementById('modalTitle').textContent = 'Nouveau livre (depuis ISBN)';
+      document.getElementById('livreForm').reset();
+      document.getElementById('livreId').value = '';
+
+      // Pre-remplir les champs avec les donnees trouvees
+      const data = currentLookupResult;
+      document.getElementById('titre').value = data.titre || data.title || '';
+      document.getElementById('annee_publication').value = data.annee_publication || data.year || '';
+      document.getElementById('isbn').value = data.isbn || data.isbn13 || data.isbn10 || '';
+      document.getElementById('nb_pages').value = data.nb_pages || data.pageCount || '';
+      document.getElementById('resume').value = data.description || '';
+
+      clearTomSelects();
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('livreModal'));
+      }
+      modalInstance.show();
+
+      currentLookupResult = null;
     }
 
     // Toast notification

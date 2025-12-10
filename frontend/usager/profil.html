@@ -6,10 +6,12 @@
   <title>Mon profil - Espace usager</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Theme Loader -->
+  <script src="/js/theme-loader.js"></script>
   <style>
     :root {
-      --couleur-primaire: #0d6efd;
-      --couleur-secondaire: #6c757d;
+      --couleur-primaire: var(--primary-color, #0d6efd);
+      --couleur-secondaire: var(--secondary-color, #6c757d);
     }
     body {
       background-color: #f8f9fa;

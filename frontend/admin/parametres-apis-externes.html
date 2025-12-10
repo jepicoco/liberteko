@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APIs Externes - Parametres - Assotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card { margin-bottom: 1.5rem; }
+    .section-card .card-header { background-color: #f8f9fa; font-weight: 600; }
+    .config-card { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .config-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .config-card.default { border-color: #198754; border-width: 2px; }
+    .config-card.inactive { opacity: 0.6; }
+    .provider-icon { font-size: 2rem; }
+    .sub-nav { background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #e9ecef; }
+    .status-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .status-indicator.success { background-color: #198754; }
+    .status-indicator.error { background-color: #dc3545; }
+    .status-indicator.pending { background-color: #ffc107; }
+    .stats-badge { font-size: 0.75rem; }
+    .collection-badge { font-size: 0.7rem; padding: 0.2em 0.5em; }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-cloud-arrow-down"></i> APIs Externes</h1>
+            <p class="text-muted mb-0">Configuration des services de recherche EAN/ISBN</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="bi bi-plus"></i> Ajouter une API
+          </button>
+        </div>
+
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          Ces APIs permettent d'enrichir automatiquement les fiches articles en recherchant les informations
+          par code-barres EAN ou ISBN. Configurez les cles API et les limites selon vos besoins.
+        </div>
+
+        <!-- Filtres par collection -->
+        <div class="mb-4">
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary active" onclick="filterByCollection(null)">
+              <i class="bi bi-grid"></i> Toutes
+            </button>
+            <button type="button" class="btn btn-outline-primary" onclick="filterByCollection('jeu')">
+              <i class="bi bi-dice-5"></i> Jeux
+            </button>
+            <button type="button" class="btn btn-outline-purple" onclick="filterByCollection('livre')" style="--bs-btn-color: #6f42c1; --bs-btn-border-color: #6f42c1;">
+              <i class="bi bi-book"></i> Livres
+            </button>
+            <button type="button" class="btn btn-outline-danger" onclick="filterByCollection('film')">
+              <i class="bi bi-film"></i> Films
+            </button>
+            <button type="button" class="btn btn-outline-warning" onclick="filterByCollection('disque')">
+              <i class="bi bi-disc"></i> Disques
+            </button>
+          </div>
+        </div>
+
+        <div id="configs-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Config API -->
+  <div class="modal fade" id="modalConfig" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalConfigTitle">Nouvelle configuration API</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formConfig">
+            <input type="hidden" id="config_id">
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="config_libelle" required placeholder="Ex: BoardGameGeek">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_provider" class="form-label">Fournisseur <span class="text-danger">*</span></label>
+                  <select class="form-select" id="config_provider" required onchange="onProviderChange()">
+                    <option value="">-- Selectionner --</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_type_api" class="form-label">Type d'API</label>
+                  <select class="form-select" id="config_type_api">
+                    <option value="ean_lookup">Recherche EAN</option>
+                    <option value="isbn_lookup">Recherche ISBN</option>
+                    <option value="enrichissement">Enrichissement</option>
+                    <option value="custom">Personnalise</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label class="form-label">Collections supportees</label>
+                  <div class="d-flex gap-3 flex-wrap">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="coll_jeu" value="jeu">
+                      <label class="form-check-label" for="coll_jeu"><i class="bi bi-dice-5"></i> Jeux</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="coll_livre" value="livre">
+                      <label class="form-check-label" for="coll_livre"><i class="bi bi-book"></i> Livres</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="coll_film" value="film">
+                      <label class="form-check-label" for="coll_film"><i class="bi bi-film"></i> Films</label>
+                    </div>
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="coll_disque" value="disque">
+                      <label class="form-check-label" for="coll_disque"><i class="bi bi-disc"></i> Disques</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="mb-3"><i class="bi bi-key"></i> Authentification</h6>
+
+            <div class="row">
+              <div class="col-md-12">
+                <div class="mb-3">
+                  <label for="config_api_url" class="form-label">URL de l'API</label>
+                  <input type="url" class="form-control" id="config_api_url" placeholder="https://api.example.com/v1">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_api_key" class="form-label">Cle API</label>
+                  <input type="password" class="form-control" id="config_api_key" placeholder="••••••••">
+                  <small class="text-muted">Laissez vide pour conserver la cle actuelle</small>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_api_secret" class="form-label">Secret API (optionnel)</label>
+                  <input type="password" class="form-control" id="config_api_secret" placeholder="••••••••">
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="mb-3"><i class="bi bi-speedometer2"></i> Limites</h6>
+
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="config_limite_requetes" class="form-label">Limite de requetes</label>
+                  <input type="number" class="form-control" id="config_limite_requetes" min="0" placeholder="Illimite si vide">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="config_periode_limite" class="form-label">Periode</label>
+                  <select class="form-select" id="config_periode_limite">
+                    <option value="jour">Par jour</option>
+                    <option value="heure">Par heure</option>
+                    <option value="mois">Par mois</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="config_priorite" class="form-label">Priorite</label>
+                  <input type="number" class="form-control" id="config_priorite" min="0" value="0">
+                  <small class="text-muted">0 = plus haute priorite</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check form-switch mb-3">
+                  <input class="form-check-input" type="checkbox" id="config_cache_active" checked>
+                  <label class="form-check-label" for="config_cache_active">Activer le cache</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_cache_duree" class="form-label">Duree cache (jours)</label>
+                  <input type="number" class="form-control" id="config_cache_duree" min="1" value="90">
+                </div>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_icone" class="form-label">Icone</label>
+                  <select class="form-select" id="config_icone">
+                    <option value="bi-search">Recherche</option>
+                    <option value="bi-upc-scan">Code-barres</option>
+                    <option value="bi-dice-5">Jeux</option>
+                    <option value="bi-book">Livres</option>
+                    <option value="bi-film">Films</option>
+                    <option value="bi-music-note-beamed">Musique</option>
+                    <option value="bi-cloud">Cloud</option>
+                    <option value="bi-globe">Globe</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="config_couleur" class="form-label">Couleur</label>
+                  <select class="form-select" id="config_couleur">
+                    <option value="primary">Bleu</option>
+                    <option value="success">Vert</option>
+                    <option value="info">Cyan</option>
+                    <option value="warning">Orange</option>
+                    <option value="danger">Rouge</option>
+                    <option value="purple">Violet</option>
+                    <option value="secondary">Gris</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="config_description" class="form-label">Description</label>
+              <textarea class="form-control" id="config_description" rows="2" placeholder="Description de l'API..."></textarea>
+            </div>
+
+            <hr>
+
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="config_par_defaut">
+              <label class="form-check-label" for="config_par_defaut"><strong>Configuration par defaut</strong> pour ce type</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-info" onclick="testConnection()">
+            <i class="bi bi-wifi"></i> Tester
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveConfig()">
+            <i class="bi bi-check"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Stats -->
+  <div class="modal fade" id="modalStats" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-graph-up"></i> Statistiques d'utilisation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="statsContent">
+          <div class="text-center py-3">
+            <div class="spinner-border text-primary" role="status"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let allConfigs = [];
+    let providers = [];
+    let currentFilter = null;
+    let modalConfig, modalStats;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTemplate('parametres');
+      modalConfig = new bootstrap.Modal(document.getElementById('modalConfig'));
+      modalStats = new bootstrap.Modal(document.getElementById('modalStats'));
+      await loadProviders();
+      await loadConfigs();
+    });
+
+    async function loadProviders() {
+      try {
+        const response = await apiRequest('/parametres/apis-externes/providers');
+        providers = response.providers || [];
+
+        const select = document.getElementById('config_provider');
+        select.innerHTML = '<option value="">-- Selectionner --</option>';
+        providers.forEach(p => {
+          select.innerHTML += `<option value="${p.code}">${p.nom}</option>`;
+        });
+      } catch (error) {
+        console.error('Erreur chargement providers:', error);
+      }
+    }
+
+    async function loadConfigs() {
+      try {
+        const response = await apiRequest('/parametres/apis-externes');
+        allConfigs = response.configurations || [];
+        renderConfigs();
+      } catch (error) {
+        console.error('Erreur chargement configurations:', error);
+        document.getElementById('configs-container').innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Erreur de chargement: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    function filterByCollection(collection) {
+      currentFilter = collection;
+
+      // Update button states
+      document.querySelectorAll('.btn-group .btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      renderConfigs();
+    }
+
+    function renderConfigs() {
+      let configs = allConfigs;
+
+      // Filtrer par collection si necessaire
+      if (currentFilter) {
+        configs = configs.filter(c => {
+          const collections = c.collections_supportees || [];
+          return collections.includes(currentFilter);
+        });
+      }
+
+      if (configs.length === 0) {
+        document.getElementById('configs-container').innerHTML = `
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-cloud-slash" style="font-size: 3rem;"></i>
+            <p class="mt-2">Aucune configuration API${currentFilter ? ' pour cette collection' : ''}</p>
+            <button class="btn btn-primary" onclick="openAddModal()">
+              <i class="bi bi-plus"></i> Ajouter une API
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '<div class="row">';
+      configs.forEach(config => {
+        const collections = config.collections_supportees || [];
+        const collectionBadges = collections.map(c => {
+          const colors = { jeu: 'primary', livre: 'purple', film: 'danger', disque: 'warning' };
+          const icons = { jeu: 'dice-5', livre: 'book', film: 'film', disque: 'disc' };
+          return `<span class="badge bg-${colors[c] || 'secondary'} collection-badge"><i class="bi bi-${icons[c]}"></i></span>`;
+        }).join(' ');
+
+        const statusClass = config.actif ? '' : 'inactive';
+        const defaultClass = config.par_defaut ? 'default' : '';
+        const lastStatus = config.dernier_statut || 'pending';
+        const statusColor = lastStatus === 'success' ? 'success' : (lastStatus === 'error' ? 'error' : 'pending');
+
+        html += `
+          <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card config-card ${statusClass} ${defaultClass}" onclick="openEditModal(${config.id})">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="provider-icon text-${config.couleur || 'primary'}">
+                      <i class="bi ${config.icone || 'bi-cloud'}"></i>
+                    </span>
+                    <div>
+                      <h6 class="mb-0">${config.libelle}</h6>
+                      <small class="text-muted">${config.provider}</small>
+                    </div>
+                  </div>
+                  <span class="status-indicator ${statusColor}" title="Dernier statut: ${lastStatus}"></span>
+                </div>
+
+                <div class="mb-2">
+                  ${collectionBadges}
+                  ${config.par_defaut ? '<span class="badge bg-success ms-1"><i class="bi bi-star-fill"></i> Defaut</span>' : ''}
+                </div>
+
+                <p class="text-muted small mb-2">${config.description || 'Aucune description'}</p>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="stats-badge">
+                    <span class="badge bg-light text-dark">
+                      <i class="bi bi-arrow-repeat"></i> ${config.total_requetes || 0} req.
+                    </span>
+                    ${config.limite_requetes ? `
+                      <span class="badge bg-light text-dark">
+                        <i class="bi bi-speedometer2"></i> ${config.requetes_compteur || 0}/${config.limite_requetes}
+                      </span>
+                    ` : ''}
+                  </div>
+                  <div class="btn-group btn-group-sm" onclick="event.stopPropagation()">
+                    <button class="btn btn-outline-info" onclick="showStats(${config.id})" title="Statistiques">
+                      <i class="bi bi-graph-up"></i>
+                    </button>
+                    <button class="btn btn-outline-${config.actif ? 'warning' : 'success'}" onclick="toggleActif(${config.id})" title="${config.actif ? 'Desactiver' : 'Activer'}">
+                      <i class="bi bi-${config.actif ? 'pause' : 'play'}"></i>
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="deleteConfig(${config.id})" title="Supprimer">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      document.getElementById('configs-container').innerHTML = html;
+    }
+
+    function onProviderChange() {
+      const provider = document.getElementById('config_provider').value;
+      const providerInfo = providers.find(p => p.code === provider);
+
+      if (providerInfo) {
+        document.getElementById('config_api_url').value = providerInfo.url_defaut || '';
+        document.getElementById('config_description').value = providerInfo.description || '';
+
+        // Pre-cocher les collections
+        ['jeu', 'livre', 'film', 'disque'].forEach(c => {
+          document.getElementById(`coll_${c}`).checked = (providerInfo.collections || []).includes(c);
+        });
+      }
+    }
+
+    function openAddModal() {
+      document.getElementById('formConfig').reset();
+      document.getElementById('config_id').value = '';
+      document.getElementById('modalConfigTitle').textContent = 'Nouvelle configuration API';
+      document.getElementById('config_cache_active').checked = true;
+      document.getElementById('config_cache_duree').value = 90;
+      modalConfig.show();
+    }
+
+    async function openEditModal(id) {
+      try {
+        const config = await apiRequest(`/parametres/apis-externes/${id}`);
+
+        document.getElementById('config_id').value = config.id;
+        document.getElementById('config_libelle').value = config.libelle;
+        document.getElementById('config_provider').value = config.provider;
+        document.getElementById('config_type_api').value = config.type_api;
+        document.getElementById('config_api_url').value = config.api_url || '';
+        document.getElementById('config_api_key').value = '';
+        document.getElementById('config_api_secret').value = '';
+        document.getElementById('config_limite_requetes').value = config.limite_requetes || '';
+        document.getElementById('config_periode_limite').value = config.periode_limite || 'jour';
+        document.getElementById('config_priorite').value = config.priorite || 0;
+        document.getElementById('config_cache_active').checked = config.cache_active !== false;
+        document.getElementById('config_cache_duree').value = config.cache_duree_jours || 90;
+        document.getElementById('config_icone').value = config.icone || 'bi-search';
+        document.getElementById('config_couleur').value = config.couleur || 'primary';
+        document.getElementById('config_description').value = config.description || '';
+        document.getElementById('config_par_defaut').checked = config.par_defaut;
+
+        // Collections
+        const collections = config.collections_supportees || [];
+        ['jeu', 'livre', 'film', 'disque'].forEach(c => {
+          document.getElementById(`coll_${c}`).checked = collections.includes(c);
+        });
+
+        document.getElementById('modalConfigTitle').textContent = `Modifier: ${config.libelle}`;
+        modalConfig.show();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function saveConfig() {
+      const id = document.getElementById('config_id').value;
+
+      const collections = [];
+      ['jeu', 'livre', 'film', 'disque'].forEach(c => {
+        if (document.getElementById(`coll_${c}`).checked) collections.push(c);
+      });
+
+      const data = {
+        libelle: document.getElementById('config_libelle').value,
+        provider: document.getElementById('config_provider').value,
+        type_api: document.getElementById('config_type_api').value,
+        api_url: document.getElementById('config_api_url').value || null,
+        limite_requetes: document.getElementById('config_limite_requetes').value || null,
+        periode_limite: document.getElementById('config_periode_limite').value,
+        priorite: parseInt(document.getElementById('config_priorite').value) || 0,
+        cache_active: document.getElementById('config_cache_active').checked,
+        cache_duree_jours: parseInt(document.getElementById('config_cache_duree').value) || 90,
+        icone: document.getElementById('config_icone').value,
+        couleur: document.getElementById('config_couleur').value,
+        description: document.getElementById('config_description').value || null,
+        par_defaut: document.getElementById('config_par_defaut').checked,
+        collections_supportees: collections
+      };
+
+      // Ajouter cle API si fournie
+      const apiKey = document.getElementById('config_api_key').value;
+      if (apiKey) data.api_key = apiKey;
+
+      const apiSecret = document.getElementById('config_api_secret').value;
+      if (apiSecret) data.api_secret = apiSecret;
+
+      try {
+        if (id) {
+          await apiRequest(`/parametres/apis-externes/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          });
+        } else {
+          await apiRequest('/parametres/apis-externes', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+        }
+
+        modalConfig.hide();
+        await loadConfigs();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function toggleActif(id) {
+      try {
+        await apiRequest(`/parametres/apis-externes/${id}/toggle`, { method: 'PATCH' });
+        await loadConfigs();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function deleteConfig(id) {
+      if (!confirm('Supprimer cette configuration API ?')) return;
+
+      try {
+        await apiRequest(`/parametres/apis-externes/${id}`, { method: 'DELETE' });
+        await loadConfigs();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function testConnection() {
+      const id = document.getElementById('config_id').value;
+      if (!id) {
+        alert('Enregistrez d\'abord la configuration avant de tester');
+        return;
+      }
+
+      try {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Test...';
+
+        const result = await apiRequest(`/parametres/apis-externes/${id}/test`, { method: 'POST' });
+
+        if (result.success) {
+          alert('Connexion reussie !\n\n' + (result.message || ''));
+        } else {
+          alert('Echec de connexion:\n' + (result.error || 'Erreur inconnue'));
+        }
+      } catch (error) {
+        alert('Erreur de test: ' + error.message);
+      } finally {
+        event.target.disabled = false;
+        event.target.innerHTML = '<i class="bi bi-wifi"></i> Tester';
+      }
+    }
+
+    async function showStats(id) {
+      try {
+        const stats = await apiRequest(`/parametres/apis-externes/${id}/stats`);
+
+        document.getElementById('statsContent').innerHTML = `
+          <div class="row text-center mb-4">
+            <div class="col-4">
+              <div class="h3 text-primary">${stats.total_requetes || 0}</div>
+              <small class="text-muted">Total requetes</small>
+            </div>
+            <div class="col-4">
+              <div class="h3 text-success">${stats.total_succes || 0}</div>
+              <small class="text-muted">Succes</small>
+            </div>
+            <div class="col-4">
+              <div class="h3 text-danger">${(stats.total_requetes || 0) - (stats.total_succes || 0)}</div>
+              <small class="text-muted">Echecs</small>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <strong>Taux de succes:</strong>
+            <div class="progress">
+              <div class="progress-bar bg-success" style="width: ${stats.taux_succes || 0}%">
+                ${(stats.taux_succes || 0).toFixed(1)}%
+              </div>
+            </div>
+          </div>
+
+          ${stats.limite_requetes ? `
+            <div class="mb-3">
+              <strong>Utilisation periode:</strong>
+              <div class="progress">
+                <div class="progress-bar" style="width: ${(stats.requetes_compteur / stats.limite_requetes * 100)}%">
+                  ${stats.requetes_compteur || 0} / ${stats.limite_requetes}
+                </div>
+              </div>
+              <small class="text-muted">Reset: ${stats.date_reset_compteur ? new Date(stats.date_reset_compteur).toLocaleString() : 'N/A'}</small>
+            </div>
+          ` : ''}
+
+          <p class="text-muted small mb-0">
+            <i class="bi bi-clock"></i> Derniere utilisation:
+            ${stats.derniere_utilisation ? new Date(stats.derniere_utilisation).toLocaleString() : 'Jamais'}
+          </p>
+        `;
+
+        modalStats.show();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>

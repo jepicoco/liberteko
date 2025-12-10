@@ -334,8 +334,8 @@
           <!-- Loading -->
           <div id="lookupLoading" class="d-none text-center py-4">
             <div class="spinner-border text-success" role="status"></div>
-            <p class="mt-2">Recherche en cours sur UPCitemdb + BoardGameGeek...</p>
-            <small class="text-muted">Cette recherche peut prendre quelques secondes (rate limiting BGG)</small>
+            <p class="mt-2">Recherche en cours sur les APIs externes...</p>
+            <small class="text-muted">UPCitemdb, BoardGameGeek, et autres sources configurees</small>
           </div>
 
           <!-- Results -->
@@ -1157,17 +1157,13 @@
       document.getElementById('btnUseResults').classList.add('d-none');
 
       try {
-        let result;
-        if (/^\d+$/.test(input)) {
-          result = await lookupAPI.byEAN(input);
-        } else {
-          result = await lookupAPI.byTitle(input);
-        }
+        // Utilise la nouvelle API generique avec recherche automatique
+        const result = await lookupAPI.search(input, 'jeu');
 
         document.getElementById('lookupLoading').classList.add('d-none');
 
-        if (result.found && result.jeu) {
-          currentLookupResult = result.jeu;
+        if (result.found && result.data) {
+          currentLookupResult = result.data;
           displayLookupResults(result);
         } else {
           document.getElementById('lookupNotFound').classList.remove('d-none');
@@ -1180,27 +1176,34 @@
     }
 
     function displayLookupResults(result) {
-      const jeu = result.jeu;
+      // La nouvelle API retourne les donnees dans result.data
+      const data = result.data;
 
       document.getElementById('lookupSource').textContent = result.source || 'inconnu';
-      document.getElementById('lookupTitre').textContent = jeu.titre || 'Sans titre';
-      document.getElementById('lookupEditeur').textContent = jeu.editeur || '-';
-      document.getElementById('lookupAuteur').textContent = jeu.auteur || '-';
-      document.getElementById('lookupAnnee').textContent = jeu.annee_sortie || '-';
+      document.getElementById('lookupTitre').textContent = data.titre || data.title || 'Sans titre';
+      document.getElementById('lookupEditeur').textContent = data.editeur || data.publisher || '-';
+      document.getElementById('lookupAuteur').textContent = data.auteur || data.designer || '-';
+      document.getElementById('lookupAnnee').textContent = data.annee_sortie || data.year || '-';
       document.getElementById('lookupJoueurs').textContent =
-        jeu.nb_joueurs_min && jeu.nb_joueurs_max
-          ? `${jeu.nb_joueurs_min}-${jeu.nb_joueurs_max}`
-          : jeu.nb_joueurs_min || '-';
-      document.getElementById('lookupDuree').textContent = jeu.duree_partie || '-';
-      document.getElementById('lookupAge').textContent = jeu.age_min || '-';
-      document.getElementById('lookupCategorie').textContent = jeu.categorie
-        ? `Categorie: ${jeu.categorie}`
+        data.nb_joueurs_min && data.nb_joueurs_max
+          ? `${data.nb_joueurs_min}-${data.nb_joueurs_max}`
+          : data.nb_joueurs_min || data.minPlayers || '-';
+      document.getElementById('lookupDuree').textContent = data.duree_partie || data.playingTime || '-';
+      document.getElementById('lookupAge').textContent = data.age_min || data.minAge || '-';
+
+      // Categories peuvent etre un tableau ou une chaine
+      let categories = data.categorie || data.categories || '';
+      if (Array.isArray(categories)) {
+        categories = categories.join(', ');
+      }
+      document.getElementById('lookupCategorie').textContent = categories
+        ? `Categorie: ${categories}`
         : '';
-      document.getElementById('lookupDescription').textContent = jeu.description || 'Pas de description';
+      document.getElementById('lookupDescription').textContent = data.description || 'Pas de description';
 
       const img = document.getElementById('lookupImage');
-      if (jeu.image_url) {
-        img.src = jeu.image_url;
+      if (data.image_url || data.image) {
+        img.src = data.image_url || data.image;
         img.classList.remove('d-none');
       } else {
         img.src = '';
@@ -1220,14 +1223,15 @@
       document.getElementById('jeuForm').reset();
       document.getElementById('jeuId').value = '';
 
-      // Pre-remplir les champs de base
-      document.getElementById('titre').value = currentLookupResult.titre || '';
-      document.getElementById('annee_sortie').value = currentLookupResult.annee_sortie || '';
-      document.getElementById('age_min').value = currentLookupResult.age_min || '';
-      document.getElementById('nb_joueurs_min').value = currentLookupResult.nb_joueurs_min || '';
-      document.getElementById('nb_joueurs_max').value = currentLookupResult.nb_joueurs_max || '';
-      document.getElementById('duree_partie').value = currentLookupResult.duree_partie || '';
-      document.getElementById('description').value = currentLookupResult.description || '';
+      // Pre-remplir les champs de base (gere les deux formats de noms)
+      const data = currentLookupResult;
+      document.getElementById('titre').value = data.titre || data.title || '';
+      document.getElementById('annee_sortie').value = data.annee_sortie || data.year || '';
+      document.getElementById('age_min').value = data.age_min || data.minAge || '';
+      document.getElementById('nb_joueurs_min').value = data.nb_joueurs_min || data.minPlayers || '';
+      document.getElementById('nb_joueurs_max').value = data.nb_joueurs_max || data.maxPlayers || '';
+      document.getElementById('duree_partie').value = data.duree_partie || data.playingTime || '';
+      document.getElementById('description').value = data.description || '';
 
       clearTomSelects();
 

@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exports Comptables - Parametres - Assotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card { margin-bottom: 1.5rem; }
+    .section-card .card-header { background-color: #f8f9fa; font-weight: 600; }
+    .format-card { transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .format-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .format-card.default { border-color: #198754; border-width: 2px; }
+    .format-card.inactive { opacity: 0.6; }
+    .format-icon { font-size: 2.5rem; }
+    .sub-nav { background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #e9ecef; }
+    .mapping-row { background: #f8f9fa; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem; }
+    .mapping-row:hover { background: #e9ecef; }
+    code { background: #e9ecef; padding: 0.2em 0.4em; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-file-earmark-spreadsheet"></i> Exports Comptables</h1>
+            <p class="text-muted mb-0">Configuration des formats d'export multi-logiciels</p>
+          </div>
+          <a href="comptabilite.html" class="btn btn-outline-primary">
+            <i class="bi bi-calculator"></i> Aller aux exports
+          </a>
+        </div>
+
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          Configurez les mappings de comptes et journaux pour chaque logiciel comptable.
+          Le format FEC est obligatoire pour le controle fiscal en France.
+        </div>
+
+        <!-- Stats exercice -->
+        <div class="card section-card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-graph-up"></i> Exercice courant</span>
+            <select class="form-select form-select-sm w-auto" id="exercice-select" onchange="loadStats()">
+            </select>
+          </div>
+          <div class="card-body" id="stats-container">
+            <div class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formats disponibles -->
+        <h5 class="mb-3"><i class="bi bi-collection"></i> Formats disponibles</h5>
+
+        <div id="formats-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Config Format -->
+  <div class="modal fade" id="modalFormat" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalFormatTitle">Configuration du format</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <ul class="nav nav-tabs mb-3" role="tablist">
+            <li class="nav-item">
+              <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general">
+                <i class="bi bi-gear"></i> General
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-comptes">
+                <i class="bi bi-journal-text"></i> Mapping Comptes
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-journaux">
+                <i class="bi bi-book"></i> Mapping Journaux
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <!-- Tab General -->
+            <div class="tab-pane fade show active" id="tab-general">
+              <form id="formFormat">
+                <input type="hidden" id="format_code">
+
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">Format</label>
+                      <input type="text" class="form-control" id="format_libelle" readonly>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="mb-3">
+                      <label class="form-label">Extension</label>
+                      <input type="text" class="form-control" id="format_extension" readonly>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="format_separateur" class="form-label">Separateur</label>
+                      <select class="form-select" id="format_separateur">
+                        <option value=";">Point-virgule (;)</option>
+                        <option value=",">Virgule (,)</option>
+                        <option value="	">Tabulation</option>
+                        <option value="|">Pipe (|)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="format_separateur_decimal" class="form-label">Decimal</label>
+                      <select class="form-select" id="format_separateur_decimal">
+                        <option value=",">Virgule (,)</option>
+                        <option value=".">Point (.)</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="format_encodage" class="form-label">Encodage</label>
+                      <select class="form-select" id="format_encodage">
+                        <option value="UTF-8">UTF-8</option>
+                        <option value="ISO-8859-1">ISO-8859-1 (Latin-1)</option>
+                        <option value="CP1252">Windows-1252</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="format_date" class="form-label">Format date</label>
+                      <select class="form-select" id="format_date">
+                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                        <option value="YYYYMMDD">YYYYMMDD</option>
+                        <option value="DDMMYYYY">DDMMYYYY</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3">
+                      <label for="format_precision" class="form-label">Decimales</label>
+                      <select class="form-select" id="format_precision">
+                        <option value="2">2 decimales</option>
+                        <option value="4">4 decimales</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="mb-3 pt-4">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="format_entete">
+                        <label class="form-check-label" for="format_entete">Inclure entete</label>
+                      </div>
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="format_guillemets">
+                        <label class="form-check-label" for="format_guillemets">Guillemets texte</label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <label for="format_description" class="form-label">Description</label>
+                  <textarea class="form-control" id="format_description" rows="2" readonly></textarea>
+                </div>
+
+                <div class="mb-3" id="format_doc_container" style="display: none;">
+                  <a href="#" id="format_doc_link" target="_blank" class="btn btn-outline-info btn-sm">
+                    <i class="bi bi-book"></i> Documentation officielle
+                  </a>
+                </div>
+              </form>
+            </div>
+
+            <!-- Tab Mapping Comptes -->
+            <div class="tab-pane fade" id="tab-comptes">
+              <div class="alert alert-secondary">
+                <i class="bi bi-info-circle"></i>
+                Mappez les codes comptables internes vers les codes de votre logiciel.
+                Laissez vide pour conserver le code interne.
+              </div>
+
+              <div class="mb-3">
+                <button class="btn btn-sm btn-outline-primary" onclick="addMappingCompte()">
+                  <i class="bi bi-plus"></i> Ajouter un mapping
+                </button>
+              </div>
+
+              <div id="mapping-comptes-container">
+                <!-- Mappings dynamiques -->
+              </div>
+
+              <hr>
+              <h6>Comptes utilises par Assotheque:</h6>
+              <ul class="small text-muted">
+                <li><code>5121</code> - Banque (compte courant)</li>
+                <li><code>5300</code> - Caisse</li>
+                <li><code>7061</code> - Cotisations</li>
+                <li><code>7062</code> - Locations</li>
+                <li><code>411</code> - Clients</li>
+              </ul>
+            </div>
+
+            <!-- Tab Mapping Journaux -->
+            <div class="tab-pane fade" id="tab-journaux">
+              <div class="alert alert-secondary">
+                <i class="bi bi-info-circle"></i>
+                Mappez les codes journaux internes vers les codes de votre logiciel.
+              </div>
+
+              <div class="mb-3">
+                <button class="btn btn-sm btn-outline-primary" onclick="addMappingJournal()">
+                  <i class="bi bi-plus"></i> Ajouter un mapping
+                </button>
+              </div>
+
+              <div id="mapping-journaux-container">
+                <!-- Mappings dynamiques -->
+              </div>
+
+              <hr>
+              <h6>Journaux utilises par Assotheque:</h6>
+              <ul class="small text-muted">
+                <li><code>VT</code> - Journal des ventes</li>
+                <li><code>BQ</code> - Journal de banque</li>
+                <li><code>CA</code> - Journal de caisse</li>
+                <li><code>OD</code> - Operations diverses</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveFormat()">
+            <i class="bi bi-check"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Export -->
+  <div class="modal fade" id="modalExport" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-download"></i> Exporter les ecritures</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formExport">
+            <input type="hidden" id="export_format">
+
+            <div class="mb-3">
+              <label class="form-label">Format selectionne</label>
+              <input type="text" class="form-control" id="export_format_label" readonly>
+            </div>
+
+            <div class="mb-3">
+              <label for="export_exercice" class="form-label">Exercice <span class="text-danger">*</span></label>
+              <select class="form-select" id="export_exercice" required>
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="export_date_debut" class="form-label">Date debut (optionnel)</label>
+                  <input type="date" class="form-control" id="export_date_debut">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="export_date_fin" class="form-label">Date fin (optionnel)</label>
+                  <input type="date" class="form-control" id="export_date_fin">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="export_journal" class="form-label">Journal (optionnel)</label>
+              <select class="form-select" id="export_journal">
+                <option value="">Tous les journaux</option>
+                <option value="VT">VT - Ventes</option>
+                <option value="BQ">BQ - Banque</option>
+                <option value="CA">CA - Caisse</option>
+                <option value="OD">OD - Operations diverses</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" onclick="doExport()">
+            <i class="bi bi-download"></i> Telecharger
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let allFormats = [];
+    let currentFormat = null;
+    let mappingComptes = {};
+    let mappingJournaux = {};
+    let modalFormat, modalExport;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      initTemplate('parametres');
+      modalFormat = new bootstrap.Modal(document.getElementById('modalFormat'));
+      modalExport = new bootstrap.Modal(document.getElementById('modalExport'));
+      await loadExercices();
+      await loadFormats();
+      await loadStats();
+    });
+
+    async function loadExercices() {
+      try {
+        const response = await apiRequest('/export-comptable/exercices');
+        const exercices = response.exercices || [];
+
+        const currentYear = new Date().getFullYear();
+        const selectExercice = document.getElementById('exercice-select');
+        const selectExport = document.getElementById('export_exercice');
+
+        // Ajouter annees meme si pas d'ecritures
+        const years = new Set(exercices.map(e => e.exercice));
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+          years.add(y);
+        }
+
+        const sortedYears = Array.from(years).sort((a, b) => b - a);
+
+        selectExercice.innerHTML = sortedYears.map(y =>
+          `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`
+        ).join('');
+
+        selectExport.innerHTML = sortedYears.map(y =>
+          `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`
+        ).join('');
+      } catch (error) {
+        console.error('Erreur chargement exercices:', error);
+      }
+    }
+
+    async function loadStats() {
+      const exercice = document.getElementById('exercice-select').value;
+
+      try {
+        const stats = await apiRequest(`/export-comptable/statistiques/${exercice}`);
+
+        let html = `
+          <div class="row text-center">
+            <div class="col-md-3">
+              <div class="h4 text-primary">${stats.statistiques?.nb_ecritures_total || 0}</div>
+              <small class="text-muted">Ecritures</small>
+            </div>
+            <div class="col-md-3">
+              <div class="h4 text-success">${formatMontant(stats.statistiques?.total_debit || 0)}</div>
+              <small class="text-muted">Total debit</small>
+            </div>
+            <div class="col-md-3">
+              <div class="h4 text-danger">${formatMontant(stats.statistiques?.total_credit || 0)}</div>
+              <small class="text-muted">Total credit</small>
+            </div>
+            <div class="col-md-3">
+              <div class="h4 ${stats.statistiques?.equilibre ? 'text-success' : 'text-warning'}">
+                <i class="bi bi-${stats.statistiques?.equilibre ? 'check-circle' : 'exclamation-triangle'}"></i>
+              </div>
+              <small class="text-muted">${stats.statistiques?.equilibre ? 'Equilibre' : 'Desequilibre'}</small>
+            </div>
+          </div>
+        `;
+
+        if (stats.par_journal && stats.par_journal.length > 0) {
+          html += `
+            <hr>
+            <h6>Par journal:</h6>
+            <div class="row">
+              ${stats.par_journal.map(j => `
+                <div class="col-md-3 mb-2">
+                  <div class="card card-body py-2">
+                    <strong>${j.journal_code}</strong>
+                    <small class="text-muted">${j.nb_ecritures} ecritures</small>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        document.getElementById('stats-container').innerHTML = html;
+      } catch (error) {
+        document.getElementById('stats-container').innerHTML = `
+          <p class="text-muted text-center">Aucune donnee pour cet exercice</p>
+        `;
+      }
+    }
+
+    async function loadFormats() {
+      try {
+        const response = await apiRequest('/export-comptable/formats');
+        allFormats = response.formats || [];
+        renderFormats();
+      } catch (error) {
+        console.error('Erreur chargement formats:', error);
+        document.getElementById('formats-container').innerHTML = `
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle"></i> Erreur: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderFormats() {
+      const icons = {
+        fec: 'bi-file-earmark-ruled',
+        sage: 'bi-building',
+        ciel: 'bi-cloud',
+        ebp: 'bi-box',
+        quadra: 'bi-grid-3x3',
+        openconcerto: 'bi-door-open',
+        dolibarr: 'bi-globe',
+        csv: 'bi-filetype-csv',
+        json: 'bi-filetype-json'
+      };
+
+      const colors = {
+        fec: 'primary',
+        sage: 'success',
+        ciel: 'info',
+        ebp: 'warning',
+        quadra: 'secondary',
+        openconcerto: 'purple',
+        dolibarr: 'danger',
+        csv: 'dark',
+        json: 'secondary'
+      };
+
+      let html = '<div class="row">';
+
+      allFormats.forEach(format => {
+        const icon = icons[format.format] || 'bi-file-earmark';
+        const color = colors[format.format] || 'secondary';
+        const defaultClass = format.par_defaut ? 'default' : '';
+
+        html += `
+          <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card format-card ${defaultClass}" onclick="openFormatModal('${format.format}')">
+              <div class="card-body text-center">
+                <div class="format-icon text-${color} mb-2">
+                  <i class="bi ${icon}"></i>
+                </div>
+                <h6 class="mb-1">${format.libelle}</h6>
+                <small class="text-muted d-block mb-2">${format.extension}</small>
+                ${format.par_defaut ? '<span class="badge bg-success"><i class="bi bi-star-fill"></i> Defaut</span>' : ''}
+              </div>
+              <div class="card-footer bg-white border-top-0 text-center">
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="event.stopPropagation(); openFormatModal('${format.format}')">
+                  <i class="bi bi-gear"></i>
+                </button>
+                <button class="btn btn-sm btn-success" onclick="event.stopPropagation(); openExportModal('${format.format}', '${format.libelle}')">
+                  <i class="bi bi-download"></i> Exporter
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      document.getElementById('formats-container').innerHTML = html;
+    }
+
+    async function openFormatModal(formatCode) {
+      try {
+        const format = await apiRequest(`/export-comptable/formats/${formatCode}`);
+        currentFormat = format;
+        mappingComptes = format.mapping_comptes || {};
+        mappingJournaux = format.mapping_journaux || {};
+
+        document.getElementById('format_code').value = format.format;
+        document.getElementById('format_libelle').value = format.libelle;
+        document.getElementById('format_extension').value = format.extension;
+        document.getElementById('format_separateur').value = format.separateur || ';';
+        document.getElementById('format_separateur_decimal').value = format.separateur_decimal || ',';
+        document.getElementById('format_encodage').value = format.encodage || 'UTF-8';
+        document.getElementById('format_date').value = format.format_date || 'DD/MM/YYYY';
+        document.getElementById('format_precision').value = format.precision_decimale || 2;
+        document.getElementById('format_entete').checked = format.inclure_entete !== false;
+        document.getElementById('format_guillemets').checked = format.guillemets_texte === true;
+        document.getElementById('format_description').value = format.description || '';
+
+        if (format.documentation_url) {
+          document.getElementById('format_doc_container').style.display = 'block';
+          document.getElementById('format_doc_link').href = format.documentation_url;
+        } else {
+          document.getElementById('format_doc_container').style.display = 'none';
+        }
+
+        document.getElementById('modalFormatTitle').textContent = `Configuration: ${format.libelle}`;
+
+        renderMappingComptes();
+        renderMappingJournaux();
+
+        modalFormat.show();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function renderMappingComptes() {
+      const container = document.getElementById('mapping-comptes-container');
+      const entries = Object.entries(mappingComptes);
+
+      if (entries.length === 0) {
+        container.innerHTML = '<p class="text-muted">Aucun mapping configure</p>';
+        return;
+      }
+
+      container.innerHTML = entries.map(([interne, externe]) => `
+        <div class="mapping-row d-flex align-items-center gap-2">
+          <input type="text" class="form-control form-control-sm" value="${interne}" style="width: 150px;" onchange="updateMappingCompte('${interne}', this.value, null)">
+          <i class="bi bi-arrow-right"></i>
+          <input type="text" class="form-control form-control-sm" value="${externe}" style="width: 150px;" onchange="updateMappingCompte('${interne}', null, this.value)">
+          <button class="btn btn-sm btn-outline-danger" onclick="removeMappingCompte('${interne}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function renderMappingJournaux() {
+      const container = document.getElementById('mapping-journaux-container');
+      const entries = Object.entries(mappingJournaux);
+
+      if (entries.length === 0) {
+        container.innerHTML = '<p class="text-muted">Aucun mapping configure</p>';
+        return;
+      }
+
+      container.innerHTML = entries.map(([interne, externe]) => `
+        <div class="mapping-row d-flex align-items-center gap-2">
+          <input type="text" class="form-control form-control-sm" value="${interne}" style="width: 100px;" onchange="updateMappingJournal('${interne}', this.value, null)">
+          <i class="bi bi-arrow-right"></i>
+          <input type="text" class="form-control form-control-sm" value="${externe}" style="width: 100px;" onchange="updateMappingJournal('${interne}', null, this.value)">
+          <button class="btn btn-sm btn-outline-danger" onclick="removeMappingJournal('${interne}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function addMappingCompte() {
+      const key = prompt('Code compte interne:');
+      if (!key) return;
+      const value = prompt('Code compte externe:');
+      if (!value) return;
+      mappingComptes[key] = value;
+      renderMappingComptes();
+    }
+
+    function addMappingJournal() {
+      const key = prompt('Code journal interne:');
+      if (!key) return;
+      const value = prompt('Code journal externe:');
+      if (!value) return;
+      mappingJournaux[key] = value;
+      renderMappingJournaux();
+    }
+
+    function updateMappingCompte(oldKey, newKey, newValue) {
+      if (newKey !== null) {
+        const value = mappingComptes[oldKey];
+        delete mappingComptes[oldKey];
+        mappingComptes[newKey] = value;
+      }
+      if (newValue !== null) {
+        mappingComptes[oldKey] = newValue;
+      }
+    }
+
+    function updateMappingJournal(oldKey, newKey, newValue) {
+      if (newKey !== null) {
+        const value = mappingJournaux[oldKey];
+        delete mappingJournaux[oldKey];
+        mappingJournaux[newKey] = value;
+      }
+      if (newValue !== null) {
+        mappingJournaux[oldKey] = newValue;
+      }
+    }
+
+    function removeMappingCompte(key) {
+      delete mappingComptes[key];
+      renderMappingComptes();
+    }
+
+    function removeMappingJournal(key) {
+      delete mappingJournaux[key];
+      renderMappingJournaux();
+    }
+
+    async function saveFormat() {
+      const formatCode = document.getElementById('format_code').value;
+
+      const data = {
+        separateur: document.getElementById('format_separateur').value,
+        separateur_decimal: document.getElementById('format_separateur_decimal').value,
+        encodage: document.getElementById('format_encodage').value,
+        format_date: document.getElementById('format_date').value,
+        precision_decimale: parseInt(document.getElementById('format_precision').value),
+        inclure_entete: document.getElementById('format_entete').checked,
+        guillemets_texte: document.getElementById('format_guillemets').checked,
+        mapping_comptes: mappingComptes,
+        mapping_journaux: mappingJournaux
+      };
+
+      try {
+        await apiRequest(`/export-comptable/formats/${formatCode}`, {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        });
+
+        modalFormat.hide();
+        alert('Configuration sauvegardee');
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function openExportModal(format, label) {
+      document.getElementById('export_format').value = format;
+      document.getElementById('export_format_label').value = label;
+      document.getElementById('export_date_debut').value = '';
+      document.getElementById('export_date_fin').value = '';
+      document.getElementById('export_journal').value = '';
+      modalExport.show();
+    }
+
+    async function doExport() {
+      const format = document.getElementById('export_format').value;
+      const exercice = document.getElementById('export_exercice').value;
+      const dateDebut = document.getElementById('export_date_debut').value;
+      const dateFin = document.getElementById('export_date_fin').value;
+      const journal = document.getElementById('export_journal').value;
+
+      let url = `/export-comptable/export/${format}?exercice=${exercice}`;
+      if (dateDebut) url += `&dateDebut=${dateDebut}`;
+      if (dateFin) url += `&dateFin=${dateFin}`;
+      if (journal) url += `&journal=${journal}`;
+
+      try {
+        // Telecharger directement
+        const token = localStorage.getItem('authToken');
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur export');
+        }
+
+        const blob = await response.blob();
+        const filename = response.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || `export_${format}.txt`;
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+
+        modalExport.hide();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function formatMontant(val) {
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(val || 0);
+    }
+  </script>
+</body>
+</html>
