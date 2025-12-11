@@ -116,25 +116,25 @@ app.use(requestLogger);
 // Rate limiting global pour toutes les routes API
 app.use('/api/', apiLimiter);
 
-// Route publique avec vérification maintenance (AVANT static pour intercepter /)
-app.get('/', checkMaintenance, (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
-
 // Redirection des anciennes URLs vers les nouvelles
 app.get('/connexion.html', (req, res) => {
   res.redirect(301, '/usager/login.html');
 });
 
-// Serve static files from frontend (sans servir index.html automatiquement)
-app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
-
 // Theme resolver middleware - gère le fallback des fichiers de thème
+// IMPORTANT: Doit être AVANT express.static pour intercepter les pages surchargeables
 const frontendPath = path.join(__dirname, '../frontend');
-app.use(createThemeResolverMiddleware(frontendPath));
 
 // Route pour les ressources statiques du thème actif (/theme/css/*, /theme/js/*, etc.)
 app.use('/theme', createThemeStaticMiddleware(frontendPath));
+
+// Middleware de résolution des thèmes pour les pages HTML publiques
+// Intercepte /, /catalogue.html, /fiche.html, etc. et sert la version du thème si elle existe
+app.use(checkMaintenance, createThemeResolverMiddleware(frontendPath));
+
+// Serve static files from frontend (sans servir index.html automatiquement)
+// Fallback pour les fichiers non trouvés dans le thème
+app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
 
 app.get('/api', (req, res) => {
   res.json({
