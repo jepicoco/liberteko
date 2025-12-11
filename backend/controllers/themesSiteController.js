@@ -1,4 +1,10 @@
+const path = require('path');
+const fs = require('fs');
 const { ThemeSite, ParametresFront } = require('../models');
+const { createThemeStructure, listThemeFiles, invalidateThemeCache, OVERRIDABLE_PAGES } = require('../middleware/themeResolver');
+
+// Chemin vers le dossier frontend
+const FRONTEND_PATH = path.join(__dirname, '../../frontend');
 
 /**
  * Controller pour la gestion des themes du site public
@@ -308,6 +314,12 @@ class ThemesSiteController {
 
       await parametres.save();
 
+      // Invalider le cache du theme resolver
+      invalidateThemeCache();
+
+      // Creer la structure de dossiers si elle n'existe pas
+      createThemeStructure(theme.code, FRONTEND_PATH);
+
       res.json({
         message: `Theme "${theme.nom}" active`,
         theme: {
@@ -561,6 +573,237 @@ class ThemesSiteController {
     } catch (error) {
       console.error('Erreur lors de la generation du CSS public:', error);
       res.status(500).send('/* Error generating CSS */');
+    }
+  }
+
+  // ============================================
+  // GESTION DES FICHIERS DE THEME
+  // ============================================
+
+  /**
+   * Liste les fichiers d'un theme
+   * GET /api/parametres/themes/:id/files
+   */
+  static async getFiles(req, res) {
+    try {
+      const { id } = req.params;
+      const theme = await ThemeSite.findByPk(id);
+
+      if (!theme) {
+        return res.status(404).json({ error: 'Theme non trouve' });
+      }
+
+      const files = listThemeFiles(theme.code, FRONTEND_PATH);
+
+      res.json({
+        theme: { id: theme.id, code: theme.code, nom: theme.nom },
+        ...files,
+        overridable_pages: OVERRIDABLE_PAGES
+      });
+    } catch (error) {
+      console.error('Erreur liste fichiers theme:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la liste des fichiers',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Cree la structure de dossiers pour un theme
+   * POST /api/parametres/themes/:id/init-folder
+   */
+  static async initFolder(req, res) {
+    try {
+      const { id } = req.params;
+      const theme = await ThemeSite.findByPk(id);
+
+      if (!theme) {
+        return res.status(404).json({ error: 'Theme non trouve' });
+      }
+
+      const themePath = createThemeStructure(theme.code, FRONTEND_PATH);
+
+      res.json({
+        message: `Structure creee pour le theme "${theme.nom}"`,
+        path: themePath,
+        structure: ['css/', 'js/', 'assets/', 'README.md']
+      });
+    } catch (error) {
+      console.error('Erreur creation dossier theme:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la creation de la structure',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Upload un fichier dans le theme (page HTML, CSS, JS)
+   * POST /api/parametres/themes/:id/files
+   * Body: { filename: string, content: string, type: 'page'|'css'|'js' }
+   */
+  static async uploadFile(req, res) {
+    try {
+      const { id } = req.params;
+      const { filename, content, type } = req.body;
+
+      if (!filename || !content) {
+        return res.status(400).json({ error: 'filename et content requis' });
+      }
+
+      const theme = await ThemeSite.findByPk(id);
+      if (!theme) {
+        return res.status(404).json({ error: 'Theme non trouve' });
+      }
+
+      // Securite: nettoyer le nom de fichier
+      const cleanFilename = path.basename(filename);
+
+      // Determiner le chemin selon le type
+      let filePath;
+      switch (type) {
+        case 'css':
+          if (!cleanFilename.endsWith('.css')) {
+            return res.status(400).json({ error: 'Extension .css requise' });
+          }
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'css', cleanFilename);
+          break;
+        case 'js':
+          if (!cleanFilename.endsWith('.js')) {
+            return res.status(400).json({ error: 'Extension .js requise' });
+          }
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'js', cleanFilename);
+          break;
+        case 'page':
+          if (!OVERRIDABLE_PAGES.includes(cleanFilename)) {
+            return res.status(400).json({
+              error: 'Page non autorisee',
+              allowed: OVERRIDABLE_PAGES
+            });
+          }
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, cleanFilename);
+          break;
+        default:
+          return res.status(400).json({ error: 'Type invalide (page, css, js)' });
+      }
+
+      // Creer le dossier si necessaire
+      createThemeStructure(theme.code, FRONTEND_PATH);
+
+      // Ecrire le fichier
+      fs.writeFileSync(filePath, content, 'utf8');
+
+      res.json({
+        message: 'Fichier sauvegarde',
+        path: filePath.replace(FRONTEND_PATH, ''),
+        filename: cleanFilename
+      });
+    } catch (error) {
+      console.error('Erreur upload fichier theme:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la sauvegarde du fichier',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Lit le contenu d'un fichier du theme
+   * GET /api/parametres/themes/:id/files/:type/:filename
+   */
+  static async readFile(req, res) {
+    try {
+      const { id, type, filename } = req.params;
+
+      const theme = await ThemeSite.findByPk(id);
+      if (!theme) {
+        return res.status(404).json({ error: 'Theme non trouve' });
+      }
+
+      const cleanFilename = path.basename(filename);
+      let filePath;
+
+      switch (type) {
+        case 'css':
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'css', cleanFilename);
+          break;
+        case 'js':
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'js', cleanFilename);
+          break;
+        case 'page':
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, cleanFilename);
+          break;
+        default:
+          return res.status(400).json({ error: 'Type invalide' });
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'Fichier non trouve' });
+      }
+
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      res.json({
+        filename: cleanFilename,
+        type,
+        content
+      });
+    } catch (error) {
+      console.error('Erreur lecture fichier theme:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la lecture du fichier',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Supprime un fichier du theme
+   * DELETE /api/parametres/themes/:id/files/:type/:filename
+   */
+  static async deleteFile(req, res) {
+    try {
+      const { id, type, filename } = req.params;
+
+      const theme = await ThemeSite.findByPk(id);
+      if (!theme) {
+        return res.status(404).json({ error: 'Theme non trouve' });
+      }
+
+      const cleanFilename = path.basename(filename);
+      let filePath;
+
+      switch (type) {
+        case 'css':
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'css', cleanFilename);
+          break;
+        case 'js':
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'js', cleanFilename);
+          break;
+        case 'page':
+          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, cleanFilename);
+          break;
+        default:
+          return res.status(400).json({ error: 'Type invalide' });
+      }
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'Fichier non trouve' });
+      }
+
+      fs.unlinkSync(filePath);
+
+      res.json({
+        message: 'Fichier supprime',
+        filename: cleanFilename
+      });
+    } catch (error) {
+      console.error('Erreur suppression fichier theme:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la suppression du fichier',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
     }
   }
 }

@@ -56,6 +56,13 @@ router.get('/themes/:id/export', verifyToken, isAdmin(), themesSiteController.ex
 // Toggle actif/inactif
 router.patch('/themes/:id/toggle', verifyToken, isAdmin(), themesSiteController.toggle);
 
+// Gestion des fichiers de theme
+router.get('/themes/:id/files', verifyToken, isAdmin(), themesSiteController.getFiles);
+router.post('/themes/:id/init-folder', verifyToken, isAdmin(), themesSiteController.initFolder);
+router.post('/themes/:id/files', verifyToken, isAdmin(), themesSiteController.uploadFile);
+router.get('/themes/:id/files/:type/:filename', verifyToken, isAdmin(), themesSiteController.readFile);
+router.delete('/themes/:id/files/:type/:filename', verifyToken, isAdmin(), themesSiteController.deleteFile);
+
 // ============================================
 // Routes pour les modules actifs
 // ============================================

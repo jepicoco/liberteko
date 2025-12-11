@@ -1,0 +1,11 @@
+# Ce dossier contient les themes personnalises
+# Chaque theme a sa propre structure de dossiers:
+#
+# themes/
+# └── {theme_code}/
+#     ├── css/
+#     ├── js/
+#     ├── assets/
+#     ├── index.html      (optionnel)
+#     ├── catalogue.html  (optionnel)
+#     └── fiche.html      (optionnel)

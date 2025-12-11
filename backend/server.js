@@ -8,6 +8,7 @@ const { checkMaintenance } = require('./middleware/maintenance');
 const requestLogger = require('./middleware/requestLogger');
 const logger = require('./utils/logger');
 const { apiLimiter, loginLimiter, resetPasswordLimiter, registerLimiter } = require('./middleware/rateLimiter');
+const { createThemeResolverMiddleware, createThemeStaticMiddleware } = require('./middleware/themeResolver');
 
 // ============================================
 // VALIDATION DES SECRETS AU DEMARRAGE
@@ -127,6 +128,13 @@ app.get('/connexion.html', (req, res) => {
 
 // Serve static files from frontend (sans servir index.html automatiquement)
 app.use(express.static(path.join(__dirname, '../frontend'), { index: false }));
+
+// Theme resolver middleware - gère le fallback des fichiers de thème
+const frontendPath = path.join(__dirname, '../frontend');
+app.use(createThemeResolverMiddleware(frontendPath));
+
+// Route pour les ressources statiques du thème actif (/theme/css/*, /theme/js/*, etc.)
+app.use('/theme', createThemeStaticMiddleware(frontendPath));
 
 app.get('/api', (req, res) => {
   res.json({
