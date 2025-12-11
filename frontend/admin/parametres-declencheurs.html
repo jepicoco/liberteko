@@ -419,7 +419,7 @@
       document.getElementById('modalTriggerTitle').textContent = 'Modifier le declencheur';
       document.getElementById('trigger_id').value = t.id;
       document.getElementById('trigger_nom').value = t.libelle || '';
-      document.getElementById('trigger_evenement').value = t.code || '';
+      document.getElementById('trigger_evenement').value = (t.code || '').toLowerCase();
       document.getElementById('trigger_categorie').value = t.categorie || 'systeme';
 
       // Convertir delai_envoi (en minutes) en valeur/unite
