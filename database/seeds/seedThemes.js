@@ -132,7 +132,7 @@ const themesPredefinis = [
     couleur_danger: '#ff4757',
     couleur_info: '#4158d0',
     navbar_style: 'solid',
-    shadow_style: 'pixel',
+    shadow_style: 'strong',
     border_radius: '0px',
     ordre_affichage: 4,
     actif: true
