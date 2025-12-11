@@ -249,6 +249,15 @@ const startServer = async () => {
       logger.warn('Parametres front initialization skipped or failed:', err.message);
     }
 
+    // Initialize default message templates (first install)
+    try {
+      const seedTemplates = require('../database/seeds/seedTemplatesMessages');
+      await seedTemplates();
+      logger.info('Templates messages initialized');
+    } catch (err) {
+      logger.warn('Templates messages initialization skipped or failed:', err.message);
+    }
+
     // Initialize email service
     const emailService = require('./services/emailService');
     await emailService.initialize();
