@@ -240,6 +240,15 @@ const startServer = async () => {
       logger.warn('Modules actifs initialization skipped or failed:', err.message);
     }
 
+    // Initialize default front parameters (first install)
+    try {
+      const { ParametresFront } = require('./models');
+      await ParametresFront.getParametres();
+      logger.info('Parametres front initialized');
+    } catch (err) {
+      logger.warn('Parametres front initialization skipped or failed:', err.message);
+    }
+
     // Initialize email service
     const emailService = require('./services/emailService');
     await emailService.initialize();

@@ -92,7 +92,7 @@ class EmailService {
       }
 
       // Créer le transporteur
-      this.transporter = nodemailer.createTransport({
+      const transportConfig = {
         host: this.defaultConfig.smtp_host,
         port: this.defaultConfig.smtp_port,
         secure: this.defaultConfig.smtp_secure,
@@ -103,7 +103,14 @@ class EmailService {
         tls: {
           rejectUnauthorized: false // Pour les serveurs de test
         }
-      });
+      };
+
+      // Pour le port 587, activer STARTTLS si secure est false
+      if (!this.defaultConfig.smtp_secure && this.defaultConfig.smtp_port === 587) {
+        transportConfig.requireTLS = true;
+      }
+
+      this.transporter = nodemailer.createTransport(transportConfig);
 
       // Vérifier la connexion (mais ne pas bloquer si ça échoue)
       try {
