@@ -98,6 +98,12 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0
+    },
+    statut_nouveaute: {
+      type: DataTypes.ENUM('auto', 'force_nouveau', 'jamais_nouveau'),
+      allowNull: false,
+      defaultValue: 'auto',
+      comment: 'Statut nouveaute: auto, force_nouveau, jamais_nouveau'
     }
   }, {
     tableName: 'films',

@@ -440,6 +440,56 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: 'Taux TVA par defaut pour animations (FK taux_tva)'
+    },
+
+    // === Parametres de nouveaute par module ===
+    nouveaute_duree_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 60,
+      comment: 'Duree nouveaute jeux (jours)'
+    },
+    nouveaute_duree_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 30,
+      comment: 'Duree nouveaute livres (jours)'
+    },
+    nouveaute_duree_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 45,
+      comment: 'Duree nouveaute films (jours)'
+    },
+    nouveaute_duree_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 10,
+      comment: 'Duree nouveaute disques (jours)'
+    },
+    nouveaute_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Activer nouveautes jeux'
+    },
+    nouveaute_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Activer nouveautes livres'
+    },
+    nouveaute_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Activer nouveautes films'
+    },
+    nouveaute_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Activer nouveautes disques'
     }
   }, {
     tableName: 'parametres_front',

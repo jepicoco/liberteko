@@ -243,6 +243,40 @@
     .status-emprunte { background: #f8d7da; color: #721c24; }
     .status-maintenance { background: #fff3cd; color: #856404; }
 
+    /* Nouveaute badge */
+    .nouveaute-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 0.7rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 50px;
+      z-index: 10;
+      animation: nouveaute-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes nouveaute-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.05); }
+    }
+
+    .item-card-wrapper {
+      position: relative;
+    }
+
+    /* Filtre nouveautes */
+    .filter-btn.nouveautes-btn {
+      border-color: #dc3545;
+      color: #dc3545;
+    }
+
+    .filter-btn.nouveautes-btn:hover,
+    .filter-btn.nouveautes-btn.active {
+      background: #dc3545;
+      border-color: #dc3545;
+      color: white;
+    }
+
     /* Match reason */
     .item-match-reason {
       margin-top: 0.75rem;
@@ -511,6 +545,7 @@
     let hasMoreResults = false;
     let intelligentSearchEnabled = false;
     let intelligentSearchAvailable = false;
+    let filterNouveautes = false;
     const limit = 12;
 
     // Icons for each type
@@ -658,7 +693,7 @@
       // Reset le bouton "Tout" - actif seulement si pas de type selectionne
       const allBtn = container.querySelector('[data-type=""]');
       if (allBtn) {
-        allBtn.classList.toggle('active', !currentType);
+        allBtn.classList.toggle('active', !currentType && !filterNouveautes);
       }
 
       if (modules.ludotheque) {
@@ -690,8 +725,15 @@
         `;
       }
 
+      // Ajout bouton Nouveautes
+      container.innerHTML += `
+        <button class="filter-btn nouveautes-btn ${filterNouveautes ? 'active' : ''}" id="nouveautes-btn" onclick="toggleNouveautes()">
+          <i class="bi bi-stars"></i> Nouveautes
+        </button>
+      `;
+
       // Desactiver "Tout" si un type est selectionne
-      if (currentType && allBtn) {
+      if ((currentType || filterNouveautes) && allBtn) {
         allBtn.classList.remove('active');
       }
     }
@@ -743,6 +785,7 @@
         let url = `/api/public/catalogue?page=${currentPage}&limit=${limit}`;
         if (currentType) url += `&type=${currentType}`;
         if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+        if (filterNouveautes) url += `&nouveautes=true`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -888,6 +931,27 @@
       loadIntelligentSearch(true);
     }
 
+    // Toggle nouveautes filter
+    function toggleNouveautes() {
+      filterNouveautes = !filterNouveautes;
+      currentPage = 1;
+      currentOffset = 0;
+
+      // Update button state
+      const btn = document.getElementById('nouveautes-btn');
+      if (btn) {
+        btn.classList.toggle('active', filterNouveautes);
+      }
+
+      // Update "Tout" button
+      const allBtn = document.querySelector('.filter-btn[data-type=""]');
+      if (allBtn) {
+        allBtn.classList.toggle('active', !currentType && !filterNouveautes);
+      }
+
+      loadCatalogue();
+    }
+
     // Render single item card (classic)
     function renderItem(item) {
       const imageHtml = item.image_url
@@ -901,19 +965,27 @@
 
       let metaHtml = renderItemMeta(item);
 
+      // Badge nouveaute
+      const nouveauteBadge = item.est_nouveau
+        ? '<span class="badge bg-danger nouveaute-badge"><i class="bi bi-stars me-1"></i>Nouveau</span>'
+        : '';
+
       return `
         <div class="col-sm-6 col-md-4 col-lg-3">
-          <div class="item-card" onclick="viewItem('${item.type}', ${item.id})">
-            ${imageHtml}
-            <div class="item-body">
-              <span class="item-type-badge badge-${item.type}">${item.type_label}</span>
-              <h5 class="item-title">${item.titre}</h5>
-              ${item.sous_titre ? `<p class="item-subtitle">${item.sous_titre}</p>` : ''}
-              <div class="item-meta">
-                ${metaHtml}
-              </div>
-              <div class="mt-2">
-                <span class="item-status ${statusClass}">${statusLabel}</span>
+          <div class="item-card-wrapper">
+            ${nouveauteBadge}
+            <div class="item-card" onclick="viewItem('${item.type}', ${item.id})">
+              ${imageHtml}
+              <div class="item-body">
+                <span class="item-type-badge badge-${item.type}">${item.type_label}</span>
+                <h5 class="item-title">${item.titre}</h5>
+                ${item.sous_titre ? `<p class="item-subtitle">${item.sous_titre}</p>` : ''}
+                <div class="item-meta">
+                  ${metaHtml}
+                </div>
+                <div class="mt-2">
+                  <span class="item-status ${statusClass}">${statusLabel}</span>
+                </div>
               </div>
             </div>
           </div>

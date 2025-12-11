@@ -19,6 +19,11 @@ const {
 } = require('../models');
 const RechercheNaturelleService = require('../services/rechercheNaturelleService');
 const themesSiteController = require('../controllers/themesSiteController');
+const {
+  isNouveau,
+  getParamsNouveaute,
+  buildNouveauteWhereClause
+} = require('../utils/nouveauteHelper');
 
 // Include configurations for public queries (simplified, no sensitive data)
 const JEU_INCLUDES = [
@@ -43,8 +48,11 @@ const DISQUE_INCLUDES = [
 
 /**
  * Helper: Transform model data for public API response
+ * @param {Object} item - Sequelize model instance
+ * @param {string} type - Type of item (jeu, livre, film, disque)
+ * @param {Object} nouveauteParams - Optional { duree, actif } params for novelty calculation
  */
-function transformRefs(item, type) {
+function transformRefs(item, type, nouveauteParams = null) {
   const json = item.toJSON();
 
   // Rename *Ref to cleaner names for frontend
@@ -63,6 +71,11 @@ function transformRefs(item, type) {
   if (json.genresRef) {
     json.genres = json.genresRef;
     delete json.genresRef;
+  }
+
+  // Add novelty status if params provided
+  if (nouveauteParams) {
+    json.est_nouveau = isNouveau(json, nouveauteParams.duree, nouveauteParams.actif);
   }
 
   return { ...json, type, type_label: type.charAt(0).toUpperCase() + type.slice(1) };
@@ -126,7 +139,7 @@ router.get('/config', async (req, res) => {
  * @route   GET /api/public/catalogue
  * @desc    Get unified catalog from all active modules
  * @access  Public
- * @query   ?type=jeux|livres|films|disques&search=&categorie=&page=1&limit=20
+ * @query   ?type=jeux|livres|films|disques&search=&categorie=&page=1&limit=20&nouveautes=true
  */
 router.get('/catalogue', async (req, res) => {
   try {
@@ -137,7 +150,8 @@ router.get('/catalogue', async (req, res) => {
       page = 1,
       limit = 20,
       tri = 'titre',
-      ordre = 'ASC'
+      ordre = 'ASC',
+      nouveautes
     } = req.query;
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -148,6 +162,15 @@ router.get('/catalogue', async (req, res) => {
       limit: parseInt(limit),
       modules_actifs: []
     };
+
+    // Filter by novelty only?
+    const filterNouveautes = nouveautes === 'true' || nouveautes === '1';
+
+    // Get novelty params for each module
+    const nouveauteParamsJeux = getParamsNouveaute(parametres, 'ludotheque');
+    const nouveauteParamsLivres = getParamsNouveaute(parametres, 'bibliotheque');
+    const nouveauteParamsFilms = getParamsNouveaute(parametres, 'filmotheque');
+    const nouveauteParamsDisques = getParamsNouveaute(parametres, 'discotheque');
 
     // Base where clause - exclude archived items
     const baseWhere = {
@@ -161,6 +184,21 @@ router.get('/catalogue', async (req, res) => {
 
     // Jeux have a 'prive' field, others don't
     const jeuWhere = { ...baseWhere, prive: { [Op.ne]: true } };
+
+    // Add novelty filter if requested
+    if (filterNouveautes) {
+      const nouveauteWhereJeux = buildNouveauteWhereClause('ludotheque', parametres);
+      const nouveauteWhereLivres = buildNouveauteWhereClause('bibliotheque', parametres);
+      const nouveauteWhereFilms = buildNouveauteWhereClause('filmotheque', parametres);
+      const nouveauteWhereDisques = buildNouveauteWhereClause('discotheque', parametres);
+
+      if (nouveauteWhereJeux) {
+        Object.assign(jeuWhere, nouveauteWhereJeux);
+      }
+      if (nouveauteWhereLivres) {
+        Object.assign(baseWhere, nouveauteWhereLivres);
+      }
+    }
 
     // Determine which modules to query
     const modulesToQuery = [];
@@ -185,11 +223,20 @@ router.get('/catalogue', async (req, res) => {
     // Query each active module
     if (modulesToQuery.includes('jeux')) {
       try {
+        // Build jeux where clause (with novelty filter if needed)
+        let jeuxWhere = { ...jeuWhere };
+        if (filterNouveautes) {
+          const nouveauteWhereJeux = buildNouveauteWhereClause('ludotheque', parametres);
+          if (nouveauteWhereJeux) {
+            jeuxWhere = { ...jeuxWhere, ...nouveauteWhereJeux };
+          }
+        }
+
         const { count, rows } = await Jeu.findAndCountAll({
-          where: jeuWhere,
+          where: jeuxWhere,
           attributes: ['id', 'code_barre', 'titre', 'sous_titre', 'annee_sortie',
                        'age_min', 'nb_joueurs_min', 'nb_joueurs_max', 'duree_partie',
-                       'statut', 'image_url', 'prix_indicatif'],
+                       'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute'],
           include: JEU_INCLUDES,
           order: [[tri === 'titre' ? 'titre' : tri, ordre]],
           limit: type === 'jeux' ? parseInt(limit) : undefined,
@@ -197,7 +244,7 @@ router.get('/catalogue', async (req, res) => {
           distinct: true
         });
 
-        results.items.push(...rows.map(j => transformRefs(j, 'jeu')));
+        results.items.push(...rows.map(j => transformRefs(j, 'jeu', nouveauteParamsJeux)));
 
         if (type === 'jeux') {
           results.total = count;
@@ -209,10 +256,19 @@ router.get('/catalogue', async (req, res) => {
 
     if (modulesToQuery.includes('livres')) {
       try {
+        // Build livres where clause (with novelty filter if needed)
+        let livresWhere = { ...baseWhere };
+        if (filterNouveautes) {
+          const nouveauteWhereLivres = buildNouveauteWhereClause('bibliotheque', parametres);
+          if (nouveauteWhereLivres) {
+            livresWhere = { ...livresWhere, ...nouveauteWhereLivres };
+          }
+        }
+
         const { count, rows } = await Livre.findAndCountAll({
-          where: { ...baseWhere },
+          where: livresWhere,
           attributes: ['id', 'code_barre', 'titre', 'sous_titre', 'annee_publication',
-                       'nb_pages', 'statut', 'image_url', 'prix_indicatif'],
+                       'nb_pages', 'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute'],
           include: LIVRE_INCLUDES,
           order: [[tri === 'titre' ? 'titre' : tri, ordre]],
           limit: type === 'livres' ? parseInt(limit) : undefined,
@@ -220,7 +276,7 @@ router.get('/catalogue', async (req, res) => {
           distinct: true
         });
 
-        results.items.push(...rows.map(l => transformRefs(l, 'livre')));
+        results.items.push(...rows.map(l => transformRefs(l, 'livre', nouveauteParamsLivres)));
 
         if (type === 'livres') {
           results.total = count;
@@ -232,10 +288,19 @@ router.get('/catalogue', async (req, res) => {
 
     if (modulesToQuery.includes('films')) {
       try {
+        // Build films where clause (with novelty filter if needed)
+        let filmsWhere = { ...baseWhere };
+        if (filterNouveautes) {
+          const nouveauteWhereFilms = buildNouveauteWhereClause('filmotheque', parametres);
+          if (nouveauteWhereFilms) {
+            filmsWhere = { ...filmsWhere, ...nouveauteWhereFilms };
+          }
+        }
+
         const { count, rows } = await Film.findAndCountAll({
-          where: { ...baseWhere },
+          where: filmsWhere,
           attributes: ['id', 'code_barre', 'titre', 'titre_original', 'annee_sortie',
-                       'duree', 'classification', 'statut', 'image_url', 'prix_indicatif'],
+                       'duree', 'classification', 'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute'],
           include: FILM_INCLUDES,
           order: [[tri === 'titre' ? 'titre' : tri, ordre]],
           limit: type === 'films' ? parseInt(limit) : undefined,
@@ -243,7 +308,7 @@ router.get('/catalogue', async (req, res) => {
           distinct: true
         });
 
-        results.items.push(...rows.map(f => transformRefs(f, 'film')));
+        results.items.push(...rows.map(f => transformRefs(f, 'film', nouveauteParamsFilms)));
 
         if (type === 'films') {
           results.total = count;
@@ -255,10 +320,19 @@ router.get('/catalogue', async (req, res) => {
 
     if (modulesToQuery.includes('disques')) {
       try {
+        // Build disques where clause (with novelty filter if needed)
+        let disquesWhere = { ...baseWhere };
+        if (filterNouveautes) {
+          const nouveauteWhereDisques = buildNouveauteWhereClause('discotheque', parametres);
+          if (nouveauteWhereDisques) {
+            disquesWhere = { ...disquesWhere, ...nouveauteWhereDisques };
+          }
+        }
+
         const { count, rows } = await Disque.findAndCountAll({
-          where: { ...baseWhere },
+          where: disquesWhere,
           attributes: ['id', 'code_barre', 'titre', 'titre_original', 'annee_sortie',
-                       'nb_pistes', 'duree_totale', 'statut', 'image_url', 'prix_indicatif'],
+                       'nb_pistes', 'duree_totale', 'statut', 'image_url', 'prix_indicatif', 'date_acquisition', 'statut_nouveaute'],
           include: DISQUE_INCLUDES,
           order: [[tri === 'titre' ? 'titre' : tri, ordre]],
           limit: type === 'disques' ? parseInt(limit) : undefined,
@@ -266,7 +340,7 @@ router.get('/catalogue', async (req, res) => {
           distinct: true
         });
 
-        results.items.push(...rows.map(d => transformRefs(d, 'disque')));
+        results.items.push(...rows.map(d => transformRefs(d, 'disque', nouveauteParamsDisques)));
 
         if (type === 'disques') {
           results.total = count;
@@ -322,7 +396,8 @@ router.get('/catalogue/:type/:id', async (req, res) => {
         include: JEU_INCLUDES
       });
       if (result) {
-        item = transformRefs(result, 'jeu');
+        const nouveauteParams = getParamsNouveaute(parametres, 'ludotheque');
+        item = transformRefs(result, 'jeu', nouveauteParams);
       }
     }
 
@@ -335,7 +410,8 @@ router.get('/catalogue/:type/:id', async (req, res) => {
         include: LIVRE_INCLUDES
       });
       if (result) {
-        item = transformRefs(result, 'livre');
+        const nouveauteParams = getParamsNouveaute(parametres, 'bibliotheque');
+        item = transformRefs(result, 'livre', nouveauteParams);
       }
     }
 
@@ -348,7 +424,8 @@ router.get('/catalogue/:type/:id', async (req, res) => {
         include: FILM_INCLUDES
       });
       if (result) {
-        item = transformRefs(result, 'film');
+        const nouveauteParams = getParamsNouveaute(parametres, 'filmotheque');
+        item = transformRefs(result, 'film', nouveauteParams);
       }
     }
 
@@ -361,7 +438,8 @@ router.get('/catalogue/:type/:id', async (req, res) => {
         include: DISQUE_INCLUDES
       });
       if (result) {
-        item = transformRefs(result, 'disque');
+        const nouveauteParams = getParamsNouveaute(parametres, 'discotheque');
+        item = transformRefs(result, 'disque', nouveauteParams);
       }
     }
 

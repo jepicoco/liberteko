@@ -64,7 +64,8 @@
     "migrate-llm": "node database/migrations/addConfigurationsLLM.js up",
     "migrate-thematiques": "node database/migrations/addThematiquesUnifiees.js up",
     "migrate-utilisateurs": "node database/migrations/refactorAdherentToUtilisateur.js",
-    "migrate-fk": "node database/migrations/addMissingForeignKeys.js up"
+    "migrate-fk": "node database/migrations/addMissingForeignKeys.js up",
+    "setup-nouveautes": "node database/migrations/addNouveauteParams.js up && node database/migrations/addStatutNouveaute.js up"
   },
   "keywords": [
     "ludotheque",

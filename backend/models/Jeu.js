@@ -275,6 +275,12 @@ module.exports = (sequelize) => {
       allowNull: true,
       defaultValue: 0,
       comment: 'Nombre total d\'emprunts'
+    },
+    statut_nouveaute: {
+      type: DataTypes.ENUM('auto', 'force_nouveau', 'jamais_nouveau'),
+      allowNull: false,
+      defaultValue: 'auto',
+      comment: 'Statut nouveaute: auto, force_nouveau, jamais_nouveau'
     }
   }, {
     tableName: 'jeux',

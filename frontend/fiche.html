@@ -118,6 +118,22 @@
     .status-emprunte { background: #f8d7da; color: #721c24; }
     .status-maintenance { background: #fff3cd; color: #856404; }
 
+    /* Nouveaute badge */
+    .fiche-nouveaute-badge {
+      display: inline-block;
+      padding: 0.35rem 0.85rem;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-left: 1rem;
+      animation: nouveaute-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes nouveaute-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.05); }
+    }
+
     /* Meta grid */
     .meta-grid {
       display: grid;
@@ -353,6 +369,9 @@
             <div class="fiche-card">
               <div class="fiche-body">
                 <span class="fiche-type-badge" id="type-badge">Type</span>
+                <span class="badge bg-danger fiche-nouveaute-badge" id="nouveaute-badge" style="display: none;">
+                  <i class="bi bi-stars me-1"></i>Nouveau
+                </span>
                 <h1 class="fiche-title" id="item-title">Titre</h1>
                 <p class="fiche-subtitle" id="item-subtitle" style="display: none;"></p>
 
@@ -523,6 +542,11 @@
       const typeBadge = document.getElementById('type-badge');
       typeBadge.textContent = item.type_label;
       typeBadge.className = `fiche-type-badge badge-${item.type}`;
+
+      // Nouveaute badge
+      if (item.est_nouveau) {
+        document.getElementById('nouveaute-badge').style.display = 'inline-block';
+      }
 
       // Title
       document.getElementById('item-title').textContent = item.titre;

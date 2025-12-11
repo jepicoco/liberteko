@@ -42,6 +42,22 @@ const PARAMETRES_CATEGORIES = {
       { id: 'prolongations', label: 'Prolongations', href: 'parametres-emprunts.html', icon: 'bi-clock-history' }
     ]
   },
+  catalogue: {
+    label: 'Catalogue',
+    icon: 'bi-collection',
+    pages: [
+      { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' },
+      { id: 'apis-externes', label: 'APIs Externes', href: 'parametres-apis-externes.html', icon: 'bi-cloud-download' },
+      { id: 'exports-comptables', label: 'Exports Comptables', href: 'parametres-exports-comptables.html', icon: 'bi-file-earmark-spreadsheet' }
+    ]
+  },
+  'site-web': {
+    label: 'Site Web',
+    icon: 'bi-globe',
+    pages: [
+      { id: 'themes', label: 'Themes', href: 'parametres-themes.html', icon: 'bi-palette' }
+    ]
+  },
   outils: {
     label: 'Outils',
     icon: 'bi-tools',
@@ -125,6 +141,8 @@ function getParametresLink(category) {
     comptabilite: 'comptabilite',
     communication: 'communication',
     emprunts: 'emprunts',
+    catalogue: 'catalogue',
+    'site-web': 'site-web',
     outils: 'outils'
   };
   return `parametres.html#${tabMap[category] || 'general'}`;
