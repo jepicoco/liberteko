@@ -258,6 +258,15 @@ const startServer = async () => {
       logger.warn('Templates messages initialization skipped or failed:', err.message);
     }
 
+    // Initialize default event triggers (first install)
+    try {
+      const seedTriggers = require('../database/seeds/seedEventTriggers');
+      await seedTriggers();
+      logger.info('Event triggers initialized');
+    } catch (err) {
+      logger.warn('Event triggers initialization skipped or failed:', err.message);
+    }
+
     // Initialize email service
     const emailService = require('./services/emailService');
     await emailService.initialize();
