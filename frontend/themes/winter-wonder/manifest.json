@@ -1,0 +1,42 @@
+{
+  "name": "Frost & Wonder",
+  "version": "1.0.0",
+  "description": "Theme hivernal elegant avec effet de neige, tons bleu glace et accents dores",
+  "author": "Assotheque",
+  "mode": "dark",
+  "colors": {
+    "primary": "#0ea5e9",
+    "secondary": "#0369a1",
+    "accent": "#f59e0b",
+    "background": "#0c4a6e",
+    "backgroundSecondary": "#1e3a5f",
+    "text": "#f1f5f9",
+    "textSecondary": "#94a3b8",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "danger": "#ef4444",
+    "info": "#3b82f6"
+  },
+  "style": {
+    "borderRadius": "16px",
+    "shadowStyle": "subtle",
+    "navbarStyle": "solid"
+  },
+  "preview": null,
+  "features": {
+    "snowfall": true,
+    "frostedGlass": true
+  },
+  "pages": [
+    "index.html",
+    "catalogue.html",
+    "fiche.html",
+    "infos.html",
+    "usager/login.html",
+    "usager/dashboard.html",
+    "usager/emprunts.html",
+    "usager/profil.html",
+    "usager/forgot-password.html",
+    "usager/reset-password.html"
+  ]
+}

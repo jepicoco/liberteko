@@ -201,7 +201,13 @@ module.exports = (sequelize) => {
     theme_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: 'ID du theme actif (FK themes_site)'
+      comment: 'DEPRECATED - Ancien ID du theme (FK themes_site)'
+    },
+    theme_code: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: 'default',
+      comment: 'Code du theme actif (nom du dossier dans frontend/themes/)'
     },
     allow_theme_selection: {
       type: DataTypes.BOOLEAN,

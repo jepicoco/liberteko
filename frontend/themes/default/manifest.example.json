@@ -1,0 +1,47 @@
+{
+  "name": "Mon Theme Personnalise",
+  "version": "1.0.0",
+  "description": "Description de votre theme",
+  "author": "Votre Nom",
+  "mode": "light",
+
+  "colors": {
+    "primary": "#667eea",
+    "secondary": "#764ba2",
+    "accent": "#20c997",
+    "background": "#ffffff",
+    "backgroundSecondary": "#f8f9fa",
+    "text": "#333333",
+    "textSecondary": "#6c757d",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "danger": "#ef4444",
+    "info": "#3b82f6"
+  },
+
+  "style": {
+    "borderRadius": "8px",
+    "shadowStyle": "subtle",
+    "navbarStyle": "gradient"
+  },
+
+  "preview": "preview.png",
+
+  "features": {
+    "customFeature1": true,
+    "customFeature2": false
+  },
+
+  "pages": [
+    "index.html",
+    "catalogue.html",
+    "fiche.html",
+    "infos.html",
+    "usager/login.html",
+    "usager/dashboard.html",
+    "usager/emprunts.html",
+    "usager/profil.html",
+    "usager/forgot-password.html",
+    "usager/reset-password.html"
+  ]
+}

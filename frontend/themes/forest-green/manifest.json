@@ -1,0 +1,27 @@
+{
+  "name": "Foret Verdoyante",
+  "version": "1.0.0",
+  "description": "Theme vert nature apaisant",
+  "author": "Assotheque",
+  "mode": "light",
+  "colors": {
+    "primary": "#2d6a4f",
+    "secondary": "#52b788",
+    "accent": "#ee9b00",
+    "background": "#ffffff",
+    "backgroundSecondary": "#f4f9f4",
+    "text": "#2d2d2d",
+    "textSecondary": "#5a5a5a",
+    "success": "#40916c",
+    "warning": "#ee9b00",
+    "danger": "#bc4749",
+    "info": "#168aad"
+  },
+  "style": {
+    "borderRadius": "6px",
+    "shadowStyle": "subtle",
+    "navbarStyle": "gradient"
+  },
+  "preview": null,
+  "pages": []
+}

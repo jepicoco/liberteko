@@ -22,7 +22,7 @@
 
 const path = require('path');
 const fs = require('fs');
-const { ParametresFront, ThemeSite } = require('../models');
+const { ParametresFront } = require('../models');
 
 // Cache du thème actif (refresh toutes les 5 minutes)
 let activeThemeCache = {
@@ -30,6 +30,9 @@ let activeThemeCache = {
   timestamp: 0
 };
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Chemin vers les themes (utilise pour verifier que le theme existe)
+const THEMES_PATH = path.join(__dirname, '../../frontend/themes');
 
 // Pages publiques qui peuvent être surchargées par un thème
 const OVERRIDABLE_PAGES = [
@@ -52,6 +55,8 @@ const OVERRIDABLE_PAGES = [
 
 /**
  * Récupère le code du thème actif (avec cache)
+ * Le theme est maintenant stocke dans parametres_front.theme_code
+ * et correspond au nom du dossier dans frontend/themes/
  */
 async function getActiveThemeCode() {
   const now = Date.now();
@@ -62,22 +67,21 @@ async function getActiveThemeCode() {
 
   try {
     const params = await ParametresFront.findOne();
-    if (!params || !params.theme_id) {
-      activeThemeCache = { code: null, timestamp: now };
-      return null;
+    const themeCode = params?.theme_code || 'default';
+
+    // Verifier que le dossier du theme existe
+    const themePath = path.join(THEMES_PATH, themeCode);
+    if (!fs.existsSync(themePath)) {
+      // Fallback vers le theme default
+      activeThemeCache = { code: 'default', timestamp: now };
+      return 'default';
     }
 
-    const theme = await ThemeSite.findByPk(params.theme_id);
-    if (!theme || !theme.actif) {
-      activeThemeCache = { code: null, timestamp: now };
-      return null;
-    }
-
-    activeThemeCache = { code: theme.code, timestamp: now };
-    return theme.code;
+    activeThemeCache = { code: themeCode, timestamp: now };
+    return themeCode;
   } catch (error) {
     console.error('Erreur récupération thème actif:', error.message);
-    return null;
+    return 'default';
   }
 }
 

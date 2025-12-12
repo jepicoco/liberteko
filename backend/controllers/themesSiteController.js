@@ -1,48 +1,43 @@
 const path = require('path');
 const fs = require('fs');
-const { ThemeSite, ParametresFront } = require('../models');
-const { createThemeStructure, listThemeFiles, invalidateThemeCache, OVERRIDABLE_PAGES } = require('../middleware/themeResolver');
-
-// Chemin vers le dossier frontend
-const FRONTEND_PATH = path.join(__dirname, '../../frontend');
+const { ParametresFront } = require('../models');
+const themeService = require('../services/themeService');
+const { invalidateThemeCache } = require('../middleware/themeResolver');
 
 /**
  * Controller pour la gestion des themes du site public
+ * Les themes sont stockes dans le filesystem (frontend/themes/)
+ * et detectes automatiquement via leur manifest.json
  */
 class ThemesSiteController {
   /**
-   * Recupere tous les themes (actifs et inactifs pour l'admin)
+   * Recupere tous les themes disponibles
    * GET /api/parametres/themes
    */
   static async getAll(req, res) {
     try {
-      // Retourner tous les themes pour l'admin (le filtrage se fait cote frontend)
-      const themes = await ThemeSite.findAll({
-        order: [['ordre_affichage', 'ASC'], ['nom', 'ASC']]
-      });
+      const themes = themeService.scanThemes(true); // Force refresh
+
+      // Recuperer le theme actif
+      const parametres = await ParametresFront.findOne();
+      const activeThemeCode = parametres?.theme_code || 'default';
 
       res.json({
         themes: themes.map(t => ({
-          id: t.id,
           code: t.code,
-          nom: t.nom,
+          name: t.name,
           description: t.description,
-          type: t.type,
+          author: t.author,
+          version: t.version,
           mode: t.mode,
-          actif: t.actif,
-          couleur_primaire: t.couleur_primaire,
-          couleur_secondaire: t.couleur_secondaire,
-          couleur_accent: t.couleur_accent,
-          couleur_fond_principal: t.couleur_fond_principal,
-          couleur_fond_secondaire: t.couleur_fond_secondaire,
-          couleur_texte_principal: t.couleur_texte_principal,
-          couleur_texte_secondaire: t.couleur_texte_secondaire,
-          navbar_style: t.navbar_style,
-          shadow_style: t.shadow_style,
-          border_radius: t.border_radius,
-          preview_image: t.preview_image,
-          ordre_affichage: t.ordre_affichage
-        }))
+          colors: t.colors,
+          style: t.style,
+          preview: t.preview,
+          hasManifest: t.hasManifest,
+          files: t.files,
+          isActive: t.code === activeThemeCode
+        })),
+        activeTheme: activeThemeCode
       });
     } catch (error) {
       console.error('Erreur lors de la recuperation des themes:', error);
@@ -54,28 +49,28 @@ class ThemesSiteController {
   }
 
   /**
-   * Recupere un theme par son code ou ID
-   * GET /api/parametres/themes/:codeOrId
+   * Recupere un theme par son code
+   * GET /api/parametres/themes/:code
    */
-  static async getByCodeOrId(req, res) {
+  static async getByCode(req, res) {
     try {
-      const { codeOrId } = req.params;
-      let theme;
-
-      // Essayer par ID si numerique
-      if (!isNaN(codeOrId)) {
-        theme = await ThemeSite.findByPk(parseInt(codeOrId));
-      } else {
-        theme = await ThemeSite.getByCode(codeOrId);
-      }
+      const { code } = req.params;
+      const theme = themeService.getTheme(code);
 
       if (!theme) {
         return res.status(404).json({
-          error: `Theme non trouve: ${codeOrId}`
+          error: `Theme non trouve: ${code}`
         });
       }
 
-      res.json(theme);
+      // Recuperer le theme actif
+      const parametres = await ParametresFront.findOne();
+      const activeThemeCode = parametres?.theme_code || 'default';
+
+      res.json({
+        ...theme,
+        isActive: theme.code === activeThemeCode
+      });
     } catch (error) {
       console.error('Erreur lors de la recuperation du theme:', error);
       res.status(500).json({
@@ -87,26 +82,20 @@ class ThemesSiteController {
 
   /**
    * Genere le CSS d'un theme
-   * GET /api/parametres/themes/:codeOrId/css
+   * GET /api/parametres/themes/:code/css
    */
   static async getCSS(req, res) {
     try {
-      const { codeOrId } = req.params;
-      let theme;
-
-      if (!isNaN(codeOrId)) {
-        theme = await ThemeSite.findByPk(parseInt(codeOrId));
-      } else {
-        theme = await ThemeSite.getByCode(codeOrId);
-      }
+      const { code } = req.params;
+      const theme = themeService.getTheme(code);
 
       if (!theme) {
         return res.status(404).json({
-          error: `Theme non trouve: ${codeOrId}`
+          error: `Theme non trouve: ${code}`
         });
       }
 
-      const css = theme.genererCSS();
+      const css = themeService.generateThemeCSS(theme);
 
       res.setHeader('Content-Type', 'text/css; charset=utf-8');
       res.send(css);
@@ -120,31 +109,48 @@ class ThemesSiteController {
   }
 
   /**
-   * Cree un nouveau theme personnalise
+   * Cree un nouveau theme
    * POST /api/parametres/themes
    */
   static async create(req, res) {
     try {
-      // Generer un code unique si non fourni
-      if (!req.body.code) {
-        req.body.code = `custom_${Date.now()}`;
+      const { code, name, description, author, mode, colors, style } = req.body;
+
+      if (!code || !name) {
+        return res.status(400).json({
+          error: 'Les champs "code" et "name" sont requis'
+        });
       }
 
-      // Forcer le type custom
-      req.body.type = 'custom';
+      // Valider le code (alphanumerique + tirets)
+      if (!/^[a-z0-9-]+$/.test(code)) {
+        return res.status(400).json({
+          error: 'Le code doit contenir uniquement des lettres minuscules, chiffres et tirets'
+        });
+      }
 
-      const theme = await ThemeSite.create(req.body);
+      const themePath = themeService.createTheme(code, {
+        name,
+        description,
+        author,
+        mode,
+        colors,
+        style
+      });
+
+      const theme = themeService.getTheme(code);
 
       res.status(201).json({
         message: 'Theme cree avec succes',
-        theme
+        theme,
+        path: themePath
       });
     } catch (error) {
       console.error('Erreur lors de la creation du theme:', error);
 
-      if (error.name === 'SequelizeUniqueConstraintError') {
+      if (error.message.includes('existe deja')) {
         return res.status(400).json({
-          error: 'Un theme avec ce code existe deja'
+          error: error.message
         });
       }
 
@@ -156,44 +162,27 @@ class ThemesSiteController {
   }
 
   /**
-   * Met a jour un theme
-   * PUT /api/parametres/themes/:id
+   * Met a jour le manifest d'un theme
+   * PUT /api/parametres/themes/:code
    */
   static async update(req, res) {
     try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
+      const { code } = req.params;
 
-      if (!theme) {
+      if (!themeService.themeExists(code)) {
         return res.status(404).json({
           error: 'Theme non trouve'
         });
       }
 
-      // Empecher la modification des themes systeme (sauf CSS personnalise)
-      if (theme.type === 'system') {
-        // Autoriser uniquement css_personnalise et ordre_affichage pour themes system
-        const champsAutorises = ['css_personnalise', 'ordre_affichage', 'actif'];
-        const champsDemandes = Object.keys(req.body);
-        const champsNonAutorises = champsDemandes.filter(c => !champsAutorises.includes(c));
-
-        if (champsNonAutorises.length > 0) {
-          return res.status(403).json({
-            error: 'Les themes systeme ne peuvent pas etre modifies',
-            champs_bloques: champsNonAutorises
-          });
-        }
-      }
-
-      // Empecher de changer le type
-      delete req.body.type;
+      // Empecher la modification du code
       delete req.body.code;
 
-      await theme.update(req.body);
+      const updated = themeService.updateManifest(code, req.body);
 
       res.json({
         message: 'Theme mis a jour',
-        theme
+        manifest: updated
       });
     } catch (error) {
       console.error('Erreur lors de la mise a jour du theme:', error);
@@ -205,33 +194,35 @@ class ThemesSiteController {
   }
 
   /**
-   * Supprime un theme personnalise
-   * DELETE /api/parametres/themes/:id
+   * Supprime un theme
+   * DELETE /api/parametres/themes/:code
    */
   static async delete(req, res) {
     try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
+      const { code } = req.params;
 
-      if (!theme) {
-        return res.status(404).json({
-          error: 'Theme non trouve'
+      // Verifier que ce n'est pas le theme actif
+      const parametres = await ParametresFront.findOne();
+      if (parametres?.theme_code === code) {
+        return res.status(400).json({
+          error: 'Impossible de supprimer le theme actif. Changez de theme d\'abord.'
         });
       }
 
-      if (theme.type === 'system') {
-        return res.status(403).json({
-          error: 'Les themes systeme ne peuvent pas etre supprimes'
-        });
-      }
-
-      await theme.destroy();
+      themeService.deleteTheme(code);
 
       res.json({
         message: 'Theme supprime'
       });
     } catch (error) {
       console.error('Erreur lors de la suppression du theme:', error);
+
+      if (error.message.includes('default')) {
+        return res.status(403).json({
+          error: error.message
+        });
+      }
+
       res.status(500).json({
         error: 'Erreur lors de la suppression du theme',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -241,27 +232,27 @@ class ThemesSiteController {
 
   /**
    * Duplique un theme
-   * POST /api/parametres/themes/:id/duplicate
+   * POST /api/parametres/themes/:code/duplicate
    */
   static async duplicate(req, res) {
     try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
+      const { code } = req.params;
+      const { newCode, newName } = req.body;
 
-      if (!theme) {
-        return res.status(404).json({
-          error: 'Theme non trouve'
+      if (!newCode) {
+        return res.status(400).json({
+          error: 'Le champ "newCode" est requis'
         });
       }
 
-      // Creer une copie
-      const data = theme.toExportJSON();
-      data.code = `${theme.code}_copy_${Date.now()}`;
-      data.nom = req.body.nom || `${theme.nom} (copie)`;
-      data.type = 'custom';
-      data.actif = true;
+      // Valider le code
+      if (!/^[a-z0-9-]+$/.test(newCode)) {
+        return res.status(400).json({
+          error: 'Le code doit contenir uniquement des lettres minuscules, chiffres et tirets'
+        });
+      }
 
-      const newTheme = await ThemeSite.create(data);
+      const newTheme = themeService.duplicateTheme(code, newCode, newName);
 
       res.status(201).json({
         message: 'Theme duplique',
@@ -278,22 +269,16 @@ class ThemesSiteController {
 
   /**
    * Active un theme pour le site
-   * POST /api/parametres/themes/:id/activate
+   * POST /api/parametres/themes/:code/activate
    */
   static async activate(req, res) {
     try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
+      const { code } = req.params;
+      const theme = themeService.getTheme(code);
 
       if (!theme) {
         return res.status(404).json({
           error: 'Theme non trouve'
-        });
-      }
-
-      if (!theme.actif) {
-        return res.status(400).json({
-          error: 'Ce theme est desactive'
         });
       }
 
@@ -303,29 +288,22 @@ class ThemesSiteController {
         parametres = await ParametresFront.create({});
       }
 
-      // Mettre a jour les couleurs depuis le theme
-      parametres.couleur_primaire = theme.couleur_primaire;
-      parametres.couleur_secondaire = theme.couleur_secondaire;
-
-      // Si le champ theme_id existe
-      if ('theme_id' in parametres) {
-        parametres.theme_id = theme.id;
-      }
+      // Mettre a jour le code du theme et les couleurs
+      parametres.theme_code = code;
+      parametres.couleur_primaire = theme.colors?.primary || '#667eea';
+      parametres.couleur_secondaire = theme.colors?.secondary || '#764ba2';
 
       await parametres.save();
 
       // Invalider le cache du theme resolver
       invalidateThemeCache();
 
-      // Creer la structure de dossiers si elle n'existe pas
-      createThemeStructure(theme.code, FRONTEND_PATH);
-
       res.json({
-        message: `Theme "${theme.nom}" active`,
+        message: `Theme "${theme.name}" active`,
         theme: {
-          id: theme.id,
           code: theme.code,
-          nom: theme.nom
+          name: theme.name,
+          mode: theme.mode
         }
       });
     } catch (error) {
@@ -338,13 +316,13 @@ class ThemesSiteController {
   }
 
   /**
-   * Exporte un theme en JSON
-   * GET /api/parametres/themes/:id/export
+   * Exporte un theme en JSON (manifest + structure)
+   * GET /api/parametres/themes/:code/export
    */
   static async exportTheme(req, res) {
     try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
+      const { code } = req.params;
+      const theme = themeService.getTheme(code);
 
       if (!theme) {
         return res.status(404).json({
@@ -352,11 +330,11 @@ class ThemesSiteController {
         });
       }
 
-      const data = theme.toExportJSON();
+      const manifest = themeService.readManifest(code);
 
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="theme_${theme.code}.json"`);
-      res.send(JSON.stringify(data, null, 2));
+      res.setHeader('Content-Disposition', `attachment; filename="theme_${code}.json"`);
+      res.send(JSON.stringify(manifest, null, 2));
     } catch (error) {
       console.error('Erreur lors de l\'export du theme:', error);
       res.status(500).json({
@@ -367,98 +345,22 @@ class ThemesSiteController {
   }
 
   /**
-   * Importe un theme depuis JSON
-   * POST /api/parametres/themes/import
+   * Rafraichit le cache des themes
+   * POST /api/parametres/themes/refresh
    */
-  static async importTheme(req, res) {
+  static async refresh(req, res) {
     try {
-      const data = req.body;
-
-      if (!data.nom) {
-        return res.status(400).json({
-          error: 'Le champ "nom" est requis'
-        });
-      }
-
-      // Generer un code unique
-      data.code = `imported_${Date.now()}`;
-      data.type = 'custom';
-      data.actif = true;
-
-      const theme = await ThemeSite.create(data);
-
-      res.status(201).json({
-        message: 'Theme importe avec succes',
-        theme
-      });
-    } catch (error) {
-      console.error('Erreur lors de l\'import du theme:', error);
-      res.status(500).json({
-        error: 'Erreur lors de l\'import du theme',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  }
-
-  /**
-   * Reordonne les themes
-   * PUT /api/parametres/themes/reorder
-   */
-  static async reorder(req, res) {
-    try {
-      const { ordre } = req.body;
-
-      if (!Array.isArray(ordre)) {
-        return res.status(400).json({
-          error: 'Le champ "ordre" doit etre un tableau d\'IDs'
-        });
-      }
-
-      for (let i = 0; i < ordre.length; i++) {
-        await ThemeSite.update(
-          { ordre_affichage: i },
-          { where: { id: ordre[i] } }
-        );
-      }
+      themeService.invalidateCache();
+      const themes = themeService.scanThemes(true);
 
       res.json({
-        message: 'Ordre mis a jour'
+        message: 'Cache des themes rafraichi',
+        count: themes.length
       });
     } catch (error) {
-      console.error('Erreur lors du reordonnement:', error);
+      console.error('Erreur lors du rafraichissement:', error);
       res.status(500).json({
-        error: 'Erreur lors du reordonnement',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  }
-
-  /**
-   * Toggle actif/inactif
-   * PATCH /api/parametres/themes/:id/toggle
-   */
-  static async toggle(req, res) {
-    try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
-
-      if (!theme) {
-        return res.status(404).json({
-          error: 'Theme non trouve'
-        });
-      }
-
-      theme.actif = !theme.actif;
-      await theme.save();
-
-      res.json({
-        message: `Theme ${theme.actif ? 'active' : 'desactive'}`,
-        actif: theme.actif
-      });
-    } catch (error) {
-      console.error('Erreur lors du toggle:', error);
-      res.status(500).json({
-        error: 'Erreur lors du toggle',
+        error: 'Erreur lors du rafraichissement',
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }
@@ -475,34 +377,30 @@ class ThemesSiteController {
   static async getPublicTheme(req, res) {
     try {
       const parametres = await ParametresFront.findOne();
+      const themeCode = parametres?.theme_code || 'default';
+      const theme = themeService.getTheme(themeCode);
 
-      let theme = null;
       let css = '';
 
-      // Si un theme est defini
-      if (parametres && parametres.theme_id) {
-        theme = await ThemeSite.findByPk(parametres.theme_id);
-        if (theme && theme.actif) {
-          css = theme.genererCSS();
-        }
+      if (theme) {
+        css = themeService.generateThemeCSS(theme);
+      } else {
+        // Fallback si theme non trouve
+        css = `:root {
+  --color-primary: ${parametres?.couleur_primaire || '#667eea'};
+  --color-secondary: ${parametres?.couleur_secondaire || '#764ba2'};
+}`;
       }
 
-      // Sinon, generer CSS depuis les parametres
-      if (!css && parametres) {
-        css = `:root {
-  --primary-color: ${parametres.couleur_primaire || '#667eea'};
-  --secondary-color: ${parametres.couleur_secondaire || '#764ba2'};
-}`;
-        if (parametres.css_personnalise) {
-          css += `\n\n/* CSS Personnalise */\n${parametres.css_personnalise}`;
-        }
+      // Ajouter CSS personnalise si present
+      if (parametres?.css_personnalise) {
+        css += `\n\n/* CSS Personnalise */\n${parametres.css_personnalise}`;
       }
 
       res.json({
         theme: theme ? {
-          id: theme.id,
           code: theme.code,
-          nom: theme.nom,
+          name: theme.name,
           mode: theme.mode
         } : null,
         css,
@@ -529,17 +427,18 @@ class ThemesSiteController {
         return res.json({ themes: [], allow_selection: false });
       }
 
-      const themes = await ThemeSite.getActifs();
+      const themes = themeService.scanThemes();
 
       res.json({
         themes: themes.map(t => ({
-          id: t.id,
           code: t.code,
-          nom: t.nom,
+          name: t.name,
           mode: t.mode,
-          couleur_primaire: t.couleur_primaire,
-          couleur_secondaire: t.couleur_secondaire,
-          preview_image: t.preview_image
+          colors: {
+            primary: t.colors?.primary,
+            secondary: t.colors?.secondary
+          },
+          preview: t.preview
         })),
         allow_selection: true
       });
@@ -559,13 +458,13 @@ class ThemesSiteController {
   static async getPublicThemeCSS(req, res) {
     try {
       const { code } = req.params;
-      const theme = await ThemeSite.getByCode(code);
+      const theme = themeService.getTheme(code);
 
       if (!theme) {
         return res.status(404).send('/* Theme not found */');
       }
 
-      const css = theme.genererCSS();
+      const css = themeService.generateThemeCSS(theme);
 
       res.setHeader('Content-Type', 'text/css; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=3600');
@@ -582,23 +481,21 @@ class ThemesSiteController {
 
   /**
    * Liste les fichiers d'un theme
-   * GET /api/parametres/themes/:id/files
+   * GET /api/parametres/themes/:code/files
    */
   static async getFiles(req, res) {
     try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
+      const { code } = req.params;
+      const theme = themeService.getTheme(code);
 
       if (!theme) {
         return res.status(404).json({ error: 'Theme non trouve' });
       }
 
-      const files = listThemeFiles(theme.code, FRONTEND_PATH);
-
       res.json({
-        theme: { id: theme.id, code: theme.code, nom: theme.nom },
-        ...files,
-        overridable_pages: OVERRIDABLE_PAGES
+        theme: { code: theme.code, name: theme.name },
+        files: theme.files,
+        path: theme.path
       });
     } catch (error) {
       console.error('Erreur liste fichiers theme:', error);
@@ -610,113 +507,14 @@ class ThemesSiteController {
   }
 
   /**
-   * Cree la structure de dossiers pour un theme
-   * POST /api/parametres/themes/:id/init-folder
-   */
-  static async initFolder(req, res) {
-    try {
-      const { id } = req.params;
-      const theme = await ThemeSite.findByPk(id);
-
-      if (!theme) {
-        return res.status(404).json({ error: 'Theme non trouve' });
-      }
-
-      const themePath = createThemeStructure(theme.code, FRONTEND_PATH);
-
-      res.json({
-        message: `Structure creee pour le theme "${theme.nom}"`,
-        path: themePath,
-        structure: ['css/', 'js/', 'assets/', 'README.md']
-      });
-    } catch (error) {
-      console.error('Erreur creation dossier theme:', error);
-      res.status(500).json({
-        error: 'Erreur lors de la creation de la structure',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  }
-
-  /**
-   * Upload un fichier dans le theme (page HTML, CSS, JS)
-   * POST /api/parametres/themes/:id/files
-   * Body: { filename: string, content: string, type: 'page'|'css'|'js' }
-   */
-  static async uploadFile(req, res) {
-    try {
-      const { id } = req.params;
-      const { filename, content, type } = req.body;
-
-      if (!filename || !content) {
-        return res.status(400).json({ error: 'filename et content requis' });
-      }
-
-      const theme = await ThemeSite.findByPk(id);
-      if (!theme) {
-        return res.status(404).json({ error: 'Theme non trouve' });
-      }
-
-      // Securite: nettoyer le nom de fichier
-      const cleanFilename = path.basename(filename);
-
-      // Determiner le chemin selon le type
-      let filePath;
-      switch (type) {
-        case 'css':
-          if (!cleanFilename.endsWith('.css')) {
-            return res.status(400).json({ error: 'Extension .css requise' });
-          }
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'css', cleanFilename);
-          break;
-        case 'js':
-          if (!cleanFilename.endsWith('.js')) {
-            return res.status(400).json({ error: 'Extension .js requise' });
-          }
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'js', cleanFilename);
-          break;
-        case 'page':
-          if (!OVERRIDABLE_PAGES.includes(cleanFilename)) {
-            return res.status(400).json({
-              error: 'Page non autorisee',
-              allowed: OVERRIDABLE_PAGES
-            });
-          }
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, cleanFilename);
-          break;
-        default:
-          return res.status(400).json({ error: 'Type invalide (page, css, js)' });
-      }
-
-      // Creer le dossier si necessaire
-      createThemeStructure(theme.code, FRONTEND_PATH);
-
-      // Ecrire le fichier
-      fs.writeFileSync(filePath, content, 'utf8');
-
-      res.json({
-        message: 'Fichier sauvegarde',
-        path: filePath.replace(FRONTEND_PATH, ''),
-        filename: cleanFilename
-      });
-    } catch (error) {
-      console.error('Erreur upload fichier theme:', error);
-      res.status(500).json({
-        error: 'Erreur lors de la sauvegarde du fichier',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined
-      });
-    }
-  }
-
-  /**
    * Lit le contenu d'un fichier du theme
-   * GET /api/parametres/themes/:id/files/:type/:filename
+   * GET /api/parametres/themes/:code/files/:type/:filename
    */
   static async readFile(req, res) {
     try {
-      const { id, type, filename } = req.params;
+      const { code, type, filename } = req.params;
+      const theme = themeService.getTheme(code);
 
-      const theme = await ThemeSite.findByPk(id);
       if (!theme) {
         return res.status(404).json({ error: 'Theme non trouve' });
       }
@@ -726,13 +524,16 @@ class ThemesSiteController {
 
       switch (type) {
         case 'css':
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'css', cleanFilename);
+          filePath = path.join(theme.path, 'css', cleanFilename);
           break;
         case 'js':
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'js', cleanFilename);
+          filePath = path.join(theme.path, 'js', cleanFilename);
           break;
         case 'page':
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, cleanFilename);
+          filePath = path.join(theme.path, cleanFilename);
+          break;
+        case 'usager':
+          filePath = path.join(theme.path, 'usager', cleanFilename);
           break;
         default:
           return res.status(400).json({ error: 'Type invalide' });
@@ -759,14 +560,19 @@ class ThemesSiteController {
   }
 
   /**
-   * Supprime un fichier du theme
-   * DELETE /api/parametres/themes/:id/files/:type/:filename
+   * Sauvegarde un fichier dans le theme
+   * POST /api/parametres/themes/:code/files
    */
-  static async deleteFile(req, res) {
+  static async saveFile(req, res) {
     try {
-      const { id, type, filename } = req.params;
+      const { code } = req.params;
+      const { filename, content, type } = req.body;
 
-      const theme = await ThemeSite.findByPk(id);
+      if (!filename || content === undefined) {
+        return res.status(400).json({ error: 'filename et content requis' });
+      }
+
+      const theme = themeService.getTheme(code);
       if (!theme) {
         return res.status(404).json({ error: 'Theme non trouve' });
       }
@@ -776,13 +582,71 @@ class ThemesSiteController {
 
       switch (type) {
         case 'css':
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'css', cleanFilename);
+          filePath = path.join(theme.path, 'css', cleanFilename);
           break;
         case 'js':
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, 'js', cleanFilename);
+          filePath = path.join(theme.path, 'js', cleanFilename);
           break;
         case 'page':
-          filePath = path.join(FRONTEND_PATH, 'themes', theme.code, cleanFilename);
+          filePath = path.join(theme.path, cleanFilename);
+          break;
+        case 'usager':
+          filePath = path.join(theme.path, 'usager', cleanFilename);
+          // Creer le dossier usager si necessaire
+          const usagerDir = path.join(theme.path, 'usager');
+          if (!fs.existsSync(usagerDir)) {
+            fs.mkdirSync(usagerDir, { recursive: true });
+          }
+          break;
+        default:
+          return res.status(400).json({ error: 'Type invalide (css, js, page, usager)' });
+      }
+
+      fs.writeFileSync(filePath, content, 'utf8');
+      themeService.invalidateCache();
+
+      res.json({
+        message: 'Fichier sauvegarde',
+        filename: cleanFilename,
+        path: filePath.replace(theme.path, '')
+      });
+    } catch (error) {
+      console.error('Erreur sauvegarde fichier theme:', error);
+      res.status(500).json({
+        error: 'Erreur lors de la sauvegarde du fichier',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  }
+
+  /**
+   * Supprime un fichier du theme
+   * DELETE /api/parametres/themes/:code/files/:type/:filename
+   */
+  static async deleteFile(req, res) {
+    try {
+      const { code, type, filename } = req.params;
+      const theme = themeService.getTheme(code);
+
+      if (!theme) {
+        return res.status(404).json({ error: 'Theme non trouve' });
+      }
+
+      const cleanFilename = path.basename(filename);
+      let filePath;
+
+      switch (type) {
+        case 'css':
+          filePath = path.join(theme.path, 'css', cleanFilename);
+          break;
+        case 'js':
+          filePath = path.join(theme.path, 'js', cleanFilename);
+          break;
+        case 'page':
+          filePath = path.join(theme.path, cleanFilename);
+          break;
+        case 'usager':
+          filePath = path.join(theme.path, 'usager', cleanFilename);
           break;
         default:
           return res.status(400).json({ error: 'Type invalide' });
@@ -793,6 +657,7 @@ class ThemesSiteController {
       }
 
       fs.unlinkSync(filePath);
+      themeService.invalidateCache();
 
       res.json({
         message: 'Fichier supprime',

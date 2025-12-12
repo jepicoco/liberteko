@@ -18,13 +18,11 @@ const themesSiteController = require('../controllers/themesSiteController');
 
 // ============================================
 // Routes pour les themes du site public
+// (Themes stockes dans le filesystem frontend/themes/)
 // ============================================
 
-// Importer un theme (doit etre avant :codeOrId)
-router.post('/themes/import', verifyToken, isAdmin(), themesSiteController.importTheme);
-
-// Reordonner les themes
-router.put('/themes/reorder', verifyToken, isAdmin(), themesSiteController.reorder);
+// Rafraichir le cache des themes (doit etre avant :code)
+router.post('/themes/refresh', verifyToken, isAdmin(), themesSiteController.refresh);
 
 // Recuperer tous les themes
 router.get('/themes', verifyToken, isGestionnaire(), themesSiteController.getAll);
@@ -32,36 +30,32 @@ router.get('/themes', verifyToken, isGestionnaire(), themesSiteController.getAll
 // Creer un nouveau theme
 router.post('/themes', verifyToken, isAdmin(), themesSiteController.create);
 
-// Recuperer un theme par code ou ID
-router.get('/themes/:codeOrId', verifyToken, isGestionnaire(), themesSiteController.getByCodeOrId);
+// Recuperer un theme par code
+router.get('/themes/:code', verifyToken, isGestionnaire(), themesSiteController.getByCode);
 
 // Generer le CSS d'un theme
-router.get('/themes/:codeOrId/css', verifyToken, isGestionnaire(), themesSiteController.getCSS);
+router.get('/themes/:code/css', verifyToken, isGestionnaire(), themesSiteController.getCSS);
 
-// Mettre a jour un theme
-router.put('/themes/:id', verifyToken, isAdmin(), themesSiteController.update);
+// Mettre a jour un theme (manifest)
+router.put('/themes/:code', verifyToken, isAdmin(), themesSiteController.update);
 
 // Supprimer un theme
-router.delete('/themes/:id', verifyToken, isAdmin(), themesSiteController.delete);
+router.delete('/themes/:code', verifyToken, isAdmin(), themesSiteController.delete);
 
 // Dupliquer un theme
-router.post('/themes/:id/duplicate', verifyToken, isAdmin(), themesSiteController.duplicate);
+router.post('/themes/:code/duplicate', verifyToken, isAdmin(), themesSiteController.duplicate);
 
 // Activer un theme pour le site
-router.post('/themes/:id/activate', verifyToken, isAdmin(), themesSiteController.activate);
+router.post('/themes/:code/activate', verifyToken, isAdmin(), themesSiteController.activate);
 
 // Exporter un theme en JSON
-router.get('/themes/:id/export', verifyToken, isAdmin(), themesSiteController.exportTheme);
-
-// Toggle actif/inactif
-router.patch('/themes/:id/toggle', verifyToken, isAdmin(), themesSiteController.toggle);
+router.get('/themes/:code/export', verifyToken, isAdmin(), themesSiteController.exportTheme);
 
 // Gestion des fichiers de theme
-router.get('/themes/:id/files', verifyToken, isAdmin(), themesSiteController.getFiles);
-router.post('/themes/:id/init-folder', verifyToken, isAdmin(), themesSiteController.initFolder);
-router.post('/themes/:id/files', verifyToken, isAdmin(), themesSiteController.uploadFile);
-router.get('/themes/:id/files/:type/:filename', verifyToken, isAdmin(), themesSiteController.readFile);
-router.delete('/themes/:id/files/:type/:filename', verifyToken, isAdmin(), themesSiteController.deleteFile);
+router.get('/themes/:code/files', verifyToken, isAdmin(), themesSiteController.getFiles);
+router.post('/themes/:code/files', verifyToken, isAdmin(), themesSiteController.saveFile);
+router.get('/themes/:code/files/:type/:filename', verifyToken, isAdmin(), themesSiteController.readFile);
+router.delete('/themes/:code/files/:type/:filename', verifyToken, isAdmin(), themesSiteController.deleteFile);
 
 // ============================================
 // Routes pour les modules actifs

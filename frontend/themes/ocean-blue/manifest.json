@@ -1,0 +1,27 @@
+{
+  "name": "Ocean Blue",
+  "version": "1.0.0",
+  "description": "Theme bleu ocean frais et professionnel",
+  "author": "Assotheque",
+  "mode": "light",
+  "colors": {
+    "primary": "#0077b6",
+    "secondary": "#00b4d8",
+    "accent": "#ff6b6b",
+    "background": "#ffffff",
+    "backgroundSecondary": "#f0f7fa",
+    "text": "#1a1a2e",
+    "textSecondary": "#4a5568",
+    "success": "#2ecc71",
+    "warning": "#f1c40f",
+    "danger": "#e74c3c",
+    "info": "#3498db"
+  },
+  "style": {
+    "borderRadius": "12px",
+    "shadowStyle": "medium",
+    "navbarStyle": "gradient"
+  },
+  "preview": null,
+  "pages": []
+}

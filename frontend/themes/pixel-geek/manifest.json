@@ -1,0 +1,43 @@
+{
+  "name": "Pixel Geek",
+  "version": "1.0.0",
+  "description": "Theme retro gaming style Celeste avec pixel art et effets 8-bit",
+  "author": "Assotheque",
+  "mode": "dark",
+  "colors": {
+    "primary": "#ff6b9d",
+    "secondary": "#c850c0",
+    "accent": "#00d4ff",
+    "background": "#0d0d1a",
+    "backgroundSecondary": "#1a1a2e",
+    "text": "#ffffff",
+    "textSecondary": "#a0a0c0",
+    "success": "#7bffa0",
+    "warning": "#ffeb3b",
+    "danger": "#ff4757",
+    "info": "#4158d0"
+  },
+  "style": {
+    "borderRadius": "0px",
+    "shadowStyle": "strong",
+    "navbarStyle": "solid"
+  },
+  "preview": null,
+  "features": {
+    "pixelFont": true,
+    "scanlines": true,
+    "catGame": true
+  },
+  "pages": [
+    "index.html",
+    "catalogue.html",
+    "fiche.html",
+    "infos.html",
+    "usager/login.html",
+    "usager/dashboard.html",
+    "usager/emprunts.html",
+    "usager/profil.html",
+    "usager/forgot-password.html",
+    "usager/reset-password.html"
+  ]
+}

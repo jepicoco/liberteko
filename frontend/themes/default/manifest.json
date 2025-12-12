@@ -1,0 +1,27 @@
+{
+  "name": "Violet Gradient",
+  "version": "1.0.0",
+  "description": "Theme par defaut avec gradient violet moderne",
+  "author": "Assotheque",
+  "mode": "light",
+  "colors": {
+    "primary": "#667eea",
+    "secondary": "#764ba2",
+    "accent": "#20c997",
+    "background": "#ffffff",
+    "backgroundSecondary": "#f8f9fa",
+    "text": "#333333",
+    "textSecondary": "#6c757d",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "danger": "#ef4444",
+    "info": "#3b82f6"
+  },
+  "style": {
+    "borderRadius": "8px",
+    "shadowStyle": "subtle",
+    "navbarStyle": "gradient"
+  },
+  "preview": null,
+  "pages": []
+}
