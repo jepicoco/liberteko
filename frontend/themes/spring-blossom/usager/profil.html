@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Mon profil - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .profil-container { max-width: 900px; margin: 0 auto; padding: var(--space-xl) var(--space-lg); }
+    .user-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-lg) 0; margin-bottom: var(--space-lg); border-bottom: var(--border-light); }
+    .user-menu { display: flex; gap: var(--space-md); }
+    .user-menu a { padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); color: var(--color-text-secondary); text-decoration: none; transition: all 0.3s ease; display: flex; align-items: center; gap: var(--space-xs); }
+    .user-menu a:hover, .user-menu a.active { background: var(--spring-pink-pale); color: var(--spring-pink); }
+    .btn-logout { background: none; border: 2px solid #dc2626; color: #dc2626; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-md); cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: var(--space-xs); }
+    .btn-logout:hover { background: #dc2626; color: white; }
+    .page-title { margin-bottom: var(--space-xl); }
+    .page-title h1 { font-size: 2rem; color: var(--color-text); display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-sm); }
+    .page-title h1 i { color: var(--spring-pink); }
+    .page-title p { color: var(--color-text-secondary); }
+    .profil-card { background: var(--spring-white); border-radius: var(--radius-lg); box-shadow: var(--soft-shadow); border: var(--border-soft); margin-bottom: var(--space-xl); overflow: hidden; animation: card-bloom 0.6s ease-out backwards; }
+    .profil-card:nth-of-type(1) { animation-delay: 0.1s; }
+    .profil-card:nth-of-type(2) { animation-delay: 0.2s; }
+    .profil-card:nth-of-type(3) { animation-delay: 0.3s; }
+    .card-header { background: var(--spring-cream); padding: var(--space-lg); border-bottom: var(--border-soft); display: flex; justify-content: space-between; align-items: center; }
+    .card-header h2 { font-size: 1.25rem; color: var(--color-text); display: flex; align-items: center; gap: var(--space-sm); margin: 0; }
+    .card-header h2 i { color: var(--spring-pink); }
+    .card-body { padding: var(--space-xl); }
+    .profil-header { display: flex; gap: var(--space-xl); align-items: center; margin-bottom: var(--space-xl); padding-bottom: var(--space-xl); border-bottom: var(--border-light); }
+    .avatar { width: 120px; height: 120px; border-radius: 50%; background: var(--gradient-spring); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; box-shadow: var(--bloom-glow); animation: bloom-pulse 4s ease-in-out infinite; flex-shrink: 0; }
+    .profil-identity h2 { font-size: 1.75rem; margin-bottom: var(--space-xs); color: var(--color-text); }
+    .profil-identity p { color: var(--color-text-secondary); display: flex; align-items: center; gap: var(--space-xs); }
+    .profil-identity p i { color: var(--spring-pink); }
+    .member-badge { display: inline-flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) var(--space-md); background: var(--spring-pink-pale); color: var(--spring-pink); border-radius: var(--radius-full); font-size: 0.85rem; font-weight: 600; margin-top: var(--space-sm); }
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-lg); }
+    .info-item { display: flex; flex-direction: column; gap: var(--space-xs); }
+    .info-item .label { font-size: 0.85rem; color: var(--color-text-light); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: var(--space-xs); }
+    .info-item .label i { color: var(--spring-pink); }
+    .info-item .value { font-size: 1rem; color: var(--color-text); font-weight: 500; }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-lg); }
+    .form-group { margin-bottom: var(--space-lg); }
+    .form-group:last-child { margin-bottom: 0; }
+    .form-label { display: block; font-weight: 600; color: var(--color-text); margin-bottom: var(--space-sm); font-size: 0.95rem; }
+    .form-input { width: 100%; padding: var(--space-md); border: 2px solid #e5e7eb; border-radius: var(--radius-md); font-size: 1rem; transition: all 0.3s ease; background: var(--spring-white); }
+    .form-input:focus { outline: none; border-color: var(--spring-pink); box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1); }
+    .form-input:disabled { background: var(--spring-cream); cursor: not-allowed; }
+    .form-actions { display: flex; justify-content: flex-end; gap: var(--space-md); margin-top: var(--space-xl); padding-top: var(--space-lg); border-top: var(--border-light); }
+    .alert { padding: var(--space-md); border-radius: var(--radius-md); margin-bottom: var(--space-lg); display: none; align-items: center; gap: var(--space-sm); }
+    .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .alert-danger { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+    .alert.show { display: flex; }
+    .cotisation-card { background: var(--spring-pink-pale); border-radius: var(--radius-md); padding: var(--space-lg); display: flex; align-items: center; gap: var(--space-lg); }
+    .cotisation-card.expired { background: #fee2e2; }
+    .cotisation-card.expiring { background: #fef9c3; }
+    .cotisation-icon { width: 60px; height: 60px; border-radius: 50%; background: var(--spring-white); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .cotisation-card .cotisation-icon { color: var(--spring-pink); }
+    .cotisation-card.expired .cotisation-icon { color: #dc2626; }
+    .cotisation-card.expiring .cotisation-icon { color: #854d0e; }
+    .cotisation-info h4 { font-size: 1.1rem; margin-bottom: var(--space-xs); }
+    .cotisation-card .cotisation-info h4 { color: var(--spring-pink); }
+    .cotisation-card.expired .cotisation-info h4 { color: #dc2626; }
+    .cotisation-card.expiring .cotisation-info h4 { color: #854d0e; }
+    .cotisation-info p { font-size: 0.9rem; color: var(--color-text-secondary); }
+    .password-toggle { position: relative; }
+    .password-toggle .toggle-btn { position: absolute; right: var(--space-md); top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--color-text-light); cursor: pointer; }
+    @media (max-width: 768px) { .user-header { flex-direction: column; gap: var(--space-md); } .user-menu { width: 100%; justify-content: center; flex-wrap: wrap; } .profil-header { flex-direction: column; text-align: center; } .avatar { width: 100px; height: 100px; font-size: 2.5rem; } .form-actions { flex-direction: column; } .form-actions button { width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="petals-container">
+    <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+    <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo"><i class="bi bi-flower1 logo-icon"></i><span class="logo-text" id="header-title">ASSOTHEQUE</span></a>
+      <nav><ul class="nav-menu">
+        <li><a href="/">Accueil</a></li>
+        <li><a href="/catalogue.html">Catalogue</a></li>
+        <li><a href="/infos.html">Infos</a></li>
+      </ul></nav>
+      <a href="/usager/dashboard.html" class="btn-login"><i class="bi bi-person-circle"></i> Mon espace</a>
+    </div>
+  </header>
+
+  <div class="profil-container">
+    <div class="user-header">
+      <div class="user-menu">
+        <a href="/usager/dashboard.html"><i class="bi bi-house"></i> Tableau de bord</a>
+        <a href="/usager/emprunts.html"><i class="bi bi-bookmark"></i> Mes emprunts</a>
+        <a href="/usager/profil.html" class="active"><i class="bi bi-person"></i> Mon profil</a>
+      </div>
+      <button class="btn-logout" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Deconnexion</button>
+    </div>
+
+    <div class="page-title">
+      <h1><i class="bi bi-person-circle"></i> Mon profil</h1>
+      <p>Consultez et modifiez vos informations personnelles</p>
+    </div>
+
+    <div class="profil-card">
+      <div class="card-body">
+        <div class="profil-header">
+          <div class="avatar" id="avatar">?</div>
+          <div class="profil-identity">
+            <h2 id="full-name">Chargement...</h2>
+            <p><i class="bi bi-envelope"></i> <span id="email">-</span></p>
+            <p><i class="bi bi-person-badge"></i> Membre #<span id="numero">-</span></p>
+            <span class="member-badge"><i class="bi bi-flower1"></i> Membre depuis <span id="membre-depuis">-</span></span>
+          </div>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="label"><i class="bi bi-telephone"></i> Telephone</span><span class="value" id="telephone">-</span></div>
+          <div class="info-item"><span class="label"><i class="bi bi-geo-alt"></i> Adresse</span><span class="value" id="adresse">-</span></div>
+          <div class="info-item"><span class="label"><i class="bi bi-calendar"></i> Date de naissance</span><span class="value" id="date-naissance">-</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profil-card">
+      <div class="card-header"><h2><i class="bi bi-card-checklist"></i> Mon adhesion</h2></div>
+      <div class="card-body" id="cotisation-section">
+        <div class="cotisation-card"><div class="cotisation-icon"><i class="bi bi-hourglass"></i></div><div class="cotisation-info"><h4>Chargement...</h4></div></div>
+      </div>
+    </div>
+
+    <div class="profil-card">
+      <div class="card-header"><h2><i class="bi bi-pencil"></i> Modifier mes informations</h2></div>
+      <div class="card-body">
+        <div class="alert alert-success" id="success-info"><i class="bi bi-check-circle"></i><span>Informations mises a jour</span></div>
+        <div class="alert alert-danger" id="error-info"><i class="bi bi-exclamation-circle"></i><span id="error-info-msg"></span></div>
+
+        <form id="info-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Prenom</label>
+              <input type="text" class="form-input" id="edit-prenom" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Nom</label>
+              <input type="text" class="form-input" id="edit-nom" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" id="edit-email" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Telephone</label>
+              <input type="tel" class="form-input" id="edit-telephone">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Adresse</label>
+            <input type="text" class="form-input" id="edit-adresse">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-check"></i> Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="profil-card">
+      <div class="card-header"><h2><i class="bi bi-lock"></i> Changer mon mot de passe</h2></div>
+      <div class="card-body">
+        <div class="alert alert-success" id="success-pwd"><i class="bi bi-check-circle"></i><span>Mot de passe modifie</span></div>
+        <div class="alert alert-danger" id="error-pwd"><i class="bi bi-exclamation-circle"></i><span id="error-pwd-msg"></span></div>
+
+        <form id="password-form">
+          <div class="form-group">
+            <label class="form-label">Mot de passe actuel</label>
+            <div class="password-toggle">
+              <input type="password" class="form-input" id="current-password" required>
+              <button type="button" class="toggle-btn" onclick="togglePassword('current-password')"><i class="bi bi-eye"></i></button>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Nouveau mot de passe</label>
+              <div class="password-toggle">
+                <input type="password" class="form-input" id="new-password" required minlength="6">
+                <button type="button" class="toggle-btn" onclick="togglePassword('new-password')"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirmer le mot de passe</label>
+              <div class="password-toggle">
+                <input type="password" class="form-input" id="confirm-password" required>
+                <button type="button" class="toggle-btn" onclick="togglePassword('confirm-password')"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary"><i class="bi bi-lock"></i> Changer le mot de passe</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section"><h4>Contact</h4><p id="footer-address"></p><p id="footer-phone"></p><p id="footer-email"></p></div>
+      <div class="footer-section"><h4>Navigation</h4><ul><li><a href="/">Accueil</a></li><li><a href="/catalogue.html">Catalogue</a></li></ul></div>
+      <div class="footer-section"><h4>Mon compte</h4><ul><li><a href="/usager/dashboard.html">Tableau de bord</a></li><li><a href="/usager/emprunts.html">Mes emprunts</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p></div>
+  </footer>
+
+  <script>
+    let currentUser = null;
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      const token = localStorage.getItem('usager_token');
+      if (!token) { window.location.href = '/usager/login.html'; return; }
+
+      try {
+        const configResp = await fetch('/api/public/config');
+        const config = await configResp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Mon profil - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+        if (config.contact) {
+          if (config.contact.adresse) document.getElementById('footer-address').innerHTML = `<i class="bi bi-geo-alt"></i> ${config.contact.adresse}`;
+          if (config.contact.telephone) document.getElementById('footer-phone').innerHTML = `<i class="bi bi-telephone"></i> ${config.contact.telephone}`;
+          if (config.contact.email) document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${config.contact.email}`;
+        }
+      } catch (e) { console.error('Config error:', e); }
+
+      await loadProfile();
+    }
+
+    async function loadProfile() {
+      const token = localStorage.getItem('usager_token');
+      try {
+        const resp = await fetch('/api/usager/auth/profile', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) { logout(); return; }
+        currentUser = await resp.json();
+
+        const initials = ((currentUser.prenom?.[0] || '') + (currentUser.nom?.[0] || '')).toUpperCase() || '?';
+        document.getElementById('avatar').textContent = initials;
+        document.getElementById('full-name').textContent = `${currentUser.prenom || ''} ${currentUser.nom || ''}`.trim() || 'Membre';
+        document.getElementById('email').textContent = currentUser.email || '-';
+        document.getElementById('numero').textContent = currentUser.numero_membre || currentUser.id || '-';
+        document.getElementById('telephone').textContent = currentUser.telephone || '-';
+        document.getElementById('adresse').textContent = currentUser.adresse || '-';
+        document.getElementById('date-naissance').textContent = currentUser.date_naissance ? new Date(currentUser.date_naissance).toLocaleDateString('fr-FR') : '-';
+
+        const dateInscription = currentUser.date_inscription || currentUser.createdAt;
+        document.getElementById('membre-depuis').textContent = dateInscription ? new Date(dateInscription).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '-';
+
+        document.getElementById('edit-prenom').value = currentUser.prenom || '';
+        document.getElementById('edit-nom').value = currentUser.nom || '';
+        document.getElementById('edit-email').value = currentUser.email || '';
+        document.getElementById('edit-telephone').value = currentUser.telephone || '';
+        document.getElementById('edit-adresse').value = currentUser.adresse || '';
+
+        renderCotisation(currentUser);
+      } catch (e) { console.error('Profile error:', e); logout(); }
+    }
+
+    function renderCotisation(profile) {
+      const container = document.getElementById('cotisation-section');
+      const dateFinStr = profile.date_fin_adhesion || profile.date_fin_cotisation;
+
+      if (!dateFinStr) {
+        container.innerHTML = '<div class="cotisation-card expired"><div class="cotisation-icon"><i class="bi bi-exclamation-circle"></i></div><div class="cotisation-info"><h4>Pas d\'adhesion active</h4><p>Contactez l\'association pour adherer</p></div></div>';
+        return;
+      }
+
+      const dateFin = new Date(dateFinStr);
+      const today = new Date();
+      const diff = Math.ceil((dateFin - today) / (1000 * 60 * 60 * 24));
+
+      if (diff < 0) {
+        container.innerHTML = `<div class="cotisation-card expired"><div class="cotisation-icon"><i class="bi bi-exclamation-circle"></i></div><div class="cotisation-info"><h4>Adhesion expiree</h4><p>Votre adhesion a expire le ${dateFin.toLocaleDateString('fr-FR')}</p></div></div>`;
+      } else if (diff <= 30) {
+        container.innerHTML = `<div class="cotisation-card expiring"><div class="cotisation-icon"><i class="bi bi-exclamation-triangle"></i></div><div class="cotisation-info"><h4>Adhesion bientot expiree</h4><p>Expire le ${dateFin.toLocaleDateString('fr-FR')} (${diff} jours restants)</p></div></div>`;
+      } else {
+        container.innerHTML = `<div class="cotisation-card"><div class="cotisation-icon"><i class="bi bi-check-circle"></i></div><div class="cotisation-info"><h4>Adhesion active</h4><p>Valide jusqu'au ${dateFin.toLocaleDateString('fr-FR')}</p></div></div>`;
+      }
+    }
+
+    document.getElementById('info-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlerts();
+      const token = localStorage.getItem('usager_token');
+
+      try {
+        const resp = await fetch('/api/usager/auth/profile', {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prenom: document.getElementById('edit-prenom').value,
+            nom: document.getElementById('edit-nom').value,
+            email: document.getElementById('edit-email').value,
+            telephone: document.getElementById('edit-telephone').value,
+            adresse: document.getElementById('edit-adresse').value
+          })
+        });
+
+        if (!resp.ok) {
+          const data = await resp.json();
+          showError('error-info', 'error-info-msg', data.message || 'Erreur lors de la mise a jour');
+          return;
+        }
+
+        showSuccess('success-info');
+        await loadProfile();
+      } catch (e) {
+        console.error('Update error:', e);
+        showError('error-info', 'error-info-msg', 'Erreur de connexion');
+      }
+    });
+
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideAlerts();
+
+      const newPwd = document.getElementById('new-password').value;
+      const confirmPwd = document.getElementById('confirm-password').value;
+
+      if (newPwd !== confirmPwd) {
+        showError('error-pwd', 'error-pwd-msg', 'Les mots de passe ne correspondent pas');
+        return;
+      }
+
+      const token = localStorage.getItem('usager_token');
+
+      try {
+        const resp = await fetch('/api/usager/auth/password', {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            currentPassword: document.getElementById('current-password').value,
+            newPassword: newPwd
+          })
+        });
+
+        if (!resp.ok) {
+          const data = await resp.json();
+          showError('error-pwd', 'error-pwd-msg', data.message || 'Erreur lors du changement');
+          return;
+        }
+
+        showSuccess('success-pwd');
+        document.getElementById('password-form').reset();
+      } catch (e) {
+        console.error('Password error:', e);
+        showError('error-pwd', 'error-pwd-msg', 'Erreur de connexion');
+      }
+    });
+
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      const btn = input.nextElementSibling;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.innerHTML = '<i class="bi bi-eye-slash"></i>';
+      } else {
+        input.type = 'password';
+        btn.innerHTML = '<i class="bi bi-eye"></i>';
+      }
+    }
+
+    function showSuccess(id) { document.getElementById(id).classList.add('show'); }
+    function showError(alertId, msgId, message) { document.getElementById(msgId).textContent = message; document.getElementById(alertId).classList.add('show'); }
+    function hideAlerts() { document.querySelectorAll('.alert').forEach(a => a.classList.remove('show')); }
+
+    function logout() {
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_info');
+      window.location.href = '/usager/login.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>

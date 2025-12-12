@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Fiche - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .fiche-container { max-width: 1200px; margin: 0 auto; padding: var(--space-xl) var(--space-lg); }
+    .breadcrumb { display: flex; align-items: center; gap: var(--space-xs); margin-bottom: var(--space-lg); color: var(--color-text-secondary); font-size: 0.9rem; }
+    .breadcrumb a { color: var(--spring-pink); }
+    .breadcrumb i { font-size: 0.7rem; }
+    .fiche-content { display: grid; grid-template-columns: 350px 1fr; gap: var(--space-2xl); background: var(--spring-white); border-radius: var(--radius-lg); padding: var(--space-xl); box-shadow: var(--card-shadow); border: var(--border-soft); }
+    .fiche-image { background: var(--spring-pink-pale); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; min-height: 400px; overflow: hidden; }
+    .fiche-image img { max-width: 100%; max-height: 400px; object-fit: contain; border-radius: var(--radius-md); }
+    .fiche-image i { font-size: 8rem; color: var(--spring-pink); }
+    .fiche-details h1 { font-size: 2.25rem; margin-bottom: var(--space-sm); color: var(--color-text); }
+    .fiche-meta { color: var(--color-text-secondary); margin-bottom: var(--space-lg); font-size: 1.1rem; }
+    .status-row { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-xl); padding: var(--space-md); background: var(--spring-pink-pale); border-radius: var(--radius-md); }
+    .status-indicator { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-full); font-weight: 600; font-size: 0.95rem; }
+    .status-disponible { background: #dcfce7; color: #166534; }
+    .status-emprunte { background: #fef9c3; color: #854d0e; }
+    .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
+    .info-item { display: flex; flex-direction: column; gap: var(--space-xs); }
+    .info-label { font-size: 0.85rem; color: var(--color-text-light); text-transform: uppercase; letter-spacing: 0.5px; }
+    .info-value { font-size: 1rem; color: var(--color-text); font-weight: 500; }
+    .description-section { margin-bottom: var(--space-xl); }
+    .description-section h3 { font-size: 1.25rem; margin-bottom: var(--space-md); color: var(--color-text); display: flex; align-items: center; gap: var(--space-sm); }
+    .description-section h3 i { color: var(--spring-pink); }
+    .description-section p { line-height: 1.8; color: var(--color-text-secondary); }
+    .actions-row { display: flex; gap: var(--space-md); flex-wrap: wrap; padding-top: var(--space-lg); border-top: var(--border-light); }
+    .related-section { margin-top: var(--space-2xl); }
+    .related-section h2 { margin-bottom: var(--space-lg); display: flex; align-items: center; gap: var(--space-sm); }
+    .related-section h2 i { color: var(--spring-pink); }
+    .related-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--space-lg); }
+    .related-card { background: var(--spring-white); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--soft-shadow); transition: all 0.3s ease; text-decoration: none; border: var(--border-soft); }
+    .related-card:hover { transform: translateY(-4px); box-shadow: var(--card-shadow); }
+    .related-card .card-image { height: 140px; background: var(--spring-pink-pale); display: flex; align-items: center; justify-content: center; }
+    .related-card .card-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .related-card .card-image i { font-size: 3rem; color: var(--spring-pink); }
+    .related-card .card-body { padding: var(--space-md); }
+    .related-card .card-title { font-size: 0.95rem; font-weight: 600; color: var(--color-text); margin-bottom: var(--space-xs); }
+    .loading { text-align: center; padding: var(--space-2xl); }
+    .loading i { font-size: 3rem; color: var(--spring-pink); animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 900px) { .fiche-content { grid-template-columns: 1fr; } .fiche-image { min-height: 300px; } .info-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="petals-container">
+    <div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div><div class="petal"></div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo"><i class="bi bi-flower1 logo-icon"></i><span class="logo-text" id="header-title">ASSOTHEQUE</span></a>
+      <nav><ul class="nav-menu">
+        <li><a href="/">Accueil</a></li>
+        <li><a href="/catalogue.html" class="active">Catalogue</a></li>
+        <li><a href="/infos.html">Infos</a></li>
+      </ul></nav>
+      <a href="/usager/login.html" class="btn-login"><i class="bi bi-person-circle"></i> Connexion</a>
+    </div>
+  </header>
+
+  <div class="fiche-container">
+    <div class="breadcrumb">
+      <a href="/">Accueil</a><i class="bi bi-chevron-right"></i>
+      <a href="/catalogue.html">Catalogue</a><i class="bi bi-chevron-right"></i>
+      <span id="breadcrumb-title">Chargement...</span>
+    </div>
+
+    <div id="loading" class="loading"><i class="bi bi-arrow-repeat"></i><p>Chargement...</p></div>
+
+    <div id="fiche-content" class="fiche-content" style="display: none;">
+      <div class="fiche-image" id="fiche-image"><i class="bi bi-box"></i></div>
+      <div class="fiche-details">
+        <h1 id="fiche-title"></h1>
+        <p class="fiche-meta" id="fiche-meta"></p>
+        <div class="status-row">
+          <div class="status-indicator" id="status-indicator"><i class="bi bi-check-circle"></i><span>Disponible</span></div>
+          <span id="return-date"></span>
+        </div>
+        <div class="info-grid" id="info-grid"></div>
+        <div class="description-section" id="description-section" style="display: none;">
+          <h3><i class="bi bi-text-paragraph"></i> Description</h3>
+          <p id="description-text"></p>
+        </div>
+        <div class="actions-row">
+          <a href="/catalogue.html" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> Retour au catalogue</a>
+          <a href="/usager/login.html" class="btn btn-primary" id="btn-reserve" style="display: none;"><i class="bi bi-bookmark"></i> Reserver</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="related-section" id="related-section" style="display: none;">
+      <h2><i class="bi bi-collection"></i> Articles similaires</h2>
+      <div class="related-grid" id="related-grid"></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section"><h4>Contact</h4><p id="footer-address"></p><p id="footer-phone"></p><p id="footer-email"></p></div>
+      <div class="footer-section"><h4>Navigation</h4><ul><li><a href="/">Accueil</a></li><li><a href="/catalogue.html">Catalogue</a></li></ul></div>
+      <div class="footer-section"><h4>Espace membre</h4><ul><li><a href="/usager/login.html">Connexion</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p></div>
+  </footer>
+
+  <script>
+    const icons = { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' };
+    const labels = { jeux: 'Jeu', livres: 'Livre', films: 'Film', disques: 'Disque' };
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+      try {
+        const configResp = await fetch('/api/public/config');
+        const config = await configResp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+        if (config.contact) {
+          if (config.contact.adresse) document.getElementById('footer-address').innerHTML = `<i class="bi bi-geo-alt"></i> ${config.contact.adresse}`;
+          if (config.contact.telephone) document.getElementById('footer-phone').innerHTML = `<i class="bi bi-telephone"></i> ${config.contact.telephone}`;
+          if (config.contact.email) document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${config.contact.email}`;
+        }
+      } catch (e) { console.error('Config error:', e); }
+
+      const params = new URLSearchParams(window.location.search);
+      const collection = params.get('collection');
+      const id = params.get('id');
+      if (!collection || !id) { showError('Article non trouve'); return; }
+      await loadFiche(collection, id);
+    }
+
+    async function loadFiche(collection, id) {
+      try {
+        const resp = await fetch(`/api/public/${collection}/${id}`);
+        if (!resp.ok) throw new Error('Not found');
+        const item = await resp.json();
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('fiche-content').style.display = 'grid';
+
+        const title = item.nom || item.titre;
+        document.title = `${title} - Assotheque`;
+        document.getElementById('site-title').textContent = `${title} - Assotheque`;
+        document.getElementById('breadcrumb-title').textContent = title;
+        document.getElementById('fiche-title').textContent = title;
+        document.getElementById('fiche-meta').textContent = item.auteur || item.editeur || labels[collection];
+
+        const imageContainer = document.getElementById('fiche-image');
+        imageContainer.innerHTML = item.image_url ? `<img src="${item.image_url}" alt="${title}">` : `<i class="bi bi-${icons[collection]}"></i>`;
+
+        const statusIndicator = document.getElementById('status-indicator');
+        if (item.statut === 'disponible') {
+          statusIndicator.className = 'status-indicator status-disponible';
+          statusIndicator.innerHTML = '<i class="bi bi-check-circle"></i><span>Disponible</span>';
+          document.getElementById('btn-reserve').style.display = 'flex';
+        } else {
+          statusIndicator.className = 'status-indicator status-emprunte';
+          statusIndicator.innerHTML = '<i class="bi bi-clock"></i><span>Emprunte</span>';
+          if (item.date_retour_prevue) document.getElementById('return-date').textContent = `Retour prevu le ${new Date(item.date_retour_prevue).toLocaleDateString('fr-FR')}`;
+        }
+
+        const infoGrid = document.getElementById('info-grid');
+        const infoItems = buildInfoItems(collection, item);
+        infoGrid.innerHTML = infoItems.map(info => `<div class="info-item"><span class="info-label">${info.label}</span><span class="info-value">${info.value}</span></div>`).join('');
+
+        if (item.description) {
+          document.getElementById('description-section').style.display = 'block';
+          document.getElementById('description-text').textContent = item.description;
+        }
+
+        await loadRelated(collection, id);
+      } catch (e) { console.error('Load error:', e); showError('Impossible de charger cet article'); }
+    }
+
+    function buildInfoItems(collection, item) {
+      const items = [];
+      if (collection === 'jeux') {
+        if (item.editeur) items.push({ label: 'Editeur', value: item.editeur });
+        if (item.annee) items.push({ label: 'Annee', value: item.annee });
+        if (item.nb_joueurs_min || item.nb_joueurs_max) items.push({ label: 'Joueurs', value: `${item.nb_joueurs_min || 1} - ${item.nb_joueurs_max || '?'}` });
+        if (item.duree) items.push({ label: 'Duree', value: `${item.duree} min` });
+        if (item.age_min) items.push({ label: 'Age minimum', value: `${item.age_min} ans` });
+      } else if (collection === 'livres') {
+        if (item.auteur) items.push({ label: 'Auteur', value: item.auteur });
+        if (item.editeur) items.push({ label: 'Editeur', value: item.editeur });
+        if (item.annee) items.push({ label: 'Annee', value: item.annee });
+        if (item.isbn) items.push({ label: 'ISBN', value: item.isbn });
+      } else if (collection === 'films') {
+        if (item.realisateur) items.push({ label: 'Realisateur', value: item.realisateur });
+        if (item.annee) items.push({ label: 'Annee', value: item.annee });
+        if (item.duree) items.push({ label: 'Duree', value: `${item.duree} min` });
+      } else if (collection === 'disques') {
+        if (item.artiste) items.push({ label: 'Artiste', value: item.artiste });
+        if (item.annee) items.push({ label: 'Annee', value: item.annee });
+        if (item.label) items.push({ label: 'Label', value: item.label });
+      }
+      if (item.emplacement) items.push({ label: 'Emplacement', value: item.emplacement });
+      return items;
+    }
+
+    async function loadRelated(collection, id) {
+      try {
+        const resp = await fetch(`/api/public/${collection}?limit=4&exclude=${id}`);
+        const data = await resp.json();
+        if (data.items && data.items.length > 0) {
+          document.getElementById('related-section').style.display = 'block';
+          document.getElementById('related-grid').innerHTML = data.items.map(item => `
+            <a href="/fiche.html?collection=${collection}&id=${item.id}" class="related-card">
+              <div class="card-image">${item.image_url ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">` : `<i class="bi bi-${icons[collection]}"></i>`}</div>
+              <div class="card-body"><div class="card-title">${item.nom || item.titre}</div></div>
+            </a>`).join('');
+        }
+      } catch (e) { console.error('Related error:', e); }
+    }
+
+    function showError(message) {
+      document.getElementById('loading').innerHTML = `<i class="bi bi-exclamation-triangle" style="color: var(--color-danger); animation: none;"></i><p>${message}</p><a href="/catalogue.html" class="btn btn-primary mt-3">Retour au catalogue</a>`;
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maintenance - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .maintenance-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: var(--space-xl);
+      position: relative;
+      z-index: 1;
+    }
+
+    .maintenance-icon {
+      width: 180px;
+      height: 180px;
+      background: var(--gradient-sunset);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-xl);
+      box-shadow: var(--sun-glow);
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .maintenance-icon i {
+      font-size: 5rem;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 60px rgba(245, 158, 11, 0.25);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 80px rgba(245, 158, 11, 0.35);
+      }
+    }
+
+    .maintenance-title {
+      font-size: 2.5rem;
+      margin-bottom: var(--space-md);
+      color: var(--color-text);
+    }
+
+    .maintenance-subtitle {
+      font-size: 1.25rem;
+      color: var(--color-text-secondary);
+      max-width: 500px;
+      margin-bottom: var(--space-xl);
+      line-height: 1.7;
+    }
+
+    .maintenance-info {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      max-width: 500px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .maintenance-info h3 {
+      font-size: 1.25rem;
+      margin-bottom: var(--space-md);
+      color: var(--summer-orange);
+    }
+
+    .maintenance-info p {
+      margin-bottom: var(--space-md);
+    }
+
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-lg);
+      margin-top: var(--space-lg);
+    }
+
+    .countdown-item {
+      text-align: center;
+    }
+
+    .countdown-number {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--summer-orange);
+      display: block;
+      font-family: var(--font-heading);
+    }
+
+    .countdown-label {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+    }
+
+    .social-links {
+      display: flex;
+      gap: var(--space-md);
+      margin-top: var(--space-xl);
+    }
+
+    .social-links a {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: var(--summer-white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--summer-orange);
+      box-shadow: var(--soft-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .social-links a:hover {
+      background: var(--summer-gold);
+      color: white;
+      transform: translateY(-3px);
+    }
+
+    @media (max-width: 600px) {
+      .maintenance-icon {
+        width: 140px;
+        height: 140px;
+      }
+
+      .maintenance-icon i {
+        font-size: 4rem;
+      }
+
+      .maintenance-title {
+        font-size: 1.75rem;
+      }
+
+      .countdown {
+        gap: var(--space-md);
+      }
+
+      .countdown-number {
+        font-size: 1.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="maintenance-container">
+    <div class="maintenance-icon">
+      <i class="bi bi-gear"></i>
+    </div>
+
+    <h1 class="maintenance-title">Site en maintenance</h1>
+    <p class="maintenance-subtitle">
+      Nous effectuons actuellement une mise a jour pour vous offrir une meilleure experience.
+      Le site sera de retour tres bientot !
+    </p>
+
+    <div class="maintenance-info">
+      <h3><i class="bi bi-clock"></i> Retour prevu</h3>
+      <p>Nous travaillons aussi vite que possible pour retablir l'acces au site.</p>
+
+      <div class="countdown" id="countdown">
+        <div class="countdown-item">
+          <span class="countdown-number" id="hours">00</span>
+          <span class="countdown-label">Heures</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="minutes">00</span>
+          <span class="countdown-label">Minutes</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="seconds">00</span>
+          <span class="countdown-label">Secondes</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="social-links">
+      <a href="#" title="Facebook"><i class="bi bi-facebook"></i></a>
+      <a href="#" title="Instagram"><i class="bi bi-instagram"></i></a>
+      <a href="mailto:contact@assotheque.fr" title="Email"><i class="bi bi-envelope"></i></a>
+    </div>
+  </div>
+
+  <script>
+    // Simple countdown (2 hours from now as example)
+    let targetTime = new Date().getTime() + (2 * 60 * 60 * 1000);
+
+    function updateCountdown() {
+      const now = new Date().getTime();
+      const diff = targetTime - now;
+
+      if (diff <= 0) {
+        document.getElementById('countdown').innerHTML = '<p style="color: var(--summer-gold);">Le site devrait etre disponible. Rafraichissez la page.</p>';
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      document.getElementById('hours').textContent = hours.toString().padStart(2, '0');
+      document.getElementById('minutes').textContent = minutes.toString().padStart(2, '0');
+      document.getElementById('seconds').textContent = seconds.toString().padStart(2, '0');
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
+</body>
+</html>

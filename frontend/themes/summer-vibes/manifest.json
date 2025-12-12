@@ -28,5 +28,18 @@
     "sunGlow": true,
     "waveEffect": true
   },
-  "pages": []
+  "pages": [
+    "index.html",
+    "catalogue.html",
+    "fiche.html",
+    "infos.html",
+    "maintenance.html",
+    "test.html",
+    "usager/login.html",
+    "usager/dashboard.html",
+    "usager/emprunts.html",
+    "usager/profil.html",
+    "usager/forgot-password.html",
+    "usager/reset-password.html"
+  ]
 }

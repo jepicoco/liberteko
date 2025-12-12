@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Mes emprunts - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .user-header {
+      background: var(--gradient-beach);
+      padding: var(--space-lg) var(--space-lg);
+      border-bottom: var(--border-light);
+    }
+
+    .user-header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .page-title h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .page-title i {
+      color: var(--summer-gold);
+    }
+
+    .user-nav {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+    }
+
+    .user-nav a {
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-full);
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .user-nav a:hover {
+      background: var(--summer-gold-pale);
+      color: var(--summer-orange);
+    }
+
+    .user-nav a.active {
+      background: var(--gradient-sunset);
+      color: white;
+    }
+
+    .tabs {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: var(--space-sm);
+    }
+
+    .tab {
+      padding: var(--space-sm) var(--space-md);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab:hover {
+      color: var(--summer-orange);
+    }
+
+    .tab.active {
+      color: var(--summer-orange);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--summer-gold);
+      border-radius: 2px;
+    }
+
+    .tab .count {
+      background: var(--summer-gold-pale);
+      color: var(--summer-orange);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      margin-left: var(--space-xs);
+    }
+
+    .emprunts-list {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .emprunt-card {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      box-shadow: var(--soft-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .emprunt-card:hover {
+      box-shadow: var(--card-shadow);
+    }
+
+    .emprunt-card.retard {
+      border-left: 4px solid var(--summer-red);
+    }
+
+    .emprunt-card.avertissement {
+      border-left: 4px solid var(--summer-gold);
+    }
+
+    .emprunt-card.returned {
+      opacity: 0.8;
+    }
+
+    .emprunt-image {
+      width: 100px;
+      height: 100px;
+      border-radius: var(--radius-md);
+      background: var(--summer-cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .emprunt-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+    }
+
+    .emprunt-image i {
+      font-size: 2.5rem;
+      color: var(--summer-gold);
+    }
+
+    .emprunt-content {
+      flex: 1;
+    }
+
+    .emprunt-title {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--color-text);
+      margin-bottom: var(--space-xs);
+    }
+
+    .emprunt-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-md);
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+    }
+
+    .emprunt-meta span {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .emprunt-status {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: var(--space-sm);
+    }
+
+    .status-badge {
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .status-encours {
+      background: #e0f2fe;
+      color: #075985;
+    }
+
+    .status-retard {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .status-rendu {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .emprunt-actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .prolongation-btn {
+      font-size: 0.85rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl);
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--summer-gold);
+      margin-bottom: var(--space-md);
+    }
+
+    @media (max-width: 768px) {
+      .user-header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .emprunt-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .emprunt-status {
+        align-items: center;
+        width: 100%;
+      }
+
+      .emprunt-meta {
+        justify-content: center;
+      }
+
+      .emprunt-actions {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-sun logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+        </ul>
+      </nav>
+      <a href="#" class="btn-login" onclick="logout()">
+        <i class="bi bi-box-arrow-right"></i> Deconnexion
+      </a>
+    </div>
+  </header>
+
+  <!-- User Header -->
+  <div class="user-header">
+    <div class="user-header-content">
+      <div class="page-title">
+        <i class="bi bi-bookmark"></i>
+        <h1>Mes emprunts</h1>
+      </div>
+      <nav class="user-nav">
+        <a href="/usager/dashboard.html"><i class="bi bi-house"></i> Accueil</a>
+        <a href="/usager/emprunts.html" class="active"><i class="bi bi-bookmark"></i> Emprunts</a>
+        <a href="/usager/profil.html"><i class="bi bi-person"></i> Profil</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="dashboard-container">
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="en-cours" onclick="switchTab('en-cours')">
+        En cours <span class="count" id="count-en-cours">0</span>
+      </button>
+      <button class="tab" data-tab="historique" onclick="switchTab('historique')">
+        Historique <span class="count" id="count-historique">0</span>
+      </button>
+    </div>
+
+    <!-- Emprunts List -->
+    <div class="emprunts-list" id="emprunts-list">
+      <div class="empty-state">
+        <i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i>
+        <p>Chargement...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits reserves</p>
+    </div>
+  </footer>
+
+  <script>
+    const icons = { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' };
+    let token = null;
+    let allEmprunts = [];
+    let currentTab = 'en-cours';
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = '/usager/login.html';
+        return;
+      }
+
+      // Load config
+      try {
+        const resp = await fetch('/api/public/config');
+        const config = await resp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Mes emprunts - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+
+      await loadEmprunts();
+    }
+
+    async function loadEmprunts() {
+      try {
+        const resp = await fetch('/api/usager/emprunts', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!resp.ok) {
+          if (resp.status === 401) {
+            logout();
+            return;
+          }
+          throw new Error('Failed to load loans');
+        }
+
+        const data = await resp.json();
+        allEmprunts = data.emprunts || data || [];
+
+        const enCours = allEmprunts.filter(e => !e.date_retour_effectif);
+        const historique = allEmprunts.filter(e => e.date_retour_effectif);
+
+        document.getElementById('count-en-cours').textContent = enCours.length;
+        document.getElementById('count-historique').textContent = historique.length;
+
+        renderEmprunts();
+
+      } catch (e) {
+        console.error('Emprunts error:', e);
+        document.getElementById('emprunts-list').innerHTML = `
+          <div class="empty-state">
+            <i class="bi bi-exclamation-triangle" style="color: var(--summer-red);"></i>
+            <h3>Erreur de chargement</h3>
+            <p>Impossible de charger vos emprunts</p>
+          </div>
+        `;
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+      renderEmprunts();
+    }
+
+    function renderEmprunts() {
+      const list = document.getElementById('emprunts-list');
+      let emprunts;
+
+      if (currentTab === 'en-cours') {
+        emprunts = allEmprunts.filter(e => !e.date_retour_effectif);
+      } else {
+        emprunts = allEmprunts.filter(e => e.date_retour_effectif);
+      }
+
+      if (emprunts.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="bi bi-bookmark"></i>
+            <h3>${currentTab === 'en-cours' ? 'Aucun emprunt en cours' : 'Aucun historique'}</h3>
+            <p>${currentTab === 'en-cours' ? 'Explorez notre catalogue pour emprunter' : 'Vos emprunts passes apparaitront ici'}</p>
+            ${currentTab === 'en-cours' ? '<a href="/catalogue.html" class="btn btn-primary mt-3">Explorer le catalogue</a>' : ''}
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = emprunts.map(emprunt => {
+        const article = emprunt.jeu || emprunt.livre || emprunt.film || emprunt.disque || {};
+        const collection = emprunt.jeu ? 'jeux' : emprunt.livre ? 'livres' : emprunt.film ? 'films' : 'disques';
+        const icon = icons[collection];
+
+        const dateEmprunt = new Date(emprunt.date_emprunt);
+        const dateRetour = new Date(emprunt.date_retour_prevue);
+        const now = new Date();
+        const isReturned = !!emprunt.date_retour_effectif;
+
+        let daysLeft = Math.ceil((dateRetour - now) / (1000 * 60 * 60 * 24));
+        let cardClass = '';
+        let statusClass = 'status-encours';
+        let statusText = 'En cours';
+
+        if (isReturned) {
+          cardClass = 'returned';
+          statusClass = 'status-rendu';
+          statusText = 'Rendu';
+        } else if (daysLeft < 0) {
+          cardClass = 'retard';
+          statusClass = 'status-retard';
+          statusText = `${Math.abs(daysLeft)}j de retard`;
+        } else if (daysLeft <= 3) {
+          cardClass = 'avertissement';
+        }
+
+        return `
+          <div class="emprunt-card ${cardClass}">
+            <div class="emprunt-image">
+              ${article.image_url
+                ? `<img src="${article.image_url}" alt="${article.nom || article.titre}">`
+                : `<i class="bi bi-${icon}"></i>`
+              }
+            </div>
+            <div class="emprunt-content">
+              <div class="emprunt-title">${article.nom || article.titre || 'Article'}</div>
+              <div class="emprunt-meta">
+                <span><i class="bi bi-calendar-plus"></i> Emprunte: ${dateEmprunt.toLocaleDateString('fr-FR')}</span>
+                <span><i class="bi bi-calendar-check"></i> Retour: ${dateRetour.toLocaleDateString('fr-FR')}</span>
+                ${isReturned ? `<span><i class="bi bi-check-circle"></i> Rendu: ${new Date(emprunt.date_retour_effectif).toLocaleDateString('fr-FR')}</span>` : ''}
+              </div>
+            </div>
+            <div class="emprunt-status">
+              <span class="status-badge ${statusClass}">${statusText}</span>
+              <div class="emprunt-actions">
+                <a href="/fiche.html?collection=${collection}&id=${article.id}" class="btn btn-outline btn-sm">
+                  <i class="bi bi-eye"></i> Voir
+                </a>
+                ${!isReturned && emprunt.prolongation_possible ? `
+                  <button class="btn btn-primary btn-sm prolongation-btn" onclick="demanderProlongation(${emprunt.id})">
+                    <i class="bi bi-arrow-clockwise"></i> Prolonger
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function demanderProlongation(empruntId) {
+      if (!confirm('Demander une prolongation de 7 jours ?')) return;
+
+      try {
+        const resp = await fetch('/api/prolongations', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ emprunt_id: empruntId })
+        });
+
+        if (!resp.ok) {
+          const data = await resp.json();
+          throw new Error(data.message || 'Prolongation refusee');
+        }
+
+        alert('Prolongation accordee !');
+        await loadEmprunts();
+
+      } catch (e) {
+        alert('Erreur: ' + e.message);
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_data');
+      window.location.href = '/usager/login.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>

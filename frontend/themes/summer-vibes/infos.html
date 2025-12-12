@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Infos pratiques - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .infos-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-xl) var(--space-lg);
+    }
+
+    .info-card {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      margin-bottom: var(--space-xl);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .info-card h2 {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+      color: var(--color-text);
+      font-size: 1.5rem;
+    }
+
+    .info-card h2 i {
+      color: var(--summer-gold);
+      font-size: 1.75rem;
+    }
+
+    .horaires-grid {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .horaire-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md);
+      background: var(--summer-cream);
+      border-radius: var(--radius-md);
+      transition: all 0.3s ease;
+    }
+
+    .horaire-row:hover {
+      background: var(--summer-gold-pale);
+    }
+
+    .horaire-row.today {
+      background: var(--summer-gold-pale);
+      border-left: 4px solid var(--summer-gold);
+    }
+
+    .horaire-jour {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .horaire-heures {
+      color: var(--summer-orange);
+      font-weight: 500;
+    }
+
+    .horaire-ferme {
+      color: var(--color-text-light);
+      font-style: italic;
+    }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-lg);
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-md);
+      padding: var(--space-lg);
+      background: var(--summer-cream);
+      border-radius: var(--radius-md);
+      transition: all 0.3s ease;
+    }
+
+    .contact-item:hover {
+      background: var(--summer-gold-pale);
+      transform: translateY(-2px);
+    }
+
+    .contact-item i {
+      font-size: 1.75rem;
+      color: var(--summer-gold);
+      flex-shrink: 0;
+    }
+
+    .contact-item .content {
+      flex: 1;
+    }
+
+    .contact-item .label {
+      font-size: 0.85rem;
+      color: var(--color-text-light);
+      margin-bottom: var(--space-xs);
+    }
+
+    .contact-item .value {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .contact-item a {
+      color: var(--summer-orange);
+    }
+
+    .tarifs-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .tarifs-table th,
+    .tarifs-table td {
+      padding: var(--space-md);
+      text-align: left;
+      border-bottom: var(--border-light);
+    }
+
+    .tarifs-table th {
+      background: var(--summer-cream);
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .tarifs-table tr:hover td {
+      background: var(--summer-gold-pale);
+    }
+
+    .tarif-prix {
+      font-weight: 700;
+      color: var(--summer-orange);
+      font-size: 1.1rem;
+    }
+
+    .rules-list {
+      list-style: none;
+    }
+
+    .rules-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      padding: var(--space-md) 0;
+      border-bottom: var(--border-light);
+    }
+
+    .rules-list li:last-child {
+      border-bottom: none;
+    }
+
+    .rules-list li i {
+      color: var(--summer-gold);
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .map-container {
+      height: 300px;
+      background: var(--summer-cream);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--color-text-secondary);
+    }
+
+    .fermetures-list {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .fermeture-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: #fef3c7;
+      border-radius: var(--radius-md);
+      border-left: 4px solid var(--summer-gold);
+    }
+
+    .fermeture-item i {
+      color: var(--summer-orange);
+    }
+
+    .fermeture-dates {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .fermeture-motif {
+      color: var(--color-text-secondary);
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-sun logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html" class="active">Infos</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1><i class="bi bi-info-circle"></i> Infos pratiques</h1>
+    <p>Tout ce qu'il faut savoir pour profiter de nos services</p>
+  </div>
+
+  <!-- Content -->
+  <div class="infos-container">
+    <!-- Horaires -->
+    <div class="info-card">
+      <h2><i class="bi bi-clock"></i> Horaires d'ouverture</h2>
+      <div class="horaires-grid" id="horaires-grid">
+        <div class="horaire-row">
+          <span class="horaire-jour">Chargement...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fermetures exceptionnelles -->
+    <div class="info-card" id="fermetures-card" style="display: none;">
+      <h2><i class="bi bi-calendar-x"></i> Fermetures exceptionnelles</h2>
+      <div class="fermetures-list" id="fermetures-list"></div>
+    </div>
+
+    <!-- Contact -->
+    <div class="info-card">
+      <h2><i class="bi bi-geo-alt"></i> Nous trouver</h2>
+      <div class="contact-grid">
+        <div class="contact-item">
+          <i class="bi bi-building"></i>
+          <div class="content">
+            <div class="label">Adresse</div>
+            <div class="value" id="contact-adresse">-</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <i class="bi bi-telephone"></i>
+          <div class="content">
+            <div class="label">Telephone</div>
+            <div class="value" id="contact-telephone">-</div>
+          </div>
+        </div>
+        <div class="contact-item">
+          <i class="bi bi-envelope"></i>
+          <div class="content">
+            <div class="label">Email</div>
+            <div class="value" id="contact-email">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tarifs -->
+    <div class="info-card">
+      <h2><i class="bi bi-tag"></i> Tarifs d'adhesion</h2>
+      <table class="tarifs-table" id="tarifs-table">
+        <thead>
+          <tr>
+            <th>Type d'adhesion</th>
+            <th>Duree</th>
+            <th>Tarif</th>
+          </tr>
+        </thead>
+        <tbody id="tarifs-body">
+          <tr>
+            <td colspan="3">Chargement...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Reglement -->
+    <div class="info-card">
+      <h2><i class="bi bi-journal-check"></i> Reglement</h2>
+      <ul class="rules-list">
+        <li>
+          <i class="bi bi-check-circle"></i>
+          <span>Les emprunts sont reserves aux membres a jour de leur cotisation</span>
+        </li>
+        <li>
+          <i class="bi bi-check-circle"></i>
+          <span>La duree d'emprunt est de 3 semaines maximum</span>
+        </li>
+        <li>
+          <i class="bi bi-check-circle"></i>
+          <span>Le nombre d'emprunts simultanes est limite a 3 articles</span>
+        </li>
+        <li>
+          <i class="bi bi-check-circle"></i>
+          <span>Tout article endommage ou perdu devra etre rembourse</span>
+        </li>
+        <li>
+          <i class="bi bi-check-circle"></i>
+          <span>Les retards repetitifs peuvent entrainer une suspension temporaire</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos pratiques</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Espace membre</h4>
+        <ul>
+          <li><a href="/usager/login.html">Connexion</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits reserves</p>
+    </div>
+  </footer>
+
+  <script>
+    const joursNoms = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const joursOrdre = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      try {
+        // Load config
+        const configResp = await fetch('/api/public/config');
+        const config = await configResp.json();
+
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Infos pratiques - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+
+        // Contact
+        if (config.contact) {
+          if (config.contact.adresse) {
+            document.getElementById('contact-adresse').textContent = config.contact.adresse;
+            document.getElementById('footer-address').innerHTML = `<i class="bi bi-geo-alt"></i> ${config.contact.adresse}`;
+          }
+          if (config.contact.telephone) {
+            document.getElementById('contact-telephone').innerHTML = `<a href="tel:${config.contact.telephone}">${config.contact.telephone}</a>`;
+            document.getElementById('footer-phone').innerHTML = `<i class="bi bi-telephone"></i> ${config.contact.telephone}`;
+          }
+          if (config.contact.email) {
+            document.getElementById('contact-email').innerHTML = `<a href="mailto:${config.contact.email}">${config.contact.email}</a>`;
+            document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${config.contact.email}`;
+          }
+        }
+
+        // Horaires
+        if (config.horaires) {
+          renderHoraires(config.horaires);
+        }
+
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+
+      // Load tarifs
+      await loadTarifs();
+
+      // Load fermetures
+      await loadFermetures();
+    }
+
+    function renderHoraires(horaires) {
+      const today = new Date().getDay();
+      const todayName = joursOrdre[(today + 6) % 7];
+
+      const grid = document.getElementById('horaires-grid');
+      grid.innerHTML = joursOrdre.map(jour => {
+        const h = horaires[jour];
+        const isToday = jour === todayName;
+        const jourDisplay = jour.charAt(0).toUpperCase() + jour.slice(1);
+
+        if (!h || h.ferme) {
+          return `
+            <div class="horaire-row ${isToday ? 'today' : ''}">
+              <span class="horaire-jour">${jourDisplay}</span>
+              <span class="horaire-ferme">Ferme</span>
+            </div>
+          `;
+        }
+
+        let heures = `${h.ouverture} - ${h.fermeture}`;
+        if (h.pause_debut && h.pause_fin) {
+          heures = `${h.ouverture} - ${h.pause_debut} / ${h.pause_fin} - ${h.fermeture}`;
+        }
+
+        return `
+          <div class="horaire-row ${isToday ? 'today' : ''}">
+            <span class="horaire-jour">${jourDisplay}</span>
+            <span class="horaire-heures">${heures}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadTarifs() {
+      try {
+        const resp = await fetch('/api/public/tarifs');
+        const tarifs = await resp.json();
+
+        if (tarifs && tarifs.length > 0) {
+          const tbody = document.getElementById('tarifs-body');
+          tbody.innerHTML = tarifs.map(t => `
+            <tr>
+              <td>${t.nom}</td>
+              <td>${t.duree_mois} mois</td>
+              <td class="tarif-prix">${parseFloat(t.montant).toFixed(2)} EUR</td>
+            </tr>
+          `).join('');
+        }
+      } catch (e) {
+        console.error('Tarifs error:', e);
+      }
+    }
+
+    async function loadFermetures() {
+      try {
+        const resp = await fetch('/api/public/fermetures');
+        const fermetures = await resp.json();
+
+        if (fermetures && fermetures.length > 0) {
+          document.getElementById('fermetures-card').style.display = 'block';
+          const list = document.getElementById('fermetures-list');
+          list.innerHTML = fermetures.map(f => {
+            const debut = new Date(f.date_debut).toLocaleDateString('fr-FR');
+            const fin = new Date(f.date_fin).toLocaleDateString('fr-FR');
+            const dates = debut === fin ? debut : `${debut} - ${fin}`;
+
+            return `
+              <div class="fermeture-item">
+                <i class="bi bi-calendar-x"></i>
+                <div>
+                  <div class="fermeture-dates">${dates}</div>
+                  <div class="fermeture-motif">${f.motif || 'Fermeture exceptionnelle'}</div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (e) {
+        console.error('Fermetures error:', e);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

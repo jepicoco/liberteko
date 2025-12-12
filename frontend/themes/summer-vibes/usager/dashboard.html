@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Mon espace - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .user-header {
+      background: var(--gradient-beach);
+      padding: var(--space-xl) var(--space-lg);
+      border-bottom: var(--border-light);
+    }
+
+    .user-header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      flex-wrap: wrap;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+    }
+
+    .user-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--gradient-sunset);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 2rem;
+      font-weight: 700;
+      box-shadow: var(--warm-shadow);
+    }
+
+    .user-details h1 {
+      font-size: 1.75rem;
+      margin-bottom: var(--space-xs);
+    }
+
+    .user-details p {
+      color: var(--color-text-secondary);
+      margin: 0;
+    }
+
+    .membership-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: var(--space-xs);
+    }
+
+    .membership-active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .membership-expired {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .user-nav {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+    }
+
+    .user-nav a {
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-full);
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .user-nav a:hover {
+      background: var(--summer-gold-pale);
+      color: var(--summer-orange);
+    }
+
+    .user-nav a.active {
+      background: var(--gradient-sunset);
+      color: white;
+    }
+
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .quick-stat {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      box-shadow: var(--soft-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .quick-stat:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--card-shadow);
+    }
+
+    .quick-stat .icon {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+
+    .quick-stat .icon.gold { background: var(--gradient-sunset); }
+    .quick-stat .icon.sky { background: linear-gradient(135deg, #7dd3fc, #0ea5e9); }
+    .quick-stat .icon.green { background: linear-gradient(135deg, #6ee7b7, #10b981); }
+    .quick-stat .icon.coral { background: linear-gradient(135deg, #fda4af, #f43f5e); }
+
+    .quick-stat .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-text);
+      line-height: 1;
+    }
+
+    .quick-stat .label {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .section-header h2 {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin: 0;
+    }
+
+    .section-header h2 i {
+      color: var(--summer-gold);
+    }
+
+    .emprunts-list {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .emprunt-card {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      box-shadow: var(--soft-shadow);
+      transition: all 0.3s ease;
+    }
+
+    .emprunt-card:hover {
+      box-shadow: var(--card-shadow);
+    }
+
+    .emprunt-card.retard {
+      border-left: 4px solid var(--summer-red);
+    }
+
+    .emprunt-card.avertissement {
+      border-left: 4px solid var(--summer-gold);
+    }
+
+    .emprunt-image {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-md);
+      background: var(--summer-cream);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .emprunt-image img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+    }
+
+    .emprunt-image i {
+      font-size: 2rem;
+      color: var(--summer-gold);
+    }
+
+    .emprunt-content {
+      flex: 1;
+    }
+
+    .emprunt-title {
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-xs);
+    }
+
+    .emprunt-meta {
+      font-size: 0.9rem;
+      color: var(--color-text-secondary);
+    }
+
+    .emprunt-date {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+      font-size: 0.9rem;
+    }
+
+    .emprunt-date.retard {
+      color: var(--summer-red);
+      font-weight: 600;
+    }
+
+    .emprunt-date.avertissement {
+      color: var(--summer-gold);
+    }
+
+    .emprunt-actions {
+      display: flex;
+      gap: var(--space-sm);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl);
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--summer-gold);
+      margin-bottom: var(--space-md);
+    }
+
+    @media (max-width: 768px) {
+      .user-header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .user-info {
+        flex-direction: column;
+      }
+
+      .emprunt-card {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .emprunt-actions {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-sun logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+        </ul>
+      </nav>
+      <a href="#" class="btn-login" onclick="logout()">
+        <i class="bi bi-box-arrow-right"></i> Deconnexion
+      </a>
+    </div>
+  </header>
+
+  <!-- User Header -->
+  <div class="user-header">
+    <div class="user-header-content">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-details">
+          <h1 id="user-name">Chargement...</h1>
+          <p id="user-email"></p>
+          <span class="membership-badge membership-active" id="membership-badge">
+            <i class="bi bi-check-circle"></i>
+            <span id="membership-status">Chargement...</span>
+          </span>
+        </div>
+      </div>
+      <nav class="user-nav">
+        <a href="/usager/dashboard.html" class="active"><i class="bi bi-house"></i> Accueil</a>
+        <a href="/usager/emprunts.html"><i class="bi bi-bookmark"></i> Emprunts</a>
+        <a href="/usager/profil.html"><i class="bi bi-person"></i> Profil</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div class="dashboard-container">
+    <!-- Quick Stats -->
+    <div class="quick-stats">
+      <div class="quick-stat">
+        <div class="icon gold"><i class="bi bi-bookmark-check"></i></div>
+        <div>
+          <div class="value" id="stat-emprunts">0</div>
+          <div class="label">Emprunts en cours</div>
+        </div>
+      </div>
+      <div class="quick-stat">
+        <div class="icon sky"><i class="bi bi-clock-history"></i></div>
+        <div>
+          <div class="value" id="stat-historique">0</div>
+          <div class="label">Emprunts total</div>
+        </div>
+      </div>
+      <div class="quick-stat">
+        <div class="icon green"><i class="bi bi-calendar-check"></i></div>
+        <div>
+          <div class="value" id="stat-jours">-</div>
+          <div class="label">Jours restants (adhesion)</div>
+        </div>
+      </div>
+      <div class="quick-stat">
+        <div class="icon coral"><i class="bi bi-exclamation-triangle"></i></div>
+        <div>
+          <div class="value" id="stat-retards">0</div>
+          <div class="label">En retard</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Loans -->
+    <div class="section-header">
+      <h2><i class="bi bi-bookmark"></i> Mes emprunts en cours</h2>
+      <a href="/usager/emprunts.html" class="btn btn-outline btn-sm">Voir tout</a>
+    </div>
+
+    <div class="emprunts-list" id="emprunts-list">
+      <div class="empty-state">
+        <i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i>
+        <p>Chargement...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits reserves</p>
+    </div>
+  </footer>
+
+  <script>
+    const icons = { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'vinyl' };
+    let token = null;
+    let userData = null;
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      // Check auth
+      token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = '/usager/login.html';
+        return;
+      }
+
+      userData = JSON.parse(localStorage.getItem('usager_data') || '{}');
+
+      // Load config
+      try {
+        const resp = await fetch('/api/public/config');
+        const config = await resp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Mon espace - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+
+      // Load user data
+      await loadUserData();
+      await loadEmprunts();
+    }
+
+    async function loadUserData() {
+      try {
+        const resp = await fetch('/api/usager/profil', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!resp.ok) {
+          if (resp.status === 401) {
+            logout();
+            return;
+          }
+          throw new Error('Failed to load user data');
+        }
+
+        const user = await resp.json();
+        userData = user;
+        localStorage.setItem('usager_data', JSON.stringify(user));
+
+        // Update UI
+        const name = `${user.prenom || ''} ${user.nom || ''}`.trim() || 'Utilisateur';
+        document.getElementById('user-name').textContent = `Bienvenue, ${name}`;
+        document.getElementById('user-email').textContent = user.email || '';
+        document.getElementById('user-avatar').textContent = name.charAt(0).toUpperCase();
+
+        // Membership status
+        const badge = document.getElementById('membership-badge');
+        const statusText = document.getElementById('membership-status');
+
+        if (user.cotisation_valide) {
+          badge.className = 'membership-badge membership-active';
+          badge.querySelector('i').className = 'bi bi-check-circle';
+          statusText.textContent = 'Adhesion active';
+
+          if (user.date_fin_cotisation) {
+            const endDate = new Date(user.date_fin_cotisation);
+            const now = new Date();
+            const days = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('stat-jours').textContent = days > 0 ? days : 0;
+          }
+        } else {
+          badge.className = 'membership-badge membership-expired';
+          badge.querySelector('i').className = 'bi bi-x-circle';
+          statusText.textContent = 'Adhesion expiree';
+          document.getElementById('stat-jours').textContent = '0';
+        }
+
+        // Stats
+        document.getElementById('stat-historique').textContent = user.total_emprunts || 0;
+
+      } catch (e) {
+        console.error('User data error:', e);
+      }
+    }
+
+    async function loadEmprunts() {
+      try {
+        const resp = await fetch('/api/usager/emprunts', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!resp.ok) throw new Error('Failed to load loans');
+
+        const data = await resp.json();
+        const emprunts = data.emprunts || data || [];
+        const enCours = emprunts.filter(e => !e.date_retour_effectif);
+        const retards = enCours.filter(e => new Date(e.date_retour_prevue) < new Date());
+
+        document.getElementById('stat-emprunts').textContent = enCours.length;
+        document.getElementById('stat-retards').textContent = retards.length;
+
+        const list = document.getElementById('emprunts-list');
+
+        if (enCours.length === 0) {
+          list.innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-bookmark"></i>
+              <h3>Aucun emprunt en cours</h3>
+              <p>Explorez notre catalogue pour trouver votre prochain emprunt</p>
+              <a href="/catalogue.html" class="btn btn-primary mt-3">Explorer le catalogue</a>
+            </div>
+          `;
+          return;
+        }
+
+        list.innerHTML = enCours.slice(0, 5).map(emprunt => {
+          const article = emprunt.jeu || emprunt.livre || emprunt.film || emprunt.disque || {};
+          const collection = emprunt.jeu ? 'jeux' : emprunt.livre ? 'livres' : emprunt.film ? 'films' : 'disques';
+          const icon = icons[collection];
+
+          const dateRetour = new Date(emprunt.date_retour_prevue);
+          const now = new Date();
+          const daysLeft = Math.ceil((dateRetour - now) / (1000 * 60 * 60 * 24));
+
+          let dateClass = '';
+          let cardClass = '';
+          if (daysLeft < 0) {
+            dateClass = 'retard';
+            cardClass = 'retard';
+          } else if (daysLeft <= 3) {
+            dateClass = 'avertissement';
+            cardClass = 'avertissement';
+          }
+
+          return `
+            <div class="emprunt-card ${cardClass}">
+              <div class="emprunt-image">
+                ${article.image_url
+                  ? `<img src="${article.image_url}" alt="${article.nom || article.titre}">`
+                  : `<i class="bi bi-${icon}"></i>`
+                }
+              </div>
+              <div class="emprunt-content">
+                <div class="emprunt-title">${article.nom || article.titre || 'Article'}</div>
+                <div class="emprunt-meta">Emprunte le ${new Date(emprunt.date_emprunt).toLocaleDateString('fr-FR')}</div>
+              </div>
+              <div class="emprunt-date ${dateClass}">
+                <i class="bi bi-calendar"></i>
+                <span>Retour: ${dateRetour.toLocaleDateString('fr-FR')}</span>
+                ${daysLeft < 0 ? `<span class="badge badge-danger">${Math.abs(daysLeft)}j de retard</span>` : ''}
+              </div>
+              <div class="emprunt-actions">
+                <a href="/fiche.html?collection=${collection}&id=${article.id}" class="btn btn-outline btn-sm">
+                  <i class="bi bi-eye"></i>
+                </a>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (e) {
+        console.error('Emprunts error:', e);
+        document.getElementById('emprunts-list').innerHTML = `
+          <div class="empty-state">
+            <i class="bi bi-exclamation-triangle" style="color: var(--summer-red);"></i>
+            <h3>Erreur de chargement</h3>
+            <p>Impossible de charger vos emprunts</p>
+          </div>
+        `;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_data');
+      window.location.href = '/usager/login.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>

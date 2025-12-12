@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Mon profil - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .user-header {
+      background: var(--gradient-beach);
+      padding: var(--space-lg) var(--space-lg);
+      border-bottom: var(--border-light);
+    }
+
+    .user-header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .page-title h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .page-title i {
+      color: var(--summer-gold);
+    }
+
+    .user-nav {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+    }
+
+    .user-nav a {
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-full);
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .user-nav a:hover {
+      background: var(--summer-gold-pale);
+      color: var(--summer-orange);
+    }
+
+    .user-nav a.active {
+      background: var(--gradient-sunset);
+      color: white;
+    }
+
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-xl);
+    }
+
+    .profile-section {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .profile-section h2 {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-lg);
+      padding-bottom: var(--space-md);
+      border-bottom: var(--border-light);
+      font-size: 1.25rem;
+    }
+
+    .profile-section h2 i {
+      color: var(--summer-gold);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-md) 0;
+      border-bottom: var(--border-light);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      color: var(--color-text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .info-value {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .membership-card {
+      background: var(--gradient-beach);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      margin-bottom: var(--space-lg);
+      border: 2px solid var(--summer-gold-light);
+    }
+
+    .membership-status {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .membership-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .membership-icon.active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .membership-icon.expired {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .membership-details h3 {
+      margin: 0 0 var(--space-xs);
+      font-size: 1.1rem;
+    }
+
+    .membership-details p {
+      margin: 0;
+      color: var(--color-text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .password-section {
+      grid-column: 1 / -1;
+    }
+
+    .password-form {
+      max-width: 400px;
+    }
+
+    .alert-container {
+      margin-bottom: var(--space-lg);
+    }
+
+    @media (max-width: 900px) {
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .password-section {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-sun logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+        </ul>
+      </nav>
+      <a href="#" class="btn-login" onclick="logout()">
+        <i class="bi bi-box-arrow-right"></i> Deconnexion
+      </a>
+    </div>
+  </header>
+
+  <!-- User Header -->
+  <div class="user-header">
+    <div class="user-header-content">
+      <div class="page-title">
+        <i class="bi bi-person"></i>
+        <h1>Mon profil</h1>
+      </div>
+      <nav class="user-nav">
+        <a href="/usager/dashboard.html"><i class="bi bi-house"></i> Accueil</a>
+        <a href="/usager/emprunts.html"><i class="bi bi-bookmark"></i> Emprunts</a>
+        <a href="/usager/profil.html" class="active"><i class="bi bi-person"></i> Profil</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="dashboard-container">
+    <div id="alert-container"></div>
+
+    <div class="profile-grid">
+      <!-- Personal Info -->
+      <div class="profile-section">
+        <h2><i class="bi bi-person-badge"></i> Informations personnelles</h2>
+        <div class="info-row">
+          <span class="info-label">Nom</span>
+          <span class="info-value" id="info-nom">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Prenom</span>
+          <span class="info-value" id="info-prenom">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email</span>
+          <span class="info-value" id="info-email">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Telephone</span>
+          <span class="info-value" id="info-telephone">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Adresse</span>
+          <span class="info-value" id="info-adresse">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Numero adherent</span>
+          <span class="info-value" id="info-numero">-</span>
+        </div>
+      </div>
+
+      <!-- Membership -->
+      <div class="profile-section">
+        <h2><i class="bi bi-card-checklist"></i> Adhesion</h2>
+
+        <div class="membership-card">
+          <div class="membership-status">
+            <div class="membership-icon" id="membership-icon">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="membership-details">
+              <h3 id="membership-status">Chargement...</h3>
+              <p id="membership-dates"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <span class="info-label">Type d'adhesion</span>
+          <span class="info-value" id="info-type-adhesion">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Date d'inscription</span>
+          <span class="info-value" id="info-inscription">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Emprunts autorises</span>
+          <span class="info-value" id="info-max-emprunts">-</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Duree max. emprunt</span>
+          <span class="info-value" id="info-duree-emprunt">-</span>
+        </div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="profile-section password-section">
+        <h2><i class="bi bi-shield-lock"></i> Changer le mot de passe</h2>
+
+        <form id="password-form" class="password-form">
+          <div class="form-group">
+            <label class="form-label" for="current-password">Mot de passe actuel</label>
+            <input type="password" id="current-password" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="new-password">Nouveau mot de passe</label>
+            <input type="password" id="new-password" class="form-input" required minlength="6">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="confirm-password">Confirmer le mot de passe</label>
+            <input type="password" id="confirm-password" class="form-input" required>
+          </div>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-check-lg"></i> Modifier
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits reserves</p>
+    </div>
+  </footer>
+
+  <script>
+    let token = null;
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = '/usager/login.html';
+        return;
+      }
+
+      // Load config
+      try {
+        const resp = await fetch('/api/public/config');
+        const config = await resp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Mon profil - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+
+      await loadProfile();
+    }
+
+    async function loadProfile() {
+      try {
+        const resp = await fetch('/api/usager/profil', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!resp.ok) {
+          if (resp.status === 401) {
+            logout();
+            return;
+          }
+          throw new Error('Failed to load profile');
+        }
+
+        const user = await resp.json();
+
+        // Personal info
+        document.getElementById('info-nom').textContent = user.nom || '-';
+        document.getElementById('info-prenom').textContent = user.prenom || '-';
+        document.getElementById('info-email').textContent = user.email || '-';
+        document.getElementById('info-telephone').textContent = user.telephone || '-';
+        document.getElementById('info-adresse').textContent = user.adresse || '-';
+        document.getElementById('info-numero').textContent = user.numero_adherent || user.code_barre || '-';
+
+        // Membership
+        const membershipIcon = document.getElementById('membership-icon');
+        const membershipStatus = document.getElementById('membership-status');
+        const membershipDates = document.getElementById('membership-dates');
+
+        if (user.cotisation_valide) {
+          membershipIcon.className = 'membership-icon active';
+          membershipIcon.innerHTML = '<i class="bi bi-check-circle"></i>';
+          membershipStatus.textContent = 'Adhesion active';
+
+          if (user.date_fin_cotisation) {
+            const endDate = new Date(user.date_fin_cotisation);
+            membershipDates.textContent = `Valide jusqu'au ${endDate.toLocaleDateString('fr-FR')}`;
+          }
+        } else {
+          membershipIcon.className = 'membership-icon expired';
+          membershipIcon.innerHTML = '<i class="bi bi-x-circle"></i>';
+          membershipStatus.textContent = 'Adhesion expiree';
+          membershipDates.textContent = 'Renouvelez votre adhesion pour emprunter';
+        }
+
+        // Additional info
+        document.getElementById('info-type-adhesion').textContent = user.type_adhesion || 'Standard';
+        document.getElementById('info-inscription').textContent = user.date_inscription
+          ? new Date(user.date_inscription).toLocaleDateString('fr-FR')
+          : '-';
+        document.getElementById('info-max-emprunts').textContent = user.max_emprunts || '3';
+        document.getElementById('info-duree-emprunt').textContent = `${user.duree_emprunt || 21} jours`;
+
+      } catch (e) {
+        console.error('Profile error:', e);
+        showAlert('Erreur lors du chargement du profil', 'danger');
+      }
+    }
+
+    function showAlert(message, type = 'danger') {
+      const container = document.getElementById('alert-container');
+      container.innerHTML = `
+        <div class="alert alert-${type}">
+          <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'}"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      setTimeout(() => { container.innerHTML = ''; }, 5000);
+    }
+
+    document.getElementById('password-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const currentPassword = document.getElementById('current-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+
+      if (newPassword !== confirmPassword) {
+        showAlert('Les mots de passe ne correspondent pas');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showAlert('Le mot de passe doit contenir au moins 6 caracteres');
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/usager/profil/password', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            current_password: currentPassword,
+            new_password: newPassword
+          })
+        });
+
+        if (!resp.ok) {
+          const data = await resp.json();
+          throw new Error(data.message || 'Erreur lors du changement de mot de passe');
+        }
+
+        showAlert('Mot de passe modifie avec succes', 'success');
+        document.getElementById('password-form').reset();
+
+      } catch (e) {
+        showAlert(e.message);
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem('usager_token');
+      localStorage.removeItem('usager_data');
+      window.location.href = '/usager/login.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>
