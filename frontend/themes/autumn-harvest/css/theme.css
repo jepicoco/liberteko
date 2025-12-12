@@ -1,0 +1,794 @@
+/**
+ * Autumn Harvest Theme - Récolte d'Automne
+ * A warm autumn theme with earthy tones, falling leaves and cozy atmosphere
+ */
+
+/* ========================================
+   CSS VARIABLES
+   ======================================== */
+:root {
+  /* Autumn Color Palette */
+  --autumn-amber: #d97706;
+  --autumn-amber-light: #fbbf24;
+  --autumn-amber-dark: #b45309;
+  --autumn-orange: #ea580c;
+  --autumn-red: #dc2626;
+  --autumn-burgundy: #991b1b;
+  --autumn-brown: #78350f;
+  --autumn-brown-light: #92400e;
+  --autumn-olive: #65a30d;
+  --autumn-forest: #166534;
+  --autumn-earth: #1c1917;
+  --autumn-earth-light: #292524;
+  --autumn-stone: #44403c;
+  --autumn-cream: #fef3c7;
+  --autumn-warm-white: #fffbeb;
+
+  /* Semantic Colors */
+  --color-primary: var(--autumn-amber);
+  --color-secondary: var(--autumn-orange);
+  --color-accent: var(--autumn-red);
+  --color-background: var(--autumn-earth);
+  --color-background-secondary: var(--autumn-earth-light);
+  --color-text: var(--autumn-cream);
+  --color-text-secondary: #d6d3d1;
+  --color-text-light: #a8a29e;
+
+  /* Status Colors */
+  --color-success: #22c55e;
+  --color-warning: var(--autumn-amber);
+  --color-danger: var(--autumn-red);
+  --color-info: #0ea5e9;
+
+  /* Effects */
+  --warm-glow: 0 0 40px rgba(217, 119, 6, 0.25);
+  --ember-shadow: 0 4px 25px rgba(217, 119, 6, 0.2);
+  --soft-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+  --card-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+
+  /* Borders */
+  --border-warm: 1px solid rgba(217, 119, 6, 0.3);
+  --border-accent: 2px solid var(--autumn-amber-dark);
+  --border-subtle: 1px solid rgba(255, 255, 255, 0.1);
+
+  /* Spacing & Radius */
+  --border-radius: 8px;
+  --border-radius-sm: 6px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
+
+  /* Gradients */
+  --gradient-autumn: linear-gradient(135deg, #d97706 0%, #ea580c 50%, #dc2626 100%);
+  --gradient-earth: linear-gradient(135deg, #292524 0%, #1c1917 100%);
+  --gradient-leaves: linear-gradient(135deg, #fbbf24 0%, #d97706 33%, #ea580c 66%, #dc2626 100%);
+  --gradient-forest: linear-gradient(180deg, #1c1917 0%, #292524 50%, #1c1917 100%);
+
+  /* Typography */
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Merriweather', Georgia, serif;
+}
+
+/* ========================================
+   BASE STYLES
+   ======================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--gradient-forest);
+  color: var(--color-text);
+  line-height: 1.7;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Falling Leaves Effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(4px 6px at 5% 10%, rgba(217, 119, 6, 0.4) 50%, transparent 50%),
+    radial-gradient(5px 7px at 15% 25%, rgba(234, 88, 12, 0.35) 50%, transparent 50%),
+    radial-gradient(4px 5px at 25% 5%, rgba(251, 191, 36, 0.4) 50%, transparent 50%),
+    radial-gradient(6px 8px at 40% 20%, rgba(220, 38, 38, 0.3) 50%, transparent 50%),
+    radial-gradient(4px 6px at 55% 8%, rgba(217, 119, 6, 0.35) 50%, transparent 50%),
+    radial-gradient(5px 6px at 70% 30%, rgba(180, 83, 9, 0.4) 50%, transparent 50%),
+    radial-gradient(4px 5px at 85% 15%, rgba(234, 88, 12, 0.35) 50%, transparent 50%),
+    radial-gradient(5px 7px at 95% 25%, rgba(251, 191, 36, 0.3) 50%, transparent 50%);
+  animation: fall-leaves 25s linear infinite;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+@keyframes fall-leaves {
+  0% { transform: translateY(-100px) rotate(0deg); }
+  100% { transform: translateY(100vh) rotate(360deg); }
+}
+
+/* Warm Glow Overlay */
+body::after {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150%;
+  height: 100%;
+  background: radial-gradient(ellipse at center top, rgba(217, 119, 6, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ========================================
+   TYPOGRAPHY
+   ======================================== */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--color-text);
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; }
+
+a {
+  color: var(--autumn-amber-light);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+a:hover {
+  color: var(--autumn-amber);
+}
+
+/* ========================================
+   HEADER / NAVIGATION
+   ======================================== */
+.navbar, .site-header {
+  background: var(--autumn-earth);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid rgba(217, 119, 6, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.navbar-brand, .logo {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--autumn-amber-light) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.navbar-brand img, .logo img {
+  height: 40px;
+  filter: sepia(100%) hue-rotate(-10deg) saturate(200%) brightness(0.9);
+}
+
+.nav-link {
+  color: var(--color-text-secondary) !important;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--autumn-amber-light) !important;
+  background: rgba(217, 119, 6, 0.15);
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.nav-menu a {
+  color: var(--color-text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--border-radius-sm);
+  transition: all 0.3s ease;
+}
+
+.nav-menu a:hover, .nav-menu a.active {
+  background: rgba(217, 119, 6, 0.15);
+  color: var(--autumn-amber-light);
+}
+
+/* ========================================
+   HERO SECTION
+   ======================================== */
+.hero {
+  background: var(--gradient-earth);
+  padding: 4rem 2rem;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center, rgba(217, 119, 6, 0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  background: var(--gradient-leaves);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 2rem;
+}
+
+.hero .highlight {
+  color: var(--autumn-amber-light);
+  -webkit-text-fill-color: var(--autumn-amber-light);
+}
+
+/* ========================================
+   SEARCH BAR
+   ======================================== */
+.search-container {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-bar, .frost-search, .pixel-search {
+  display: flex;
+  background: var(--autumn-earth-light);
+  border-radius: var(--border-radius-xl);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  border: var(--border-warm);
+}
+
+.search-bar input, .frost-search input, .pixel-search input {
+  flex: 1;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 1rem;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+}
+
+.search-bar input::placeholder {
+  color: var(--color-text-light);
+}
+
+.search-bar button, .frost-search button, .pixel-search button {
+  background: var(--gradient-autumn);
+  border: none;
+  padding: 1rem 2rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.search-bar button:hover {
+  filter: brightness(1.1);
+}
+
+/* ========================================
+   STATS SECTION
+   ======================================== */
+.stats-section {
+  padding: 3rem 2rem;
+  background: var(--autumn-earth-light);
+  position: relative;
+  z-index: 1;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stat-box {
+  background: var(--autumn-earth);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  text-align: center;
+  border: var(--border-warm);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-box::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-autumn);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.stat-box:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--ember-shadow);
+  border-color: var(--autumn-amber);
+}
+
+.stat-box:hover::before {
+  transform: scaleX(1);
+}
+
+.stat-box .number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--autumn-amber-light);
+  display: block;
+}
+
+.stat-box .label {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+}
+
+.stat-box i {
+  font-size: 2rem;
+  color: var(--autumn-amber);
+  margin-bottom: 1rem;
+  display: block;
+}
+
+/* ========================================
+   COLLECTIONS SECTION
+   ======================================== */
+.collections-section {
+  padding: 4rem 2rem;
+  background: var(--gradient-earth);
+  position: relative;
+  z-index: 1;
+}
+
+.collections-section h2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  color: var(--color-text);
+}
+
+.collections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.collection-card {
+  background: var(--autumn-earth-light);
+  border-radius: var(--border-radius);
+  padding: 2rem;
+  text-align: center;
+  box-shadow: var(--soft-shadow);
+  transition: all 0.4s ease;
+  border: var(--border-subtle);
+  position: relative;
+  overflow: hidden;
+}
+
+.collection-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-autumn);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+}
+
+.collection-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--ember-shadow);
+  border-color: rgba(217, 119, 6, 0.4);
+}
+
+.collection-card:hover::after {
+  transform: scaleX(1);
+}
+
+.collection-card .card-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2rem;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.collection-card:hover .card-icon {
+  transform: scale(1.1);
+}
+
+/* Collection-specific colors */
+.collection-card.jeux .card-icon {
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+}
+
+.collection-card.livres .card-icon {
+  background: linear-gradient(135deg, #ea580c, #b45309);
+}
+
+.collection-card.films .card-icon {
+  background: linear-gradient(135deg, #dc2626, #991b1b);
+}
+
+.collection-card.disques .card-icon {
+  background: linear-gradient(135deg, #65a30d, #166534);
+}
+
+.collection-card h3 {
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.collection-card p {
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}
+
+.collection-card .count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--autumn-amber-light);
+  margin-top: 1rem;
+}
+
+/* ========================================
+   CARDS (GENERIC)
+   ======================================== */
+.card {
+  background: var(--autumn-earth-light);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  box-shadow: var(--soft-shadow);
+  border: var(--border-subtle);
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: var(--ember-shadow);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--gradient-autumn);
+  color: white;
+  box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--autumn-amber-light);
+  border: 2px solid var(--autumn-amber);
+}
+
+.btn-secondary:hover {
+  background: rgba(217, 119, 6, 0.15);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--autumn-amber-light);
+  border: 2px solid var(--autumn-amber);
+}
+
+.btn-outline:hover {
+  background: var(--autumn-amber);
+  color: white;
+}
+
+.btn-login, .btn-espace {
+  background: rgba(217, 119, 6, 0.2);
+  color: var(--autumn-amber-light) !important;
+  border: 1px solid rgba(217, 119, 6, 0.4);
+  border-radius: 50px;
+  padding: 0.5rem 1.25rem;
+}
+
+.btn-login:hover, .btn-espace:hover {
+  background: var(--autumn-amber);
+  color: white !important;
+}
+
+/* ========================================
+   FORMS
+   ======================================== */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.form-input, .form-control {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid var(--autumn-stone);
+  border-radius: var(--border-radius-sm);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: var(--autumn-earth);
+  color: var(--color-text);
+}
+
+.form-input:focus, .form-control:focus {
+  outline: none;
+  border-color: var(--autumn-amber);
+  box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+}
+
+.form-input::placeholder {
+  color: var(--color-text-light);
+}
+
+/* ========================================
+   ALERTS & BADGES
+   ======================================== */
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.alert-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.alert-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.alert-danger {
+  background: rgba(220, 38, 38, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.alert-info {
+  background: rgba(14, 165, 233, 0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.badge-primary {
+  background: rgba(217, 119, 6, 0.2);
+  color: var(--autumn-amber-light);
+}
+
+.badge-success {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.badge-warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+}
+
+.badge-danger {
+  background: rgba(220, 38, 38, 0.15);
+  color: #fca5a5;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+.footer, .site-footer {
+  background: var(--autumn-earth);
+  color: var(--color-text);
+  padding: 3rem 2rem;
+  margin-top: auto;
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+}
+
+.footer h4 {
+  color: var(--autumn-amber-light);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.footer a {
+  color: var(--color-text-secondary);
+  display: block;
+  padding: 0.25rem 0;
+  transition: color 0.3s ease;
+}
+
+.footer a:hover {
+  color: var(--autumn-amber-light);
+}
+
+.footer-bottom {
+  text-align: center;
+  padding-top: 2rem;
+  margin-top: 2rem;
+  border-top: 1px solid rgba(217, 119, 6, 0.2);
+  color: var(--color-text-secondary);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 900px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .hero h1 {
+    font-size: 2.25rem;
+  }
+
+  .navbar, .site-header {
+    padding: 1rem;
+  }
+
+  .header-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-menu {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    padding: 2rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .search-bar {
+    flex-direction: column;
+  }
+
+  .search-bar button {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+  }
+
+  .collections-section {
+    padding: 2rem 1rem;
+  }
+
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+}
+
+/* ========================================
+   UTILITIES
+   ======================================== */
+.text-center { text-align: center; }
+.text-primary { color: var(--autumn-amber-light); }
+.text-secondary { color: var(--color-text-secondary); }
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }

@@ -1,0 +1,32 @@
+{
+  "name": "Récolte d'Automne",
+  "version": "1.0.0",
+  "description": "Theme automnal chaleureux avec des tons terre, feuilles mortes et ambiance cosy",
+  "author": "Assotheque",
+  "mode": "dark",
+  "favicon": "assets/favicon.ico",
+  "colors": {
+    "primary": "#d97706",
+    "secondary": "#b45309",
+    "accent": "#dc2626",
+    "background": "#1c1917",
+    "backgroundSecondary": "#292524",
+    "text": "#fef3c7",
+    "textSecondary": "#d6d3d1",
+    "success": "#22c55e",
+    "warning": "#f59e0b",
+    "danger": "#dc2626",
+    "info": "#0ea5e9"
+  },
+  "style": {
+    "borderRadius": "8px",
+    "shadowStyle": "strong",
+    "navbarStyle": "solid"
+  },
+  "preview": null,
+  "features": {
+    "fallingLeaves": true,
+    "warmGlow": true
+  },
+  "pages": []
+}

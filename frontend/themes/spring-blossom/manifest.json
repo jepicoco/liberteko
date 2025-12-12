@@ -1,0 +1,32 @@
+{
+  "name": "Floraison Printanière",
+  "version": "1.0.0",
+  "description": "Theme printanier frais avec des tons pastel, fleurs de cerisier et ambiance douce",
+  "author": "Assotheque",
+  "mode": "light",
+  "favicon": "assets/favicon.ico",
+  "colors": {
+    "primary": "#ec4899",
+    "secondary": "#06b6d4",
+    "accent": "#84cc16",
+    "background": "#fefef8",
+    "backgroundSecondary": "#fdf2f8",
+    "text": "#374151",
+    "textSecondary": "#6b7280",
+    "success": "#22c55e",
+    "warning": "#eab308",
+    "danger": "#ef4444",
+    "info": "#06b6d4"
+  },
+  "style": {
+    "borderRadius": "16px",
+    "shadowStyle": "subtle",
+    "navbarStyle": "gradient"
+  },
+  "preview": null,
+  "features": {
+    "petals": true,
+    "softGlow": true
+  },
+  "pages": []
+}

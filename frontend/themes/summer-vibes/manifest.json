@@ -1,0 +1,32 @@
+{
+  "name": "Soleil d'Été",
+  "version": "1.0.0",
+  "description": "Theme estival lumineux avec des tons chauds, ambiance plage et coucher de soleil",
+  "author": "Assotheque",
+  "mode": "light",
+  "favicon": "assets/favicon.ico",
+  "colors": {
+    "primary": "#f59e0b",
+    "secondary": "#ef4444",
+    "accent": "#0ea5e9",
+    "background": "#fffbeb",
+    "backgroundSecondary": "#fef3c7",
+    "text": "#1f2937",
+    "textSecondary": "#4b5563",
+    "success": "#10b981",
+    "warning": "#f59e0b",
+    "danger": "#ef4444",
+    "info": "#0ea5e9"
+  },
+  "style": {
+    "borderRadius": "12px",
+    "shadowStyle": "medium",
+    "navbarStyle": "gradient"
+  },
+  "preview": null,
+  "features": {
+    "sunGlow": true,
+    "waveEffect": true
+  },
+  "pages": []
+}
