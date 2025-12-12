@@ -1,7 +1,16 @@
-const { Emprunt, Utilisateur, Jeu, sequelize } = require('../models');
+const { Emprunt, Utilisateur, Jeu, Livre, Film, Disque, sequelize } = require('../models');
 const { Op, Transaction } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
+const limiteEmpruntService = require('../services/limiteEmpruntService');
+
+// Configuration des modules pour l'emprunt multi-collection
+const EMPRUNT_MODULES = {
+  jeu: { model: Jeu, foreignKey: 'jeu_id', module: 'ludotheque' },
+  livre: { model: Livre, foreignKey: 'livre_id', module: 'bibliotheque' },
+  film: { model: Film, foreignKey: 'film_id', module: 'filmotheque' },
+  disque: { model: Disque, foreignKey: 'disque_id', module: 'discotheque' }
+};
 
 /**
  * Get all emprunts with filters
@@ -114,11 +123,19 @@ const getEmpruntById = async (req, res) => {
 };
 
 /**
- * Create new emprunt (loan a game)
+ * Create new emprunt (loan an item)
  * POST /api/emprunts
  *
+ * Supporte tous les modules : jeu, livre, film, disque
  * Utilise une transaction avec verrouillage pessimiste pour eviter
- * les race conditions sur la disponibilite du jeu.
+ * les race conditions sur la disponibilite de l'article.
+ *
+ * Body params:
+ * - utilisateur_id (ou adherent_id pour rétrocompat)
+ * - jeu_id | livre_id | film_id | disque_id
+ * - date_retour_prevue (optionnel)
+ * - commentaire (optionnel)
+ * - force_override (optionnel) - pour outrepasser les limites non-bloquantes
  */
 const createEmprunt = async (req, res) => {
   // Demarrer une transaction avec isolation READ COMMITTED
@@ -128,17 +145,33 @@ const createEmprunt = async (req, res) => {
 
   try {
     // Support adherent_id pour rétrocompatibilité frontend
-    const { adherent_id, utilisateur_id, jeu_id, date_retour_prevue, commentaire } = req.body;
+    const {
+      adherent_id, utilisateur_id,
+      jeu_id, livre_id, film_id, disque_id,
+      date_retour_prevue, commentaire,
+      force_override
+    } = req.body;
     const userId = utilisateur_id || adherent_id;
 
+    // Déterminer quel type d'article est emprunté
+    let itemType = null;
+    let itemId = null;
+
+    if (jeu_id) { itemType = 'jeu'; itemId = jeu_id; }
+    else if (livre_id) { itemType = 'livre'; itemId = livre_id; }
+    else if (film_id) { itemType = 'film'; itemId = film_id; }
+    else if (disque_id) { itemType = 'disque'; itemId = disque_id; }
+
     // Validate required fields
-    if (!userId || !jeu_id) {
+    if (!userId || !itemId) {
       await transaction.rollback();
       return res.status(400).json({
         error: 'Validation error',
-        message: 'utilisateur_id (ou adherent_id) and jeu_id are required'
+        message: 'utilisateur_id (ou adherent_id) et un ID d\'article (jeu_id, livre_id, film_id ou disque_id) sont requis'
       });
     }
+
+    const moduleConfig = EMPRUNT_MODULES[itemType];
 
     // Check if utilisateur exists and is active
     const utilisateur = await Utilisateur.findByPk(userId, { transaction });
@@ -154,31 +187,66 @@ const createEmprunt = async (req, res) => {
       await transaction.rollback();
       return res.status(403).json({
         error: 'Forbidden',
-        message: `Utilisateur account is ${utilisateur.statut}. Only active members can borrow games.`
+        message: `Le compte utilisateur est ${utilisateur.statut}. Seuls les membres actifs peuvent emprunter.`
       });
     }
 
-    // Check if jeu exists with pessimistic lock (FOR UPDATE)
-    // Cela bloque les autres transactions jusqu'au commit
-    const jeu = await Jeu.findByPk(jeu_id, {
+    // Vérifier les limites d'emprunt AVANT le verrouillage
+    const limitValidation = await limiteEmpruntService.validateEmpruntLimits(
+      userId,
+      moduleConfig.module,
+      itemId,
+      { skipWarnings: force_override }
+    );
+
+    // Si des limites bloquantes sont atteintes
+    if (!limitValidation.allowed && limitValidation.blocking) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Limite atteinte',
+        message: limitValidation.errors[0]?.message || 'Limite d\'emprunt atteinte',
+        limitErrors: limitValidation.errors,
+        blocking: true
+      });
+    }
+
+    // Si des limites non-bloquantes sont atteintes et pas de force_override
+    if (limitValidation.warnings.length > 0 && !force_override) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Limite atteinte (non bloquante)',
+        message: limitValidation.warnings[0]?.message || 'Limite d\'emprunt atteinte',
+        limitWarnings: limitValidation.warnings,
+        blocking: false,
+        canOverride: true
+      });
+    }
+
+    // Check if item exists with pessimistic lock (FOR UPDATE)
+    const ItemModel = moduleConfig.model;
+    const item = await ItemModel.findByPk(itemId, {
       transaction,
       lock: Transaction.LOCK.UPDATE
     });
 
-    if (!jeu) {
+    if (!item) {
       await transaction.rollback();
       return res.status(404).json({
         error: 'Not found',
-        message: 'Jeu not found'
+        message: `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} not found`
       });
     }
 
-    if (!jeu.estDisponible()) {
-      await transaction.rollback();
-      return res.status(400).json({
-        error: 'Game not available',
-        message: `Game is currently ${jeu.statut}`
-      });
+    if (!item.estDisponible || (typeof item.estDisponible === 'function' && !item.estDisponible())) {
+      // Fallback si pas de méthode estDisponible
+      const isAvailable = item.statut === 'disponible';
+      if (!isAvailable) {
+        await transaction.rollback();
+        return res.status(400).json({
+          error: 'Article non disponible',
+          message: `L'article est actuellement ${item.statut}`
+        });
+      }
     }
 
     // Calculate default return date if not provided (14 days from now)
@@ -187,33 +255,41 @@ const createEmprunt = async (req, res) => {
       : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 
     // Create emprunt within transaction
-    const emprunt = await Emprunt.create({
+    const empruntData = {
       utilisateur_id: userId,
-      jeu_id,
+      [moduleConfig.foreignKey]: itemId,
       date_emprunt: new Date(),
       date_retour_prevue: dateRetourPrevue,
       statut: 'en_cours',
       commentaire
-    }, { transaction });
+    };
 
-    // Update game status within transaction
-    jeu.statut = 'emprunte';
-    await jeu.save({ transaction });
+    const emprunt = await Emprunt.create(empruntData, { transaction });
+
+    // Update item status within transaction
+    item.statut = 'emprunte';
+    await item.save({ transaction });
 
     // Commit la transaction - libere le verrou
     await transaction.commit();
 
     // Reload with associations (hors transaction)
-    await emprunt.reload({
-      include: [
-        { model: Utilisateur, as: 'utilisateur' },
-        { model: Jeu, as: 'jeu' }
-      ]
-    });
+    const includes = [{ model: Utilisateur, as: 'utilisateur' }];
+
+    // Ajouter l'association pour le type d'item
+    if (itemType === 'jeu') includes.push({ model: Jeu, as: 'jeu' });
+    else if (itemType === 'livre') includes.push({ model: Livre, as: 'livre' });
+    else if (itemType === 'film') includes.push({ model: Film, as: 'film' });
+    else if (itemType === 'disque') includes.push({ model: Disque, as: 'disque' });
+
+    await emprunt.reload({ include: includes });
 
     // Déclencher l'événement de création d'emprunt (hors transaction)
     try {
-      await eventTriggerService.triggerEmpruntCreated(emprunt, utilisateur, jeu);
+      // Pour rétrocompat, passer jeu si c'est un jeu
+      if (itemType === 'jeu') {
+        await eventTriggerService.triggerEmpruntCreated(emprunt, utilisateur, item);
+      }
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue
@@ -223,10 +299,17 @@ const createEmprunt = async (req, res) => {
     const data = emprunt.toJSON();
     data.adherent = data.utilisateur;
 
-    res.status(201).json({
-      message: 'Emprunt created successfully',
+    // Inclure les warnings si force_override a été utilisé
+    const response = {
+      message: 'Emprunt créé avec succès',
       emprunt: data
-    });
+    };
+
+    if (force_override && limitValidation.warnings.length > 0) {
+      response.overriddenWarnings = limitValidation.warnings;
+    }
+
+    res.status(201).json(response);
   } catch (error) {
     // Rollback en cas d'erreur
     await transaction.rollback();
@@ -496,6 +579,95 @@ const getOverdueEmprunts = async (req, res) => {
   }
 };
 
+/**
+ * Get loan limits summary for a user
+ * GET /api/emprunts/limites/:utilisateurId/:module
+ */
+const getLimitesSummary = async (req, res) => {
+  try {
+    const { utilisateurId, module } = req.params;
+
+    if (!utilisateurId || !module) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'utilisateurId et module sont requis'
+      });
+    }
+
+    const validModules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
+    if (!validModules.includes(module)) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Module invalide. Valeurs acceptées: ' + validModules.join(', ')
+      });
+    }
+
+    const summary = await limiteEmpruntService.getLimitsSummary(utilisateurId, module);
+
+    res.json({
+      utilisateurId: parseInt(utilisateurId),
+      module,
+      limites: summary
+    });
+  } catch (error) {
+    console.error('Get limites summary error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Pre-validate loan limits (without creating)
+ * POST /api/emprunts/valider-limites
+ *
+ * Body: { utilisateur_id, jeu_id | livre_id | film_id | disque_id }
+ */
+const validerLimites = async (req, res) => {
+  try {
+    const { utilisateur_id, adherent_id, jeu_id, livre_id, film_id, disque_id } = req.body;
+    const userId = utilisateur_id || adherent_id;
+
+    // Déterminer quel type d'article
+    let itemType = null;
+    let itemId = null;
+
+    if (jeu_id) { itemType = 'jeu'; itemId = jeu_id; }
+    else if (livre_id) { itemType = 'livre'; itemId = livre_id; }
+    else if (film_id) { itemType = 'film'; itemId = film_id; }
+    else if (disque_id) { itemType = 'disque'; itemId = disque_id; }
+
+    if (!userId || !itemId) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'utilisateur_id et un ID d\'article sont requis'
+      });
+    }
+
+    const moduleConfig = EMPRUNT_MODULES[itemType];
+    const validation = await limiteEmpruntService.validateEmpruntLimits(
+      userId,
+      moduleConfig.module,
+      itemId
+    );
+
+    res.json({
+      allowed: validation.allowed,
+      blocking: validation.blocking,
+      errors: validation.errors,
+      warnings: validation.warnings,
+      canOverride: !validation.blocking && validation.warnings.length > 0
+    });
+  } catch (error) {
+    console.error('Valider limites error:', error);
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
 module.exports = {
   getAllEmprunts,
   getEmpruntById,
@@ -503,5 +675,7 @@ module.exports = {
   retourEmprunt,
   updateEmprunt,
   deleteEmprunt,
-  getOverdueEmprunts
+  getOverdueEmprunts,
+  getLimitesSummary,
+  validerLimites
 };

@@ -202,6 +202,7 @@ app.use('/api/public', require('./routes/public'));
 app.use('/api/prolongations', require('./routes/prolongations'));
 app.use('/api/export-comptable', require('./routes/exportComptable'));
 app.use('/api/parametres/llm', require('./routes/llm'));
+app.use('/api/parametres/limites-emprunt', require('./routes/limitesEmprunt'));
 app.use('/api/thematiques', require('./routes/thematiques'));
 app.use('/api/enrichissement', require('./routes/enrichissement'));
 app.use('/api/codes-barres-reserves', require('./routes/codesBarresReserves'));

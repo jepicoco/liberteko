@@ -17,6 +17,20 @@ const checkAnyModule = checkAnyModuleAccess(MODULES);
 router.get('/overdue', verifyToken, isAgent(), checkAnyModule, empruntController.getOverdueEmprunts);
 
 /**
+ * @route   GET /api/emprunts/limites/:utilisateurId/:module
+ * @desc    Get loan limits summary for a user on a specific module
+ * @access  Private (agent+)
+ */
+router.get('/limites/:utilisateurId/:module', verifyToken, isAgent(), checkAnyModule, empruntController.getLimitesSummary);
+
+/**
+ * @route   POST /api/emprunts/valider-limites
+ * @desc    Pre-validate loan limits without creating the loan
+ * @access  Private (agent+)
+ */
+router.post('/valider-limites', verifyToken, isAgent(), empruntController.validerLimites);
+
+/**
  * @route   GET /api/emprunts
  * @desc    Get all emprunts with filters
  * @access  Private (agent+)

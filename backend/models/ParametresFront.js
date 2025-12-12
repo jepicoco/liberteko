@@ -501,6 +501,86 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: true,
       comment: 'Activer nouveautes disques'
+    },
+
+    // === Limites d'emprunt - Ludotheque ===
+    limite_emprunt_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite generale emprunts simultanes (jeux)'
+    },
+    limite_emprunt_nouveaute_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (jeux)'
+    },
+    limite_emprunt_bloquante_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (jeux) - si false, affiche un warning'
+    },
+
+    // === Limites d'emprunt - Bibliotheque ===
+    limite_emprunt_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite generale emprunts simultanes (livres)'
+    },
+    limite_emprunt_nouveaute_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (livres)'
+    },
+    limite_emprunt_bloquante_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (livres) - si false, affiche un warning'
+    },
+
+    // === Limites d'emprunt - Filmotheque ===
+    limite_emprunt_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite generale emprunts simultanes (films)'
+    },
+    limite_emprunt_nouveaute_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (films)'
+    },
+    limite_emprunt_bloquante_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (films) - si false, affiche un warning'
+    },
+
+    // === Limites d'emprunt - Discotheque ===
+    limite_emprunt_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite generale emprunts simultanes (disques)'
+    },
+    limite_emprunt_nouveaute_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (disques)'
+    },
+    limite_emprunt_bloquante_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (disques) - si false, affiche un warning'
     }
   }, {
     tableName: 'parametres_front',

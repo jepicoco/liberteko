@@ -138,6 +138,9 @@ const ThemeSiteModel = require('./ThemeSite');
 // Import LeaderboardScore (mini-jeu chat)
 const LeaderboardScoreModel = require('./LeaderboardScore');
 
+// Import LimiteEmpruntGenre (limites emprunts par genre)
+const LimiteEmpruntGenreModel = require('./LimiteEmpruntGenre');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -274,6 +277,9 @@ const ThemeSite = ThemeSiteModel(sequelize);
 
 // Initialize LeaderboardScore (mini-jeu chat)
 const LeaderboardScore = LeaderboardScoreModel(sequelize);
+
+// Initialize LimiteEmpruntGenre (limites emprunts par genre)
+const LimiteEmpruntGenre = LimiteEmpruntGenreModel(sequelize);
 
 // Define associations
 // Utilisateur <-> Emprunt (One-to-Many)
@@ -1280,5 +1286,7 @@ module.exports = {
   // Themes du site public
   ThemeSite,
   // Mini-jeu chat leaderboard
-  LeaderboardScore
+  LeaderboardScore,
+  // Limites emprunts par genre
+  LimiteEmpruntGenre
 };
