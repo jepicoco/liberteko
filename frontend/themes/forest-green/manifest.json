@@ -4,6 +4,7 @@
   "description": "Theme vert nature apaisant",
   "author": "Assotheque",
   "mode": "light",
+  "favicon": "assets/favicon.ico",
   "colors": {
     "primary": "#2d6a4f",
     "secondary": "#52b788",

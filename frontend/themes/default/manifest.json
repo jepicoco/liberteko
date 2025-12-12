@@ -4,6 +4,7 @@
   "description": "Theme par defaut avec gradient violet moderne",
   "author": "Assotheque",
   "mode": "light",
+  "favicon": "assets/favicon.ico",
   "colors": {
     "primary": "#667eea",
     "secondary": "#764ba2",

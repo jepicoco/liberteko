@@ -4,6 +4,7 @@
   "description": "Theme bleu ocean frais et professionnel",
   "author": "Assotheque",
   "mode": "light",
+  "favicon": "assets/favicon.ico",
   "colors": {
     "primary": "#0077b6",
     "secondary": "#00b4d8",

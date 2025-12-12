@@ -4,6 +4,7 @@
   "description": "Theme hivernal elegant avec effet de neige, tons bleu glace et accents dores",
   "author": "Assotheque",
   "mode": "dark",
+  "favicon": "assets/favicon.ico",
   "colors": {
     "primary": "#0ea5e9",
     "secondary": "#0369a1",

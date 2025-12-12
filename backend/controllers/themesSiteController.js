@@ -33,6 +33,7 @@ class ThemesSiteController {
           colors: t.colors,
           style: t.style,
           preview: t.preview,
+          favicon: t.favicon,
           hasManifest: t.hasManifest,
           files: t.files,
           isActive: t.code === activeThemeCode
@@ -397,13 +398,23 @@ class ThemesSiteController {
         css += `\n\n/* CSS Personnalise */\n${parametres.css_personnalise}`;
       }
 
+      // Determiner le favicon : theme > parametres > null
+      let faviconUrl = null;
+      if (theme?.favicon) {
+        faviconUrl = `/theme/${theme.favicon}`;
+      } else if (parametres?.favicon_url) {
+        faviconUrl = parametres.favicon_url;
+      }
+
       res.json({
         theme: theme ? {
           code: theme.code,
           name: theme.name,
-          mode: theme.mode
+          mode: theme.mode,
+          favicon: theme.favicon || null
         } : null,
         css,
+        favicon_url: faviconUrl,
         allow_selection: parametres?.allow_theme_selection || false
       });
     } catch (error) {
@@ -438,7 +449,8 @@ class ThemesSiteController {
             primary: t.colors?.primary,
             secondary: t.colors?.secondary
           },
-          preview: t.preview
+          preview: t.preview,
+          favicon: t.favicon
         })),
         allow_selection: true
       });

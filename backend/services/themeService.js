@@ -37,6 +37,7 @@ const CACHE_TTL = 60000; // 1 minute
  * @property {string} style.borderRadius - Rayon des bordures (ex: '8px')
  * @property {string} style.shadowStyle - Style d'ombre ('subtle', 'medium', 'strong')
  * @property {string} preview - Nom du fichier de prévisualisation (optionnel)
+ * @property {string} favicon - Chemin relatif du favicon (ex: 'assets/favicon.ico')
  * @property {Array<string>} pages - Liste des pages personnalisées
  */
 
@@ -115,6 +116,19 @@ function scanThemes(forceRefresh = false) {
       files.pages.push(...subdirHtmlFiles.map(f => `${subdir.name}/${f}`));
     }
 
+    // Détecter le favicon (manifest ou convention de fichier)
+    let favicon = manifest?.favicon || null;
+    if (!favicon) {
+      // Chercher un favicon par convention dans assets/
+      const faviconPaths = ['assets/favicon.ico', 'assets/favicon.png', 'assets/favicon.svg'];
+      for (const fp of faviconPaths) {
+        if (fs.existsSync(path.join(themePath, fp))) {
+          favicon = fp;
+          break;
+        }
+      }
+    }
+
     const theme = {
       code: themeCode,
       path: themePath,
@@ -138,6 +152,7 @@ function scanThemes(forceRefresh = false) {
         shadowStyle: 'subtle'
       },
       preview: manifest?.preview || null,
+      favicon: favicon,
       files
     };
 

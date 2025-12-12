@@ -8,6 +8,7 @@
   const THEME_STORAGE_KEY = 'selectedTheme';
   const THEME_CSS_ID = 'theme-css';
   const THEME_STYLE_ID = 'theme-dynamic-styles';
+  const THEME_FAVICON_ID = 'theme-favicon';
 
   /**
    * Charge le thème actif depuis l'API et l'applique
@@ -22,6 +23,11 @@
       // Appliquer le CSS du thème
       if (data.css) {
         applyThemeCSS(data.css);
+      }
+
+      // Appliquer le favicon du thème
+      if (data.favicon_url) {
+        applyFavicon(data.favicon_url);
       }
 
       // Stocker les infos du thème
@@ -39,6 +45,34 @@
     } catch (error) {
       console.warn('Impossible de charger le thème:', error);
     }
+  }
+
+  /**
+   * Applique le favicon du thème
+   */
+  function applyFavicon(faviconUrl) {
+    if (!faviconUrl) return;
+
+    // Supprimer les anciens favicons
+    const existingFavicons = document.querySelectorAll('link[rel="icon"], link[rel="shortcut icon"]');
+    existingFavicons.forEach(el => el.remove());
+
+    // Créer le nouveau favicon
+    const link = document.createElement('link');
+    link.id = THEME_FAVICON_ID;
+    link.rel = 'icon';
+
+    // Déterminer le type MIME basé sur l'extension
+    if (faviconUrl.endsWith('.svg')) {
+      link.type = 'image/svg+xml';
+    } else if (faviconUrl.endsWith('.png')) {
+      link.type = 'image/png';
+    } else if (faviconUrl.endsWith('.ico')) {
+      link.type = 'image/x-icon';
+    }
+
+    link.href = faviconUrl;
+    document.head.appendChild(link);
   }
 
   /**
@@ -69,12 +103,17 @@
       // Sauvegarder la préférence
       localStorage.setItem(THEME_STORAGE_KEY, themeCode);
 
-      // Mettre à jour l'attribut data-theme
+      // Mettre à jour l'attribut data-theme et le favicon
       const themes = window.AVAILABLE_THEMES || [];
       const theme = themes.find(t => t.code === themeCode);
       if (theme) {
         document.documentElement.setAttribute('data-theme', theme.mode || 'light');
         window.CURRENT_THEME = theme;
+
+        // Appliquer le favicon du thème s'il existe
+        if (theme.favicon) {
+          applyFavicon(`/theme/${theme.favicon}`);
+        }
       }
 
       // Déclencher un événement
@@ -323,7 +362,8 @@
   window.ThemeLoader = {
     loadTheme,
     switchTheme,
-    applyThemeCSS
+    applyThemeCSS,
+    applyFavicon
   };
 
   // Charger le thème au démarrage

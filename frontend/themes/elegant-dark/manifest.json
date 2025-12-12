@@ -4,6 +4,7 @@
   "description": "Theme sombre elegant et moderne",
   "author": "Assotheque",
   "mode": "dark",
+  "favicon": "assets/favicon.ico",
   "colors": {
     "primary": "#6366f1",
     "secondary": "#8b5cf6",
