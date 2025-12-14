@@ -54,10 +54,39 @@ const getAllConfigurations = async (req, res) => {
  */
 const getProviders = async (req, res) => {
   try {
-    const providers = ConfigurationAPI.getProviders();
+    const providersByType = ConfigurationAPI.getProviders();
+
+    // Transformer en liste plate unique pour le frontend
+    const uniqueProviders = new Map();
+
+    Object.values(providersByType).forEach(typeProviders => {
+      typeProviders.forEach(p => {
+        if (!uniqueProviders.has(p.value)) {
+          uniqueProviders.set(p.value, {
+            code: p.value,
+            nom: p.label,
+            description: `${p.gratuit ? 'Gratuit' : 'Payant'} - Limite: ${p.limite}`,
+            collections: [...p.collections],
+            gratuit: p.gratuit,
+            limite: p.limite,
+            url_defaut: p.url_defaut || null
+          });
+        } else {
+          // Fusionner les collections si le provider existe déjà
+          const existing = uniqueProviders.get(p.value);
+          p.collections.forEach(c => {
+            if (!existing.collections.includes(c)) {
+              existing.collections.push(c);
+            }
+          });
+        }
+      });
+    });
+
     res.json({
       success: true,
-      providers
+      providers: Array.from(uniqueProviders.values()),
+      providersByType // Garder aussi la structure par type si besoin
     });
   } catch (error) {
     console.error('Get providers error:', error);
@@ -503,11 +532,23 @@ const testConnection = async (req, res) => {
       case 'openlibrary':
         testResult = await testOpenLibrary(configuration);
         break;
+      case 'bnf':
+        testResult = await testBNF(configuration);
+        break;
       case 'tmdb':
         testResult = await testTMDB(configuration);
         break;
       case 'musicbrainz':
         testResult = await testMusicBrainz(configuration);
+        break;
+      case 'googlebooks':
+        testResult = await testGoogleBooks(configuration);
+        break;
+      case 'discogs':
+        testResult = await testDiscogs(configuration);
+        break;
+      case 'wikiludo':
+        testResult = await testWikiludo(configuration);
         break;
       default:
         testResult = { success: true, message: 'Provider non teste mais configuration valide' };
@@ -606,10 +647,34 @@ async function testUPCitemdb(config) {
 async function testBGG(config) {
   const fetch = (await import('node-fetch')).default;
   try {
-    const url = `${config.api_url}/thing?id=13&type=boardgame`;
-    const response = await fetch(url);
+    // Utiliser l'URL configuree ou l'URL par defaut
+    const baseUrl = config.api_url || 'https://boardgamegeek.com/xmlapi2';
+    const url = `${baseUrl}/thing?id=13&type=boardgame`;
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Assotheque/1.0 (Library Management System)',
+        'Accept': 'application/xml, text/xml, */*'
+      },
+      timeout: 10000
+    });
 
     if (!response.ok) {
+      // BGG peut retourner 401 si rate-limited ou bloque
+      if (response.status === 401) {
+        return {
+          success: false,
+          message: 'Acces refuse (401). BGG peut limiter les requetes. Reessayez plus tard.',
+          details: 'L\'API BGG peut bloquer temporairement certaines IP. La recherche par titre peut quand meme fonctionner.'
+        };
+      }
+      if (response.status === 429) {
+        return {
+          success: false,
+          message: 'Trop de requetes (429). Attendez quelques minutes.',
+          details: 'Rate limiting actif. Patientez avant de reessayer.'
+        };
+      }
       return { success: false, message: `Erreur HTTP: ${response.status}` };
     }
 
@@ -618,10 +683,15 @@ async function testBGG(config) {
 
     return {
       success: hasData,
-      message: hasData ? 'Connexion reussie' : 'Reponse invalide'
+      message: hasData ? 'Connexion reussie - BGG repond correctement' : 'Reponse invalide (pas de donnees)',
+      details: hasData ? 'L\'API BoardGameGeek fonctionne.' : null
     };
   } catch (error) {
-    return { success: false, message: `Erreur: ${error.message}` };
+    return {
+      success: false,
+      message: `Erreur de connexion: ${error.message}`,
+      details: 'Verifiez votre connexion internet ou reessayez plus tard.'
+    };
   }
 }
 
@@ -672,6 +742,127 @@ async function testMusicBrainz(config) {
     return {
       success: response.ok,
       message: response.ok ? 'Connexion reussie' : `Erreur HTTP: ${response.status}`
+    };
+  } catch (error) {
+    return { success: false, message: `Erreur: ${error.message}` };
+  }
+}
+
+async function testBNF(config) {
+  const fetch = (await import('node-fetch')).default;
+  try {
+    // Test avec un ISBN connu (Le Petit Prince)
+    const testIsbn = '9782070408504';
+    const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=bib.isbn%20all%20%22${testIsbn}%22&recordSchema=dublincore&maximumRecords=1`;
+
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Assotheque/1.0' }
+    });
+
+    if (!response.ok) {
+      return { success: false, message: `Erreur HTTP: ${response.status}` };
+    }
+
+    const text = await response.text();
+
+    // Verifier que la reponse contient des resultats SRU valides
+    if (text.includes('searchRetrieveResponse') && text.includes('numberOfRecords')) {
+      const hasResults = !text.includes('<numberOfRecords>0</numberOfRecords>');
+      return {
+        success: true,
+        message: hasResults
+          ? 'Connexion reussie - API SRU BNF fonctionnelle (test ISBN Le Petit Prince)'
+          : 'Connexion reussie - API repond mais aucun resultat pour le test'
+      };
+    }
+
+    return { success: false, message: 'Reponse invalide de l\'API SRU' };
+  } catch (error) {
+    return { success: false, message: `Erreur: ${error.message}` };
+  }
+}
+
+async function testGoogleBooks(config) {
+  const fetch = (await import('node-fetch')).default;
+  try {
+    const apiKey = config.getDecryptedApiKey();
+    // Google Books fonctionne aussi sans cle (avec limites)
+    const url = apiKey
+      ? `https://www.googleapis.com/books/v1/volumes?q=isbn:9782070408504&key=${apiKey}`
+      : `https://www.googleapis.com/books/v1/volumes?q=isbn:9782070408504`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.error) {
+      return { success: false, message: data.error.message || 'Erreur API' };
+    }
+
+    return {
+      success: true,
+      message: `Connexion reussie - ${data.totalItems || 0} resultat(s) trouve(s)`
+    };
+  } catch (error) {
+    return { success: false, message: `Erreur: ${error.message}` };
+  }
+}
+
+async function testDiscogs(config) {
+  const fetch = (await import('node-fetch')).default;
+  try {
+    const apiKey = config.getDecryptedApiKey();
+    if (!apiKey) {
+      return { success: false, message: 'Token Discogs requis pour l\'API' };
+    }
+
+    // Test avec une recherche simple
+    const url = `https://api.discogs.com/database/search?q=test&type=release&per_page=1`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Assotheque/1.0',
+        'Authorization': `Discogs token=${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return { success: false, message: `Erreur HTTP: ${response.status}` };
+    }
+
+    const data = await response.json();
+    return {
+      success: true,
+      message: `Connexion reussie - ${data.pagination?.items || 0} resultat(s) disponible(s)`
+    };
+  } catch (error) {
+    return { success: false, message: `Erreur: ${error.message}` };
+  }
+}
+
+async function testWikiludo(config) {
+  try {
+    const WikiludoProvider = require('../services/providers/WikiludoProvider');
+    const provider = new WikiludoProvider();
+
+    // Test de connexion
+    const connResult = await provider.testConnection();
+    if (!connResult.success) {
+      return { success: false, message: connResult.message };
+    }
+
+    // Test avec une recherche pour verifier que ca fonctionne
+    const searchResult = await provider.search('Catan');
+    if (searchResult && searchResult.titre) {
+      return {
+        success: true,
+        message: `Connexion reussie - Test: "${searchResult.titre}" trouve`,
+        details: `Base Wikiludo accessible (${searchResult.editeur || 'editeur inconnu'})`
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Connexion reussie - Wikiludo accessible',
+      details: 'Recherche de test sans resultat'
     };
   } catch (error) {
     return { success: false, message: `Erreur: ${error.message}` };

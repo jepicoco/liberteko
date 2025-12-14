@@ -603,6 +603,11 @@
                   </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                  <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-famille" type="button">
+                    <i class="bi bi-people"></i> Famille
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
                   <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-stats" type="button">
                     <i class="bi bi-graph-up"></i> Statistiques
                   </button>
@@ -658,6 +663,54 @@
                   <div id="view_notes_section" style="display: none;">
                     <h6 class="mt-3"><i class="bi bi-journal-text"></i> Notes internes</h6>
                     <div class="alert alert-info" id="view_notes">-</div>
+                  </div>
+                </div>
+
+                <!-- Onglet Famille -->
+                <div class="tab-pane fade" id="view-tab-famille">
+                  <!-- Info si compte enfant -->
+                  <div id="view_famille_parent_info" class="alert alert-info d-none">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Compte rattache a :</strong>
+                    <a href="#" id="view_famille_parent_link" class="alert-link"></a>
+                    <span class="badge bg-secondary ms-2" id="view_famille_type_lien"></span>
+                  </div>
+
+                  <!-- Actions famille -->
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0"><i class="bi bi-people-fill"></i> Membres de la famille</h6>
+                    <button class="btn btn-sm btn-outline-primary" id="btn_lier_membre" onclick="openLierMembreModal()">
+                      <i class="bi bi-plus-lg"></i> Lier un membre
+                    </button>
+                  </div>
+
+                  <!-- Liste des enfants -->
+                  <div id="view_famille_enfants_list">
+                    <p class="text-muted small">Aucun membre rattache</p>
+                  </div>
+
+                  <!-- Tarif famille -->
+                  <div id="view_famille_tarif" class="mt-3 d-none">
+                    <hr>
+                    <div class="card bg-light">
+                      <div class="card-body">
+                        <h6><i class="bi bi-calculator"></i> Tarif famille</h6>
+                        <div class="row text-center">
+                          <div class="col-4">
+                            <div class="fs-4 text-primary" id="view_famille_nb_membres">0</div>
+                            <small class="text-muted">Membres</small>
+                          </div>
+                          <div class="col-4">
+                            <div class="fs-4 text-success" id="view_famille_cout">0 EUR</div>
+                            <small class="text-muted">Tarif famille</small>
+                          </div>
+                          <div class="col-4">
+                            <div class="fs-4 text-info" id="view_famille_economie">0 EUR</div>
+                            <small class="text-muted">Economie</small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -752,6 +805,51 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lier Membre Famille -->
+  <div class="modal fade" id="lierMembreModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title"><i class="bi bi-people-fill"></i> Lier un membre de la famille</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Recherche -->
+          <div class="mb-3">
+            <label class="form-label">Rechercher un usager existant</label>
+            <input type="text" class="form-control" id="searchMembreFamille"
+                   placeholder="Nom, prenom, email..." onkeyup="rechercherMembresFamille()">
+          </div>
+
+          <!-- Resultats de recherche -->
+          <div id="resultatsRechercheFamille" class="list-group mb-3" style="max-height: 200px; overflow-y: auto;">
+          </div>
+
+          <!-- Type de lien -->
+          <div class="mb-3">
+            <label class="form-label">Type de lien</label>
+            <select class="form-select" id="typeLienFamille">
+              <option value="parent">Parent</option>
+              <option value="tuteur">Tuteur legal</option>
+              <option value="autre">Autre responsable</option>
+            </select>
+            <small class="text-muted">
+              L'usager selectionne sera rattache comme "enfant" de l'usager actuellement consulte
+            </small>
+          </div>
+
+          <input type="hidden" id="selectedMembreFamilleId">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="btnConfirmerLienFamille" disabled onclick="confirmerLienFamille()">
+            <i class="bi bi-link-45deg"></i> Lier
+          </button>
         </div>
       </div>
     </div>
@@ -874,6 +972,176 @@
           console.error('Erreur suppression:', error);
           showToast('Erreur lors de la suppression: ' + error.message, 'error');
         }
+      }
+    }
+
+    // ============================================
+    // GESTION FAMILLE
+    // ============================================
+    let lierMembreModalInstance = null;
+    let currentViewAdherentId = null;
+    let rechercheMembreTimeout = null;
+
+    function openLierMembreModal() {
+      // Reset
+      document.getElementById('searchMembreFamille').value = '';
+      document.getElementById('resultatsRechercheFamille').innerHTML = '';
+      document.getElementById('selectedMembreFamilleId').value = '';
+      document.getElementById('typeLienFamille').value = 'parent';
+      document.getElementById('btnConfirmerLienFamille').disabled = true;
+
+      if (!lierMembreModalInstance) {
+        lierMembreModalInstance = new bootstrap.Modal(document.getElementById('lierMembreModal'));
+      }
+      lierMembreModalInstance.show();
+    }
+
+    async function rechercherMembresFamille() {
+      clearTimeout(rechercheMembreTimeout);
+      const query = document.getElementById('searchMembreFamille').value.trim();
+
+      if (query.length < 2) {
+        document.getElementById('resultatsRechercheFamille').innerHTML = '<p class="text-muted small p-2">Tapez au moins 2 caracteres...</p>';
+        return;
+      }
+
+      rechercheMembreTimeout = setTimeout(async () => {
+        try {
+          const data = await adherentsAPI.rechercherDisponibles(query, currentViewAdherentId);
+          const container = document.getElementById('resultatsRechercheFamille');
+
+          if (!data.utilisateurs || data.utilisateurs.length === 0) {
+            container.innerHTML = '<p class="text-muted small p-2">Aucun resultat</p>';
+            return;
+          }
+
+          container.innerHTML = data.utilisateurs.map(u => `
+            <button type="button" class="list-group-item list-group-item-action" onclick="selectMembreFamille(${u.id}, '${u.nom} ${u.prenom}')">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>${u.nom} ${u.prenom}</strong>
+                  <small class="text-muted d-block">${u.email || ''}</small>
+                </div>
+                ${u.date_naissance ? `<small class="text-muted">${formatDate(u.date_naissance)}</small>` : ''}
+              </div>
+            </button>
+          `).join('');
+        } catch (error) {
+          console.error('Erreur recherche:', error);
+        }
+      }, 300);
+    }
+
+    function selectMembreFamille(id, nomComplet) {
+      document.getElementById('selectedMembreFamilleId').value = id;
+      document.getElementById('btnConfirmerLienFamille').disabled = false;
+
+      // Mettre en surbrillance la selection
+      document.querySelectorAll('#resultatsRechercheFamille .list-group-item').forEach(el => {
+        el.classList.remove('active');
+      });
+      event.target.closest('.list-group-item').classList.add('active');
+    }
+
+    async function confirmerLienFamille() {
+      const enfantId = document.getElementById('selectedMembreFamilleId').value;
+      const typeLien = document.getElementById('typeLienFamille').value;
+
+      if (!enfantId || !currentViewAdherentId) {
+        showToast('Veuillez selectionner un membre', 'error');
+        return;
+      }
+
+      try {
+        await adherentsAPI.ajouterEnfant(currentViewAdherentId, parseInt(enfantId), typeLien);
+        lierMembreModalInstance.hide();
+        showToast('Membre rattache avec succes', 'success');
+        // Recharger les infos famille
+        loadFamilleInfo(currentViewAdherentId);
+      } catch (error) {
+        console.error('Erreur liaison:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    async function retirerMembreFamille(enfantId) {
+      if (!confirm('Voulez-vous vraiment retirer ce membre de la famille ?')) return;
+
+      try {
+        await adherentsAPI.retirerEnfant(currentViewAdherentId, enfantId);
+        showToast('Membre retire de la famille', 'success');
+        loadFamilleInfo(currentViewAdherentId);
+      } catch (error) {
+        console.error('Erreur retrait:', error);
+        showToast('Erreur: ' + error.message, 'error');
+      }
+    }
+
+    async function loadFamilleInfo(adherentId) {
+      try {
+        const famille = await adherentsAPI.getFamille(adherentId);
+
+        // Info parent si compte enfant
+        const parentInfo = document.getElementById('view_famille_parent_info');
+        if (famille.estEnfant && famille.responsable) {
+          parentInfo.classList.remove('d-none');
+          document.getElementById('view_famille_parent_link').textContent =
+            `${famille.responsable.prenom} ${famille.responsable.nom}`;
+          document.getElementById('view_famille_parent_link').href = '#';
+          document.getElementById('view_famille_parent_link').onclick = () => viewAdherent(famille.responsable.id);
+          document.getElementById('view_famille_type_lien').textContent = famille.lienAvecParent || '';
+          // Masquer bouton lier si c'est un enfant
+          document.getElementById('btn_lier_membre').classList.add('d-none');
+        } else {
+          parentInfo.classList.add('d-none');
+          document.getElementById('btn_lier_membre').classList.remove('d-none');
+        }
+
+        // Liste des enfants
+        const enfantsContainer = document.getElementById('view_famille_enfants_list');
+        if (famille.enfants && famille.enfants.length > 0) {
+          enfantsContainer.innerHTML = `
+            <div class="list-group">
+              ${famille.enfants.map(e => `
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>${e.prenom} ${e.nom}</strong>
+                    ${e.date_naissance ? `<small class="text-muted ms-2">(${formatDate(e.date_naissance)})</small>` : ''}
+                    <span class="badge bg-secondary ms-2">${e.type_lien_famille || ''}</span>
+                  </div>
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="viewAdherent(${e.id})" title="Voir">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="retirerMembreFamille(${e.id})" title="Retirer">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          enfantsContainer.innerHTML = '<p class="text-muted small">Aucun membre rattache</p>';
+        }
+
+        // Tarif famille (seulement si c'est un parent avec enfants)
+        if (!famille.estEnfant && famille.enfants && famille.enfants.length > 0) {
+          try {
+            const cout = await adherentsAPI.getCoutFamille(adherentId);
+            document.getElementById('view_famille_tarif').classList.remove('d-none');
+            document.getElementById('view_famille_nb_membres').textContent = cout.nombreMembres;
+            document.getElementById('view_famille_cout').textContent = `${cout.coutFamille.toFixed(2)} EUR`;
+            document.getElementById('view_famille_economie').textContent = `${cout.economie.toFixed(2)} EUR`;
+          } catch (e) {
+            document.getElementById('view_famille_tarif').classList.add('d-none');
+          }
+        } else {
+          document.getElementById('view_famille_tarif').classList.add('d-none');
+        }
+
+      } catch (error) {
+        console.error('Erreur chargement famille:', error);
       }
     }
 

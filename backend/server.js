@@ -208,10 +208,16 @@ app.use('/api/enrichissement', require('./routes/enrichissement'));
 app.use('/api/codes-barres-reserves', require('./routes/codesBarresReserves'));
 app.use('/api/lookup', require('./routes/eanLookup'));
 app.use('/api/leaderboard', require('./routes/leaderboard'));
+app.use('/api/parametres/comptabilite', require('./routes/parametrageComptable'));
+app.use('/api/caisses', require('./routes/caisse'));
+app.use('/api/factures', require('./routes/factures'));
+app.use('/api/api-keys', require('./routes/apiKeys'));
+app.use('/api/external', require('./routes/external'));
 
 // Routes espace usager (adherents)
 app.use('/api/usager/auth', require('./routes/usagerAuth'));
 app.use('/api/usager/emprunts', require('./routes/usagerEmprunts'));
+app.use('/api/usager/factures', require('./routes/usagerFactures'));
 
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {

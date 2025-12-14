@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cles API - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .sub-nav { background: #f8f9fa; padding: 0.75rem 1rem; border-radius: 0.5rem; border: 1px solid #e9ecef; }
+    .key-display {
+      font-family: 'Courier New', monospace;
+      background: #f8f9fa;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
+      word-break: break-all;
+    }
+    .key-warning {
+      background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+      border-left: 4px solid #ffc107;
+    }
+    .permission-badge {
+      font-size: 0.75rem;
+      margin: 2px;
+    }
+    .stats-mini {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+    .progress-thin {
+      height: 6px;
+    }
+    .config-card { transition: transform 0.2s, box-shadow 0.2s; }
+    .config-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-key"></i> Cles API</h1>
+            <p class="text-muted mb-0">Gestion des acces pour les extensions externes</p>
+          </div>
+          <button class="btn btn-primary" onclick="ouvrirModalCreation()">
+            <i class="bi bi-plus"></i> Nouvelle cle
+          </button>
+        </div>
+
+        <!-- Alerte cle creee -->
+        <div id="alerteCleCree" class="alert key-warning d-none" role="alert">
+          <h5 class="alert-heading"><i class="bi bi-exclamation-triangle-fill me-2"></i>Cle API Creee</h5>
+          <p class="mb-2">Copiez cette cle maintenant. <strong>Elle ne sera plus jamais affichee.</strong></p>
+          <div class="key-display mb-3" id="nouvelleCle"></div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-warning" onclick="copierCle()">
+              <i class="bi bi-clipboard me-1"></i>Copier
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="fermerAlerteCle()">
+              <i class="bi bi-x-lg me-1"></i>J'ai copie, fermer
+            </button>
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          Les cles API permettent aux extensions externes (comme l'extension Chrome MyLudo) d'acceder a votre base de donnees.
+          Chaque cle peut avoir des permissions et des limites de requetes specifiques.
+        </div>
+
+        <!-- Liste des cles -->
+        <div class="card">
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" id="tableCles">
+                <thead class="table-light">
+                  <tr>
+                    <th>Nom</th>
+                    <th>Prefixe</th>
+                    <th>Permissions</th>
+                    <th>Utilisation</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="listeCles">
+                  <tr>
+                    <td colspan="6" class="text-center py-4">
+                      <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info API -->
+        <div class="card mt-4">
+          <div class="card-header bg-secondary text-white">
+            <i class="bi bi-code-slash me-2"></i>Utilisation des Cles API
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Authentification</h6>
+                <p class="mb-2">Incluez la cle dans l'en-tete de la requete:</p>
+                <code class="d-block bg-light p-2 rounded mb-3">X-API-Key: ask_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>
+              </div>
+              <div class="col-md-6">
+                <h6>Endpoints disponibles</h6>
+                <ul class="mb-0 small">
+                  <li><code>GET /api/external/jeux/check-ean/:ean</code> - Verifier si un jeu existe</li>
+                  <li><code>POST /api/external/jeux</code> - Creer ou mettre a jour un jeu</li>
+                  <li><code>POST /api/external/upload-image</code> - Uploader une image (base64)</li>
+                  <li><code>POST /api/external/upload-image-url</code> - Telecharger une image depuis URL</li>
+                  <li><code>GET /api/external/stats</code> - Statistiques de la cle</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Creation/Edition -->
+  <div class="modal fade" id="modalCle" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCleTitle">Nouvelle Cle API</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCle">
+            <input type="hidden" id="cleId">
+
+            <div class="row g-3">
+              <!-- Nom et Description -->
+              <div class="col-md-6">
+                <label class="form-label">Nom <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="cleNom" required placeholder="Ex: Extension Chrome MyLudo">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Description</label>
+                <input type="text" class="form-control" id="cleDescription" placeholder="Usage prevu...">
+              </div>
+
+              <!-- Permissions -->
+              <div class="col-12">
+                <label class="form-label">Permissions</label>
+                <div id="containerPermissions" class="border rounded p-3 bg-light">
+                  <!-- Permissions dynamiques -->
+                </div>
+              </div>
+
+              <!-- Collections -->
+              <div class="col-md-6">
+                <label class="form-label">Collections autorisees</label>
+                <div class="d-flex flex-wrap gap-3">
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="collJeu" value="jeu" checked>
+                    <label class="form-check-label" for="collJeu">Jeux</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="collLivre" value="livre">
+                    <label class="form-check-label" for="collLivre">Livres</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="collFilm" value="film">
+                    <label class="form-check-label" for="collFilm">Films</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="collDisque" value="disque">
+                    <label class="form-check-label" for="collDisque">Disques</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Limite requetes -->
+              <div class="col-md-3">
+                <label class="form-label">Limite requetes</label>
+                <input type="number" class="form-control" id="cleLimite" value="1000" min="0">
+                <small class="text-muted">0 = illimite</small>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Par periode</label>
+                <select class="form-select" id="clePeriode">
+                  <option value="jour">Jour</option>
+                  <option value="heure">Heure</option>
+                  <option value="mois">Mois</option>
+                </select>
+              </div>
+
+              <!-- Date expiration -->
+              <div class="col-md-6">
+                <label class="form-label">Date d'expiration</label>
+                <input type="date" class="form-control" id="cleExpiration">
+                <small class="text-muted">Laisser vide pour pas d'expiration</small>
+              </div>
+
+              <!-- IPs autorisees -->
+              <div class="col-md-6">
+                <label class="form-label">IPs autorisees</label>
+                <input type="text" class="form-control" id="cleIps" placeholder="192.168.1.1, 10.0.0.1">
+                <small class="text-muted">Separees par virgule, vide = toutes</small>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderCle()">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Details -->
+  <div class="modal fade" id="modalDetails" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Details de la cle</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="contenuDetails">
+          <!-- Contenu dynamique -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    initTemplate('parametres');
+    initSubNav('services-externes', 'api-keys');
+
+    let modalCle, modalDetails;
+    let permissionsDisponibles = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      modalCle = new bootstrap.Modal(document.getElementById('modalCle'));
+      modalDetails = new bootstrap.Modal(document.getElementById('modalDetails'));
+
+      await chargerPermissions();
+      await chargerCles();
+    });
+
+    async function chargerPermissions() {
+      try {
+        const response = await apiAdmin.get('/api-keys/permissions');
+        if (response.success) {
+          permissionsDisponibles = response.data;
+          renderPermissions();
+        }
+      } catch (error) {
+        console.error('Erreur chargement permissions:', error);
+      }
+    }
+
+    function renderPermissions() {
+      const container = document.getElementById('containerPermissions');
+      const groupes = {};
+
+      // Grouper par groupe
+      permissionsDisponibles.forEach(p => {
+        if (!groupes[p.groupe]) groupes[p.groupe] = [];
+        groupes[p.groupe].push(p);
+      });
+
+      let html = '<div class="row">';
+      for (const [groupe, perms] of Object.entries(groupes)) {
+        html += `<div class="col-md-4 mb-2">
+          <strong class="d-block mb-1">${groupe}</strong>`;
+        perms.forEach(p => {
+          html += `<div class="form-check">
+            <input type="checkbox" class="form-check-input perm-check" id="perm_${p.id}" value="${p.id}">
+            <label class="form-check-label" for="perm_${p.id}">${p.label}</label>
+          </div>`;
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    async function chargerCles() {
+      try {
+        const response = await apiAdmin.get('/api-keys');
+        if (response.success) {
+          renderCles(response.data);
+        }
+      } catch (error) {
+        console.error('Erreur chargement cles:', error);
+        document.getElementById('listeCles').innerHTML = `
+          <tr><td colspan="6" class="text-center text-danger py-4">
+            Erreur de chargement
+          </td></tr>`;
+      }
+    }
+
+    function renderCles(cles) {
+      const tbody = document.getElementById('listeCles');
+
+      if (!cles || cles.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">
+          Aucune cle API. Cliquez sur "Nouvelle cle" pour en creer une.
+        </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = cles.map(cle => {
+        const stats = cle.stats || {};
+        const pctUtilisation = stats.limite_periode
+          ? Math.min(100, (stats.requetes_periode / stats.limite_periode) * 100)
+          : 0;
+
+        const permBadges = (cle.permissions || []).slice(0, 3)
+          .map(p => `<span class="badge bg-secondary permission-badge">${p}</span>`)
+          .join('');
+        const plusBadge = (cle.permissions || []).length > 3
+          ? `<span class="badge bg-secondary permission-badge">+${cle.permissions.length - 3}</span>`
+          : '';
+
+        return `<tr>
+          <td>
+            <strong>${cle.nom}</strong>
+            ${cle.description ? `<br><small class="text-muted">${cle.description}</small>` : ''}
+          </td>
+          <td><code>${cle.key_prefix}</code></td>
+          <td>${permBadges}${plusBadge}</td>
+          <td>
+            <div class="stats-mini">
+              ${stats.requetes_periode || 0}/${stats.limite_periode || '&#8734;'} (${stats.periode || 'jour'})
+            </div>
+            ${stats.limite_periode ? `<div class="progress progress-thin mt-1">
+              <div class="progress-bar ${pctUtilisation > 80 ? 'bg-warning' : ''}" style="width: ${pctUtilisation}%"></div>
+            </div>` : ''}
+            <div class="stats-mini">Total: ${stats.total_requetes || 0}</div>
+          </td>
+          <td>
+            ${cle.actif
+              ? '<span class="badge bg-success">Active</span>'
+              : '<span class="badge bg-danger">Inactive</span>'}
+            ${cle.date_expiration && new Date(cle.date_expiration) < new Date()
+              ? '<br><span class="badge bg-warning text-dark">Expiree</span>'
+              : ''}
+          </td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-primary" onclick="voirDetails(${cle.id})" title="Details">
+                <i class="bi bi-eye"></i>
+              </button>
+              <button class="btn btn-outline-secondary" onclick="editerCle(${cle.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+              ${cle.actif
+                ? `<button class="btn btn-outline-warning" onclick="toggleActif(${cle.id}, false)" title="Desactiver">
+                    <i class="bi bi-pause"></i>
+                  </button>`
+                : `<button class="btn btn-outline-success" onclick="toggleActif(${cle.id}, true)" title="Activer">
+                    <i class="bi bi-play"></i>
+                  </button>`}
+              <button class="btn btn-outline-danger" onclick="supprimerCle(${cle.id})" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function ouvrirModalCreation() {
+      document.getElementById('cleId').value = '';
+      document.getElementById('formCle').reset();
+      document.getElementById('modalCleTitle').textContent = 'Nouvelle Cle API';
+
+      // Cocher jeux:create et jeux:update par defaut
+      document.querySelectorAll('.perm-check').forEach(cb => cb.checked = false);
+      const defPerms = ['jeux:create', 'jeux:update'];
+      defPerms.forEach(p => {
+        const cb = document.getElementById('perm_' + p);
+        if (cb) cb.checked = true;
+      });
+
+      // Collection jeu par defaut
+      document.getElementById('collJeu').checked = true;
+      document.getElementById('collLivre').checked = false;
+      document.getElementById('collFilm').checked = false;
+      document.getElementById('collDisque').checked = false;
+
+      modalCle.show();
+    }
+
+    async function editerCle(id) {
+      try {
+        const response = await apiAdmin.get(`/api-keys/${id}`);
+        if (!response.success) throw new Error(response.message);
+
+        const cle = response.data;
+        document.getElementById('cleId').value = cle.id;
+        document.getElementById('cleNom').value = cle.nom;
+        document.getElementById('cleDescription').value = cle.description || '';
+        document.getElementById('cleLimite').value = cle.limite_requetes || 0;
+        document.getElementById('clePeriode').value = cle.periode_limite || 'jour';
+        document.getElementById('cleExpiration').value = cle.date_expiration
+          ? cle.date_expiration.split('T')[0] : '';
+        document.getElementById('cleIps').value = (cle.ip_autorisees || []).join(', ');
+
+        // Permissions
+        document.querySelectorAll('.perm-check').forEach(cb => {
+          cb.checked = (cle.permissions || []).includes(cb.value);
+        });
+
+        // Collections
+        document.getElementById('collJeu').checked = (cle.collections_autorisees || []).includes('jeu');
+        document.getElementById('collLivre').checked = (cle.collections_autorisees || []).includes('livre');
+        document.getElementById('collFilm').checked = (cle.collections_autorisees || []).includes('film');
+        document.getElementById('collDisque').checked = (cle.collections_autorisees || []).includes('disque');
+
+        document.getElementById('modalCleTitle').textContent = 'Modifier la Cle API';
+        modalCle.show();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function sauvegarderCle() {
+      const id = document.getElementById('cleId').value;
+      const nom = document.getElementById('cleNom').value.trim();
+
+      if (!nom) {
+        alert('Le nom est requis');
+        return;
+      }
+
+      // Collecter les permissions
+      const permissions = Array.from(document.querySelectorAll('.perm-check:checked'))
+        .map(cb => cb.value);
+
+      // Collecter les collections
+      const collections_autorisees = [];
+      if (document.getElementById('collJeu').checked) collections_autorisees.push('jeu');
+      if (document.getElementById('collLivre').checked) collections_autorisees.push('livre');
+      if (document.getElementById('collFilm').checked) collections_autorisees.push('film');
+      if (document.getElementById('collDisque').checked) collections_autorisees.push('disque');
+
+      // IPs
+      const ipsText = document.getElementById('cleIps').value.trim();
+      const ip_autorisees = ipsText ? ipsText.split(',').map(ip => ip.trim()).filter(ip => ip) : null;
+
+      const data = {
+        nom,
+        description: document.getElementById('cleDescription').value.trim() || null,
+        permissions,
+        collections_autorisees,
+        limite_requetes: parseInt(document.getElementById('cleLimite').value) || null,
+        periode_limite: document.getElementById('clePeriode').value,
+        date_expiration: document.getElementById('cleExpiration').value || null,
+        ip_autorisees
+      };
+
+      try {
+        let response;
+        if (id) {
+          response = await apiAdmin.put(`/api-keys/${id}`, data);
+        } else {
+          response = await apiAdmin.post('/api-keys', data);
+        }
+
+        if (!response.success) throw new Error(response.message);
+
+        modalCle.hide();
+
+        // Si creation, afficher la cle
+        if (!id && response.data.cle) {
+          document.getElementById('nouvelleCle').textContent = response.data.cle;
+          document.getElementById('alerteCleCree').classList.remove('d-none');
+        }
+
+        await chargerCles();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function toggleActif(id, activer) {
+      try {
+        const endpoint = activer ? 'activer' : 'desactiver';
+        const response = await apiAdmin.post(`/api-keys/${id}/${endpoint}`);
+        if (!response.success) throw new Error(response.message);
+        await chargerCles();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function supprimerCle(id) {
+      if (!confirm('Supprimer cette cle API ? Les extensions utilisant cette cle ne pourront plus acceder a la base.')) {
+        return;
+      }
+
+      try {
+        const response = await apiAdmin.delete(`/api-keys/${id}`);
+        if (!response.success) throw new Error(response.message);
+        await chargerCles();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    async function voirDetails(id) {
+      try {
+        const response = await apiAdmin.get(`/api-keys/${id}`);
+        if (!response.success) throw new Error(response.message);
+
+        const cle = response.data;
+        const stats = cle.stats || {};
+
+        document.getElementById('contenuDetails').innerHTML = `
+          <h6>${cle.nom}</h6>
+          <p class="text-muted">${cle.description || 'Pas de description'}</p>
+
+          <table class="table table-sm">
+            <tr><td>Prefixe</td><td><code>${cle.key_prefix}</code></td></tr>
+            <tr><td>Statut</td><td>${cle.actif ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Inactive</span>'}</td></tr>
+            <tr><td>Creee le</td><td>${new Date(cle.createdAt).toLocaleDateString('fr-FR')}</td></tr>
+            ${cle.date_expiration ? `<tr><td>Expire le</td><td>${new Date(cle.date_expiration).toLocaleDateString('fr-FR')}</td></tr>` : ''}
+          </table>
+
+          <h6>Statistiques</h6>
+          <table class="table table-sm">
+            <tr><td>Total requetes</td><td>${stats.total_requetes || 0}</td></tr>
+            <tr><td>Cette periode</td><td>${stats.requetes_periode || 0}/${stats.limite_periode || '&#8734;'}</td></tr>
+            <tr><td>Periode</td><td>${stats.periode || 'jour'}</td></tr>
+            <tr><td>Prochain reset</td><td>${stats.prochain_reset ? new Date(stats.prochain_reset).toLocaleString('fr-FR') : '-'}</td></tr>
+            <tr><td>Derniere utilisation</td><td>${stats.derniere_utilisation ? new Date(stats.derniere_utilisation).toLocaleString('fr-FR') : 'Jamais'}</td></tr>
+            <tr><td>Derniere IP</td><td>${stats.derniere_ip || '-'}</td></tr>
+          </table>
+
+          <h6>Permissions</h6>
+          <div>${(cle.permissions || []).map(p => `<span class="badge bg-secondary me-1 mb-1">${p}</span>`).join('')}</div>
+
+          <h6 class="mt-3">Collections</h6>
+          <div>${(cle.collections_autorisees || []).map(c => `<span class="badge bg-info me-1">${c}</span>`).join('')}</div>
+
+          ${cle.ip_autorisees && cle.ip_autorisees.length > 0 ? `
+            <h6 class="mt-3">IPs autorisees</h6>
+            <div>${cle.ip_autorisees.map(ip => `<code class="me-2">${ip}</code>`).join('')}</div>
+          ` : ''}
+        `;
+
+        modalDetails.show();
+      } catch (error) {
+        alert('Erreur: ' + error.message);
+      }
+    }
+
+    function copierCle() {
+      const cle = document.getElementById('nouvelleCle').textContent;
+      navigator.clipboard.writeText(cle).then(() => {
+        alert('Cle copiee dans le presse-papier');
+      });
+    }
+
+    function fermerAlerteCle() {
+      document.getElementById('alerteCleCree').classList.add('d-none');
+    }
+  </script>
+</body>
+</html>

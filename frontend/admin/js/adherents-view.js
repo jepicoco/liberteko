@@ -27,6 +27,11 @@ async function viewAdherent(id) {
     // Configurer le chargement des communications au clic sur l'onglet
     setupCommunicationsTab(id);
 
+    // Charger les infos famille
+    if (typeof loadFamilleInfo === 'function') {
+      loadFamilleInfo(id);
+    }
+
     // Afficher la modal
     if (!viewModalInstance) {
       viewModalInstance = new bootstrap.Modal(document.getElementById('viewAdherentModal'));

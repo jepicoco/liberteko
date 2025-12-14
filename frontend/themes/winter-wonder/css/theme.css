@@ -715,3 +715,63 @@ a:hover {
     font-size: 1.25rem;
   }
 }
+
+/* ========================================
+   NO ANIMATIONS MODE
+   Disables all decorative animations when
+   body has .no-animations class
+======================================== */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Hide snowflakes */
+body.no-animations .snowflake,
+body.no-animations .snow-particle,
+body.no-animations .floating-snow {
+  display: none !important;
+}
+
+/* Disable aurora/glow effects */
+body.no-animations .aurora,
+body.no-animations .frost-glow,
+body.no-animations .winter-glow {
+  animation: none !important;
+}
+
+/* Keep static frost effects but no animation */
+body.no-animations .frost-border {
+  animation: none !important;
+}
+
+body.no-animations .hero::before,
+body.no-animations .hero::after {
+  animation: none !important;
+}
+
+/* Prefers reduced motion - automatic */
+@media (prefers-reduced-motion: reduce) {
+  .snowflake,
+  .snow-particle,
+  .floating-snow {
+    display: none !important;
+  }
+
+  .aurora,
+  .frost-glow,
+  .winter-glow {
+    animation: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

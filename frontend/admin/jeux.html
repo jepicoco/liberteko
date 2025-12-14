@@ -160,130 +160,274 @@
   <div class="modal fade" id="jeuModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalTitle">Nouveau jeu</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title" id="modalTitle"><i class="bi bi-puzzle me-2"></i>Nouveau jeu</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <!-- Barre d'enrichissement (visible uniquement en mode edition) -->
+          <div id="enrichmentBar" class="alert alert-light border mb-3 d-none">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <i class="bi bi-magic me-1"></i>
+                <strong>Enrichir depuis une API :</strong>
+              </div>
+              <div id="enrichmentButtons" class="d-flex gap-2 flex-wrap">
+                <!-- Boutons generes dynamiquement -->
+              </div>
+            </div>
+            <div id="enrichmentStatus" class="mt-2 d-none">
+              <small class="text-muted">
+                <span class="badge bg-success me-1">&nbsp;</span> Identique
+                <span class="badge bg-warning text-dark ms-2 me-1">&nbsp;</span> Difference (cliquez pour appliquer)
+              </small>
+            </div>
+          </div>
+
           <form id="jeuForm">
             <input type="hidden" id="jeuId">
 
-            <!-- Titre -->
-            <div class="mb-3">
-              <label for="titre" class="form-label">Titre *</label>
-              <input type="text" id="titre" class="form-control" required>
-            </div>
+            <!-- Section: Identification -->
+            <div class="card mb-3 border-success">
+              <div class="card-header bg-success bg-opacity-10">
+                <i class="bi bi-info-circle me-1"></i> Identification
+              </div>
+              <div class="card-body">
+                <!-- Titre -->
+                <div class="mb-3">
+                  <label for="titre" class="form-label fw-bold">Titre *</label>
+                  <input type="text" id="titre" class="form-control form-control-lg" required placeholder="Titre du jeu">
+                </div>
 
-            <!-- Infos de base -->
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label for="annee_sortie" class="form-label">Annee</label>
-                <input type="number" id="annee_sortie" class="form-control" min="1900" max="2100">
-              </div>
-              <div class="col-md-4">
-                <label for="age_min" class="form-label">Age min</label>
-                <input type="number" id="age_min" class="form-control" min="0">
-              </div>
-              <div class="col-md-4">
-                <label for="duree_partie" class="form-label">Duree (min)</label>
-                <input type="number" id="duree_partie" class="form-control" min="0">
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="nb_joueurs_min" class="form-label">Joueurs min</label>
-                <input type="number" id="nb_joueurs_min" class="form-control" min="1">
-              </div>
-              <div class="col-md-6">
-                <label for="nb_joueurs_max" class="form-label">Joueurs max</label>
-                <input type="number" id="nb_joueurs_max" class="form-control" min="1">
-              </div>
-            </div>
-
-            <hr>
-            <h6 class="text-muted mb-3"><i class="bi bi-tags"></i> Referentiels</h6>
-
-            <!-- Categories (multi-select) -->
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="select_categories" class="form-label">Categories</label>
-                <select id="select_categories" multiple placeholder="Selectionnez..."></select>
-              </div>
-              <div class="col-md-6">
-                <label for="select_themes" class="form-label">Themes</label>
-                <select id="select_themes" multiple placeholder="Selectionnez..."></select>
+                <!-- Codes et Annee -->
+                <div class="row mb-3">
+                  <div class="col-md-4">
+                    <label for="ean" class="form-label">
+                      <i class="bi bi-upc me-1"></i>Code EAN
+                    </label>
+                    <input type="text" id="ean" class="form-control font-monospace" placeholder="3760093330145" maxlength="20">
+                    <small class="text-muted">Code-barres commercial</small>
+                  </div>
+                  <div class="col-md-4">
+                    <label for="annee_sortie" class="form-label">
+                      <i class="bi bi-calendar me-1"></i>Annee de sortie
+                    </label>
+                    <input type="number" id="annee_sortie" class="form-control" min="1900" max="2100" placeholder="2024">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="image_url" class="form-label">
+                      <i class="bi bi-image me-1"></i>URL image
+                    </label>
+                    <input type="url" id="image_url" class="form-control" placeholder="https://...">
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="select_mecanismes" class="form-label">Mecanismes</label>
-                <select id="select_mecanismes" multiple placeholder="Selectionnez..."></select>
+            <!-- Section: Caracteristiques -->
+            <div class="card mb-3 border-primary">
+              <div class="card-header bg-primary bg-opacity-10">
+                <i class="bi bi-sliders me-1"></i> Caracteristiques
               </div>
-              <div class="col-md-6">
-                <label for="select_langues" class="form-label">Langues</label>
-                <select id="select_langues" multiple placeholder="Selectionnez..."></select>
-              </div>
-            </div>
-
-            <!-- Editeurs, Auteurs, Illustrateurs -->
-            <div class="row mb-3">
-              <div class="col-md-4">
-                <label for="select_editeurs" class="form-label">Editeurs</label>
-                <select id="select_editeurs" multiple placeholder="Selectionnez..."></select>
-              </div>
-              <div class="col-md-4">
-                <label for="select_auteurs" class="form-label">Auteurs</label>
-                <select id="select_auteurs" multiple placeholder="Selectionnez..."></select>
-              </div>
-              <div class="col-md-4">
-                <label for="select_illustrateurs" class="form-label">Illustrateurs</label>
-                <select id="select_illustrateurs" multiple placeholder="Selectionnez..."></select>
-              </div>
-            </div>
-
-            <!-- Gamme et Emplacement -->
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="select_gamme" class="form-label">Gamme</label>
-                <select id="select_gamme" placeholder="Selectionnez..."></select>
-              </div>
-              <div class="col-md-6">
-                <label for="select_emplacement" class="form-label">Emplacement</label>
-                <select id="select_emplacement" placeholder="Selectionnez..."></select>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3 mb-3">
+                    <label for="nb_joueurs_min" class="form-label fw-bold">
+                      <i class="bi bi-people me-1"></i>Joueurs min
+                    </label>
+                    <input type="number" id="nb_joueurs_min" class="form-control" min="1" placeholder="2">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="nb_joueurs_max" class="form-label fw-bold">
+                      <i class="bi bi-people-fill me-1"></i>Joueurs max
+                    </label>
+                    <input type="number" id="nb_joueurs_max" class="form-control" min="1" placeholder="6">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="duree_partie" class="form-label">
+                      <i class="bi bi-clock me-1"></i>Duree (min)
+                    </label>
+                    <input type="number" id="duree_partie" class="form-control" min="0" placeholder="45">
+                    <small class="text-muted">En minutes</small>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="age_min" class="form-label">
+                      <i class="bi bi-person-check me-1"></i>Age min
+                    </label>
+                    <input type="number" id="age_min" class="form-control" min="0" placeholder="8">
+                    <small class="text-muted">En annees</small>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <hr>
-
-            <!-- Description -->
-            <div class="mb-3">
-              <label for="description" class="form-label">Description</label>
-              <textarea id="description" class="form-control" rows="3"></textarea>
+            <!-- Section: Createurs -->
+            <div class="card mb-3 border-info">
+              <div class="card-header bg-info bg-opacity-10">
+                <i class="bi bi-people me-1"></i> Createurs
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-building me-1"></i>Editeur(s)
+                    </label>
+                    <select id="select_editeurs" multiple placeholder="Tapez pour rechercher ou ajouter..."></select>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-person-badge me-1"></i>Auteur(s)
+                    </label>
+                    <select id="select_auteurs" multiple placeholder="Tapez pour rechercher ou ajouter..."></select>
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-brush me-1"></i>Illustrateur(s)
+                    </label>
+                    <select id="select_illustrateurs" multiple placeholder="Tapez pour rechercher ou ajouter..."></select>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <!-- Statut et notes -->
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="statut" class="form-label">Statut *</label>
-                <select id="statut" class="form-select" required>
-                  <option value="disponible">Disponible</option>
-                  <option value="emprunte">Emprunte</option>
-                  <option value="maintenance">Maintenance</option>
-                  <option value="perdu">Perdu</option>
-                </select>
+            <!-- Section: Classification -->
+            <div class="card mb-3 border-warning">
+              <div class="card-header bg-warning bg-opacity-10">
+                <i class="bi bi-tags me-1"></i> Classification
               </div>
-              <div class="col-md-6">
-                <label for="notes" class="form-label">Notes</label>
-                <textarea id="notes" class="form-control" rows="2"></textarea>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-bookmark me-1"></i>Categorie(s)
+                    </label>
+                    <select id="select_categories" multiple placeholder="Selectionnez une ou plusieurs categories..."></select>
+                    <small class="text-muted">Strategie, Famille, Expert, Enfant...</small>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-palette me-1"></i>Theme(s)
+                    </label>
+                    <select id="select_themes" multiple placeholder="Selectionnez un ou plusieurs themes..."></select>
+                    <small class="text-muted">Medieval, Espace, Pirates, Zombies...</small>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-gear me-1"></i>Mecanisme(s)
+                    </label>
+                    <select id="select_mecanismes" multiple placeholder="Selectionnez les mecanismes..."></select>
+                    <small class="text-muted">Placement, Draft, Deckbuilding, Cooperation...</small>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-translate me-1"></i>Langue(s)
+                    </label>
+                    <select id="select_langues" multiple placeholder="Selectionnez les langues..."></select>
+                    <small class="text-muted">Langues du materiel de jeu</small>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <label for="select_gamme" class="form-label">
+                      <i class="bi bi-collection me-1"></i>Gamme / Serie
+                    </label>
+                    <select id="select_gamme" placeholder="Selectionnez ou creez une gamme..."></select>
+                    <small class="text-muted">Ex: Catan, Unlock, Pandemic...</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Emplacement -->
+            <div class="card mb-3 border-secondary">
+              <div class="card-header bg-secondary bg-opacity-10">
+                <i class="bi bi-geo-alt me-1"></i> Emplacement
+              </div>
+              <div class="card-body">
+                <div class="row align-items-end">
+                  <div class="col-md-6">
+                    <label for="select_emplacement" class="form-label fw-bold">
+                      <i class="bi bi-geo-alt-fill me-1"></i>Emplacement de rangement
+                    </label>
+                    <select id="select_emplacement" placeholder="Selectionnez un emplacement..."></select>
+                    <small class="text-muted">Rayon, etagere ou zone de stockage</small>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="alert alert-light mb-0 py-2">
+                      <i class="bi bi-info-circle me-1"></i>
+                      <small>L'emplacement permet de retrouver facilement le jeu dans vos locaux.</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Description -->
+            <div class="card mb-3 border-secondary">
+              <div class="card-header bg-secondary bg-opacity-10">
+                <i class="bi bi-text-paragraph me-1"></i> Description
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label for="description" class="form-label">Description / Resume</label>
+                  <textarea id="description" class="form-control" rows="4" placeholder="Description du jeu, regles simplifiees..."></textarea>
+                </div>
+                <div>
+                  <label for="notes" class="form-label">Notes internes</label>
+                  <textarea id="notes" class="form-control" rows="2" placeholder="Notes pour la gestion interne..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Gestion -->
+            <div class="card border-danger">
+              <div class="card-header bg-danger bg-opacity-10">
+                <i class="bi bi-gear me-1"></i> Gestion
+              </div>
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3 mb-3">
+                    <label for="statut" class="form-label fw-bold">Statut *</label>
+                    <select id="statut" class="form-select" required>
+                      <option value="disponible">Disponible</option>
+                      <option value="emprunte">Emprunte</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="perdu">Perdu</option>
+                      <option value="archive">Archive</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="etat" class="form-label">Etat physique</label>
+                    <select id="etat" class="form-select">
+                      <option value="neuf">Neuf</option>
+                      <option value="tres_bon">Tres bon</option>
+                      <option value="bon" selected>Bon</option>
+                      <option value="acceptable">Acceptable</option>
+                      <option value="mauvais">Mauvais</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="date_acquisition" class="form-label">Date acquisition</label>
+                    <input type="date" id="date_acquisition" class="form-control">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="prix_achat" class="form-label">Prix achat (EUR)</label>
+                    <input type="number" id="prix_achat" class="form-control" step="0.01" min="0" placeholder="0.00">
+                  </div>
+                </div>
               </div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" form="jeuForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Annuler
+          </button>
+          <button type="submit" form="jeuForm" class="btn btn-success" id="submitBtn">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
         </div>
       </div>
     </div>
@@ -298,52 +442,185 @@
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- Input section -->
-          <div class="row mb-4">
-            <div class="col-md-8">
-              <label class="form-label">Code EAN ou Titre du jeu</label>
-              <div class="input-group">
-                <input type="text" id="lookupInput" class="form-control form-control-lg"
-                       placeholder="Ex: 3558380077992 ou Catan"
-                       onkeyup="handleLookupKeyup(event)">
-                <button class="btn btn-success" type="button" onclick="doLookup()">
-                  <i class="bi bi-search"></i> Rechercher
-                </button>
-              </div>
-              <small class="text-muted">Scannez un code-barre commercial ou saisissez le titre du jeu</small>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-              <button class="btn btn-outline-primary w-100" onclick="startCameraScan()">
-                <i class="bi bi-camera"></i> Scanner avec camera
+          <!-- Info APIs configurees -->
+          <div id="lookupApisInfo" class="alert alert-info small mb-3">
+            <i class="bi bi-info-circle"></i> <strong>APIs configurees:</strong>
+            <span id="lookupApisList">Chargement...</span>
+          </div>
+
+          <!-- Mode de scan -->
+          <ul class="nav nav-tabs mb-3" id="scanModeTabs">
+            <li class="nav-item">
+              <button class="nav-link active" id="tab-scanner" data-bs-toggle="tab" data-bs-target="#mode-scanner" type="button">
+                <i class="bi bi-upc-scan"></i> Scanner physique
               </button>
-            </div>
-          </div>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="tab-camera" data-bs-toggle="tab" data-bs-target="#mode-camera" type="button">
+                <i class="bi bi-camera"></i> Camera
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="tab-manual" data-bs-toggle="tab" data-bs-target="#mode-manual" type="button">
+                <i class="bi bi-keyboard"></i> Saisie manuelle
+              </button>
+            </li>
+          </ul>
 
-          <!-- Camera section (hidden by default) -->
-          <div id="cameraSection" class="d-none mb-4">
-            <div class="card bg-dark">
-              <div class="card-body text-center">
-                <div id="lookupCameraReader" style="width: 100%; max-width: 400px; margin: 0 auto;"></div>
-                <button class="btn btn-light mt-2" onclick="stopCameraScan()">
-                  <i class="bi bi-x"></i> Fermer camera
-                </button>
+          <div class="tab-content">
+            <!-- Mode Scanner physique -->
+            <div class="tab-pane fade show active" id="mode-scanner">
+              <div id="scannerZone">
+                <!-- Etat initial: Scanner pret -->
+                <div id="scannerReady" class="text-center py-4 border rounded bg-light">
+                  <i class="bi bi-upc-scan display-1 text-success mb-3"></i>
+                  <h5>Scanner pret</h5>
+                  <p class="text-muted mb-2">Scannez un code-barres EAN avec votre douchette</p>
+                  <p class="text-muted small">Le scan est capture automatiquement, meme sans cliquer dans un champ</p>
+                  <div id="scannerBuffer" class="mt-3 d-none">
+                    <span class="badge bg-success fs-5 font-monospace" id="scannerBufferDisplay"></span>
+                  </div>
+                </div>
+
+                <!-- Etat: Recherche en cours -->
+                <div id="scannerLoading" class="text-center py-4 border rounded bg-light d-none">
+                  <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status"></div>
+                  <h5 class="mt-3">Recherche en cours...</h5>
+                  <p class="text-muted" id="scannerSearchingApi">Interrogation des APIs...</p>
+                  <code id="scannerSearchingCode" class="fs-5"></code>
+                </div>
+
+                <!-- Etat: Jeu trouve -->
+                <div id="scannerResult" class="d-none">
+                  <div class="alert alert-success mb-3 d-flex align-items-center justify-content-between">
+                    <span><i class="bi bi-check-circle me-2"></i>Jeu trouve !</span>
+                    <span class="badge bg-white text-success" id="scannerSourceApi"></span>
+                  </div>
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-3 text-center">
+                          <img id="scannerResultImage" src="" alt="Image du jeu" class="img-fluid rounded" style="max-height: 150px;">
+                          <div id="scannerResultNoImage" class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;">
+                            <i class="bi bi-dice-5 display-4 text-muted"></i>
+                          </div>
+                        </div>
+                        <div class="col-md-9">
+                          <h4 id="scannerResultTitre" class="mb-2"></h4>
+                          <p class="text-muted mb-2">
+                            <i class="bi bi-building"></i> <span id="scannerResultEditeur">-</span> |
+                            <i class="bi bi-person"></i> <span id="scannerResultAuteur">-</span> |
+                            <i class="bi bi-calendar"></i> <span id="scannerResultAnnee">-</span>
+                          </p>
+                          <p class="mb-2">
+                            <span class="badge bg-info"><i class="bi bi-people"></i> <span id="scannerResultJoueurs">-</span> joueurs</span>
+                            <span class="badge bg-warning text-dark"><i class="bi bi-hourglass"></i> <span id="scannerResultDuree">-</span> min</span>
+                            <span class="badge bg-secondary"><i class="bi bi-person-check"></i> <span id="scannerResultAge">-</span>+</span>
+                          </p>
+                          <p id="scannerResultDescription" class="small text-muted" style="max-height: 80px; overflow-y: auto;"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex gap-2 mt-3">
+                    <button type="button" class="btn btn-success" onclick="useScannerResults()">
+                      <i class="bi bi-plus-circle me-1"></i>Utiliser ces infos
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetScanner()">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>Nouveau scan
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Etat: Non trouve -->
+                <div id="scannerNotFound" class="d-none">
+                  <div class="alert alert-warning mb-3">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Aucun resultat trouve pour ce code.
+                  </div>
+                  <div class="text-center py-3 border rounded bg-light">
+                    <code id="scannerNotFoundCode" class="fs-4 d-block mb-3"></code>
+                    <p class="text-muted">Ce code n'a pas ete trouve dans les APIs configurees.</p>
+                  </div>
+                  <div class="mt-3">
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetScanner()">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>Nouveau scan
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Etat: Erreur -->
+                <div id="scannerError" class="d-none">
+                  <div class="alert alert-danger mb-3">
+                    <i class="bi bi-x-circle me-2"></i><span id="scannerErrorMsg"></span>
+                  </div>
+                  <div class="mt-3">
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetScanner()">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>Reessayer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mode Camera -->
+            <div class="tab-pane fade" id="mode-camera">
+              <div class="text-center py-3">
+                <div id="cameraContainer" class="position-relative mx-auto" style="max-width: 400px;">
+                  <video id="cameraPreview" class="w-100 rounded d-none" playsinline></video>
+                  <canvas id="cameraCanvas" class="d-none"></canvas>
+                  <div id="cameraPlaceholder" class="border rounded bg-light py-5">
+                    <i class="bi bi-camera display-1 text-muted"></i>
+                    <p class="text-muted mt-2">Camera non demarree</p>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <button class="btn btn-success" id="btnStartCamera" onclick="startCamera()">
+                    <i class="bi bi-camera-video"></i> Demarrer la camera
+                  </button>
+                  <button class="btn btn-danger d-none" id="btnStopCamera" onclick="stopCamera()">
+                    <i class="bi bi-camera-video-off"></i> Arreter
+                  </button>
+                </div>
+                <p class="text-muted small mt-2">
+                  <i class="bi bi-info-circle"></i> Pointez le code-barres devant la camera
+                </p>
+              </div>
+            </div>
+
+            <!-- Mode Saisie manuelle -->
+            <div class="tab-pane fade" id="mode-manual">
+              <div class="row mb-4">
+                <div class="col-12">
+                  <label class="form-label">Code EAN ou Titre du jeu</label>
+                  <div class="input-group input-group-lg">
+                    <input type="text" id="lookupInput" class="form-control"
+                           placeholder="Ex: 3558380077992 ou Catan"
+                           onkeyup="handleLookupKeyup(event)">
+                    <button class="btn btn-success" type="button" onclick="doLookup()">
+                      <i class="bi bi-search"></i> Rechercher
+                    </button>
+                  </div>
+                  <small class="text-muted">Saisissez un code EAN (8-14 chiffres) ou un titre de jeu</small>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Loading -->
+          <hr class="my-3">
+
+          <!-- Loading (mode manuel) -->
           <div id="lookupLoading" class="d-none text-center py-4">
             <div class="spinner-border text-success" role="status"></div>
-            <p class="mt-2">Recherche en cours sur les APIs externes...</p>
-            <small class="text-muted">UPCitemdb, BoardGameGeek, et autres sources configurees</small>
+            <p class="mt-2">Recherche en cours...</p>
+            <small class="text-muted" id="lookupSearchingApi">Interrogation des APIs...</small>
           </div>
 
-          <!-- Results -->
+          <!-- Results (mode manuel) -->
           <div id="lookupResults" class="d-none">
             <div class="alert alert-success mb-3">
-              <i class="bi bi-check-circle"></i> Jeu trouve ! Source: <span id="lookupSource"></span>
+              <i class="bi bi-check-circle"></i> Jeu trouve !
+              <span class="float-end badge bg-white text-success" id="lookupSourceApi"></span>
             </div>
-
             <div class="card">
               <div class="card-body">
                 <div class="row">
@@ -373,15 +650,14 @@
             </div>
           </div>
 
-          <!-- Not found -->
+          <!-- Not found (mode manuel) -->
           <div id="lookupNotFound" class="d-none">
             <div class="alert alert-warning">
-              <i class="bi bi-exclamation-triangle"></i> Aucun resultat trouve pour ce code EAN.
-              <br><small>Essayez de rechercher par titre ou ajoutez le jeu manuellement.</small>
+              <i class="bi bi-exclamation-triangle"></i> Aucun resultat trouve pour ce code.
             </div>
           </div>
 
-          <!-- Error -->
+          <!-- Error (mode manuel) -->
           <div id="lookupError" class="d-none">
             <div class="alert alert-danger">
               <i class="bi bi-x-circle"></i> <span id="lookupErrorMsg"></span>
@@ -441,6 +717,30 @@
     </div>
   </div>
 
+  <!-- Modal de selection des resultats de recherche par titre -->
+  <div class="modal fade" id="titleSearchResultsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title"><i class="bi bi-search me-2"></i>Resultats de la recherche</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="titleSearchInfo" class="alert alert-info mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Plusieurs resultats trouves. Selectionnez celui qui correspond au jeu.
+          </div>
+          <div id="titleSearchResults" class="list-group">
+            <!-- Resultats generes dynamiquement -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
@@ -456,6 +756,7 @@
     let modalInstance = null;
     let viewModalInstance = null;
     let deleteModalInstance = null;
+    let titleSearchModalInstance = null;
     let jeuToDelete = null;
     let pagination = null;
 
@@ -476,6 +777,9 @@
       gammes: [],
       emplacements: []
     };
+
+    // Donnees de recherche par titre en attente de selection
+    let pendingTitleSearchResults = [];
 
     // Load jeux avec referentiels
     async function loadJeux(page = null, limit = null) {
@@ -804,6 +1108,10 @@
 
       clearTomSelects();
 
+      // Cacher la barre d'enrichissement pour les nouveaux jeux
+      document.getElementById('enrichmentBar').classList.add('d-none');
+      clearEnrichmentHighlights();
+
       if (!modalInstance) {
         modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
       }
@@ -821,16 +1129,21 @@
         const data = await jeuxAPI.getById(id);
         const jeu = data.jeu;
 
-        document.getElementById('modalTitle').textContent = 'Modifier le jeu';
+        document.getElementById('modalTitle').innerHTML = '<i class="bi bi-puzzle me-2"></i>Modifier le jeu';
         document.getElementById('jeuId').value = jeu.id;
         document.getElementById('titre').value = jeu.titre || '';
+        document.getElementById('ean').value = jeu.ean || '';
         document.getElementById('annee_sortie').value = jeu.annee_sortie || '';
+        document.getElementById('image_url').value = jeu.image_url || '';
         document.getElementById('age_min').value = jeu.age_min || '';
         document.getElementById('nb_joueurs_min').value = jeu.nb_joueurs_min || '';
         document.getElementById('nb_joueurs_max').value = jeu.nb_joueurs_max || '';
         document.getElementById('duree_partie').value = jeu.duree_partie || '';
         document.getElementById('description').value = jeu.description || '';
         document.getElementById('statut').value = jeu.statut || 'disponible';
+        document.getElementById('etat').value = jeu.etat || 'bon';
+        document.getElementById('date_acquisition').value = jeu.date_acquisition ? jeu.date_acquisition.split('T')[0] : '';
+        document.getElementById('prix_achat').value = jeu.prix_achat || '';
         document.getElementById('notes').value = jeu.notes || '';
 
         // Remplir les Tom-Selects avec les referentiels
@@ -845,6 +1158,9 @@
         if (jeu.illustrateursRef) tsIllustrateurs.setValue(jeu.illustrateursRef.map(i => i.id));
         if (jeu.gamme_id) tsGamme.setValue(jeu.gamme_id);
         if (jeu.emplacement_id) tsEmplacement.setValue(jeu.emplacement_id);
+
+        // Afficher la barre d'enrichissement
+        showEnrichmentBar(jeu);
 
         if (!modalInstance) {
           modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
@@ -1045,13 +1361,18 @@
         // Collecter les IDs des referentiels selectionnes
         const formData = {
           titre: document.getElementById('titre').value,
+          ean: document.getElementById('ean').value || null,
           annee_sortie: document.getElementById('annee_sortie').value || null,
+          image_url: document.getElementById('image_url').value || null,
           age_min: document.getElementById('age_min').value || null,
           nb_joueurs_min: document.getElementById('nb_joueurs_min').value || null,
           nb_joueurs_max: document.getElementById('nb_joueurs_max').value || null,
           duree_partie: document.getElementById('duree_partie').value || null,
           description: document.getElementById('description').value || null,
           statut: document.getElementById('statut').value,
+          etat: document.getElementById('etat').value || 'bon',
+          date_acquisition: document.getElementById('date_acquisition').value || null,
+          prix_achat: document.getElementById('prix_achat').value || null,
           notes: document.getElementById('notes').value || null,
 
           // Nouveaux champs normalises
@@ -1113,27 +1434,242 @@
     // =========== EAN LOOKUP ===========
 
     let lookupModalInstance = null;
-    let lookupCameraScanner = null;
     let currentLookupResult = null;
+    let scannerBuffer = '';
+    let scannerTimeout = null;
+    let isLookupModalOpen = false;
+    let cameraStream = null;
+    let quaggaRunning = false;
+    let configuredApis = [];
+    let currentScannerResult = null;
+
+    // Table de conversion AZERTY -> QWERTY pour les scanners
+    const azertyToQwerty = {
+      '&': '1', 'é': '2', '"': '3', "'": '4', '(': '5',
+      '-': '6', 'è': '7', '_': '8', 'ç': '9', 'à': '0',
+      ')': '-', '=': '='
+    };
+
+    // Convertit les caracteres AZERTY en chiffres
+    function convertScannerInput(input) {
+      let result = '';
+      for (const char of input) {
+        result += azertyToQwerty[char] || char;
+      }
+      return result;
+    }
+
+    // Verifie si c'est un code EAN valide (8-14 chiffres)
+    function isValidEAN(code) {
+      const cleaned = code.replace(/[-\s]/g, '');
+      return /^\d{8,14}$/.test(cleaned);
+    }
+
+    // Charge les APIs configurees pour les jeux
+    async function loadConfiguredApis() {
+      try {
+        const response = await apiRequest('/parametres/apis-externes');
+        const configs = response.configurations || [];
+        configuredApis = configs
+          .filter(c => c.actif && c.collections_supportees?.includes('jeu'))
+          .sort((a, b) => (a.priorite || 0) - (b.priorite || 0));
+
+        const apisList = document.getElementById('lookupApisList');
+        if (configuredApis.length === 0) {
+          apisList.innerHTML = '<span class="text-warning">Aucune API configuree pour les jeux</span>';
+        } else {
+          apisList.innerHTML = configuredApis.map((api, idx) =>
+            `<span class="badge bg-${api.par_defaut ? 'success' : 'secondary'} me-1">${idx + 1}. ${api.libelle}</span>`
+          ).join('');
+        }
+      } catch (error) {
+        console.error('Erreur chargement APIs:', error);
+        document.getElementById('lookupApisList').innerHTML = '<span class="text-danger">Erreur de chargement</span>';
+      }
+    }
+
+    // Gestionnaire global des frappes clavier pour le scanner
+    function handleScannerKeypress(event) {
+      if (!isLookupModalOpen) return;
+
+      // Ignorer si on est dans un input (sauf si c'est le mode scanner actif)
+      const activeTab = document.querySelector('#scanModeTabs .nav-link.active');
+      if (activeTab && activeTab.id !== 'tab-scanner') return;
+
+      // Ne pas capturer si on est dans un champ de saisie
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+
+      // Caracteres du scanner (chiffres ou caracteres AZERTY pour chiffres)
+      const char = event.key;
+      if (char.length === 1 && (char >= '0' && char <= '9' || azertyToQwerty[char])) {
+        event.preventDefault();
+
+        // Ajouter au buffer
+        scannerBuffer += char;
+        document.getElementById('scannerBuffer').classList.remove('d-none');
+        document.getElementById('scannerBufferDisplay').textContent = convertScannerInput(scannerBuffer);
+
+        // Reset le timeout
+        clearTimeout(scannerTimeout);
+        scannerTimeout = setTimeout(() => {
+          if (scannerBuffer.length >= 8) {
+            // C'est probablement un scan complet
+            const ean = convertScannerInput(scannerBuffer);
+            if (isValidEAN(ean)) {
+              doLookup(ean);
+            }
+          }
+          // Reset buffer
+          scannerBuffer = '';
+          document.getElementById('scannerBuffer').classList.add('d-none');
+        }, 100); // Les scanners envoient tres vite, 100ms suffit
+      } else if (char === 'Enter' && scannerBuffer.length > 0) {
+        // Enter = fin du scan
+        event.preventDefault();
+        clearTimeout(scannerTimeout);
+        const ean = convertScannerInput(scannerBuffer);
+        scannerBuffer = '';
+        document.getElementById('scannerBuffer').classList.add('d-none');
+
+        if (isValidEAN(ean)) {
+          doLookup(ean);
+        } else {
+          showToast('Code invalide: ' + ean, 'warning');
+        }
+      }
+    }
+
+    // Camera functions
+    async function startCamera() {
+      try {
+        const video = document.getElementById('cameraPreview');
+        const placeholder = document.getElementById('cameraPlaceholder');
+
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+
+        video.srcObject = cameraStream;
+        video.classList.remove('d-none');
+        placeholder.classList.add('d-none');
+        document.getElementById('btnStartCamera').classList.add('d-none');
+        document.getElementById('btnStopCamera').classList.remove('d-none');
+
+        await video.play();
+
+        // Demarrer Quagga pour la detection si disponible
+        if (typeof Quagga !== 'undefined') {
+          Quagga.init({
+            inputStream: {
+              type: 'LiveStream',
+              target: video,
+              constraints: {
+                facingMode: 'environment'
+              }
+            },
+            decoder: {
+              readers: ['ean_reader', 'ean_8_reader', 'upc_reader', 'upc_e_reader']
+            },
+            locate: true
+          }, function(err) {
+            if (err) {
+              console.error('Quagga init error:', err);
+              return;
+            }
+            Quagga.start();
+            quaggaRunning = true;
+          });
+
+          Quagga.onDetected(function(result) {
+            if (result && result.codeResult && result.codeResult.code) {
+              const code = result.codeResult.code;
+              if (isValidEAN(code)) {
+                stopCamera();
+                doLookup(code);
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Camera error:', error);
+        showToast('Impossible d\'acceder a la camera: ' + error.message, 'danger');
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+
+      if (quaggaRunning && typeof Quagga !== 'undefined') {
+        Quagga.stop();
+        quaggaRunning = false;
+      }
+
+      const video = document.getElementById('cameraPreview');
+      const placeholder = document.getElementById('cameraPlaceholder');
+
+      if (video) video.classList.add('d-none');
+      if (placeholder) placeholder.classList.remove('d-none');
+      document.getElementById('btnStartCamera').classList.remove('d-none');
+      document.getElementById('btnStopCamera').classList.add('d-none');
+    }
 
     function openLookupModal() {
       resetLookupUI();
+      loadConfiguredApis();
+
       if (!lookupModalInstance) {
         lookupModalInstance = new bootstrap.Modal(document.getElementById('lookupModal'));
+
+        // Event listeners pour ouverture/fermeture
+        document.getElementById('lookupModal').addEventListener('shown.bs.modal', () => {
+          isLookupModalOpen = true;
+        });
+        document.getElementById('lookupModal').addEventListener('hidden.bs.modal', () => {
+          isLookupModalOpen = false;
+          stopCamera();
+          scannerBuffer = '';
+        });
       }
+
       lookupModalInstance.show();
-      document.getElementById('lookupInput').focus();
     }
 
     function resetLookupUI() {
-      document.getElementById('lookupInput').value = '';
+      const lookupInput = document.getElementById('lookupInput');
+      if (lookupInput) lookupInput.value = '';
+
+      // Reset zone classique (mode manuel)
       document.getElementById('lookupLoading').classList.add('d-none');
       document.getElementById('lookupResults').classList.add('d-none');
       document.getElementById('lookupNotFound').classList.add('d-none');
       document.getElementById('lookupError').classList.add('d-none');
       document.getElementById('btnUseResults').classList.add('d-none');
-      document.getElementById('cameraSection').classList.add('d-none');
+
+      // Reset zone scanner
+      resetScanner();
+
       currentLookupResult = null;
+    }
+
+    // Reinitialiser le scanner pour un nouveau scan
+    function resetScanner() {
+      currentScannerResult = null;
+      document.getElementById('scannerReady').classList.remove('d-none');
+      document.getElementById('scannerLoading').classList.add('d-none');
+      document.getElementById('scannerResult').classList.add('d-none');
+      document.getElementById('scannerNotFound').classList.add('d-none');
+      document.getElementById('scannerError').classList.add('d-none');
+      document.getElementById('scannerBuffer').classList.add('d-none');
+      scannerBuffer = '';
+    }
+
+    // Detecter si on est en mode scanner
+    function isInScannerMode() {
+      const activeTab = document.querySelector('#scanModeTabs .nav-link.active');
+      return activeTab && activeTab.id === 'tab-scanner';
     }
 
     function handleLookupKeyup(event) {
@@ -1142,37 +1678,245 @@
       }
     }
 
-    async function doLookup() {
-      const input = document.getElementById('lookupInput').value.trim();
+    async function doLookup(scannerInput = null) {
+      // Si input fourni (depuis scanner), sinon prendre du champ manuel
+      const input = scannerInput || document.getElementById('lookupInput').value.trim();
       if (!input) {
         alert('Veuillez saisir un code EAN ou un titre de jeu');
         return;
       }
 
-      // Reset UI
-      document.getElementById('lookupLoading').classList.remove('d-none');
-      document.getElementById('lookupResults').classList.add('d-none');
-      document.getElementById('lookupNotFound').classList.add('d-none');
-      document.getElementById('lookupError').classList.add('d-none');
-      document.getElementById('btnUseResults').classList.add('d-none');
+      const isScannerMode = isInScannerMode() && scannerInput;
+
+      if (isScannerMode) {
+        // Mode scanner: afficher dans la zone scanner
+        document.getElementById('scannerReady').classList.add('d-none');
+        document.getElementById('scannerLoading').classList.remove('d-none');
+        document.getElementById('scannerResult').classList.add('d-none');
+        document.getElementById('scannerNotFound').classList.add('d-none');
+        document.getElementById('scannerError').classList.add('d-none');
+        document.getElementById('scannerSearchingCode').textContent = input;
+        document.getElementById('scannerSearchingApi').textContent = 'Interrogation des APIs...';
+      } else {
+        // Mode manuel: afficher dans la zone classique
+        document.getElementById('lookupLoading').classList.remove('d-none');
+        document.getElementById('lookupResults').classList.add('d-none');
+        document.getElementById('lookupNotFound').classList.add('d-none');
+        document.getElementById('lookupError').classList.add('d-none');
+        document.getElementById('btnUseResults').classList.add('d-none');
+      }
+
+      // Detecter si c'est un code EAN (uniquement des chiffres, 8-14 caracteres)
+      const isEAN = /^\d{8,14}$/.test(input.replace(/[- ]/g, ''));
 
       try {
-        // Utilise la nouvelle API generique avec recherche automatique
-        const result = await lookupAPI.search(input, 'jeu');
+        if (isEAN) {
+          // Recherche par code EAN
+          const result = await lookupAPI.search(input, 'jeu');
 
-        document.getElementById('lookupLoading').classList.add('d-none');
-
-        if (result.found && result.data) {
-          currentLookupResult = result.data;
-          displayLookupResults(result);
+          if (isScannerMode) {
+            document.getElementById('scannerLoading').classList.add('d-none');
+            if (result.found && result.data) {
+              currentScannerResult = result.data;
+              currentScannerResult._searchedCode = input;
+              displayScannerResults(result);
+            } else {
+              document.getElementById('scannerNotFound').classList.remove('d-none');
+              document.getElementById('scannerNotFoundCode').textContent = input;
+            }
+          } else {
+            document.getElementById('lookupLoading').classList.add('d-none');
+            if (result.found && result.data) {
+              currentLookupResult = result.data;
+              displayLookupResults(result);
+            } else {
+              document.getElementById('lookupNotFound').classList.remove('d-none');
+            }
+          }
         } else {
-          document.getElementById('lookupNotFound').classList.remove('d-none');
+          // Recherche par titre avec resultats multiples
+          await searchByTitle(input);
         }
       } catch (error) {
-        document.getElementById('lookupLoading').classList.add('d-none');
-        document.getElementById('lookupError').classList.remove('d-none');
-        document.getElementById('lookupErrorMsg').textContent = error.message;
+        if (isScannerMode) {
+          document.getElementById('scannerLoading').classList.add('d-none');
+          document.getElementById('scannerError').classList.remove('d-none');
+          document.getElementById('scannerErrorMsg').textContent = error.message;
+        } else {
+          document.getElementById('lookupLoading').classList.add('d-none');
+          document.getElementById('lookupError').classList.remove('d-none');
+          document.getElementById('lookupErrorMsg').textContent = error.message;
+        }
       }
+    }
+
+    // Afficher les resultats dans la zone scanner
+    function displayScannerResults(result) {
+      const data = result.data;
+
+      document.getElementById('scannerResultTitre').textContent = data.titre || data.title || 'Sans titre';
+      document.getElementById('scannerResultEditeur').textContent = data.editeur || data.publisher || '-';
+      document.getElementById('scannerResultAuteur').textContent = data.auteur || data.designer || '-';
+      document.getElementById('scannerResultAnnee').textContent = data.annee_sortie || data.year || '-';
+
+      // Gerer les differents formats de champs joueurs
+      const joueursMin = data.joueurs_min || data.nb_joueurs_min || data.minPlayers;
+      const joueursMax = data.joueurs_max || data.nb_joueurs_max || data.maxPlayers;
+      document.getElementById('scannerResultJoueurs').textContent =
+        joueursMin && joueursMax ? `${joueursMin}-${joueursMax}` : joueursMin || '-';
+
+      document.getElementById('scannerResultDuree').textContent = data.duree_partie || data.playingTime || '-';
+      document.getElementById('scannerResultAge').textContent = data.age_minimum || data.age_min || data.minAge || '-';
+
+      document.getElementById('scannerResultDescription').textContent =
+        (data.description || 'Pas de description').substring(0, 300) + (data.description?.length > 300 ? '...' : '');
+
+      // Source API
+      if (result.provider || result.source) {
+        document.getElementById('scannerSourceApi').textContent = 'Source: ' + (result.provider || result.source);
+      }
+
+      // Image
+      const img = document.getElementById('scannerResultImage');
+      const noImg = document.getElementById('scannerResultNoImage');
+      const imageUrl = data.image_url || data.thumbnail_url || data.image;
+
+      if (imageUrl) {
+        img.src = imageUrl;
+        img.classList.remove('d-none');
+        noImg.classList.add('d-none');
+      } else {
+        img.classList.add('d-none');
+        noImg.classList.remove('d-none');
+      }
+
+      document.getElementById('scannerResult').classList.remove('d-none');
+    }
+
+    // Utiliser les resultats du scanner
+    function useScannerResults() {
+      if (!currentScannerResult) return;
+
+      // Copier vers currentLookupResult et utiliser la fonction existante
+      currentLookupResult = currentScannerResult;
+      lookupModalInstance.hide();
+      useResultsData(currentScannerResult);
+    }
+
+    // Recherche par titre avec resultats multiples
+    async function searchByTitle(titre) {
+      try {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        const response = await fetch('/api/lookup/title/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: titre,
+            collection: 'jeu',
+            maxResults: 10
+          })
+        });
+
+        document.getElementById('lookupLoading').classList.add('d-none');
+
+        if (!response.ok) {
+          throw new Error('Erreur API');
+        }
+
+        const result = await response.json();
+
+        if (!result.found || !result.results || result.results.length === 0) {
+          document.getElementById('lookupNotFound').classList.remove('d-none');
+          return;
+        }
+
+        // Si un seul resultat, l'utiliser directement
+        if (result.results.length === 1) {
+          currentLookupResult = result.results[0];
+          displayLookupResults({ found: true, source: 'bgg', data: result.results[0] });
+          return;
+        }
+
+        // Plusieurs resultats -> ouvrir le modal de selection
+        pendingTitleSearchResults = result.results;
+        showTitleSearchResultsModal(result.results, titre);
+
+      } catch (error) {
+        document.getElementById('lookupLoading').classList.add('d-none');
+        throw error;
+      }
+    }
+
+    // Afficher le modal de selection des resultats
+    function showTitleSearchResultsModal(results, searchTitle) {
+      const container = document.getElementById('titleSearchResults');
+      const info = document.getElementById('titleSearchInfo');
+
+      info.innerHTML = `<i class="bi bi-info-circle me-1"></i>
+        ${results.length} resultat(s) trouve(s) pour "<strong>${escapeHtml(searchTitle)}</strong>".
+        Selectionnez celui qui correspond au jeu.`;
+
+      container.innerHTML = results.map((r, index) => {
+        const display = r._display || r;
+        return `
+          <a href="#" class="list-group-item list-group-item-action" onclick="selectTitleSearchResult(${index}); return false;">
+            <div class="d-flex w-100 align-items-start">
+              ${display.image_url ?
+                `<img src="${display.image_url}" alt="" class="me-3" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">` :
+                `<div class="me-3 d-flex align-items-center justify-content-center bg-secondary text-white" style="width: 60px; height: 60px; border-radius: 4px;"><i class="bi bi-dice-5"></i></div>`
+              }
+              <div class="flex-grow-1">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">${escapeHtml(display.titre || r.titre || 'Sans titre')}</h6>
+                  <small class="text-muted">${display.annee || r.annee_sortie || ''}</small>
+                </div>
+                <p class="mb-1 text-muted small">
+                  ${display.auteurs || r.auteur || 'Auteur inconnu'}
+                  ${display.editeur || r.editeur ? ` - ${display.editeur || r.editeur}` : ''}
+                </p>
+                <small class="text-muted">
+                  ${display.joueurs || (r.joueurs_min && r.joueurs_max ? `${r.joueurs_min}-${r.joueurs_max} joueurs` : '')}
+                  ${display.duree || (r.duree_partie ? ` - ${r.duree_partie} min` : '')}
+                </small>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      // Ouvrir le modal
+      if (!titleSearchModalInstance) {
+        titleSearchModalInstance = new bootstrap.Modal(document.getElementById('titleSearchResultsModal'));
+      }
+      titleSearchModalInstance.show();
+    }
+
+    // Selectionner un resultat de recherche par titre
+    function selectTitleSearchResult(index) {
+      const result = pendingTitleSearchResults[index];
+
+      // Fermer le modal de selection
+      if (titleSearchModalInstance) {
+        titleSearchModalInstance.hide();
+      }
+
+      // Afficher dans le modal principal
+      currentLookupResult = result;
+      displayLookupResults({ found: true, source: 'bgg', data: result });
+
+      // Nettoyer
+      pendingTitleSearchResults = [];
+    }
+
+    // Echapper le HTML
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
     }
 
     function displayLookupResults(result) {
@@ -1184,12 +1928,15 @@
       document.getElementById('lookupEditeur').textContent = data.editeur || data.publisher || '-';
       document.getElementById('lookupAuteur').textContent = data.auteur || data.designer || '-';
       document.getElementById('lookupAnnee').textContent = data.annee_sortie || data.year || '-';
+
+      // Gerer les differents formats de champs joueurs (BGG: joueurs_min/max, autres: nb_joueurs_min/max)
+      const joueursMin = data.joueurs_min || data.nb_joueurs_min || data.minPlayers;
+      const joueursMax = data.joueurs_max || data.nb_joueurs_max || data.maxPlayers;
       document.getElementById('lookupJoueurs').textContent =
-        data.nb_joueurs_min && data.nb_joueurs_max
-          ? `${data.nb_joueurs_min}-${data.nb_joueurs_max}`
-          : data.nb_joueurs_min || data.minPlayers || '-';
+        joueursMin && joueursMax ? `${joueursMin}-${joueursMax}` : joueursMin || '-';
+
       document.getElementById('lookupDuree').textContent = data.duree_partie || data.playingTime || '-';
-      document.getElementById('lookupAge').textContent = data.age_min || data.minAge || '-';
+      document.getElementById('lookupAge').textContent = data.age_minimum || data.age_min || data.minAge || '-';
 
       // Categories peuvent etre un tableau ou une chaine
       let categories = data.categorie || data.categories || '';
@@ -1202,8 +1949,8 @@
       document.getElementById('lookupDescription').textContent = data.description || 'Pas de description';
 
       const img = document.getElementById('lookupImage');
-      if (data.image_url || data.image) {
-        img.src = data.image_url || data.image;
+      if (data.image_url || data.thumbnail_url || data.image) {
+        img.src = data.image_url || data.thumbnail_url || data.image;
         img.classList.remove('d-none');
       } else {
         img.src = '';
@@ -1218,24 +1965,34 @@
       if (!currentLookupResult) return;
 
       lookupModalInstance.hide();
+      useResultsData(currentLookupResult);
+      currentLookupResult = null;
+    }
 
-      document.getElementById('modalTitle').textContent = 'Nouveau jeu (depuis EAN)';
+    // Fonction partagee pour utiliser les resultats (depuis scanner ou manuel)
+    function useResultsData(data) {
+      document.getElementById('modalTitle').innerHTML = '<i class="bi bi-puzzle me-2"></i>Nouveau jeu (depuis API)';
       document.getElementById('jeuForm').reset();
       document.getElementById('jeuId').value = '';
 
-      // Pre-remplir les champs de base (gere les deux formats de noms)
-      const data = currentLookupResult;
+      // Cacher la barre d'enrichissement pour les nouveaux jeux
+      document.getElementById('enrichmentBar').classList.add('d-none');
+      clearEnrichmentHighlights();
+
+      // Pre-remplir les champs de base (gere les formats BGG, Wikiludo et legacy)
       document.getElementById('titre').value = data.titre || data.title || '';
+      document.getElementById('ean').value = data.ean || '';
       document.getElementById('annee_sortie').value = data.annee_sortie || data.year || '';
-      document.getElementById('age_min').value = data.age_min || data.minAge || '';
-      document.getElementById('nb_joueurs_min').value = data.nb_joueurs_min || data.minPlayers || '';
-      document.getElementById('nb_joueurs_max').value = data.nb_joueurs_max || data.maxPlayers || '';
+      document.getElementById('image_url').value = data.image_url || '';
+      document.getElementById('age_min').value = data.age_minimum || data.age_min || data.minAge || '';
+      document.getElementById('nb_joueurs_min').value = data.joueurs_min || data.nb_joueurs_min || data.minPlayers || '';
+      document.getElementById('nb_joueurs_max').value = data.joueurs_max || data.nb_joueurs_max || data.maxPlayers || '';
       document.getElementById('duree_partie').value = data.duree_partie || data.playingTime || '';
       document.getElementById('description').value = data.description || '';
 
       clearTomSelects();
 
-      // Note: Les champs texte de BGG (editeur, auteur, categorie) restent en texte
+      // Note: Les champs texte de BGG/Wikiludo (editeur, auteur, categorie) restent en texte
       // L'utilisateur devra selectionner/creer les referentiels manuellement
       // ou une future evolution pourra matcher automatiquement
 
@@ -1243,60 +2000,621 @@
         modalInstance = new bootstrap.Modal(document.getElementById('jeuModal'));
       }
       modalInstance.show();
-
-      currentLookupResult = null;
     }
 
-    // Camera scanning for EAN lookup
-    async function startCameraScan() {
-      document.getElementById('cameraSection').classList.remove('d-none');
+    // Ajouter le listener global pour le scanner physique
+    document.addEventListener('keypress', handleScannerKeypress);
+
+    // Nettoyer les highlights quand le modal de jeu se ferme
+    document.getElementById('jeuModal').addEventListener('hidden.bs.modal', () => {
+      clearEnrichmentHighlights();
+      document.getElementById('enrichmentBar').classList.add('d-none');
+    });
+
+    // ==================== ENRICHISSEMENT ====================
+
+    let currentEnrichmentData = null;
+
+    // Mapping des champs entre API et formulaire pour les jeux
+    const fieldMapping = {
+      titre: { formId: 'titre', label: 'Titre' },
+      ean: { formId: 'ean', label: 'Code EAN' },
+      annee_sortie: { formId: 'annee_sortie', label: 'Annee' },
+      joueurs_min: { formId: 'nb_joueurs_min', label: 'Joueurs min' },
+      joueurs_max: { formId: 'nb_joueurs_max', label: 'Joueurs max' },
+      duree_partie: { formId: 'duree_partie', label: 'Duree' },
+      age_minimum: { formId: 'age_min', label: 'Age min' },
+      description: { formId: 'description', label: 'Description' },
+      image_url: { formId: 'image_url', label: 'Image' },
+      editeur: { formId: null, label: 'Editeur', isEditeur: true },
+      auteur: { formId: null, label: 'Auteur(s)', isAuteurs: true },
+      categories: { formId: null, label: 'Categories', isCategories: true },
+      mecanismes: { formId: null, label: 'Mecanismes', isMecanismes: true }
+    };
+
+    // Afficher la barre d'enrichissement avec les APIs disponibles
+    async function showEnrichmentBar(jeu) {
+      const bar = document.getElementById('enrichmentBar');
+      const buttonsContainer = document.getElementById('enrichmentButtons');
 
       try {
-        lookupCameraScanner = new Html5Qrcode('lookupCameraReader');
-        await lookupCameraScanner.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 250, height: 100 },
-            formatsToSupport: [
-              Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.EAN_8,
-              Html5QrcodeSupportedFormats.UPC_A,
-              Html5QrcodeSupportedFormats.UPC_E
-            ]
-          },
-          onCameraScanSuccess,
-          () => {}
-        );
-      } catch (err) {
-        console.error('Camera error:', err);
-        alert('Impossible d\'acceder a la camera: ' + err);
-        document.getElementById('cameraSection').classList.add('d-none');
-      }
-    }
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        const response = await fetch('/api/lookup/providers?collection=jeu', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    async function onCameraScanSuccess(decodedText) {
-      await stopCameraScan();
-      document.getElementById('lookupInput').value = decodedText;
-      doLookup();
-    }
-
-    async function stopCameraScan() {
-      if (lookupCameraScanner) {
-        try {
-          await lookupCameraScanner.stop();
-          lookupCameraScanner.clear();
-        } catch (e) {
-          console.warn('Stop camera error:', e);
+        if (!response.ok) {
+          bar.classList.add('d-none');
+          return;
         }
-        lookupCameraScanner = null;
+
+        const data = await response.json();
+        const providers = data.providers || [];
+
+        if (providers.length === 0) {
+          bar.classList.add('d-none');
+          return;
+        }
+
+        // Generer les boutons
+        buttonsContainer.innerHTML = providers.map(p => `
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="enrichFromAPI('${p.provider}', '${p.libelle}')" data-provider="${p.provider}">
+            <i class="bi bi-cloud-download me-1"></i>${p.libelle}
+          </button>
+        `).join('');
+
+        bar.classList.remove('d-none');
+        document.getElementById('enrichmentStatus').classList.add('d-none');
+
+      } catch (error) {
+        console.error('Erreur chargement APIs:', error);
+        bar.classList.add('d-none');
       }
-      document.getElementById('cameraSection').classList.add('d-none');
     }
 
-    document.getElementById('lookupModal').addEventListener('hidden.bs.modal', () => {
-      stopCameraScan();
-    });
+    // Enrichir depuis une API specifique
+    async function enrichFromAPI(provider, providerLabel) {
+      const titre = document.getElementById('titre').value;
+
+      if (!titre || titre.length < 2) {
+        showToast('Saisissez un titre pour effectuer la recherche', 'warning');
+        return;
+      }
+
+      // Mettre le bouton en loading
+      const btn = document.querySelector(`[data-provider="${provider}"]`);
+      const originalHtml = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Recherche...';
+
+      // Nettoyer les anciens highlights
+      clearEnrichmentHighlights();
+
+      try {
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+        const response = await fetch('/api/lookup/title/search', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: titre,
+            collection: 'jeu',
+            maxResults: 10,
+            provider: provider
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur API');
+        }
+
+        const result = await response.json();
+
+        if (!result.found || !result.results || result.results.length === 0) {
+          showToast(`Aucun resultat trouve sur ${providerLabel} pour "${titre}"`, 'warning');
+          return;
+        }
+
+        // Si un seul resultat, l'appliquer directement
+        if (result.results.length === 1) {
+          applyEnrichmentResult(result.results[0], provider, providerLabel);
+          return;
+        }
+
+        // Plusieurs resultats -> ouvrir le modal de selection
+        pendingTitleSearchResults = result.results;
+        pendingEnrichmentProvider = { provider, providerLabel };
+        showEnrichmentResultsModal(result.results, titre);
+
+      } catch (error) {
+        showToast(`Erreur lors de l'enrichissement: ${error.message}`, 'danger');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+      }
+    }
+
+    let pendingEnrichmentProvider = null;
+
+    // Afficher le modal de selection des resultats pour enrichissement
+    function showEnrichmentResultsModal(results, searchTitle) {
+      const container = document.getElementById('titleSearchResults');
+      const info = document.getElementById('titleSearchInfo');
+
+      info.innerHTML = `<i class="bi bi-info-circle me-1"></i>
+        ${results.length} resultat(s) trouve(s) pour "<strong>${escapeHtml(searchTitle)}</strong>".
+        Selectionnez celui qui correspond au jeu.`;
+
+      container.innerHTML = results.map((r, index) => {
+        const display = r._display || r;
+        return `
+          <a href="#" class="list-group-item list-group-item-action" onclick="selectEnrichmentResult(${index}); return false;">
+            <div class="d-flex w-100 align-items-start">
+              ${display.image_url ?
+                `<img src="${display.image_url}" alt="" class="me-3" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">` :
+                `<div class="me-3 d-flex align-items-center justify-content-center bg-secondary text-white" style="width: 60px; height: 60px; border-radius: 4px;"><i class="bi bi-dice-5"></i></div>`
+              }
+              <div class="flex-grow-1">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">${escapeHtml(display.titre || r.titre || 'Sans titre')}</h6>
+                  <small class="text-muted">${display.annee || r.annee_sortie || ''}</small>
+                </div>
+                <p class="mb-1 text-muted small">
+                  ${display.auteurs || r.auteur || 'Auteur inconnu'}
+                  ${display.editeur || r.editeur ? ` - ${display.editeur || r.editeur}` : ''}
+                </p>
+                <small class="text-muted">
+                  ${display.joueurs || (r.joueurs_min && r.joueurs_max ? `${r.joueurs_min}-${r.joueurs_max} joueurs` : '')}
+                  ${display.duree || (r.duree_partie ? ` - ${r.duree_partie} min` : '')}
+                </small>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      // Ouvrir le modal
+      if (!titleSearchModalInstance) {
+        titleSearchModalInstance = new bootstrap.Modal(document.getElementById('titleSearchResultsModal'));
+      }
+      titleSearchModalInstance.show();
+    }
+
+    // Selectionner un resultat pour enrichissement
+    function selectEnrichmentResult(index) {
+      const result = pendingTitleSearchResults[index];
+      const { provider, providerLabel } = pendingEnrichmentProvider || { provider: 'bgg', providerLabel: 'BGG' };
+
+      // Fermer le modal de selection
+      if (titleSearchModalInstance) {
+        titleSearchModalInstance.hide();
+      }
+
+      // Appliquer le resultat pour enrichissement
+      applyEnrichmentResult(result, provider, providerLabel);
+
+      // Nettoyer
+      pendingTitleSearchResults = [];
+      pendingEnrichmentProvider = null;
+    }
+
+    // Appliquer un resultat d'enrichissement
+    function applyEnrichmentResult(result, provider, providerLabel) {
+      currentEnrichmentData = result;
+      showToast(`Donnees recuperees depuis ${providerLabel}`, 'success');
+
+      // Comparer et afficher les differences
+      compareAndHighlight(result, provider);
+
+      // Afficher la legende
+      document.getElementById('enrichmentStatus').classList.remove('d-none');
+    }
+
+    // Comparer les donnees API avec le formulaire et surligner
+    function compareAndHighlight(apiData, provider) {
+      for (const [apiField, config] of Object.entries(fieldMapping)) {
+        const apiValue = apiData[apiField];
+
+        // Si pas de valeur API, ignorer
+        if (apiValue === null || apiValue === undefined || apiValue === '') continue;
+
+        // Cas special: editeur (TomSelect)
+        if (config.isEditeur) {
+          highlightEditeur(apiValue);
+          continue;
+        }
+
+        // Cas special: auteurs (TomSelect)
+        if (config.isAuteurs) {
+          highlightAuteurs(apiValue);
+          continue;
+        }
+
+        // Cas special: categories (TomSelect)
+        if (config.isCategories && Array.isArray(apiValue)) {
+          highlightCategories(apiValue);
+          continue;
+        }
+
+        // Cas special: mecanismes (TomSelect)
+        if (config.isMecanismes && Array.isArray(apiValue)) {
+          highlightMecanismes(apiValue);
+          continue;
+        }
+
+        if (!config.formId) continue;
+
+        const formElement = document.getElementById(config.formId);
+        if (!formElement) continue;
+
+        const formValue = formElement.value || '';
+        const apiValueStr = String(apiValue).trim();
+        const formValueStr = String(formValue).trim();
+
+        highlightField(config.formId, apiValueStr, config.label, provider, formValueStr);
+      }
+    }
+
+    // Surligner un champ avec la difference
+    function highlightField(fieldId, apiValue, label, provider, currentValue = null) {
+      const element = document.getElementById(fieldId);
+      if (!element) return;
+
+      const container = element.closest('.mb-3') || element.closest('.col-md-4') || element.closest('.col-md-6') || element.parentElement;
+      if (!container) return;
+
+      // Supprimer l'ancien highlight s'il existe
+      const existingDiff = container.querySelector('.enrichment-diff');
+      if (existingDiff) existingDiff.remove();
+
+      const current = currentValue !== null ? currentValue : (element.value || '');
+
+      // Comparer les valeurs
+      const isSame = current.toLowerCase().trim() === apiValue.toLowerCase().trim();
+      const isEmpty = !current.trim();
+
+      if (isSame && !isEmpty) {
+        // Valeur identique -> cadre vert
+        element.classList.remove('border-warning', 'bg-warning-subtle');
+        element.classList.add('border-success', 'bg-success-subtle');
+        element.style.borderWidth = '2px';
+      } else {
+        // Valeur differente -> cadre jaune + afficher la difference
+        element.classList.remove('border-success', 'bg-success-subtle');
+        element.classList.add('border-warning', 'bg-warning-subtle');
+        element.style.borderWidth = '2px';
+
+        // Afficher la valeur API en dessous
+        const diffDiv = document.createElement('div');
+        diffDiv.className = 'enrichment-diff mt-1 p-2 bg-warning bg-opacity-25 rounded small';
+        diffDiv.style.cursor = 'pointer';
+        diffDiv.innerHTML = `
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <strong class="text-warning-emphasis"><i class="bi bi-cloud me-1"></i>${provider.toUpperCase()}:</strong>
+              <span class="text-dark">${escapeHtml(apiValue.substring(0, 200))}${apiValue.length > 200 ? '...' : ''}</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-warning ms-2" onclick="applyEnrichmentValue('${fieldId}', this)" title="Appliquer cette valeur">
+              <i class="bi bi-check-lg"></i>
+            </button>
+          </div>
+        `;
+        diffDiv.dataset.value = apiValue;
+
+        container.appendChild(diffDiv);
+      }
+    }
+
+    // Appliquer une valeur d'enrichissement
+    function applyEnrichmentValue(fieldId, buttonElement) {
+      const diffDiv = buttonElement.closest('.enrichment-diff');
+      const value = diffDiv.dataset.value;
+      const element = document.getElementById(fieldId);
+
+      if (element) {
+        element.value = value;
+        // Passer en vert
+        element.classList.remove('border-warning', 'bg-warning-subtle');
+        element.classList.add('border-success', 'bg-success-subtle');
+      }
+
+      // Supprimer le bloc de difference
+      diffDiv.remove();
+    }
+
+    // Surligner les editeurs
+    function highlightEditeur(editeur) {
+      if (!editeur || !tsEditeurs) return;
+
+      const currentValues = tsEditeurs.getValue();
+      const container = document.getElementById('select_editeurs').closest('.col-md-4') || document.getElementById('select_editeurs').parentElement;
+
+      // Supprimer l'ancien highlight
+      const existingDiff = container.querySelector('.enrichment-diff');
+      if (existingDiff) existingDiff.remove();
+
+      // Verifier si l'editeur est deja present
+      const editeurNom = typeof editeur === 'string' ? editeur : editeur.nom;
+      const alreadyHas = currentValues.some(v => {
+        const opt = tsEditeurs.options[v];
+        return opt && opt.text.toLowerCase() === editeurNom.toLowerCase();
+      });
+
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (alreadyHas) {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+      } else if (editeurNom) {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-warning)';
+
+        const diffDiv = document.createElement('div');
+        diffDiv.className = 'enrichment-diff mt-1 p-2 bg-warning bg-opacity-25 rounded small';
+        diffDiv.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-building me-1"></i><strong>API:</strong> ${escapeHtml(editeurNom)}</span>
+            <button type="button" class="btn btn-sm btn-warning" onclick="applyEnrichmentEditeur('${escapeHtml(editeurNom).replace(/'/g, "\\'")}')" title="Ajouter cet editeur">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(diffDiv);
+      }
+    }
+
+    function applyEnrichmentEditeur(editeurNom) {
+      if (!tsEditeurs) return;
+      tsEditeurs.addOption({ value: 'new_' + editeurNom, text: editeurNom });
+      tsEditeurs.addItem('new_' + editeurNom);
+
+      // Supprimer le bloc et passer en vert
+      const container = document.getElementById('select_editeurs').closest('.col-md-4') || document.getElementById('select_editeurs').parentElement;
+      const diffDiv = container.querySelector('.enrichment-diff');
+      if (diffDiv) diffDiv.remove();
+
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+    }
+
+    // Surligner les auteurs
+    function highlightAuteurs(auteurs) {
+      if (!auteurs || !tsAuteurs) return;
+
+      // Convertir en tableau si c'est une string
+      const auteursList = typeof auteurs === 'string' ? auteurs.split(',').map(a => a.trim()) : [auteurs];
+
+      const currentValues = tsAuteurs.getValue();
+      const container = document.getElementById('select_auteurs').closest('.col-md-4') || document.getElementById('select_auteurs').parentElement;
+
+      // Supprimer l'ancien highlight
+      const existingDiff = container.querySelector('.enrichment-diff');
+      if (existingDiff) existingDiff.remove();
+
+      const newAuteurs = [];
+      for (const auteur of auteursList) {
+        const auteurNom = typeof auteur === 'string' ? auteur : auteur.nom;
+        if (!auteurNom) continue;
+
+        const alreadyHas = currentValues.some(v => {
+          const opt = tsAuteurs.options[v];
+          return opt && opt.text.toLowerCase() === auteurNom.toLowerCase();
+        });
+
+        if (!alreadyHas) {
+          newAuteurs.push(auteurNom);
+        }
+      }
+
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (newAuteurs.length === 0) {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+      } else {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-warning)';
+
+        const diffDiv = document.createElement('div');
+        diffDiv.className = 'enrichment-diff mt-1 p-2 bg-warning bg-opacity-25 rounded small';
+        diffDiv.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-person me-1"></i><strong>API:</strong> ${newAuteurs.map(a => escapeHtml(a)).join(', ')}</span>
+            <button type="button" class="btn btn-sm btn-warning" onclick="applyEnrichmentAuteurs()" title="Ajouter ces auteurs">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        `;
+        diffDiv.dataset.auteurs = JSON.stringify(newAuteurs);
+        container.appendChild(diffDiv);
+      }
+    }
+
+    function applyEnrichmentAuteurs() {
+      const container = document.getElementById('select_auteurs').closest('.col-md-4') || document.getElementById('select_auteurs').parentElement;
+      const diffDiv = container.querySelector('.enrichment-diff');
+      if (!diffDiv || !tsAuteurs) return;
+
+      const auteurs = JSON.parse(diffDiv.dataset.auteurs || '[]');
+      for (const auteurNom of auteurs) {
+        tsAuteurs.addOption({ value: 'new_' + auteurNom, text: auteurNom });
+        tsAuteurs.addItem('new_' + auteurNom);
+      }
+
+      diffDiv.remove();
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+    }
+
+    // Surligner les categories
+    function highlightCategories(categories) {
+      if (!categories || !categories.length || !tsCategories) return;
+
+      const currentValues = tsCategories.getValue();
+      const container = document.getElementById('select_categories').closest('.col-md-6') || document.getElementById('select_categories').parentElement;
+
+      const existingDiff = container.querySelector('.enrichment-diff');
+      if (existingDiff) existingDiff.remove();
+
+      const newCats = [];
+      for (const cat of categories) {
+        const catNom = typeof cat === 'string' ? cat : cat.nom;
+        if (!catNom) continue;
+
+        const alreadyHas = currentValues.some(v => {
+          const opt = tsCategories.options[v];
+          return opt && opt.text.toLowerCase() === catNom.toLowerCase();
+        });
+
+        if (!alreadyHas) {
+          newCats.push(catNom);
+        }
+      }
+
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (newCats.length === 0) {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+      } else {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-warning)';
+
+        const diffDiv = document.createElement('div');
+        diffDiv.className = 'enrichment-diff mt-1 p-2 bg-warning bg-opacity-25 rounded small';
+        diffDiv.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-tag me-1"></i><strong>API:</strong> ${newCats.map(c => escapeHtml(c)).join(', ')}</span>
+            <button type="button" class="btn btn-sm btn-warning" onclick="applyEnrichmentCategories()" title="Ajouter ces categories">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        `;
+        diffDiv.dataset.categories = JSON.stringify(newCats);
+        container.appendChild(diffDiv);
+      }
+    }
+
+    function applyEnrichmentCategories() {
+      const container = document.getElementById('select_categories').closest('.col-md-6') || document.getElementById('select_categories').parentElement;
+      const diffDiv = container.querySelector('.enrichment-diff');
+      if (!diffDiv || !tsCategories) return;
+
+      const categories = JSON.parse(diffDiv.dataset.categories || '[]');
+      for (const catNom of categories) {
+        tsCategories.addOption({ value: 'new_' + catNom, text: catNom });
+        tsCategories.addItem('new_' + catNom);
+      }
+
+      diffDiv.remove();
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+    }
+
+    // Surligner les mecanismes
+    function highlightMecanismes(mecanismes) {
+      if (!mecanismes || !mecanismes.length || !tsMecanismes) return;
+
+      const currentValues = tsMecanismes.getValue();
+      const container = document.getElementById('select_mecanismes').closest('.col-md-6') || document.getElementById('select_mecanismes').parentElement;
+
+      const existingDiff = container.querySelector('.enrichment-diff');
+      if (existingDiff) existingDiff.remove();
+
+      const newMecas = [];
+      for (const meca of mecanismes) {
+        const mecaNom = typeof meca === 'string' ? meca : meca.nom;
+        if (!mecaNom) continue;
+
+        const alreadyHas = currentValues.some(v => {
+          const opt = tsMecanismes.options[v];
+          return opt && opt.text.toLowerCase() === mecaNom.toLowerCase();
+        });
+
+        if (!alreadyHas) {
+          newMecas.push(mecaNom);
+        }
+      }
+
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (newMecas.length === 0) {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+      } else {
+        if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-warning)';
+
+        const diffDiv = document.createElement('div');
+        diffDiv.className = 'enrichment-diff mt-1 p-2 bg-warning bg-opacity-25 rounded small';
+        diffDiv.innerHTML = `
+          <div class="d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-gear me-1"></i><strong>API:</strong> ${newMecas.map(m => escapeHtml(m)).join(', ')}</span>
+            <button type="button" class="btn btn-sm btn-warning" onclick="applyEnrichmentMecanismes()" title="Ajouter ces mecanismes">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+          </div>
+        `;
+        diffDiv.dataset.mecanismes = JSON.stringify(newMecas);
+        container.appendChild(diffDiv);
+      }
+    }
+
+    function applyEnrichmentMecanismes() {
+      const container = document.getElementById('select_mecanismes').closest('.col-md-6') || document.getElementById('select_mecanismes').parentElement;
+      const diffDiv = container.querySelector('.enrichment-diff');
+      if (!diffDiv || !tsMecanismes) return;
+
+      const mecanismes = JSON.parse(diffDiv.dataset.mecanismes || '[]');
+      for (const mecaNom of mecanismes) {
+        tsMecanismes.addOption({ value: 'new_' + mecaNom, text: mecaNom });
+        tsMecanismes.addItem('new_' + mecaNom);
+      }
+
+      diffDiv.remove();
+      const tsWrapper = container.querySelector('.ts-wrapper');
+      if (tsWrapper) tsWrapper.style.border = '2px solid var(--bs-success)';
+    }
+
+    // Nettoyer tous les highlights d'enrichissement
+    function clearEnrichmentHighlights() {
+      // Supprimer les classes de highlight des inputs
+      document.querySelectorAll('.border-success, .border-warning').forEach(el => {
+        el.classList.remove('border-success', 'border-warning', 'bg-success-subtle', 'bg-warning-subtle');
+        el.style.borderWidth = '';
+      });
+
+      // Supprimer les blocs de difference
+      document.querySelectorAll('.enrichment-diff').forEach(el => el.remove());
+
+      // Nettoyer les TomSelect wrappers
+      document.querySelectorAll('.ts-wrapper').forEach(el => {
+        el.style.border = '';
+      });
+
+      currentEnrichmentData = null;
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      // Creer un toast Bootstrap s'il n'existe pas
+      let toastContainer = document.querySelector('.toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '1100';
+        document.body.appendChild(toastContainer);
+      }
+
+      const bgClass = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : type === 'danger' ? 'bg-danger' : 'bg-info';
+      const textClass = type === 'warning' ? 'text-dark' : 'text-white';
+
+      const toastHtml = `
+        <div class="toast ${bgClass} ${textClass}" role="alert">
+          <div class="toast-body d-flex justify-content-between align-items-center">
+            ${escapeHtml(message)}
+            <button type="button" class="btn-close btn-close-white ms-2" data-bs-dismiss="toast"></button>
+          </div>
+        </div>
+      `;
+
+      toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+      const toastEl = toastContainer.lastElementChild;
+      const toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+      toast.show();
+
+      toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    }
   </script>
 </body>
 </html>

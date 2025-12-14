@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assotheque - Import MyLudo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      width: 350px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-size: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 400px;
+    }
+    .header {
+      background: rgba(255,255,255,0.1);
+      padding: 15px;
+      text-align: center;
+      color: white;
+    }
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    .header .subtitle {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+    .content {
+      background: white;
+      border-radius: 12px 12px 0 0;
+      padding: 20px;
+      min-height: 300px;
+    }
+    .status {
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 13px;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .status.warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+    .status.info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .game-preview {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .game-preview img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 4px;
+      float: left;
+      margin-right: 15px;
+    }
+    .game-preview .info {
+      overflow: hidden;
+    }
+    .game-preview h3 {
+      font-size: 16px;
+      margin-bottom: 5px;
+      color: #333;
+    }
+    .game-preview .meta {
+      font-size: 12px;
+      color: #666;
+    }
+    .game-preview .meta span {
+      display: block;
+      margin-bottom: 2px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 10px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      background: #f8f9fa;
+      color: #495057;
+      border: 1px solid #dee2e6;
+    }
+    .btn-secondary:hover {
+      background: #e9ecef;
+    }
+    .btn-warning {
+      background: #ffc107;
+      color: #212529;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .not-game-page {
+      text-align: center;
+      color: #666;
+      padding: 40px 20px;
+    }
+    .not-game-page i {
+      font-size: 48px;
+      margin-bottom: 15px;
+      display: block;
+    }
+    .config-needed {
+      text-align: center;
+      padding: 30px;
+    }
+    .config-needed a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    .loading {
+      text-align: center;
+      padding: 40px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 15px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .clearfix::after {
+      content: "";
+      display: table;
+      clear: both;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Assotheque</h1>
+    <div class="subtitle">Import depuis MyLudo</div>
+  </div>
+
+  <div class="content">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p>Chargement...</p>
+    </div>
+
+    <div id="config-needed" class="config-needed" style="display: none;">
+      <p>Configuration requise</p>
+      <p><a href="#" id="config-link">Ouvrir les parametres</a></p>
+    </div>
+
+    <div id="not-game-page" class="not-game-page" style="display: none;">
+      <span style="font-size: 48px;">&#127922;</span>
+      <p>Naviguez vers une page de jeu sur MyLudo pour importer</p>
+    </div>
+
+    <div id="game-content" style="display: none;">
+      <div id="status-container"></div>
+
+      <div id="game-preview" class="game-preview clearfix">
+        <img id="game-image" src="" alt="">
+        <div class="info">
+          <h3 id="game-title"></h3>
+          <div class="meta">
+            <span id="game-editeur"></span>
+            <span id="game-annee"></span>
+            <span id="game-ean"></span>
+          </div>
+        </div>
+      </div>
+
+      <button id="btn-import" class="btn btn-primary">
+        Importer ce jeu
+      </button>
+
+      <button id="btn-update" class="btn btn-warning" style="display: none;">
+        Mettre a jour le jeu existant
+      </button>
+
+      <button id="btn-options" class="btn btn-secondary">
+        Parametres
+      </button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

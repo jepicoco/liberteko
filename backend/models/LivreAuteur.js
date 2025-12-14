@@ -19,6 +19,13 @@ module.exports = (sequelize) => {
         key: 'id'
       },
       onDelete: 'CASCADE'
+    },
+    role: {
+      type: DataTypes.STRING(50),
+      primaryKey: true,
+      allowNull: false,
+      defaultValue: 'auteur',
+      comment: 'Role: auteur, scenariste, dessinateur, coloriste, illustrateur, traducteur, adaptateur, prefacier'
     }
   }, {
     tableName: 'livre_auteurs',

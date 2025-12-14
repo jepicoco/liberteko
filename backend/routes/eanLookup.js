@@ -27,6 +27,14 @@ router.post('/ean', eanLookupController.lookupByCode);
 router.post('/title', eanLookupController.lookupByTitle);
 
 /**
+ * POST /api/lookup/title/search
+ * Recherche par titre avec resultats multiples
+ * Body: { title: "Germinal", collection: "livre", maxResults: 10, provider: "bnf" }
+ * Returns: { found: true, count: 5, results: [...], providers_used: [...] }
+ */
+router.post('/title/search', eanLookupController.searchTitleMultiple);
+
+/**
  * POST /api/lookup/search
  * Recherche automatique (detecte si c'est un code ou un titre)
  * Body: { query: "3558380077992", type: "auto" | "ean" | "title", collection: "jeu" }
@@ -38,6 +46,20 @@ router.post('/search', eanLookupController.search);
  * Detecte le type de code (EAN, ISBN-10, ISBN-13, UPC)
  */
 router.get('/detect/:code', eanLookupController.detectCode);
+
+/**
+ * GET /api/lookup/providers
+ * Liste les providers configures pour une collection
+ * Query: ?collection=livre
+ */
+router.get('/providers', eanLookupController.getProviders);
+
+/**
+ * GET /api/lookup/search
+ * Recherche par code avec provider specifique (optionnel)
+ * Query: ?code=XXX&collection=livre&provider=bnf
+ */
+router.get('/search', eanLookupController.searchGet);
 
 /**
  * GET /api/lookup/cache/stats

@@ -58,6 +58,7 @@ const LivreEditeurModel = require('./LivreEditeur');
 const LivreGenreModel = require('./LivreGenre');
 const LivreThemeModel = require('./LivreTheme');
 const LivreLangueModel = require('./LivreLangue');
+const RoleContributeurLivreModel = require('./RoleContributeurLivre');
 
 // Import Films models (normalisation films)
 const GenreFilmModel = require('./GenreFilm');
@@ -107,6 +108,12 @@ const RepartitionAnalytiqueModel = require('./RepartitionAnalytique');
 const CompteurPieceModel = require('./CompteurPiece');
 const EcritureComptableModel = require('./EcritureComptable');
 
+// Import Comptabilite (Phase 2 - Parametrage avance)
+const JournalComptableModel = require('./JournalComptable');
+const CompteComptableModel = require('./CompteComptable');
+const ParametrageComptableOperationModel = require('./ParametrageComptableOperation');
+const CompteEncaissementModePaiementModel = require('./CompteEncaissementModePaiement');
+
 // Import LLM Configuration (Recherche IA)
 const ConfigurationLLMModel = require('./ConfigurationLLM');
 
@@ -140,6 +147,19 @@ const LeaderboardScoreModel = require('./LeaderboardScore');
 
 // Import LimiteEmpruntGenre (limites emprunts par genre)
 const LimiteEmpruntGenreModel = require('./LimiteEmpruntGenre');
+
+// Import Caisse (gestion des règlements)
+const CaisseModel = require('./Caisse');
+const SessionCaisseModel = require('./SessionCaisse');
+const MouvementCaisseModel = require('./MouvementCaisse');
+
+// Import Factures (facturation)
+const FactureModel = require('./Facture');
+const LigneFactureModel = require('./LigneFacture');
+const ReglementFactureModel = require('./ReglementFacture');
+
+// Import ApiKey (cles API externes)
+const ApiKeyModel = require('./ApiKey');
 
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
@@ -198,6 +218,7 @@ const LivreEditeur = LivreEditeurModel(sequelize);
 const LivreGenre = LivreGenreModel(sequelize);
 const LivreTheme = LivreThemeModel(sequelize);
 const LivreLangue = LivreLangueModel(sequelize);
+const RoleContributeurLivre = RoleContributeurLivreModel(sequelize);
 
 // Initialize Films reference tables
 const GenreFilm = GenreFilmModel(sequelize);
@@ -247,6 +268,12 @@ const RepartitionAnalytique = RepartitionAnalytiqueModel(sequelize);
 const CompteurPiece = CompteurPieceModel(sequelize);
 const EcritureComptable = EcritureComptableModel(sequelize);
 
+// Initialize Comptabilite (Phase 2 - Parametrage avance)
+const JournalComptable = JournalComptableModel(sequelize);
+const CompteComptable = CompteComptableModel(sequelize);
+const ParametrageComptableOperation = ParametrageComptableOperationModel(sequelize);
+const CompteEncaissementModePaiement = CompteEncaissementModePaiementModel(sequelize);
+
 // Initialize LLM Configuration (Recherche IA)
 const ConfigurationLLM = ConfigurationLLMModel(sequelize);
 
@@ -281,7 +308,30 @@ const LeaderboardScore = LeaderboardScoreModel(sequelize);
 // Initialize LimiteEmpruntGenre (limites emprunts par genre)
 const LimiteEmpruntGenre = LimiteEmpruntGenreModel(sequelize);
 
+// Initialize Caisse (gestion des règlements)
+const Caisse = CaisseModel(sequelize);
+const SessionCaisse = SessionCaisseModel(sequelize);
+const MouvementCaisse = MouvementCaisseModel(sequelize);
+
+// Initialize Factures (facturation)
+const Facture = FactureModel(sequelize);
+const LigneFacture = LigneFactureModel(sequelize);
+const ReglementFacture = ReglementFactureModel(sequelize);
+const ApiKey = ApiKeyModel(sequelize);
+
 // Define associations
+
+// Utilisateur <-> Utilisateur (Self-referencing for family relationships)
+Utilisateur.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_parent_id',
+  as: 'parent'
+});
+
+Utilisateur.hasMany(Utilisateur, {
+  foreignKey: 'utilisateur_parent_id',
+  as: 'enfants'
+});
+
 // Utilisateur <-> Emprunt (One-to-Many)
 Utilisateur.hasMany(Emprunt, {
   foreignKey: 'utilisateur_id',
@@ -1019,6 +1069,54 @@ Cotisation.hasMany(EcritureComptable, {
 });
 
 // ========================================
+// ASSOCIATIONS COMPTABILITE (Phase 2 - Parametrage)
+// ========================================
+
+// CompteComptable - auto-reference pour hierarchie
+CompteComptable.belongsTo(CompteComptable, {
+  foreignKey: 'parent_id',
+  as: 'parent'
+});
+
+CompteComptable.hasMany(CompteComptable, {
+  foreignKey: 'parent_id',
+  as: 'enfants'
+});
+
+// ParametrageComptableOperation <-> TauxTVA (Many-to-One)
+ParametrageComptableOperation.belongsTo(TauxTVA, {
+  foreignKey: 'taux_tva_id',
+  as: 'tauxTVA'
+});
+
+TauxTVA.hasMany(ParametrageComptableOperation, {
+  foreignKey: 'taux_tva_id',
+  as: 'parametragesOperations'
+});
+
+// ParametrageComptableOperation <-> SectionAnalytique (Many-to-One)
+ParametrageComptableOperation.belongsTo(SectionAnalytique, {
+  foreignKey: 'section_analytique_id',
+  as: 'sectionAnalytique'
+});
+
+SectionAnalytique.hasMany(ParametrageComptableOperation, {
+  foreignKey: 'section_analytique_id',
+  as: 'parametragesOperations'
+});
+
+// CompteEncaissementModePaiement <-> ModePaiement (Many-to-One)
+CompteEncaissementModePaiement.belongsTo(ModePaiement, {
+  foreignKey: 'mode_paiement_id',
+  as: 'modePaiement'
+});
+
+ModePaiement.hasOne(CompteEncaissementModePaiement, {
+  foreignKey: 'mode_paiement_id',
+  as: 'compteEncaissement'
+});
+
+// ========================================
 // ASSOCIATIONS THEMATIQUES IA
 // ========================================
 
@@ -1169,6 +1267,253 @@ Disque.hasOne(CodeBarreDisque, {
   as: 'codeBarreReserve'
 });
 
+// ========================================
+// ASSOCIATIONS CAISSE (Gestion des règlements)
+// ========================================
+
+// Caisse <-> Site (Many-to-One)
+Caisse.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+Site.hasMany(Caisse, {
+  foreignKey: 'site_id',
+  as: 'caisses'
+});
+
+// Caisse <-> Utilisateur (responsable)
+Caisse.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_responsable_id',
+  as: 'responsable'
+});
+
+Utilisateur.hasMany(Caisse, {
+  foreignKey: 'utilisateur_responsable_id',
+  as: 'caissesResponsable'
+});
+
+// Caisse <-> SessionCaisse (One-to-Many)
+Caisse.hasMany(SessionCaisse, {
+  foreignKey: 'caisse_id',
+  as: 'sessions'
+});
+
+SessionCaisse.belongsTo(Caisse, {
+  foreignKey: 'caisse_id',
+  as: 'caisse'
+});
+
+// SessionCaisse <-> Utilisateur (ouverture)
+SessionCaisse.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
+});
+
+Utilisateur.hasMany(SessionCaisse, {
+  foreignKey: 'utilisateur_id',
+  as: 'sessionsOuvertes'
+});
+
+// SessionCaisse <-> Utilisateur (cloture)
+SessionCaisse.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_cloture_id',
+  as: 'utilisateurCloture'
+});
+
+Utilisateur.hasMany(SessionCaisse, {
+  foreignKey: 'utilisateur_cloture_id',
+  as: 'sessionsCloturees'
+});
+
+// SessionCaisse <-> MouvementCaisse (One-to-Many)
+SessionCaisse.hasMany(MouvementCaisse, {
+  foreignKey: 'session_caisse_id',
+  as: 'mouvements'
+});
+
+MouvementCaisse.belongsTo(SessionCaisse, {
+  foreignKey: 'session_caisse_id',
+  as: 'session'
+});
+
+// MouvementCaisse <-> Utilisateur (adherent concerne)
+MouvementCaisse.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
+});
+
+Utilisateur.hasMany(MouvementCaisse, {
+  foreignKey: 'utilisateur_id',
+  as: 'mouvementsCaisse'
+});
+
+// MouvementCaisse <-> Utilisateur (operateur)
+MouvementCaisse.belongsTo(Utilisateur, {
+  foreignKey: 'operateur_id',
+  as: 'operateur'
+});
+
+Utilisateur.hasMany(MouvementCaisse, {
+  foreignKey: 'operateur_id',
+  as: 'mouvementsOperes'
+});
+
+// MouvementCaisse <-> Cotisation (optionnel)
+MouvementCaisse.belongsTo(Cotisation, {
+  foreignKey: 'cotisation_id',
+  as: 'cotisation'
+});
+
+Cotisation.hasMany(MouvementCaisse, {
+  foreignKey: 'cotisation_id',
+  as: 'mouvementsCaisse'
+});
+
+// MouvementCaisse <-> Emprunt (optionnel)
+MouvementCaisse.belongsTo(Emprunt, {
+  foreignKey: 'emprunt_id',
+  as: 'emprunt'
+});
+
+Emprunt.hasMany(MouvementCaisse, {
+  foreignKey: 'emprunt_id',
+  as: 'mouvementsCaisse'
+});
+
+// MouvementCaisse <-> EcritureComptable (optionnel)
+MouvementCaisse.belongsTo(EcritureComptable, {
+  foreignKey: 'ecriture_comptable_id',
+  as: 'ecritureComptable'
+});
+
+EcritureComptable.hasMany(MouvementCaisse, {
+  foreignKey: 'ecriture_comptable_id',
+  as: 'mouvementsCaisse'
+});
+
+// ========================================
+// ASSOCIATIONS FACTURES
+// ========================================
+
+// Facture <-> Utilisateur (client)
+Facture.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'client'
+});
+
+Utilisateur.hasMany(Facture, {
+  foreignKey: 'utilisateur_id',
+  as: 'factures'
+});
+
+// Facture <-> Utilisateur (créateur)
+Facture.belongsTo(Utilisateur, {
+  foreignKey: 'cree_par_id',
+  as: 'createur'
+});
+
+// Facture <-> Cotisation (optionnel)
+Facture.belongsTo(Cotisation, {
+  foreignKey: 'cotisation_id',
+  as: 'cotisation'
+});
+
+Cotisation.hasOne(Facture, {
+  foreignKey: 'cotisation_id',
+  as: 'facture'
+});
+
+// Facture <-> Facture (avoir -> facture origine)
+Facture.belongsTo(Facture, {
+  foreignKey: 'facture_avoir_reference_id',
+  as: 'factureOrigine'
+});
+
+Facture.hasMany(Facture, {
+  foreignKey: 'facture_avoir_reference_id',
+  as: 'avoirs'
+});
+
+// Facture <-> EcritureComptable (optionnel)
+Facture.belongsTo(EcritureComptable, {
+  foreignKey: 'ecriture_comptable_id',
+  as: 'ecritureComptable'
+});
+
+EcritureComptable.hasMany(Facture, {
+  foreignKey: 'ecriture_comptable_id',
+  as: 'factures'
+});
+
+// Facture <-> LigneFacture (One-to-Many)
+Facture.hasMany(LigneFacture, {
+  foreignKey: 'facture_id',
+  as: 'lignes'
+});
+
+LigneFacture.belongsTo(Facture, {
+  foreignKey: 'facture_id',
+  as: 'facture'
+});
+
+// LigneFacture <-> SectionAnalytique (optionnel)
+LigneFacture.belongsTo(SectionAnalytique, {
+  foreignKey: 'section_analytique_id',
+  as: 'sectionAnalytique'
+});
+
+SectionAnalytique.hasMany(LigneFacture, {
+  foreignKey: 'section_analytique_id',
+  as: 'lignesFacture'
+});
+
+// LigneFacture <-> Cotisation (optionnel)
+LigneFacture.belongsTo(Cotisation, {
+  foreignKey: 'cotisation_id',
+  as: 'cotisation'
+});
+
+// Facture <-> ReglementFacture (One-to-Many)
+Facture.hasMany(ReglementFacture, {
+  foreignKey: 'facture_id',
+  as: 'reglements'
+});
+
+ReglementFacture.belongsTo(Facture, {
+  foreignKey: 'facture_id',
+  as: 'facture'
+});
+
+// ReglementFacture <-> ModePaiement (optionnel)
+ReglementFacture.belongsTo(ModePaiement, {
+  foreignKey: 'mode_paiement_id',
+  as: 'modePaiement'
+});
+
+// ReglementFacture <-> MouvementCaisse (optionnel)
+ReglementFacture.belongsTo(MouvementCaisse, {
+  foreignKey: 'mouvement_caisse_id',
+  as: 'mouvementCaisse'
+});
+
+MouvementCaisse.hasOne(ReglementFacture, {
+  foreignKey: 'mouvement_caisse_id',
+  as: 'reglementFacture'
+});
+
+// ReglementFacture <-> CompteBancaire (optionnel)
+ReglementFacture.belongsTo(CompteBancaire, {
+  foreignKey: 'compte_bancaire_id',
+  as: 'compteBancaire'
+});
+
+// ReglementFacture <-> Utilisateur (enregistreur)
+ReglementFacture.belongsTo(Utilisateur, {
+  foreignKey: 'enregistre_par_id',
+  as: 'enregistrePar'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -1224,6 +1569,7 @@ module.exports = {
   LivreGenre,
   LivreTheme,
   LivreLangue,
+  RoleContributeurLivre,
   // Films reference tables
   GenreFilm,
   Realisateur,
@@ -1263,6 +1609,11 @@ module.exports = {
   // Comptabilite (Phase 1 - FEC et numérotation)
   CompteurPiece,
   EcritureComptable,
+  // Comptabilite (Phase 2 - Parametrage avance)
+  JournalComptable,
+  CompteComptable,
+  ParametrageComptableOperation,
+  CompteEncaissementModePaiement,
   // LLM Configuration (Recherche IA)
   ConfigurationLLM,
   // Thematiques IA (Recherche naturelle)
@@ -1288,5 +1639,15 @@ module.exports = {
   // Mini-jeu chat leaderboard
   LeaderboardScore,
   // Limites emprunts par genre
-  LimiteEmpruntGenre
+  LimiteEmpruntGenre,
+  // Caisse (gestion des règlements)
+  Caisse,
+  SessionCaisse,
+  MouvementCaisse,
+  // Factures
+  Facture,
+  LigneFacture,
+  ReglementFacture,
+  // API Keys (extensions externes)
+  ApiKey
 };

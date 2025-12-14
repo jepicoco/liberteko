@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de Caisse - Administration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/admin.css" rel="stylesheet">
+  <style>
+    .session-active {
+      border-left: 4px solid #198754;
+      background-color: #d1e7dd;
+    }
+    .session-closed {
+      border-left: 4px solid #6c757d;
+    }
+    .mouvement-entree {
+      border-left: 3px solid #198754;
+    }
+    .mouvement-sortie {
+      border-left: 3px solid #dc3545;
+    }
+    .solde-positif { color: #198754; }
+    .solde-negatif { color: #dc3545; }
+    .ecart-warning { color: #ffc107; }
+    .badge-entree { background-color: #198754; }
+    .badge-sortie { background-color: #dc3545; }
+    .comptage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+    }
+    .comptage-item input {
+      width: 80px;
+    }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div id="sidebar-container" class="col-md-3 col-lg-2"></div>
+
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2"><i class="bi bi-cash-stack me-2"></i>Gestion de Caisse</h1>
+          <div class="btn-toolbar">
+            <button class="btn btn-outline-secondary me-2" onclick="afficherHistorique()">
+              <i class="bi bi-clock-history"></i> Historique
+            </button>
+            <button class="btn btn-outline-primary me-2" onclick="afficherStatistiques()">
+              <i class="bi bi-graph-up"></i> Statistiques
+            </button>
+            <button class="btn btn-primary" onclick="showModalCaisse()" id="btnNouvelleCaisse">
+              <i class="bi bi-plus-circle"></i> Nouvelle caisse
+            </button>
+          </div>
+        </div>
+
+        <!-- Sélection de la caisse -->
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <label for="selectCaisse" class="form-label">Sélectionner une caisse</label>
+            <select class="form-select" id="selectCaisse" onchange="chargerCaisse()">
+              <option value="">-- Choisir une caisse --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Zone caisse sélectionnée -->
+        <div id="zoneCaisse" style="display: none;">
+          <!-- Infos caisse -->
+          <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-info-circle me-2"></i>Informations de la caisse</span>
+              <button class="btn btn-sm btn-outline-secondary" onclick="showModalCaisse(caisseActuelle)">
+                <i class="bi bi-pencil"></i> Modifier
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-3">
+                  <strong>Nom:</strong> <span id="caisseNom"></span>
+                </div>
+                <div class="col-md-2">
+                  <strong>Code:</strong> <span id="caisseCode"></span>
+                </div>
+                <div class="col-md-2">
+                  <strong>Site:</strong> <span id="caisseSite"></span>
+                </div>
+                <div class="col-md-2">
+                  <strong>Solde initial:</strong> <span id="caisseSoldeInitial"></span>
+                </div>
+                <div class="col-md-3">
+                  <strong>Solde actuel:</strong> <span id="caisseSoldeActuel" class="fs-5 fw-bold"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Session en cours ou bouton ouvrir -->
+          <div id="zoneSession">
+            <!-- Contenu dynamique -->
+          </div>
+
+          <!-- Mouvements de la session -->
+          <div id="zoneMouvements" style="display: none;">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-list-check me-2"></i>Mouvements de la session</span>
+                <div>
+                  <button class="btn btn-sm btn-success me-2" onclick="showModalMouvement('entree')">
+                    <i class="bi bi-plus-circle"></i> Encaissement
+                  </button>
+                  <button class="btn btn-sm btn-danger" onclick="showModalMouvement('sortie')">
+                    <i class="bi bi-dash-circle"></i> Décaissement
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-hover" id="tableMouvements">
+                    <thead>
+                      <tr>
+                        <th>Date/Heure</th>
+                        <th>Type</th>
+                        <th>Catégorie</th>
+                        <th>Libellé</th>
+                        <th>Mode paiement</th>
+                        <th>Référence</th>
+                        <th class="text-end">Montant</th>
+                        <th>Opérateur</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="listeMouvements">
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Historique des sessions -->
+        <div id="zoneHistorique" style="display: none;">
+          <div class="card">
+            <div class="card-header">
+              <i class="bi bi-clock-history me-2"></i>Historique des sessions
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Date ouverture</th>
+                      <th>Date clôture</th>
+                      <th>Ouvert par</th>
+                      <th>Clôturé par</th>
+                      <th class="text-end">Solde ouv.</th>
+                      <th class="text-end">Solde clôt.</th>
+                      <th class="text-end">Écart</th>
+                      <th>Mvts</th>
+                      <th>Statut</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="listeHistorique">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Caisse -->
+  <div class="modal fade" id="modalCaisse" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCaisseTitle">Nouvelle caisse</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCaisse">
+            <input type="hidden" id="caisseId">
+            <div class="mb-3">
+              <label for="caisseFormNom" class="form-label">Nom *</label>
+              <input type="text" class="form-control" id="caisseFormNom" required>
+            </div>
+            <div class="mb-3">
+              <label for="caisseFormCode" class="form-label">Code *</label>
+              <input type="text" class="form-control" id="caisseFormCode" required maxlength="20">
+              <div class="form-text">Code unique (ex: CAISSE_PRINC)</div>
+            </div>
+            <div class="mb-3">
+              <label for="caisseFormSite" class="form-label">Site</label>
+              <select class="form-select" id="caisseFormSite">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="caisseFormSoldeInitial" class="form-label">Solde initial</label>
+              <input type="number" class="form-control" id="caisseFormSoldeInitial" step="0.01" value="0">
+            </div>
+            <div class="mb-3">
+              <label for="caisseFormCompteComptable" class="form-label">Compte comptable</label>
+              <input type="text" class="form-control" id="caisseFormCompteComptable" value="5300" maxlength="20">
+            </div>
+            <div class="mb-3">
+              <label for="caisseFormDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="caisseFormDescription" rows="2"></textarea>
+            </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="caisseFormActif" checked>
+              <label class="form-check-label" for="caisseFormActif">Active</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveCaisse()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ouvrir Session -->
+  <div class="modal fade" id="modalOuvrirSession" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Ouvrir une session de caisse</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Vous êtes sur le point d'ouvrir une session de caisse.</p>
+          <p><strong>Solde d'ouverture:</strong> <span id="soldeOuverturePrevu"></span></p>
+          <div class="mb-3">
+            <label for="commentaireOuverture" class="form-label">Commentaire (optionnel)</label>
+            <textarea class="form-control" id="commentaireOuverture" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" onclick="ouvrirSession()">
+            <i class="bi bi-play-circle"></i> Ouvrir la session
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Clôturer Session -->
+  <div class="modal fade" id="modalCloturerSession" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Clôturer la session de caisse</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>Solde ouverture:</strong><br>
+              <span id="clotSoldeOuverture" class="fs-5"></span>
+            </div>
+            <div class="col-md-4">
+              <strong>Total entrées:</strong><br>
+              <span id="clotTotalEntrees" class="fs-5 text-success"></span>
+            </div>
+            <div class="col-md-4">
+              <strong>Total sorties:</strong><br>
+              <span id="clotTotalSorties" class="fs-5 text-danger"></span>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <strong>Solde théorique:</strong><br>
+              <span id="clotSoldeTheorique" class="fs-4 fw-bold"></span>
+            </div>
+          </div>
+          <hr>
+          <h6>Comptage réel</h6>
+          <div class="comptage-grid mb-3" id="comptageGrid">
+            <!-- Généré dynamiquement -->
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="soldeClotuреReel" class="form-label">Solde réel compté *</label>
+              <input type="number" class="form-control" id="soldeClotureReel" step="0.01" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Écart</label>
+              <div id="ecartCloture" class="fs-4 fw-bold">0,00 EUR</div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="commentaireCloture" class="form-label">Commentaire (optionnel)</label>
+            <textarea class="form-control" id="commentaireCloture" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-warning" onclick="cloturerSession()">
+            <i class="bi bi-stop-circle"></i> Clôturer la session
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Mouvement -->
+  <div class="modal fade" id="modalMouvement" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalMouvementTitle">Nouveau mouvement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formMouvement">
+            <input type="hidden" id="mouvementType">
+            <div class="mb-3">
+              <label for="mouvementCategorie" class="form-label">Catégorie *</label>
+              <select class="form-select" id="mouvementCategorie" required>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="mouvementMontant" class="form-label">Montant *</label>
+              <input type="number" class="form-control" id="mouvementMontant" step="0.01" min="0.01" required>
+            </div>
+            <div class="mb-3">
+              <label for="mouvementModePaiement" class="form-label">Mode de paiement *</label>
+              <select class="form-select" id="mouvementModePaiement" required>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="mouvementLibelle" class="form-label">Libellé *</label>
+              <input type="text" class="form-control" id="mouvementLibelle" required>
+            </div>
+            <div class="mb-3">
+              <label for="mouvementReference" class="form-label">Référence</label>
+              <input type="text" class="form-control" id="mouvementReference" placeholder="N° chèque, réf. CB...">
+            </div>
+            <div class="mb-3">
+              <label for="mouvementCommentaire" class="form-label">Commentaire</label>
+              <textarea class="form-control" id="mouvementCommentaire" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveMouvement()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détail Session -->
+  <div class="modal fade" id="modalDetailSession" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Détail de la session</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="detailSessionContent">
+            <!-- Contenu dynamique -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script>
+    let caisseActuelle = null;
+    let sessionActuelle = null;
+    let references = { modesPaiement: [], sites: [], categories: [] };
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await chargerReferences();
+      await chargerListeCaisses();
+    });
+
+    async function chargerReferences() {
+      try {
+        references = await apiAdmin.get('/api/caisses/references');
+        populateSelectModesPaiement();
+        populateSelectCategories();
+        populateSelectSites();
+      } catch (error) {
+        console.error('Erreur chargement références:', error);
+      }
+    }
+
+    function populateSelectModesPaiement() {
+      const select = document.getElementById('mouvementModePaiement');
+      select.innerHTML = '';
+      references.modesPaiement.forEach(mp => {
+        select.innerHTML += `<option value="${mp.code}">${mp.nom}</option>`;
+      });
+    }
+
+    function populateSelectCategories(type = null) {
+      const select = document.getElementById('mouvementCategorie');
+      select.innerHTML = '';
+      references.categories.forEach(cat => {
+        select.innerHTML += `<option value="${cat.code}">${cat.libelle}</option>`;
+      });
+    }
+
+    function populateSelectSites() {
+      const select = document.getElementById('caisseFormSite');
+      select.innerHTML = '<option value="">-- Aucun --</option>';
+      references.sites.forEach(site => {
+        select.innerHTML += `<option value="${site.id}">${site.nom}</option>`;
+      });
+    }
+
+    async function chargerListeCaisses() {
+      try {
+        const caisses = await apiAdmin.get('/api/caisses?includeInactive=true');
+        const select = document.getElementById('selectCaisse');
+        select.innerHTML = '<option value="">-- Choisir une caisse --</option>';
+        caisses.forEach(c => {
+          const statut = c.actif ? '' : ' (inactive)';
+          select.innerHTML += `<option value="${c.id}">${c.nom} - ${c.code}${statut}</option>`;
+        });
+      } catch (error) {
+        console.error('Erreur chargement caisses:', error);
+        showAlert('Erreur lors du chargement des caisses', 'danger');
+      }
+    }
+
+    async function chargerCaisse() {
+      const caisseId = document.getElementById('selectCaisse').value;
+      if (!caisseId) {
+        document.getElementById('zoneCaisse').style.display = 'none';
+        document.getElementById('zoneHistorique').style.display = 'none';
+        caisseActuelle = null;
+        sessionActuelle = null;
+        return;
+      }
+
+      try {
+        const caisse = await apiAdmin.get(`/api/caisses/${caisseId}`);
+        caisseActuelle = caisse;
+        afficherInfosCaisse(caisse);
+        document.getElementById('zoneCaisse').style.display = 'block';
+        document.getElementById('zoneHistorique').style.display = 'none';
+
+        if (caisse.session_ouverte) {
+          sessionActuelle = caisse.session_ouverte;
+          afficherSessionOuverte(caisse.session_ouverte);
+          await chargerMouvements();
+        } else {
+          sessionActuelle = null;
+          afficherBoutonOuvrirSession();
+        }
+      } catch (error) {
+        console.error('Erreur chargement caisse:', error);
+        showAlert('Erreur lors du chargement de la caisse', 'danger');
+      }
+    }
+
+    function afficherInfosCaisse(caisse) {
+      document.getElementById('caisseNom').textContent = caisse.nom;
+      document.getElementById('caisseCode').textContent = caisse.code;
+      document.getElementById('caisseSite').textContent = caisse.site?.nom || '-';
+      document.getElementById('caisseSoldeInitial').textContent = formatMontant(caisse.solde_initial);
+      document.getElementById('caisseSoldeActuel').textContent = formatMontant(caisse.solde_actuel);
+      document.getElementById('caisseSoldeActuel').className = parseFloat(caisse.solde_actuel) >= 0 ? 'fs-5 fw-bold solde-positif' : 'fs-5 fw-bold solde-negatif';
+    }
+
+    function afficherBoutonOuvrirSession() {
+      document.getElementById('zoneSession').innerHTML = `
+        <div class="card mb-4 bg-light">
+          <div class="card-body text-center">
+            <h5>Aucune session ouverte</h5>
+            <p>Ouvrez une session pour commencer à enregistrer des mouvements.</p>
+            <button class="btn btn-success btn-lg" onclick="showModalOuvrirSession()">
+              <i class="bi bi-play-circle me-2"></i>Ouvrir une session
+            </button>
+          </div>
+        </div>
+      `;
+      document.getElementById('zoneMouvements').style.display = 'none';
+    }
+
+    function afficherSessionOuverte(session) {
+      const dateOuv = new Date(session.date_ouverture).toLocaleString('fr-FR');
+      document.getElementById('zoneSession').innerHTML = `
+        <div class="card mb-4 session-active">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-play-circle-fill me-2 text-success"></i>Session en cours</span>
+            <button class="btn btn-warning" onclick="showModalCloturerSession()">
+              <i class="bi bi-stop-circle"></i> Clôturer la session
+            </button>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-3">
+                <strong>Ouverte le:</strong><br>${dateOuv}
+              </div>
+              <div class="col-md-3">
+                <strong>Par:</strong><br>${session.utilisateur?.prenom} ${session.utilisateur?.nom}
+              </div>
+              <div class="col-md-2">
+                <strong>Solde ouverture:</strong><br>${formatMontant(session.solde_ouverture)}
+              </div>
+              <div class="col-md-2">
+                <strong>Entrées:</strong><br><span class="text-success">${formatMontant(session.total_entrees)}</span>
+              </div>
+              <div class="col-md-2">
+                <strong>Sorties:</strong><br><span class="text-danger">${formatMontant(session.total_sorties)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.getElementById('zoneMouvements').style.display = 'block';
+    }
+
+    async function chargerMouvements() {
+      if (!sessionActuelle) return;
+
+      try {
+        const mouvements = await apiAdmin.get(`/api/caisses/sessions/${sessionActuelle.id}/mouvements`);
+        const tbody = document.getElementById('listeMouvements');
+        tbody.innerHTML = '';
+
+        if (mouvements.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Aucun mouvement</td></tr>';
+          return;
+        }
+
+        mouvements.forEach(m => {
+          const dateHeure = new Date(m.date_mouvement).toLocaleString('fr-FR');
+          const typeClass = m.type_mouvement === 'entree' ? 'badge-entree' : 'badge-sortie';
+          const typeLabel = m.type_mouvement === 'entree' ? 'Entrée' : 'Sortie';
+          const montantClass = m.type_mouvement === 'entree' ? 'text-success' : 'text-danger';
+          const montantSign = m.type_mouvement === 'entree' ? '+' : '-';
+          const categorieLabel = references.categories.find(c => c.code === m.categorie)?.libelle || m.categorie;
+
+          tbody.innerHTML += `
+            <tr class="mouvement-${m.type_mouvement}">
+              <td>${dateHeure}</td>
+              <td><span class="badge ${typeClass}">${typeLabel}</span></td>
+              <td>${categorieLabel}</td>
+              <td>${m.libelle}</td>
+              <td>${m.mode_paiement}</td>
+              <td>${m.reference || '-'}</td>
+              <td class="text-end ${montantClass}">${montantSign}${formatMontant(m.montant)}</td>
+              <td>${m.operateur?.prenom || ''} ${m.operateur?.nom || ''}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-danger" onclick="annulerMouvement(${m.id})" title="Annuler">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error('Erreur chargement mouvements:', error);
+      }
+    }
+
+    function showModalCaisse(caisse = null) {
+      document.getElementById('modalCaisseTitle').textContent = caisse ? 'Modifier la caisse' : 'Nouvelle caisse';
+      document.getElementById('caisseId').value = caisse?.id || '';
+      document.getElementById('caisseFormNom').value = caisse?.nom || '';
+      document.getElementById('caisseFormCode').value = caisse?.code || '';
+      document.getElementById('caisseFormSite').value = caisse?.site_id || '';
+      document.getElementById('caisseFormSoldeInitial').value = caisse?.solde_initial || 0;
+      document.getElementById('caisseFormCompteComptable').value = caisse?.compte_comptable || '5300';
+      document.getElementById('caisseFormDescription').value = caisse?.description || '';
+      document.getElementById('caisseFormActif').checked = caisse?.actif !== false;
+
+      new bootstrap.Modal(document.getElementById('modalCaisse')).show();
+    }
+
+    async function saveCaisse() {
+      const id = document.getElementById('caisseId').value;
+      const data = {
+        nom: document.getElementById('caisseFormNom').value,
+        code: document.getElementById('caisseFormCode').value,
+        site_id: document.getElementById('caisseFormSite').value || null,
+        solde_initial: parseFloat(document.getElementById('caisseFormSoldeInitial').value) || 0,
+        compte_comptable: document.getElementById('caisseFormCompteComptable').value,
+        description: document.getElementById('caisseFormDescription').value,
+        actif: document.getElementById('caisseFormActif').checked
+      };
+
+      try {
+        if (id) {
+          await apiAdmin.put(`/api/caisses/${id}`, data);
+          showAlert('Caisse mise à jour', 'success');
+        } else {
+          await apiAdmin.post('/api/caisses', data);
+          showAlert('Caisse créée', 'success');
+        }
+        bootstrap.Modal.getInstance(document.getElementById('modalCaisse')).hide();
+        await chargerListeCaisses();
+        if (id) await chargerCaisse();
+      } catch (error) {
+        console.error('Erreur sauvegarde caisse:', error);
+        showAlert(error.message || 'Erreur lors de la sauvegarde', 'danger');
+      }
+    }
+
+    function showModalOuvrirSession() {
+      document.getElementById('soldeOuverturePrevu').textContent = formatMontant(caisseActuelle.solde_actuel);
+      document.getElementById('commentaireOuverture').value = '';
+      new bootstrap.Modal(document.getElementById('modalOuvrirSession')).show();
+    }
+
+    async function ouvrirSession() {
+      try {
+        const commentaire = document.getElementById('commentaireOuverture').value;
+        const session = await apiAdmin.post(`/api/caisses/${caisseActuelle.id}/session/ouvrir`, { commentaire });
+        sessionActuelle = session;
+        bootstrap.Modal.getInstance(document.getElementById('modalOuvrirSession')).hide();
+        showAlert('Session ouverte', 'success');
+        await chargerCaisse();
+      } catch (error) {
+        console.error('Erreur ouverture session:', error);
+        showAlert(error.message || 'Erreur lors de l\'ouverture', 'danger');
+      }
+    }
+
+    async function showModalCloturerSession() {
+      try {
+        const sessionDetail = await apiAdmin.get(`/api/caisses/sessions/${sessionActuelle.id}`);
+        const soldeTheorique = parseFloat(sessionDetail.solde_ouverture) + parseFloat(sessionDetail.totaux.entrees) - parseFloat(sessionDetail.totaux.sorties);
+
+        document.getElementById('clotSoldeOuverture').textContent = formatMontant(sessionDetail.solde_ouverture);
+        document.getElementById('clotTotalEntrees').textContent = '+' + formatMontant(sessionDetail.totaux.entrees);
+        document.getElementById('clotTotalSorties').textContent = '-' + formatMontant(sessionDetail.totaux.sorties);
+        document.getElementById('clotSoldeTheorique').textContent = formatMontant(soldeTheorique);
+        document.getElementById('soldeClotureReel').value = soldeTheorique.toFixed(2);
+        document.getElementById('ecartCloture').textContent = '0,00 EUR';
+        document.getElementById('commentaireCloture').value = '';
+
+        // Générer grille de comptage
+        const grid = document.getElementById('comptageGrid');
+        grid.innerHTML = '';
+        references.modesPaiement.forEach(mp => {
+          const totalMp = sessionDetail.totaux.par_mode_paiement[mp.code] || { entrees: 0, sorties: 0 };
+          const net = totalMp.entrees - totalMp.sorties;
+          grid.innerHTML += `
+            <div class="comptage-item">
+              <label class="form-label small">${mp.nom}</label>
+              <input type="number" class="form-control form-control-sm comptage-input"
+                     data-mode="${mp.code}" step="0.01" value="${net.toFixed(2)}"
+                     onchange="calculerEcart()">
+            </div>
+          `;
+        });
+
+        new bootstrap.Modal(document.getElementById('modalCloturerSession')).show();
+      } catch (error) {
+        console.error('Erreur préparation clôture:', error);
+        showAlert('Erreur lors de la préparation', 'danger');
+      }
+    }
+
+    function calculerEcart() {
+      const soldeTheorique = parseFloat(document.getElementById('clotSoldeTheorique').textContent.replace(/[^\d,-]/g, '').replace(',', '.'));
+      const soldeReel = parseFloat(document.getElementById('soldeClotureReel').value) || 0;
+      const ecart = soldeReel - soldeTheorique;
+
+      const ecartEl = document.getElementById('ecartCloture');
+      ecartEl.textContent = formatMontant(ecart);
+      ecartEl.className = 'fs-4 fw-bold ' + (ecart === 0 ? '' : ecart > 0 ? 'solde-positif' : 'solde-negatif');
+    }
+
+    async function cloturerSession() {
+      try {
+        const soldeReel = parseFloat(document.getElementById('soldeClotureReel').value);
+        const commentaire = document.getElementById('commentaireCloture').value;
+
+        // Récupérer le détail du comptage
+        const detailComptage = {};
+        document.querySelectorAll('.comptage-input').forEach(input => {
+          detailComptage[input.dataset.mode] = parseFloat(input.value) || 0;
+        });
+
+        await apiAdmin.post(`/api/caisses/sessions/${sessionActuelle.id}/cloturer`, {
+          solde_cloture_reel: soldeReel,
+          detail_comptage: detailComptage,
+          commentaire
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('modalCloturerSession')).hide();
+        showAlert('Session clôturée', 'success');
+        await chargerCaisse();
+      } catch (error) {
+        console.error('Erreur clôture session:', error);
+        showAlert(error.message || 'Erreur lors de la clôture', 'danger');
+      }
+    }
+
+    function showModalMouvement(type) {
+      document.getElementById('mouvementType').value = type;
+      document.getElementById('modalMouvementTitle').textContent = type === 'entree' ? 'Nouvel encaissement' : 'Nouveau décaissement';
+      document.getElementById('mouvementCategorie').value = '';
+      document.getElementById('mouvementMontant').value = '';
+      document.getElementById('mouvementModePaiement').value = references.modesPaiement[0]?.code || '';
+      document.getElementById('mouvementLibelle').value = '';
+      document.getElementById('mouvementReference').value = '';
+      document.getElementById('mouvementCommentaire').value = '';
+
+      new bootstrap.Modal(document.getElementById('modalMouvement')).show();
+    }
+
+    async function saveMouvement() {
+      try {
+        const data = {
+          type_mouvement: document.getElementById('mouvementType').value,
+          categorie: document.getElementById('mouvementCategorie').value,
+          montant: parseFloat(document.getElementById('mouvementMontant').value),
+          mode_paiement: document.getElementById('mouvementModePaiement').value,
+          libelle: document.getElementById('mouvementLibelle').value,
+          reference: document.getElementById('mouvementReference').value || null,
+          commentaire: document.getElementById('mouvementCommentaire').value || null
+        };
+
+        await apiAdmin.post(`/api/caisses/sessions/${sessionActuelle.id}/mouvements`, data);
+        bootstrap.Modal.getInstance(document.getElementById('modalMouvement')).hide();
+        showAlert('Mouvement enregistré', 'success');
+        await chargerCaisse();
+      } catch (error) {
+        console.error('Erreur enregistrement mouvement:', error);
+        showAlert(error.message || 'Erreur lors de l\'enregistrement', 'danger');
+      }
+    }
+
+    async function annulerMouvement(mouvementId) {
+      if (!confirm('Voulez-vous vraiment annuler ce mouvement ?')) return;
+
+      const motif = prompt('Motif de l\'annulation:');
+      if (motif === null) return;
+
+      try {
+        await apiAdmin.post(`/api/caisses/mouvements/${mouvementId}/annuler`, { motif });
+        showAlert('Mouvement annulé', 'success');
+        await chargerCaisse();
+      } catch (error) {
+        console.error('Erreur annulation mouvement:', error);
+        showAlert(error.message || 'Erreur lors de l\'annulation', 'danger');
+      }
+    }
+
+    async function afficherHistorique() {
+      if (!caisseActuelle) {
+        showAlert('Sélectionnez d\'abord une caisse', 'warning');
+        return;
+      }
+
+      try {
+        const sessions = await apiAdmin.get(`/api/caisses/${caisseActuelle.id}/sessions`);
+        const tbody = document.getElementById('listeHistorique');
+        tbody.innerHTML = '';
+
+        if (sessions.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">Aucune session</td></tr>';
+        } else {
+          sessions.forEach(s => {
+            const dateOuv = new Date(s.date_ouverture).toLocaleString('fr-FR');
+            const dateClo = s.date_cloture ? new Date(s.date_cloture).toLocaleString('fr-FR') : '-';
+            const statutBadge = s.statut === 'ouverte'
+              ? '<span class="badge bg-success">Ouverte</span>'
+              : s.statut === 'cloturee'
+                ? '<span class="badge bg-secondary">Clôturée</span>'
+                : '<span class="badge bg-danger">Annulée</span>';
+            const ecartClass = s.ecart === 0 ? '' : parseFloat(s.ecart) > 0 ? 'solde-positif' : 'solde-negatif';
+
+            tbody.innerHTML += `
+              <tr>
+                <td>${dateOuv}</td>
+                <td>${dateClo}</td>
+                <td>${s.utilisateur?.prenom || ''} ${s.utilisateur?.nom || ''}</td>
+                <td>${s.utilisateurCloture ? s.utilisateurCloture.prenom + ' ' + s.utilisateurCloture.nom : '-'}</td>
+                <td class="text-end">${formatMontant(s.solde_ouverture)}</td>
+                <td class="text-end">${s.solde_cloture_reel !== null ? formatMontant(s.solde_cloture_reel) : '-'}</td>
+                <td class="text-end ${ecartClass}">${s.ecart !== null ? formatMontant(s.ecart) : '-'}</td>
+                <td>${s.nb_mouvements}</td>
+                <td>${statutBadge}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary" onclick="voirDetailSession(${s.id})">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+        }
+
+        document.getElementById('zoneHistorique').style.display = 'block';
+      } catch (error) {
+        console.error('Erreur chargement historique:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function voirDetailSession(sessionId) {
+      try {
+        const session = await apiAdmin.get(`/api/caisses/sessions/${sessionId}`);
+        const dateOuv = new Date(session.date_ouverture).toLocaleString('fr-FR');
+        const dateClo = session.date_cloture ? new Date(session.date_cloture).toLocaleString('fr-FR') : '-';
+
+        let html = `
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Ouverture:</strong><br>${dateOuv}</div>
+            <div class="col-md-3"><strong>Clôture:</strong><br>${dateClo}</div>
+            <div class="col-md-3"><strong>Solde ouverture:</strong><br>${formatMontant(session.solde_ouverture)}</div>
+            <div class="col-md-3"><strong>Solde clôture:</strong><br>${session.solde_cloture_reel !== null ? formatMontant(session.solde_cloture_reel) : '-'}</div>
+          </div>
+          <hr>
+          <h6>Mouvements (${session.mouvements?.length || 0})</h6>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Catégorie</th>
+                  <th>Libellé</th>
+                  <th>Mode</th>
+                  <th class="text-end">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        (session.mouvements || []).forEach(m => {
+          const date = new Date(m.date_mouvement).toLocaleString('fr-FR');
+          const montantClass = m.type_mouvement === 'entree' ? 'text-success' : 'text-danger';
+          const sign = m.type_mouvement === 'entree' ? '+' : '-';
+          html += `
+            <tr>
+              <td>${date}</td>
+              <td>${m.type_mouvement === 'entree' ? 'Entrée' : 'Sortie'}</td>
+              <td>${m.categorie}</td>
+              <td>${m.libelle}</td>
+              <td>${m.mode_paiement}</td>
+              <td class="text-end ${montantClass}">${sign}${formatMontant(m.montant)}</td>
+            </tr>
+          `;
+        });
+
+        html += '</tbody></table></div>';
+        document.getElementById('detailSessionContent').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('modalDetailSession')).show();
+      } catch (error) {
+        console.error('Erreur chargement détail session:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function afficherStatistiques() {
+      if (!caisseActuelle) {
+        showAlert('Sélectionnez d\'abord une caisse', 'warning');
+        return;
+      }
+
+      try {
+        const stats = await apiAdmin.get(`/api/caisses/statistiques?caisseId=${caisseActuelle.id}`);
+        alert(`Statistiques de la caisse ${caisseActuelle.nom}:\n\n` +
+          `Nombre de sessions: ${stats.nb_sessions}\n` +
+          `Total entrées: ${formatMontant(stats.total_entrees)}\n` +
+          `Total sorties: ${formatMontant(stats.total_sorties)}\n` +
+          `Nombre de mouvements: ${stats.nb_mouvements}\n` +
+          `Total écarts: ${formatMontant(stats.total_ecarts)}`
+        );
+      } catch (error) {
+        console.error('Erreur chargement statistiques:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    function formatMontant(montant) {
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(montant || 0);
+    }
+
+    function showAlert(message, type) {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+      alertDiv.style.zIndex = '9999';
+      alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+      document.body.appendChild(alertDiv);
+      setTimeout(() => alertDiv.remove(), 5000);
+    }
+  </script>
+</body>
+</html>

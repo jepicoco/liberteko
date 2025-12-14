@@ -82,55 +82,82 @@ function transformRefs(item, type, nouveauteParams = null) {
 }
 
 /**
+ * Helper: Build public config response
+ */
+async function getPublicConfig() {
+  const parametres = await ParametresFront.getParametres();
+
+  return {
+    // Identite
+    nom_site: parametres.nom_site,
+    nom: parametres.nom_site, // Alias for themes
+    logo_url: parametres.logo_url,
+    favicon_url: parametres.favicon_url,
+
+    // SEO
+    meta_description: parametres.meta_description,
+    meta_keywords: parametres.meta_keywords,
+    og_image_url: parametres.og_image_url,
+
+    // Modules actifs
+    modules: {
+      ludotheque: parametres.module_ludotheque,
+      bibliotheque: parametres.module_bibliotheque,
+      filmotheque: parametres.module_filmotheque || false,
+      discotheque: parametres.module_discotheque || false,
+      inscriptions: parametres.module_inscriptions,
+      reservations: parametres.module_reservations
+    },
+
+    // Style
+    couleur_primaire: parametres.couleur_primaire,
+    couleur_secondaire: parametres.couleur_secondaire,
+    css_personnalise: parametres.css_personnalise,
+
+    // Contact
+    email_contact: parametres.email_contact,
+    email: parametres.email_contact, // Alias for themes
+    telephone_contact: parametres.telephone_contact,
+    telephone: parametres.telephone_contact, // Alias for themes
+    adresse_contact: parametres.adresse_contact,
+    adresse: parametres.adresse_contact, // Alias for themes
+
+    // Reseaux sociaux
+    reseaux_sociaux: {
+      facebook: parametres.facebook_url,
+      instagram: parametres.instagram_url,
+      twitter: parametres.twitter_url,
+      youtube: parametres.youtube_url
+    }
+  };
+}
+
+/**
  * @route   GET /api/public/config
  * @desc    Get public site configuration (name, colors, modules, contact, etc.)
  * @access  Public
  */
 router.get('/config', async (req, res) => {
   try {
-    const parametres = await ParametresFront.getParametres();
-
-    res.json({
-      // Identite
-      nom_site: parametres.nom_site,
-      logo_url: parametres.logo_url,
-      favicon_url: parametres.favicon_url,
-
-      // SEO
-      meta_description: parametres.meta_description,
-      meta_keywords: parametres.meta_keywords,
-      og_image_url: parametres.og_image_url,
-
-      // Modules actifs
-      modules: {
-        ludotheque: parametres.module_ludotheque,
-        bibliotheque: parametres.module_bibliotheque,
-        filmotheque: parametres.module_filmotheque || false,
-        discotheque: parametres.module_discotheque || false,
-        inscriptions: parametres.module_inscriptions,
-        reservations: parametres.module_reservations
-      },
-
-      // Style
-      couleur_primaire: parametres.couleur_primaire,
-      couleur_secondaire: parametres.couleur_secondaire,
-      css_personnalise: parametres.css_personnalise,
-
-      // Contact
-      email_contact: parametres.email_contact,
-      telephone_contact: parametres.telephone_contact,
-      adresse_contact: parametres.adresse_contact,
-
-      // Reseaux sociaux
-      reseaux_sociaux: {
-        facebook: parametres.facebook_url,
-        instagram: parametres.instagram_url,
-        twitter: parametres.twitter_url,
-        youtube: parametres.youtube_url
-      }
-    });
+    const config = await getPublicConfig();
+    res.json(config);
   } catch (error) {
     console.error('Erreur config publique:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+/**
+ * @route   GET /api/public/parametres
+ * @desc    Alias for /config - Get public site configuration
+ * @access  Public
+ */
+router.get('/parametres', async (req, res) => {
+  try {
+    const config = await getPublicConfig();
+    res.json(config);
+  } catch (error) {
+    console.error('Erreur parametres publics:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });

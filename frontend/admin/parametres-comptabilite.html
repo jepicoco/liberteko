@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parametrage Comptable - Assotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .section-card { margin-bottom: 1.5rem; }
+    .section-card .card-header { background-color: #f8f9fa; font-weight: 600; }
+    .compte-row:hover { background-color: #f8f9fa; }
+    .compte-child { padding-left: 2rem; }
+    .compte-numero { font-family: monospace; font-weight: 500; }
+    .badge-classe { min-width: 25px; }
+    .nav-pills .nav-link.active { background-color: #0d6efd; }
+    .table-hover tbody tr:hover { cursor: pointer; }
+    .btn-group-sm .btn { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+  <div class="d-flex">
+    <div id="sidebar-container"></div>
+    <main class="flex-grow-1 p-4" style="margin-left: 250px;">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2><i class="bi bi-gear-wide-connected me-2"></i>Parametrage Comptable</h2>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="index.html">Tableau de bord</a></li>
+              <li class="breadcrumb-item"><a href="#">Parametres</a></li>
+              <li class="breadcrumb-item active">Comptabilite</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Onglets de navigation -->
+      <ul class="nav nav-pills mb-4" id="comptaTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="operations-tab" data-bs-toggle="pill" data-bs-target="#operations" type="button">
+            <i class="bi bi-sliders me-1"></i> Operations
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="encaissements-tab" data-bs-toggle="pill" data-bs-target="#encaissements" type="button">
+            <i class="bi bi-credit-card me-1"></i> Encaissements
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="journaux-tab" data-bs-toggle="pill" data-bs-target="#journaux" type="button">
+            <i class="bi bi-journal-text me-1"></i> Journaux
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="comptes-tab" data-bs-toggle="pill" data-bs-target="#comptes" type="button">
+            <i class="bi bi-list-ol me-1"></i> Plan Comptable
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content" id="comptaTabsContent">
+        <!-- Onglet Operations -->
+        <div class="tab-pane fade show active" id="operations" role="tabpanel">
+          <div class="card section-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-sliders me-2"></i>Parametrage par type d'operation</span>
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">Configurez les comptes et journaux utilises pour chaque type d'operation comptable.</p>
+              <div class="table-responsive">
+                <table class="table table-hover" id="operationsTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Type d'operation</th>
+                      <th>Journal</th>
+                      <th>Compte produit</th>
+                      <th>Prefixe piece</th>
+                      <th>Section analytique</th>
+                      <th>Auto</th>
+                      <th style="width: 80px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="operationsBody">
+                    <tr><td colspan="7" class="text-center">Chargement...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Encaissements -->
+        <div class="tab-pane fade" id="encaissements" role="tabpanel">
+          <div class="card section-card">
+            <div class="card-header">
+              <i class="bi bi-credit-card me-2"></i>Comptes d'encaissement par mode de paiement
+            </div>
+            <div class="card-body">
+              <p class="text-muted mb-3">Associez un compte comptable a chaque mode de paiement pour l'encaissement.</p>
+              <div class="table-responsive">
+                <table class="table table-hover" id="encaissementsTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Mode de paiement</th>
+                      <th>Compte</th>
+                      <th>Libelle compte</th>
+                      <th>Journal specifique</th>
+                      <th style="width: 80px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="encaissementsBody">
+                    <tr><td colspan="5" class="text-center">Chargement...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Journaux -->
+        <div class="tab-pane fade" id="journaux" role="tabpanel">
+          <div class="card section-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-journal-text me-2"></i>Journaux comptables</span>
+              <button class="btn btn-sm btn-primary" onclick="openJournalModal()">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau journal
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover" id="journauxTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Code</th>
+                      <th>Libelle</th>
+                      <th>Type</th>
+                      <th>Compte contrepartie</th>
+                      <th>Actif</th>
+                      <th style="width: 100px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="journauxBody">
+                    <tr><td colspan="6" class="text-center">Chargement...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Onglet Plan Comptable -->
+        <div class="tab-pane fade" id="comptes" role="tabpanel">
+          <div class="card section-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span><i class="bi bi-list-ol me-2"></i>Plan comptable</span>
+              <button class="btn btn-sm btn-primary" onclick="openCompteModal()">
+                <i class="bi bi-plus-lg me-1"></i>Nouveau compte
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="row mb-3">
+                <div class="col-md-4">
+                  <select class="form-select form-select-sm" id="filterClasse" onchange="loadComptes()">
+                    <option value="">Toutes les classes</option>
+                    <option value="4">Classe 4 - Tiers</option>
+                    <option value="5">Classe 5 - Financiers</option>
+                    <option value="6">Classe 6 - Charges</option>
+                    <option value="7">Classe 7 - Produits</option>
+                  </select>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover" id="comptesTable">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Numero</th>
+                      <th>Libelle</th>
+                      <th>Classe</th>
+                      <th>Type</th>
+                      <th>Saisie</th>
+                      <th>Actif</th>
+                      <th style="width: 100px;">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="comptesBody">
+                    <tr><td colspan="7" class="text-center">Chargement...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Edition Operation -->
+  <div class="modal fade" id="operationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Modifier le parametrage</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="operationForm">
+            <input type="hidden" id="operationId">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Type d'operation</label>
+                <input type="text" class="form-control" id="operationType" readonly>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Libelle</label>
+                <input type="text" class="form-control" id="operationLibelle" required>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label">Journal</label>
+                <select class="form-select" id="operationJournal" required>
+                  <option value="">Chargement...</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Compte produit</label>
+                <input type="text" class="form-control compte-numero" id="operationCompte" placeholder="ex: 7061" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Prefixe piece</label>
+                <input type="text" class="form-control" id="operationPrefixe" placeholder="ex: COT" maxlength="10" required>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Libelle compte produit</label>
+                <input type="text" class="form-control" id="operationCompteLibelle" placeholder="Optionnel">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Section analytique</label>
+                <select class="form-select" id="operationSection">
+                  <option value="">Aucune</option>
+                </select>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="operationAuto" checked>
+                  <label class="form-check-label" for="operationAuto">
+                    Generer les ecritures automatiquement
+                  </label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="operationActif" checked>
+                  <label class="form-check-label" for="operationActif">
+                    Actif
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="operationDescription" rows="2"></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveOperation()">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Edition Encaissement -->
+  <div class="modal fade" id="encaissementModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Modifier le compte d'encaissement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="encaissementForm">
+            <input type="hidden" id="encaissementId">
+            <div class="mb-3">
+              <label class="form-label">Mode de paiement</label>
+              <input type="text" class="form-control" id="encaissementMode" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Numero de compte</label>
+              <input type="text" class="form-control compte-numero" id="encaissementCompte" placeholder="ex: 5121" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Libelle du compte</label>
+              <input type="text" class="form-control" id="encaissementLibelle" placeholder="ex: Banque - Compte courant">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Journal specifique (optionnel)</label>
+              <select class="form-select" id="encaissementJournal">
+                <option value="">Utiliser le journal de l'operation</option>
+              </select>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveEncaissement()">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Journal -->
+  <div class="modal fade" id="journalModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="journalModalTitle"><i class="bi bi-journal-plus me-2"></i>Nouveau journal</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="journalForm">
+            <input type="hidden" id="journalId">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label">Code</label>
+                <input type="text" class="form-control" id="journalCode" maxlength="10" required style="text-transform: uppercase;">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Libelle</label>
+                <input type="text" class="form-control" id="journalLibelle" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Type</label>
+              <select class="form-select" id="journalType" required>
+                <option value="ventes">Ventes</option>
+                <option value="achats">Achats</option>
+                <option value="banque">Banque</option>
+                <option value="caisse">Caisse</option>
+                <option value="operations_diverses">Operations diverses</option>
+                <option value="a_nouveaux">A-nouveaux</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Compte de contrepartie (optionnel)</label>
+              <input type="text" class="form-control compte-numero" id="journalContrepartie" placeholder="ex: 5121">
+            </div>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="checkbox" id="journalActif" checked>
+              <label class="form-check-label" for="journalActif">Actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveJournal()">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Compte -->
+  <div class="modal fade" id="compteModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="compteModalTitle"><i class="bi bi-plus-circle me-2"></i>Nouveau compte</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="compteForm">
+            <input type="hidden" id="compteId">
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label">Numero</label>
+                <input type="text" class="form-control compte-numero" id="compteNumero" required>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Libelle</label>
+                <input type="text" class="form-control" id="compteLibelle" required>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Classe</label>
+                <select class="form-select" id="compteClasse" required>
+                  <option value="4">4 - Tiers</option>
+                  <option value="5">5 - Financiers</option>
+                  <option value="6">6 - Charges</option>
+                  <option value="7">7 - Produits</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="compteType">
+                  <option value="general">General</option>
+                  <option value="auxiliaire">Auxiliaire</option>
+                  <option value="analytique">Analytique</option>
+                </select>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nature</label>
+              <select class="form-select" id="compteNature">
+                <option value="">Non definie</option>
+                <option value="actif">Actif</option>
+                <option value="passif">Passif</option>
+                <option value="charge">Charge</option>
+                <option value="produit">Produit</option>
+              </select>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="compteAccepteSaisie" checked>
+                  <label class="form-check-label" for="compteAccepteSaisie">Accepte la saisie</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="compteActif" checked>
+                  <label class="form-check-label" for="compteActif">Actif</label>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveCompte()">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script>
+    // Configuration API
+    const API_BASE = '/api/parametres/comptabilite';
+
+    // Donnees en cache
+    let journauxList = [];
+    let sectionsAnalytiquesList = [];
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadReferenceData();
+      await loadOperations();
+      await loadEncaissements();
+      await loadJournaux();
+      await loadComptes();
+    });
+
+    // Charger les donnees de reference
+    async function loadReferenceData() {
+      try {
+        const [journaux, sections] = await Promise.all([
+          apiRequest(`${API_BASE}/refs/modes-paiement`).catch(() => []),
+          apiRequest(`${API_BASE}/refs/sections-analytiques`).catch(() => [])
+        ]);
+        sectionsAnalytiquesList = sections || [];
+
+        // Charger les journaux
+        journauxList = await apiRequest(`${API_BASE}/journaux`).catch(() => []);
+
+        // Remplir les selects
+        populateJournalSelects();
+        populateSectionSelect();
+      } catch (error) {
+        console.error('Erreur chargement donnees reference:', error);
+      }
+    }
+
+    function populateJournalSelects() {
+      const selects = ['operationJournal', 'encaissementJournal'];
+      selects.forEach(id => {
+        const select = document.getElementById(id);
+        if (!select) return;
+
+        const firstOption = id === 'encaissementJournal'
+          ? '<option value="">Utiliser le journal de l\'operation</option>'
+          : '<option value="">Selectionner...</option>';
+
+        select.innerHTML = firstOption + journauxList
+          .filter(j => j.actif)
+          .map(j => `<option value="${j.code}">${j.code} - ${j.libelle}</option>`)
+          .join('');
+      });
+    }
+
+    function populateSectionSelect() {
+      const select = document.getElementById('operationSection');
+      if (!select) return;
+      select.innerHTML = '<option value="">Aucune</option>' +
+        sectionsAnalytiquesList.map(s => `<option value="${s.id}">${s.code} - ${s.libelle}</option>`).join('');
+    }
+
+    // ============================================
+    // OPERATIONS
+    // ============================================
+    async function loadOperations() {
+      try {
+        const operations = await apiRequest(`${API_BASE}/operations`);
+        const tbody = document.getElementById('operationsBody');
+
+        if (!operations || operations.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucun parametrage</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = operations.map(op => `
+          <tr>
+            <td>
+              <strong>${op.libelle}</strong>
+              <br><small class="text-muted">${op.type_operation}</small>
+            </td>
+            <td><span class="badge bg-secondary">${op.journal_code}</span></td>
+            <td><span class="compte-numero">${op.compte_produit}</span></td>
+            <td><code>${op.prefixe_piece}</code></td>
+            <td>${op.sectionAnalytique ? op.sectionAnalytique.code : '-'}</td>
+            <td>
+              ${op.generer_ecritures_auto
+                ? '<span class="badge bg-success"><i class="bi bi-check"></i></span>'
+                : '<span class="badge bg-secondary"><i class="bi bi-x"></i></span>'}
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" onclick="editOperation(${op.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error('Erreur chargement operations:', error);
+        showToast('Erreur lors du chargement des operations', 'danger');
+      }
+    }
+
+    async function editOperation(id) {
+      try {
+        const op = await apiRequest(`${API_BASE}/operations/${id}`);
+        document.getElementById('operationId').value = op.id;
+        document.getElementById('operationType').value = op.type_operation;
+        document.getElementById('operationLibelle').value = op.libelle;
+        document.getElementById('operationJournal').value = op.journal_code;
+        document.getElementById('operationCompte').value = op.compte_produit;
+        document.getElementById('operationCompteLibelle').value = op.compte_produit_libelle || '';
+        document.getElementById('operationPrefixe').value = op.prefixe_piece;
+        document.getElementById('operationSection').value = op.section_analytique_id || '';
+        document.getElementById('operationAuto').checked = op.generer_ecritures_auto;
+        document.getElementById('operationActif').checked = op.actif;
+        document.getElementById('operationDescription').value = op.description || '';
+
+        new bootstrap.Modal(document.getElementById('operationModal')).show();
+      } catch (error) {
+        console.error('Erreur chargement operation:', error);
+        showToast('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function saveOperation() {
+      const id = document.getElementById('operationId').value;
+      const data = {
+        libelle: document.getElementById('operationLibelle').value,
+        journal_code: document.getElementById('operationJournal').value,
+        compte_produit: document.getElementById('operationCompte').value,
+        compte_produit_libelle: document.getElementById('operationCompteLibelle').value || null,
+        prefixe_piece: document.getElementById('operationPrefixe').value,
+        section_analytique_id: document.getElementById('operationSection').value || null,
+        generer_ecritures_auto: document.getElementById('operationAuto').checked,
+        actif: document.getElementById('operationActif').checked,
+        description: document.getElementById('operationDescription').value || null
+      };
+
+      try {
+        await apiRequest(`${API_BASE}/operations/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        });
+        bootstrap.Modal.getInstance(document.getElementById('operationModal')).hide();
+        showToast('Parametrage enregistre', 'success');
+        loadOperations();
+      } catch (error) {
+        console.error('Erreur sauvegarde:', error);
+        showToast('Erreur lors de l\'enregistrement', 'danger');
+      }
+    }
+
+    // ============================================
+    // ENCAISSEMENTS
+    // ============================================
+    async function loadEncaissements() {
+      try {
+        const encaissements = await apiRequest(`${API_BASE}/encaissements`);
+        const tbody = document.getElementById('encaissementsBody');
+
+        if (!encaissements || encaissements.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Aucune configuration</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = encaissements.map(enc => `
+          <tr>
+            <td>
+              <i class="bi bi-${getPaymentIcon(enc.modePaiement?.code)} me-2"></i>
+              ${enc.modePaiement?.libelle || 'Mode inconnu'}
+            </td>
+            <td><span class="compte-numero">${enc.compte_numero}</span></td>
+            <td>${enc.compte_libelle || '-'}</td>
+            <td>${enc.journal_code ? `<span class="badge bg-secondary">${enc.journal_code}</span>` : '-'}</td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" onclick="editEncaissement(${enc.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error('Erreur chargement encaissements:', error);
+      }
+    }
+
+    function getPaymentIcon(code) {
+      const icons = {
+        'especes': 'cash-coin',
+        'cheque': 'file-earmark-text',
+        'carte_bancaire': 'credit-card',
+        'virement': 'arrow-left-right',
+        'prelevement': 'arrow-repeat'
+      };
+      return icons[code] || 'wallet2';
+    }
+
+    async function editEncaissement(id) {
+      try {
+        const enc = await apiRequest(`${API_BASE}/encaissements`).then(list => list.find(e => e.id === id));
+        if (!enc) throw new Error('Configuration non trouvee');
+
+        document.getElementById('encaissementId').value = enc.id;
+        document.getElementById('encaissementMode').value = enc.modePaiement?.libelle || '';
+        document.getElementById('encaissementCompte').value = enc.compte_numero;
+        document.getElementById('encaissementLibelle').value = enc.compte_libelle || '';
+        document.getElementById('encaissementJournal').value = enc.journal_code || '';
+
+        new bootstrap.Modal(document.getElementById('encaissementModal')).show();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function saveEncaissement() {
+      const id = document.getElementById('encaissementId').value;
+      const data = {
+        compte_numero: document.getElementById('encaissementCompte').value,
+        compte_libelle: document.getElementById('encaissementLibelle').value || null,
+        journal_code: document.getElementById('encaissementJournal').value || null
+      };
+
+      try {
+        await apiRequest(`${API_BASE}/encaissements/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        });
+        bootstrap.Modal.getInstance(document.getElementById('encaissementModal')).hide();
+        showToast('Configuration enregistree', 'success');
+        loadEncaissements();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de l\'enregistrement', 'danger');
+      }
+    }
+
+    // ============================================
+    // JOURNAUX
+    // ============================================
+    async function loadJournaux() {
+      try {
+        const journaux = await apiRequest(`${API_BASE}/journaux`);
+        journauxList = journaux;
+        const tbody = document.getElementById('journauxBody');
+
+        tbody.innerHTML = journaux.map(j => `
+          <tr>
+            <td><strong>${j.code}</strong></td>
+            <td>${j.libelle}</td>
+            <td><span class="badge bg-info">${formatJournalType(j.type)}</span></td>
+            <td>${j.compte_contrepartie || '-'}</td>
+            <td>
+              ${j.actif
+                ? '<span class="badge bg-success">Actif</span>'
+                : '<span class="badge bg-secondary">Inactif</span>'}
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick="editJournal(${j.id})" title="Modifier">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger" onclick="deleteJournal(${j.id})" title="Supprimer">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+        populateJournalSelects();
+      } catch (error) {
+        console.error('Erreur chargement journaux:', error);
+      }
+    }
+
+    function formatJournalType(type) {
+      const types = {
+        'ventes': 'Ventes',
+        'achats': 'Achats',
+        'banque': 'Banque',
+        'caisse': 'Caisse',
+        'operations_diverses': 'OD',
+        'a_nouveaux': 'AN'
+      };
+      return types[type] || type;
+    }
+
+    function openJournalModal(id = null) {
+      document.getElementById('journalForm').reset();
+      document.getElementById('journalId').value = '';
+      document.getElementById('journalModalTitle').innerHTML = '<i class="bi bi-journal-plus me-2"></i>Nouveau journal';
+      new bootstrap.Modal(document.getElementById('journalModal')).show();
+    }
+
+    async function editJournal(id) {
+      try {
+        const j = await apiRequest(`${API_BASE}/journaux/${id}`);
+        document.getElementById('journalId').value = j.id;
+        document.getElementById('journalCode').value = j.code;
+        document.getElementById('journalLibelle').value = j.libelle;
+        document.getElementById('journalType').value = j.type;
+        document.getElementById('journalContrepartie').value = j.compte_contrepartie || '';
+        document.getElementById('journalActif').checked = j.actif;
+        document.getElementById('journalModalTitle').innerHTML = '<i class="bi bi-pencil me-2"></i>Modifier le journal';
+
+        new bootstrap.Modal(document.getElementById('journalModal')).show();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function saveJournal() {
+      const id = document.getElementById('journalId').value;
+      const data = {
+        code: document.getElementById('journalCode').value.toUpperCase(),
+        libelle: document.getElementById('journalLibelle').value,
+        type: document.getElementById('journalType').value,
+        compte_contrepartie: document.getElementById('journalContrepartie').value || null,
+        actif: document.getElementById('journalActif').checked
+      };
+
+      try {
+        if (id) {
+          await apiRequest(`${API_BASE}/journaux/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+        } else {
+          await apiRequest(`${API_BASE}/journaux`, { method: 'POST', body: JSON.stringify(data) });
+        }
+        bootstrap.Modal.getInstance(document.getElementById('journalModal')).hide();
+        showToast('Journal enregistre', 'success');
+        loadJournaux();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement', 'danger');
+      }
+    }
+
+    async function deleteJournal(id) {
+      if (!confirm('Supprimer ce journal ?')) return;
+      try {
+        await apiRequest(`${API_BASE}/journaux/${id}`, { method: 'DELETE' });
+        showToast('Journal supprime', 'success');
+        loadJournaux();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la suppression', 'danger');
+      }
+    }
+
+    // ============================================
+    // COMPTES
+    // ============================================
+    async function loadComptes() {
+      try {
+        const classe = document.getElementById('filterClasse').value;
+        const params = classe ? `?classe=${classe}` : '';
+        const comptes = await apiRequest(`${API_BASE}/comptes${params}`);
+        const tbody = document.getElementById('comptesBody');
+
+        if (!comptes || comptes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Aucun compte</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = comptes.map(c => `
+          <tr>
+            <td><span class="compte-numero">${c.numero}</span></td>
+            <td>${c.libelle}</td>
+            <td><span class="badge bg-primary badge-classe">${c.classe}</span></td>
+            <td><small>${c.type}</small></td>
+            <td>
+              ${c.accepte_saisie
+                ? '<i class="bi bi-check-circle text-success"></i>'
+                : '<i class="bi bi-dash-circle text-muted"></i>'}
+            </td>
+            <td>
+              ${c.actif
+                ? '<span class="badge bg-success">Actif</span>'
+                : '<span class="badge bg-secondary">Inactif</span>'}
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary" onclick="editCompte(${c.id})" title="Modifier">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger" onclick="deleteCompte(${c.id})" title="Supprimer">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        console.error('Erreur chargement comptes:', error);
+      }
+    }
+
+    function openCompteModal() {
+      document.getElementById('compteForm').reset();
+      document.getElementById('compteId').value = '';
+      document.getElementById('compteModalTitle').innerHTML = '<i class="bi bi-plus-circle me-2"></i>Nouveau compte';
+      new bootstrap.Modal(document.getElementById('compteModal')).show();
+    }
+
+    async function editCompte(id) {
+      try {
+        const c = await apiRequest(`${API_BASE}/comptes/${id}`);
+        document.getElementById('compteId').value = c.id;
+        document.getElementById('compteNumero').value = c.numero;
+        document.getElementById('compteLibelle').value = c.libelle;
+        document.getElementById('compteClasse').value = c.classe;
+        document.getElementById('compteType').value = c.type;
+        document.getElementById('compteNature').value = c.nature || '';
+        document.getElementById('compteAccepteSaisie').checked = c.accepte_saisie;
+        document.getElementById('compteActif').checked = c.actif;
+        document.getElementById('compteModalTitle').innerHTML = '<i class="bi bi-pencil me-2"></i>Modifier le compte';
+
+        new bootstrap.Modal(document.getElementById('compteModal')).show();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function saveCompte() {
+      const id = document.getElementById('compteId').value;
+      const data = {
+        numero: document.getElementById('compteNumero').value,
+        libelle: document.getElementById('compteLibelle').value,
+        classe: document.getElementById('compteClasse').value,
+        type: document.getElementById('compteType').value,
+        nature: document.getElementById('compteNature').value || null,
+        accepte_saisie: document.getElementById('compteAccepteSaisie').checked,
+        actif: document.getElementById('compteActif').checked
+      };
+
+      try {
+        if (id) {
+          await apiRequest(`${API_BASE}/comptes/${id}`, { method: 'PUT', body: JSON.stringify(data) });
+        } else {
+          await apiRequest(`${API_BASE}/comptes`, { method: 'POST', body: JSON.stringify(data) });
+        }
+        bootstrap.Modal.getInstance(document.getElementById('compteModal')).hide();
+        showToast('Compte enregistre', 'success');
+        loadComptes();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement', 'danger');
+      }
+    }
+
+    async function deleteCompte(id) {
+      if (!confirm('Supprimer ce compte ?')) return;
+      try {
+        await apiRequest(`${API_BASE}/comptes/${id}`, { method: 'DELETE' });
+        showToast('Compte supprime', 'success');
+        loadComptes();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de la suppression', 'danger');
+      }
+    }
+
+    // Toast notification
+    function showToast(message, type = 'info') {
+      const toastContainer = document.querySelector('.toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      new bootstrap.Toast(toast, { delay: 3000 }).show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

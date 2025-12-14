@@ -2,6 +2,7 @@ const { Utilisateur, Emprunt, Jeu, Cotisation, UtilisateurArchive, ArchiveAccess
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
+const familleService = require('../services/familleService');
 
 /**
  * Get all utilisateurs with optional filters
@@ -733,6 +734,121 @@ async function prepareAllVariables(utilisateur, additionalVariables = {}) {
   return variables;
 }
 
+// ========== FAMILLE ==========
+
+/**
+ * Get family members for a user
+ * GET /api/adherents/:id/famille
+ */
+const getFamille = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const famille = await familleService.getFamille(id);
+    res.json(famille);
+  } catch (error) {
+    console.error('Erreur getFamille:', error);
+    res.status(error.message.includes('non trouve') ? 404 : 500).json({
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Get children of a user
+ * GET /api/adherents/:id/enfants
+ */
+const getEnfants = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const enfants = await familleService.getEnfants(id);
+    res.json({ enfants });
+  } catch (error) {
+    console.error('Erreur getEnfants:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Link a child to a parent
+ * POST /api/adherents/:id/enfants
+ * Body: { enfantId, typeLien }
+ */
+const ajouterEnfant = async (req, res) => {
+  try {
+    const { id } = req.params; // ID du parent
+    const { enfantId, typeLien = 'parent' } = req.body;
+
+    if (!enfantId) {
+      return res.status(400).json({ message: 'enfantId est requis' });
+    }
+
+    const enfant = await familleService.lierEnfant(enfantId, parseInt(id), typeLien);
+    res.status(201).json({
+      message: 'Lien familial cree avec succes',
+      enfant
+    });
+  } catch (error) {
+    console.error('Erreur ajouterEnfant:', error);
+    res.status(error.message.includes('non trouve') ? 404 : 400).json({
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Unlink a child from parent
+ * DELETE /api/adherents/:id/enfants/:enfantId
+ */
+const retirerEnfant = async (req, res) => {
+  try {
+    const { enfantId } = req.params;
+
+    const enfant = await familleService.delierEnfant(parseInt(enfantId));
+    res.json({
+      message: 'Lien familial supprime',
+      enfant
+    });
+  } catch (error) {
+    console.error('Erreur retirerEnfant:', error);
+    res.status(error.message.includes('non trouve') ? 404 : 400).json({
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Calculate family subscription cost
+ * GET /api/adherents/:id/famille/cout
+ */
+const calculerCoutFamille = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const cout = await familleService.calculerCoutFamille(id);
+    res.json(cout);
+  } catch (error) {
+    console.error('Erreur calculerCoutFamille:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Search users available for family linking
+ * GET /api/adherents/recherche/disponibles?q=dupont&exclude=5
+ */
+const rechercherDisponibles = async (req, res) => {
+  try {
+    const { q, exclude } = req.query;
+    const utilisateurs = await familleService.rechercherUtilisateursDisponibles(
+      q,
+      exclude ? parseInt(exclude) : null
+    );
+    res.json({ utilisateurs });
+  } catch (error) {
+    console.error('Erreur rechercherDisponibles:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Export avec alias pour compatibilite
 module.exports = {
   // Nouveaux noms
@@ -751,5 +867,12 @@ module.exports = {
   getAdherentStats: getUtilisateurStats,
   // Email/SMS
   sendEmail,
-  sendSms
+  sendSms,
+  // Famille
+  getFamille,
+  getEnfants,
+  ajouterEnfant,
+  retirerEnfant,
+  calculerCoutFamille,
+  rechercherDisponibles
 };

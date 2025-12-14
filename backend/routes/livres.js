@@ -12,6 +12,7 @@ router.get('/genres', livreController.getGenres);
 router.get('/formats', livreController.getFormats);
 router.get('/collections', livreController.getCollections);
 router.get('/emplacements', livreController.getEmplacements);
+router.get('/roles-contributeurs', livreController.getRolesContributeurs);
 router.get('/stats', livreController.getStats);
 
 // Routes CRUD pour les livres (lecture publique)

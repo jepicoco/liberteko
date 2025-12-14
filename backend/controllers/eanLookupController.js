@@ -67,6 +67,42 @@ const lookupByTitle = async (req, res) => {
 };
 
 /**
+ * Recherche par titre avec resultats multiples
+ * POST /api/lookup/title/search
+ * Body: { title: "Germinal", collection: "livre", maxResults: 10, provider: "bnf" }
+ */
+const searchTitleMultiple = async (req, res) => {
+  try {
+    const { title, collection = 'livre', maxResults = 10, provider = null } = req.body;
+
+    if (!title) {
+      return res.status(400).json({
+        error: 'Le titre est requis'
+      });
+    }
+
+    if (title.length < 2) {
+      return res.status(400).json({
+        error: 'Le titre doit contenir au moins 2 caracteres'
+      });
+    }
+
+    logger.info(`[Title Search Multiple] "${title}" (collection: ${collection}, max: ${maxResults}, provider: ${provider || 'all'})`);
+
+    const result = await eanLookupService.searchByTitleMultiple(title, collection, maxResults, provider);
+
+    res.json(result);
+
+  } catch (error) {
+    logger.error('[Title Search Multiple] Error:', error.message);
+    res.status(500).json({
+      error: 'Erreur lors de la recherche',
+      details: error.message
+    });
+  }
+};
+
+/**
  * Recherche multi-collection
  * POST /api/lookup/search
  * Body: { query: "3558380077992", type: "ean" | "title" }
@@ -163,11 +199,59 @@ const clearCache = async (req, res) => {
   }
 };
 
+/**
+ * Liste les providers configures pour une collection
+ * GET /api/lookup/providers?collection=livre
+ */
+const getProviders = async (req, res) => {
+  try {
+    const { collection } = req.query;
+    const providers = await eanLookupService.getConfiguredProviders(collection);
+    res.json({ providers });
+  } catch (error) {
+    logger.error('[Providers] Error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+/**
+ * Recherche GET avec provider specifique
+ * GET /api/lookup/search?code=XXX&collection=livre&provider=bnf
+ */
+const searchGet = async (req, res) => {
+  try {
+    const { code, collection, provider } = req.query;
+
+    if (!code) {
+      return res.status(400).json({ error: 'Le code est requis' });
+    }
+
+    logger.info(`[Search GET] code=${code}, collection=${collection}, provider=${provider}`);
+
+    const result = await eanLookupService.lookupEAN(code, collection, {
+      forceRefresh: false,
+      specificProvider: provider
+    });
+
+    res.json(result);
+
+  } catch (error) {
+    logger.error('[Search GET] Error:', error.message);
+    res.status(500).json({
+      error: 'Erreur lors de la recherche',
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   lookupByCode,
   lookupByTitle,
+  searchTitleMultiple,
   search,
+  searchGet,
   detectCode,
   getCacheStats,
-  clearCache
+  clearCache,
+  getProviders
 };

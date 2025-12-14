@@ -1,0 +1,109 @@
+/**
+ * Routes pour la gestion des caisses
+ */
+
+const express = require('express');
+const router = express.Router();
+const caisseController = require('../controllers/caisseController');
+const { verifyToken } = require('../middleware/auth');
+const { checkRole } = require('../middleware/checkRole');
+
+// Toutes les routes nécessitent une authentification
+router.use(verifyToken);
+
+// ============================================
+// DONNÉES DE RÉFÉRENCE
+// ============================================
+
+// GET /api/caisses/references - Données de référence pour les formulaires
+router.get('/references', caisseController.getReferences);
+
+// GET /api/caisses/statistiques - Statistiques globales
+router.get('/statistiques',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.getStatistiques
+);
+
+// ============================================
+// GESTION DES CAISSES
+// ============================================
+
+// GET /api/caisses - Liste des caisses
+router.get('/', caisseController.getCaisses);
+
+// GET /api/caisses/:id - Détail d'une caisse
+router.get('/:id', caisseController.getCaisseById);
+
+// POST /api/caisses - Créer une caisse (admin seulement)
+router.post('/',
+  checkRole(['administrateur']),
+  caisseController.createCaisse
+);
+
+// PUT /api/caisses/:id - Modifier une caisse (admin seulement)
+router.put('/:id',
+  checkRole(['administrateur']),
+  caisseController.updateCaisse
+);
+
+// DELETE /api/caisses/:id - Désactiver une caisse (admin seulement)
+router.delete('/:id',
+  checkRole(['administrateur']),
+  caisseController.deleteCaisse
+);
+
+// ============================================
+// GESTION DES SESSIONS
+// ============================================
+
+// GET /api/caisses/:id/session - Session ouverte d'une caisse
+router.get('/:id/session', caisseController.getSessionOuverte);
+
+// POST /api/caisses/:id/session/ouvrir - Ouvrir une session
+router.post('/:id/session/ouvrir',
+  checkRole(['administrateur', 'gestionnaire', 'benevole']),
+  caisseController.ouvrirSession
+);
+
+// GET /api/caisses/:id/sessions - Historique des sessions
+router.get('/:id/sessions', caisseController.getHistoriqueSessions);
+
+// ============================================
+// ROUTES SESSIONS (par ID de session)
+// ============================================
+
+// GET /api/caisses/sessions/:sessionId - Détail d'une session
+router.get('/sessions/:sessionId', caisseController.getSessionById);
+
+// POST /api/caisses/sessions/:sessionId/cloturer - Clôturer une session
+router.post('/sessions/:sessionId/cloturer',
+  checkRole(['administrateur', 'gestionnaire', 'benevole']),
+  caisseController.cloturerSession
+);
+
+// POST /api/caisses/sessions/:sessionId/annuler - Annuler une session
+router.post('/sessions/:sessionId/annuler',
+  checkRole(['administrateur', 'gestionnaire']),
+  caisseController.annulerSession
+);
+
+// ============================================
+// GESTION DES MOUVEMENTS
+// ============================================
+
+// GET /api/caisses/sessions/:sessionId/mouvements - Mouvements d'une session
+router.get('/sessions/:sessionId/mouvements', caisseController.getMouvementsSession);
+
+// POST /api/caisses/sessions/:sessionId/mouvements - Enregistrer un mouvement
+router.post('/sessions/:sessionId/mouvements',
+  checkRole(['administrateur', 'gestionnaire', 'benevole']),
+  caisseController.enregistrerMouvement
+);
+
+// POST /api/caisses/mouvements/:mouvementId/annuler - Annuler un mouvement
+router.post('/mouvements/:mouvementId/annuler',
+  checkRole(['administrateur', 'gestionnaire']),
+  caisseController.annulerMouvement
+);
+
+module.exports = router;

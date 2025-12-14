@@ -320,6 +320,326 @@ class PDFService {
   }
 
   /**
+   * Génère une facture au format PDF
+   * @param {Object} facture - Objet facture avec relations (lignes, reglements, client)
+   * @param {Object} structure - Paramètres de la structure
+   * @returns {Promise<Buffer>} - Buffer du PDF
+   */
+  async genererFacturePDF(facture, structure) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: 40, bottom: 40, left: 50, right: 50 }
+        });
+
+        const chunks = [];
+        doc.on('data', chunk => chunks.push(chunk));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', reject);
+
+        let yPos = 40;
+        const pageWidth = 595.28;
+        const leftMargin = 50;
+        const rightMargin = 545;
+
+        // Déterminer le type de document
+        const isAvoir = facture.type_document === 'avoir';
+        const isProforma = facture.type_document === 'proforma';
+        const titlePrefix = isAvoir ? 'AVOIR' : (isProforma ? 'FACTURE PROFORMA' : 'FACTURE');
+
+        // ===== EN-TÊTE ÉMETTEUR (gauche) =====
+        doc.fontSize(16)
+           .font('Helvetica-Bold')
+           .text(structure.nom_structure || 'Ludothèque', leftMargin, yPos);
+
+        yPos += 22;
+        doc.fontSize(9).font('Helvetica');
+
+        if (structure.adresse) {
+          doc.text(structure.adresse, leftMargin, yPos);
+          yPos += 12;
+        }
+
+        if (structure.code_postal && structure.ville) {
+          doc.text(`${structure.code_postal} ${structure.ville}`, leftMargin, yPos);
+          yPos += 12;
+        }
+
+        if (structure.siret) {
+          doc.text(`SIRET: ${structure.siret}`, leftMargin, yPos);
+          yPos += 12;
+        }
+
+        if (structure.telephone) {
+          doc.text(`Tél: ${structure.telephone}`, leftMargin, yPos);
+          yPos += 12;
+        }
+
+        if (structure.email) {
+          doc.text(`Email: ${structure.email}`, leftMargin, yPos);
+          yPos += 12;
+        }
+
+        // ===== CLIENT (droite) =====
+        let clientY = 40;
+        const clientX = 350;
+
+        doc.fontSize(10)
+           .font('Helvetica-Bold')
+           .fillColor(isAvoir ? '#dc3545' : '#333333')
+           .text(titlePrefix, clientX, clientY, { width: 195, align: 'right' });
+
+        clientY += 16;
+        doc.fontSize(12)
+           .text(`N° ${facture.numero}`, clientX, clientY, { width: 195, align: 'right' });
+
+        clientY += 18;
+        doc.fontSize(9)
+           .font('Helvetica')
+           .fillColor('#333333')
+           .text(`Date: ${this.formatDate(facture.date_emission || facture.created_at)}`, clientX, clientY, { width: 195, align: 'right' });
+
+        if (facture.date_echeance && !isAvoir) {
+          clientY += 12;
+          doc.text(`Échéance: ${this.formatDate(facture.date_echeance)}`, clientX, clientY, { width: 195, align: 'right' });
+        }
+
+        clientY += 25;
+        doc.fontSize(10)
+           .font('Helvetica-Bold')
+           .text('Client:', clientX, clientY);
+
+        clientY += 14;
+        doc.fontSize(9).font('Helvetica');
+        doc.text(facture.client_nom || '', clientX, clientY);
+        clientY += 12;
+
+        if (facture.client_adresse) {
+          doc.text(facture.client_adresse, clientX, clientY);
+          clientY += 12;
+        }
+
+        if (facture.client_code_postal && facture.client_ville) {
+          doc.text(`${facture.client_code_postal} ${facture.client_ville}`, clientX, clientY);
+          clientY += 12;
+        }
+
+        if (facture.client_email) {
+          doc.text(facture.client_email, clientX, clientY);
+        }
+
+        // Référence avoir
+        if (isAvoir && facture.factureOrigine) {
+          clientY += 16;
+          doc.fontSize(9)
+             .font('Helvetica-Oblique')
+             .fillColor('#666666')
+             .text(`Réf. facture: ${facture.factureOrigine.numero}`, clientX, clientY);
+          doc.fillColor('#333333');
+        }
+
+        // ===== LIGNE DE SÉPARATION =====
+        yPos = Math.max(yPos, clientY) + 25;
+        doc.moveTo(leftMargin, yPos).lineTo(rightMargin, yPos).stroke('#CCCCCC');
+        yPos += 20;
+
+        // ===== TABLEAU DES LIGNES =====
+        const col1 = leftMargin;       // Description
+        const col2 = 280;              // Qté
+        const col3 = 330;              // P.U. HT
+        const col4 = 400;              // TVA
+        const col5 = 450;              // Remise
+        const col6 = 495;              // Total TTC
+
+        // En-tête du tableau
+        doc.fontSize(8)
+           .font('Helvetica-Bold')
+           .fillColor('#FFFFFF');
+
+        // Fond de l'en-tête
+        doc.rect(leftMargin, yPos - 3, rightMargin - leftMargin, 18).fill('#4a5568');
+
+        doc.fillColor('#FFFFFF')
+           .text('Description', col1 + 5, yPos, { width: 220 })
+           .text('Qté', col2, yPos, { width: 45, align: 'right' })
+           .text('P.U. HT', col3, yPos, { width: 60, align: 'right' })
+           .text('TVA', col4, yPos, { width: 45, align: 'right' })
+           .text('Rem.', col5, yPos, { width: 35, align: 'right' })
+           .text('Total TTC', col6, yPos, { width: 50, align: 'right' });
+
+        yPos += 20;
+        doc.fillColor('#333333');
+
+        // Lignes de la facture
+        const lignes = facture.lignes || [];
+        lignes.forEach((ligne, index) => {
+          const bgColor = index % 2 === 0 ? '#FFFFFF' : '#F8F9FA';
+          doc.rect(leftMargin, yPos - 3, rightMargin - leftMargin, 18).fill(bgColor);
+
+          doc.fontSize(8).font('Helvetica');
+          doc.fillColor('#333333')
+             .text(ligne.description || '', col1 + 5, yPos, { width: 220 })
+             .text(parseFloat(ligne.quantite).toFixed(2), col2, yPos, { width: 45, align: 'right' })
+             .text(this.formatMontant(ligne.prix_unitaire_ht).replace(' €', ''), col3, yPos, { width: 60, align: 'right' })
+             .text(`${parseFloat(ligne.taux_tva).toFixed(1)}%`, col4, yPos, { width: 45, align: 'right' })
+             .text(parseFloat(ligne.remise_pourcent) > 0 ? `${parseFloat(ligne.remise_pourcent).toFixed(0)}%` : '-', col5, yPos, { width: 35, align: 'right' })
+             .text(this.formatMontant(ligne.montant_ttc).replace(' €', ''), col6, yPos, { width: 50, align: 'right' });
+
+          yPos += 18;
+        });
+
+        // Ligne de séparation
+        yPos += 5;
+        doc.moveTo(leftMargin, yPos).lineTo(rightMargin, yPos).stroke('#CCCCCC');
+        yPos += 15;
+
+        // ===== TOTAUX =====
+        const totauxX = 380;
+        const totauxWidth = rightMargin - totauxX;
+
+        doc.fontSize(9).font('Helvetica');
+        doc.text('Total HT:', totauxX, yPos, { width: 80 });
+        doc.text(this.formatMontant(facture.montant_ht), totauxX + 80, yPos, { width: totauxWidth - 80, align: 'right' });
+        yPos += 14;
+
+        doc.text('Total TVA:', totauxX, yPos, { width: 80 });
+        doc.text(this.formatMontant(facture.montant_tva), totauxX + 80, yPos, { width: totauxWidth - 80, align: 'right' });
+        yPos += 14;
+
+        // Ligne de séparation totaux
+        doc.moveTo(totauxX, yPos).lineTo(rightMargin, yPos).stroke('#333333');
+        yPos += 8;
+
+        doc.fontSize(11).font('Helvetica-Bold');
+        doc.text('Total TTC:', totauxX, yPos, { width: 80 });
+        doc.text(this.formatMontant(facture.montant_ttc), totauxX + 80, yPos, { width: totauxWidth - 80, align: 'right' });
+        yPos += 20;
+
+        // Montant réglé et reste à payer (si applicable)
+        if (!isAvoir && parseFloat(facture.montant_regle) > 0) {
+          doc.fontSize(9).font('Helvetica');
+          doc.text('Déjà réglé:', totauxX, yPos, { width: 80 });
+          doc.text(this.formatMontant(facture.montant_regle), totauxX + 80, yPos, { width: totauxWidth - 80, align: 'right' });
+          yPos += 14;
+
+          const resteAPayer = parseFloat(facture.montant_ttc) - parseFloat(facture.montant_regle);
+          if (resteAPayer > 0.01) {
+            doc.font('Helvetica-Bold')
+               .fillColor('#dc3545')
+               .text('Reste à payer:', totauxX, yPos, { width: 80 })
+               .text(this.formatMontant(resteAPayer), totauxX + 80, yPos, { width: totauxWidth - 80, align: 'right' });
+            doc.fillColor('#333333');
+          }
+          yPos += 20;
+        }
+
+        // ===== RÈGLEMENTS =====
+        const reglements = (facture.reglements || []).filter(r => !r.annule);
+        if (reglements.length > 0) {
+          yPos += 10;
+          doc.fontSize(10).font('Helvetica-Bold');
+          doc.text('Règlements:', leftMargin, yPos);
+          yPos += 15;
+
+          doc.fontSize(8).font('Helvetica');
+          reglements.forEach(reg => {
+            doc.text(`• ${this.formatDate(reg.date_reglement)} - ${this.formatModePaiement(reg.mode_paiement)} - ${this.formatMontant(reg.montant)}`, leftMargin + 10, yPos);
+            if (reg.reference) {
+              doc.text(`  (Réf: ${reg.reference})`, leftMargin + 300, yPos);
+            }
+            yPos += 12;
+          });
+        }
+
+        // ===== STATUT =====
+        yPos += 15;
+        const statutLabels = {
+          'brouillon': 'BROUILLON',
+          'emise': 'ÉMISE',
+          'partiellement_reglee': 'PARTIELLEMENT RÉGLÉE',
+          'reglee': 'RÉGLÉE',
+          'annulee': 'ANNULÉE'
+        };
+        const statutColors = {
+          'brouillon': '#6c757d',
+          'emise': '#0d6efd',
+          'partiellement_reglee': '#fd7e14',
+          'reglee': '#198754',
+          'annulee': '#dc3545'
+        };
+
+        if (facture.statut === 'annulee') {
+          doc.save();
+          doc.rotate(-30, { origin: [pageWidth / 2, 400] });
+          doc.fontSize(60)
+             .font('Helvetica-Bold')
+             .fillColor('#dc354533')
+             .text('ANNULÉE', 100, 400);
+          doc.restore();
+        }
+
+        // ===== CONDITIONS DE PAIEMENT =====
+        yPos += 10;
+        if (facture.conditions_paiement) {
+          doc.fontSize(8)
+             .font('Helvetica')
+             .text(`Conditions: ${facture.conditions_paiement}`, leftMargin, yPos);
+          yPos += 12;
+        }
+
+        // ===== MENTIONS LÉGALES =====
+        const footerY = 750;
+        doc.fontSize(7)
+           .font('Helvetica')
+           .fillColor('#666666');
+
+        if (structure.mentions_legales_facture) {
+          doc.text(structure.mentions_legales_facture, leftMargin, footerY, { width: rightMargin - leftMargin, align: 'center' });
+        } else if (structure.mentions_legales) {
+          doc.text(structure.mentions_legales, leftMargin, footerY, { width: rightMargin - leftMargin, align: 'center' });
+        }
+
+        // TVA
+        doc.fontSize(7)
+           .font('Helvetica-Oblique')
+           .text('TVA non applicable - Article 293 B du CGI', leftMargin, footerY + 20, { align: 'center', width: rightMargin - leftMargin });
+
+        // Date de génération
+        doc.text(`Document généré le ${this.formatDate(new Date())}`, leftMargin, footerY + 35, { align: 'center', width: rightMargin - leftMargin });
+
+        doc.end();
+
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Génère et sauvegarde une facture PDF dans un fichier
+   * @param {Object} facture - Objet facture
+   * @param {Object} structure - Paramètres de la structure
+   * @returns {Promise<{filepath: string, filename: string}>}
+   */
+  async genererFactureFichier(facture, structure) {
+    const facturesDir = path.join(__dirname, '../../uploads/factures');
+    if (!fs.existsSync(facturesDir)) {
+      fs.mkdirSync(facturesDir, { recursive: true });
+    }
+
+    const timestamp = Date.now();
+    const typePrefix = facture.type_document === 'avoir' ? 'avoir' : 'facture';
+    const filename = `${typePrefix}_${facture.numero.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.pdf`;
+    const filepath = path.join(facturesDir, filename);
+
+    const pdfBuffer = await this.genererFacturePDF(facture, structure);
+    fs.writeFileSync(filepath, pdfBuffer);
+
+    return { filepath, filename };
+  }
+
+  /**
    * Génère un PNG du code-barre
    * @param {string} codeBarre - Code-barre à générer
    * @returns {Promise<Buffer>} - Image PNG du code-barre

@@ -41,7 +41,8 @@ const PARAMETRES_CATEGORIES = {
       { id: 'email', label: 'Configuration Email', href: 'parametres-email.html', icon: 'bi-envelope-at' },
       { id: 'sms', label: 'Configuration SMS', href: 'parametres-sms.html', icon: 'bi-phone' },
       { id: 'ia', label: 'Intelligence Artificielle', href: 'parametres-llm.html', icon: 'bi-robot' },
-      { id: 'apis-externes', label: 'APIs Externes', href: 'parametres-apis-externes.html', icon: 'bi-cloud-download' }
+      { id: 'apis-externes', label: 'APIs Externes', href: 'parametres-apis-externes.html', icon: 'bi-cloud-download' },
+      { id: 'api-keys', label: 'Cles API', href: 'parametres-api-keys.html', icon: 'bi-key', adminOnly: true }
     ]
   },
   emprunts: {

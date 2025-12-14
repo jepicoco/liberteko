@@ -128,6 +128,9 @@
                 <button class="btn btn-primary" onclick="openCreateModal()">
                   <i class="bi bi-plus-circle"></i> Nouveau disque
                 </button>
+                <button class="btn btn-success" onclick="openLookupModal()">
+                  <i class="bi bi-upc-scan"></i> Scanner EAN
+                </button>
                 <button class="btn btn-secondary" onclick="loadDisques()">
                   <i class="bi bi-arrow-clockwise"></i> Actualiser
                 </button>
@@ -412,6 +415,110 @@
     </div>
   </div>
 
+  <!-- EAN Lookup Modal -->
+  <div class="modal fade" id="lookupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="bi bi-upc-scan"></i> Recherche par code-barre EAN</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Input section -->
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <label class="form-label">Code EAN ou Titre de l'album</label>
+              <div class="input-group">
+                <input type="text" id="lookupInput" class="form-control form-control-lg"
+                       placeholder="Ex: 602445790265 ou Abbey Road"
+                       onkeyup="handleLookupKeyup(event)">
+                <button class="btn btn-success" type="button" onclick="doLookup()">
+                  <i class="bi bi-search"></i> Rechercher
+                </button>
+              </div>
+              <small class="text-muted">Scannez un code-barre commercial ou saisissez le titre de l'album</small>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button class="btn btn-outline-primary w-100" onclick="startCameraScan()">
+                <i class="bi bi-camera"></i> Scanner avec camera
+              </button>
+            </div>
+          </div>
+
+          <!-- Camera section (hidden by default) -->
+          <div id="cameraSection" class="d-none mb-4">
+            <div class="card bg-dark">
+              <div class="card-body text-center">
+                <div id="lookupCameraReader" style="width: 100%; max-width: 400px; margin: 0 auto;"></div>
+                <button class="btn btn-light mt-2" onclick="stopCameraScan()">
+                  <i class="bi bi-x"></i> Fermer camera
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading -->
+          <div id="lookupLoading" class="d-none text-center py-4">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Recherche en cours sur les APIs externes...</p>
+            <small class="text-muted">MusicBrainz, Discogs et autres sources configurees</small>
+          </div>
+
+          <!-- Results -->
+          <div id="lookupResults" class="d-none">
+            <div class="alert alert-success mb-3">
+              <i class="bi bi-check-circle"></i> Album trouve ! Source: <span id="lookupSource"></span>
+            </div>
+
+            <div class="card">
+              <div class="card-body">
+                <div class="row">
+                  <div class="col-md-3 text-center">
+                    <img id="lookupImage" src="" alt="Pochette de l'album" class="img-fluid rounded" style="max-height: 180px;">
+                  </div>
+                  <div class="col-md-9">
+                    <h4 id="lookupTitre" class="mb-2"></h4>
+                    <p class="text-muted mb-2">
+                      <i class="bi bi-person-fill"></i> <span id="lookupArtiste">-</span>
+                    </p>
+                    <p class="mb-2">
+                      <i class="bi bi-calendar"></i> <span id="lookupAnnee">-</span> |
+                      <i class="bi bi-music-note-list"></i> <span id="lookupPistes">-</span> pistes |
+                      <i class="bi bi-building"></i> <span id="lookupLabel">-</span>
+                    </p>
+                    <p id="lookupGenres" class="mb-2"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Not found -->
+          <div id="lookupNotFound" class="d-none">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle"></i> Aucun resultat trouve pour ce code EAN.
+              <br><small>Essayez de rechercher par titre ou ajoutez le disque manuellement.</small>
+            </div>
+          </div>
+
+          <!-- Error -->
+          <div id="lookupError" class="d-none">
+            <div class="alert alert-danger">
+              <i class="bi bi-x-circle"></i> <span id="lookupErrorMsg"></span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary d-none" id="btnUseResults" onclick="useResults()">
+            <i class="bi bi-plus-circle"></i> Utiliser ces infos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
   <script src="js/api-admin.js"></script>
@@ -1108,6 +1215,194 @@
       await loadReferentiels();
       initTomSelects();
       loadDisques();
+    });
+
+    // =========== EAN LOOKUP ===========
+
+    let lookupModalInstance = null;
+    let lookupCameraScanner = null;
+    let currentLookupResult = null;
+
+    function openLookupModal() {
+      resetLookupUI();
+      if (!lookupModalInstance) {
+        lookupModalInstance = new bootstrap.Modal(document.getElementById('lookupModal'));
+      }
+      lookupModalInstance.show();
+      document.getElementById('lookupInput').focus();
+    }
+
+    function resetLookupUI() {
+      document.getElementById('lookupInput').value = '';
+      document.getElementById('lookupLoading').classList.add('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+      document.getElementById('cameraSection').classList.add('d-none');
+      currentLookupResult = null;
+    }
+
+    function handleLookupKeyup(event) {
+      if (event.key === 'Enter') {
+        doLookup();
+      }
+    }
+
+    async function doLookup() {
+      const input = document.getElementById('lookupInput').value.trim();
+      if (!input) {
+        alert('Veuillez saisir un code EAN ou un titre d\'album');
+        return;
+      }
+
+      // Reset UI
+      document.getElementById('lookupLoading').classList.remove('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+
+      try {
+        // Utilise l'API generique avec collection 'disque'
+        const result = await lookupAPI.search(input, 'disque');
+
+        document.getElementById('lookupLoading').classList.add('d-none');
+
+        if (result.found && result.data) {
+          currentLookupResult = result.data;
+          displayLookupResults(result);
+        } else {
+          document.getElementById('lookupNotFound').classList.remove('d-none');
+        }
+      } catch (error) {
+        document.getElementById('lookupLoading').classList.add('d-none');
+        document.getElementById('lookupError').classList.remove('d-none');
+        document.getElementById('lookupErrorMsg').textContent = error.message;
+      }
+    }
+
+    function displayLookupResults(result) {
+      const data = result.data;
+
+      document.getElementById('lookupSource').textContent = result.source || 'inconnu';
+      document.getElementById('lookupTitre').textContent = data.titre || data.title || 'Sans titre';
+      document.getElementById('lookupArtiste').textContent = data.artiste || data.artist || '-';
+      document.getElementById('lookupAnnee').textContent = data.annee || data.year || '-';
+      document.getElementById('lookupPistes').textContent = data.nb_pistes || data.tracks || '-';
+      document.getElementById('lookupLabel').textContent = data.label || '-';
+
+      // Genres
+      let genres = data.genres || [];
+      if (Array.isArray(genres) && genres.length > 0) {
+        document.getElementById('lookupGenres').innerHTML = genres.map(g =>
+          `<span class="badge bg-info me-1">${typeof g === 'string' ? g : g.name}</span>`
+        ).join('');
+      } else {
+        document.getElementById('lookupGenres').innerHTML = '';
+      }
+
+      const img = document.getElementById('lookupImage');
+      if (data.image_url || data.cover) {
+        img.src = data.image_url || data.cover;
+        img.classList.remove('d-none');
+      } else {
+        img.src = '';
+        img.classList.add('d-none');
+      }
+
+      document.getElementById('lookupResults').classList.remove('d-none');
+      document.getElementById('btnUseResults').classList.remove('d-none');
+    }
+
+    function useResults() {
+      if (!currentLookupResult) return;
+
+      lookupModalInstance.hide();
+
+      document.getElementById('modalTitle').textContent = 'Nouveau disque (depuis EAN)';
+      document.getElementById('disqueForm').reset();
+      document.getElementById('disqueId').value = '';
+
+      // Pre-remplir les champs de base
+      const data = currentLookupResult;
+      document.getElementById('titre').value = data.titre || data.title || '';
+      document.getElementById('annee_sortie').value = data.annee || data.year || '';
+      document.getElementById('nb_pistes').value = data.nb_pistes || data.tracks || '';
+      document.getElementById('image_url').value = data.image_url || data.cover || '';
+      document.getElementById('ean').value = data.ean || '';
+      document.getElementById('catalogue_number').value = data.catalogue_number || data.catalog_number || '';
+
+      // Duree si disponible
+      if (data.duree_totale || data.duration) {
+        document.getElementById('duree_totale').value = data.duree_totale || data.duration || '';
+      }
+
+      clearTomSelects();
+      document.getElementById('artistesContainer').innerHTML = '';
+      addArtisteRow();
+
+      // Show first tab
+      const firstTab = document.querySelector('#disqueModal .nav-link');
+      bootstrap.Tab.getOrCreateInstance(firstTab).show();
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('disqueModal'));
+      }
+      modalInstance.show();
+
+      currentLookupResult = null;
+    }
+
+    // Camera scanning for EAN lookup
+    async function startCameraScan() {
+      document.getElementById('cameraSection').classList.remove('d-none');
+
+      try {
+        lookupCameraScanner = new Html5Qrcode('lookupCameraReader');
+        await lookupCameraScanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 100 },
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E
+            ]
+          },
+          onCameraScanSuccess,
+          () => {}
+        );
+      } catch (err) {
+        console.error('Camera error:', err);
+        alert('Impossible d\'acceder a la camera: ' + err);
+        document.getElementById('cameraSection').classList.add('d-none');
+      }
+    }
+
+    async function onCameraScanSuccess(decodedText) {
+      await stopCameraScan();
+      document.getElementById('lookupInput').value = decodedText;
+      doLookup();
+    }
+
+    async function stopCameraScan() {
+      if (lookupCameraScanner) {
+        try {
+          await lookupCameraScanner.stop();
+          lookupCameraScanner.clear();
+        } catch (e) {
+          console.warn('Stop camera error:', e);
+        }
+        lookupCameraScanner = null;
+      }
+      document.getElementById('cameraSection').classList.add('d-none');
+    }
+
+    document.getElementById('lookupModal').addEventListener('hidden.bs.modal', () => {
+      stopCameraScan();
     });
   </script>
 </body>

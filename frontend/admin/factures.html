@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Factures - Administration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/admin.css" rel="stylesheet">
+  <style>
+    .badge-brouillon { background-color: #6c757d; }
+    .badge-emise { background-color: #0d6efd; }
+    .badge-partiellement_reglee { background-color: #ffc107; color: #000; }
+    .badge-reglee { background-color: #198754; }
+    .badge-annulee { background-color: #dc3545; }
+    .facture-badge { background-color: #0d6efd; }
+    .avoir-badge { background-color: #dc3545; }
+    .proforma-badge { background-color: #6c757d; }
+    .ligne-table td { vertical-align: middle; }
+    .montant-positif { color: #198754; }
+    .montant-negatif { color: #dc3545; }
+  </style>
+</head>
+<body>
+  <div id="navbar-container"></div>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div id="sidebar-container" class="col-md-3 col-lg-2"></div>
+
+      <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2"><i class="bi bi-receipt me-2"></i>Factures</h1>
+          <div class="btn-toolbar">
+            <button class="btn btn-outline-secondary me-2" onclick="afficherStatistiques()">
+              <i class="bi bi-graph-up"></i> Statistiques
+            </button>
+            <button class="btn btn-primary" onclick="showModalNouvelle()">
+              <i class="bi bi-plus-circle"></i> Nouvelle facture
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtres -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-2">
+                <label class="form-label">Type</label>
+                <select class="form-select" id="filtreType" onchange="chargerFactures()">
+                  <option value="">Tous</option>
+                  <option value="facture">Factures</option>
+                  <option value="avoir">Avoirs</option>
+                  <option value="proforma">Proforma</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Statut</label>
+                <select class="form-select" id="filtreStatut" onchange="chargerFactures()">
+                  <option value="">Tous</option>
+                  <option value="brouillon">Brouillon</option>
+                  <option value="emise">Émise</option>
+                  <option value="partiellement_reglee">Part. réglée</option>
+                  <option value="reglee">Réglée</option>
+                  <option value="annulee">Annulée</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date début</label>
+                <input type="date" class="form-control" id="filtreDateDebut" onchange="chargerFactures()">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Date fin</label>
+                <input type="date" class="form-control" id="filtreDateFin" onchange="chargerFactures()">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Recherche</label>
+                <input type="text" class="form-control" id="filtreRecherche" placeholder="N°, client, objet..." onkeyup="debounceSearch()">
+              </div>
+              <div class="col-md-1 d-flex align-items-end">
+                <button class="btn btn-outline-secondary w-100" onclick="resetFiltres()">
+                  <i class="bi bi-x-circle"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste des factures -->
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Numéro</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Client</th>
+                    <th>Objet</th>
+                    <th class="text-end">Montant TTC</th>
+                    <th class="text-end">Réglé</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="listeFactures">
+                </tbody>
+              </table>
+            </div>
+            <div id="pagination" class="d-flex justify-content-between align-items-center mt-3">
+              <span id="infoResultats"></span>
+              <nav>
+                <ul class="pagination pagination-sm mb-0" id="paginationNav">
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Nouvelle Facture -->
+  <div class="modal fade" id="modalNouvelle" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Nouvelle facture</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Type de document</label>
+            <select class="form-select" id="nouvelleType">
+              <option value="facture">Facture</option>
+              <option value="proforma">Proforma</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Rechercher un usager</label>
+            <input type="text" class="form-control" id="rechercheUsager" placeholder="Nom, email..." onkeyup="rechercherUsager()">
+            <div id="resultatsUsager" class="list-group mt-2"></div>
+            <input type="hidden" id="usagerSelectionneId">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Ou saisir les informations client</label>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nom *</label>
+              <input type="text" class="form-control" id="nouveauClientNom" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Prénom</label>
+              <input type="text" class="form-control" id="nouveauClientPrenom">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" id="nouveauClientEmail">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Objet</label>
+            <input type="text" class="form-control" id="nouveauObjet" placeholder="Objet de la facture">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="creerFacture()">Créer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détail Facture -->
+  <div class="modal fade" id="modalDetail" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><span id="detailNumero"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Infos en-tête -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h6>Client</h6>
+              <p id="detailClient" class="mb-0"></p>
+              <p id="detailClientEmail" class="text-muted small"></p>
+            </div>
+            <div class="col-md-3">
+              <h6>Date émission</h6>
+              <p id="detailDate"></p>
+            </div>
+            <div class="col-md-3">
+              <h6>Statut</h6>
+              <p id="detailStatut"></p>
+            </div>
+          </div>
+
+          <!-- Lignes -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6>Lignes</h6>
+              <button class="btn btn-sm btn-outline-primary" id="btnAjouterLigne" onclick="showModalLigne()">
+                <i class="bi bi-plus"></i> Ajouter
+              </button>
+            </div>
+            <table class="table table-sm ligne-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th class="text-center">Qté</th>
+                  <th class="text-end">P.U. HT</th>
+                  <th class="text-end">TVA</th>
+                  <th class="text-end">Montant TTC</th>
+                  <th class="text-center" id="colActionsLigne">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="detailLignes">
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="4" class="text-end"><strong>Total HT</strong></td>
+                  <td class="text-end" id="detailTotalHT"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td colspan="4" class="text-end"><strong>TVA</strong></td>
+                  <td class="text-end" id="detailTotalTVA"></td>
+                  <td></td>
+                </tr>
+                <tr class="table-primary">
+                  <td colspan="4" class="text-end"><strong>Total TTC</strong></td>
+                  <td class="text-end"><strong id="detailTotalTTC"></strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Règlements -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6>Règlements</h6>
+              <button class="btn btn-sm btn-outline-success" id="btnAjouterReglement" onclick="showModalReglement()">
+                <i class="bi bi-plus"></i> Ajouter règlement
+              </button>
+            </div>
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th>Référence</th>
+                  <th class="text-end">Montant</th>
+                  <th class="text-center" id="colActionsReglement">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="detailReglements">
+              </tbody>
+              <tfoot>
+                <tr class="table-success">
+                  <td colspan="3" class="text-end"><strong>Total réglé</strong></td>
+                  <td class="text-end"><strong id="detailTotalRegle"></strong></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td colspan="3" class="text-end"><strong>Reste à payer</strong></td>
+                  <td class="text-end"><strong id="detailResteAPayer"></strong></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer justify-content-between">
+          <div>
+            <button class="btn btn-outline-danger" id="btnAnnulerFacture" onclick="annulerFacture()">
+              <i class="bi bi-x-circle"></i> Annuler
+            </button>
+            <button class="btn btn-outline-warning" id="btnCreerAvoir" onclick="creerAvoir()">
+              <i class="bi bi-file-earmark-minus"></i> Créer avoir
+            </button>
+          </div>
+          <div>
+            <button class="btn btn-outline-secondary" onclick="telechargerPDF()">
+              <i class="bi bi-file-pdf"></i> PDF
+            </button>
+            <button class="btn btn-success" id="btnEmettre" onclick="emettreFacture()">
+              <i class="bi bi-send"></i> Émettre
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ligne -->
+  <div class="modal fade" id="modalLigne" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLigneTitle">Ajouter une ligne</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="ligneId">
+          <div class="mb-3">
+            <label class="form-label">Description *</label>
+            <input type="text" class="form-control" id="ligneDescription" required>
+          </div>
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Quantité</label>
+              <input type="number" class="form-control" id="ligneQuantite" value="1" step="0.001" onchange="calculerLigne()">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Unité</label>
+              <input type="text" class="form-control" id="ligneUnite" value="unité">
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Prix U. HT *</label>
+              <input type="number" class="form-control" id="lignePrixUnitaire" step="0.01" onchange="calculerLigne()">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Remise %</label>
+              <input type="number" class="form-control" id="ligneRemise" value="0" step="0.01" onchange="calculerLigne()">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">TVA %</label>
+              <select class="form-select" id="ligneTVA" onchange="calculerLigne()">
+                <option value="0">0% (Exonéré)</option>
+                <option value="5.5">5.5%</option>
+                <option value="10">10%</option>
+                <option value="20">20%</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Montant HT</label>
+              <input type="text" class="form-control" id="ligneMontantHT" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Montant TTC</label>
+              <input type="text" class="form-control" id="ligneMontantTTC" readonly>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveLigne()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Règlement -->
+  <div class="modal fade" id="modalReglement" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Enregistrer un règlement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Montant *</label>
+            <input type="number" class="form-control" id="reglementMontant" step="0.01" required>
+            <div class="form-text">Reste à payer : <span id="reglementResteAPayer"></span></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Mode de paiement</label>
+            <select class="form-select" id="reglementMode">
+              <option value="especes">Espèces</option>
+              <option value="cb">Carte bancaire</option>
+              <option value="cheque">Chèque</option>
+              <option value="virement">Virement</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Date</label>
+            <input type="date" class="form-control" id="reglementDate">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Référence</label>
+            <input type="text" class="form-control" id="reglementReference" placeholder="N° chèque, ref. CB...">
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="reglementEnCaisse">
+            <label class="form-check-label" for="reglementEnCaisse">
+              Enregistrer en caisse
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" onclick="saveReglement()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Statistiques -->
+  <div class="modal fade" id="modalStats" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Statistiques de facturation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="statsContent">
+            <!-- Contenu dynamique -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script>
+    let facturesData = [];
+    let factureActuelle = null;
+    let references = { modesPaiement: [], tauxTVA: [] };
+    let currentOffset = 0;
+    const limit = 20;
+    let searchTimeout;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await chargerReferences();
+      await chargerFactures();
+    });
+
+    async function chargerReferences() {
+      try {
+        references = await apiAdmin.get('/api/factures/references');
+      } catch (error) {
+        console.error('Erreur chargement références:', error);
+      }
+    }
+
+    async function chargerFactures() {
+      try {
+        const params = new URLSearchParams({
+          limit,
+          offset: currentOffset
+        });
+
+        const type = document.getElementById('filtreType').value;
+        const statut = document.getElementById('filtreStatut').value;
+        const dateDebut = document.getElementById('filtreDateDebut').value;
+        const dateFin = document.getElementById('filtreDateFin').value;
+        const recherche = document.getElementById('filtreRecherche').value;
+
+        if (type) params.append('type', type);
+        if (statut) params.append('statut', statut);
+        if (dateDebut) params.append('date_debut', dateDebut);
+        if (dateFin) params.append('date_fin', dateFin);
+        if (recherche) params.append('recherche', recherche);
+
+        const result = await apiAdmin.get(`/api/factures?${params}`);
+        facturesData = result.factures;
+        afficherFactures(facturesData);
+        afficherPagination(result.total);
+      } catch (error) {
+        console.error('Erreur chargement factures:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    function afficherFactures(factures) {
+      const tbody = document.getElementById('listeFactures');
+      tbody.innerHTML = '';
+
+      if (factures.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">Aucune facture</td></tr>';
+        return;
+      }
+
+      factures.forEach(f => {
+        const typeBadge = f.type_document === 'avoir' ? 'avoir-badge' :
+                          f.type_document === 'proforma' ? 'proforma-badge' : 'facture-badge';
+        const typeLabel = f.type_document === 'avoir' ? 'Avoir' :
+                          f.type_document === 'proforma' ? 'Proforma' : 'Facture';
+        const statutBadge = `badge-${f.statut}`;
+        const statutLabel = {
+          'brouillon': 'Brouillon',
+          'emise': 'Émise',
+          'partiellement_reglee': 'Part. réglée',
+          'reglee': 'Réglée',
+          'annulee': 'Annulée'
+        }[f.statut] || f.statut;
+
+        const clientNom = f.client ? `${f.client.prenom || ''} ${f.client.nom}`.trim() : f.client_nom;
+        const resteAPayer = parseFloat(f.montant_ttc) - parseFloat(f.montant_regle);
+
+        tbody.innerHTML += `
+          <tr style="cursor: pointer;" onclick="voirFacture(${f.id})">
+            <td><strong>${f.numero}</strong></td>
+            <td><span class="badge ${typeBadge}">${typeLabel}</span></td>
+            <td>${formatDate(f.date_emission)}</td>
+            <td>${clientNom}</td>
+            <td>${f.objet || '-'}</td>
+            <td class="text-end">${formatMontant(f.montant_ttc)}</td>
+            <td class="text-end ${resteAPayer > 0 ? 'montant-negatif' : 'montant-positif'}">${formatMontant(f.montant_regle)}</td>
+            <td><span class="badge ${statutBadge}">${statutLabel}</span></td>
+            <td>
+              <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); voirFacture(${f.id})">
+                <i class="bi bi-eye"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function afficherPagination(total) {
+      document.getElementById('infoResultats').textContent =
+        `${currentOffset + 1} - ${Math.min(currentOffset + limit, total)} sur ${total}`;
+
+      const totalPages = Math.ceil(total / limit);
+      const currentPage = Math.floor(currentOffset / limit) + 1;
+      const nav = document.getElementById('paginationNav');
+      nav.innerHTML = '';
+
+      if (totalPages <= 1) return;
+
+      // Précédent
+      nav.innerHTML += `<li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="goToPage(${currentPage - 1})">«</a>
+      </li>`;
+
+      // Pages
+      for (let i = 1; i <= Math.min(5, totalPages); i++) {
+        nav.innerHTML += `<li class="page-item ${currentPage === i ? 'active' : ''}">
+          <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+        </li>`;
+      }
+
+      // Suivant
+      nav.innerHTML += `<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+        <a class="page-link" href="#" onclick="goToPage(${currentPage + 1})">»</a>
+      </li>`;
+    }
+
+    function goToPage(page) {
+      currentOffset = (page - 1) * limit;
+      chargerFactures();
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => chargerFactures(), 300);
+    }
+
+    function resetFiltres() {
+      document.getElementById('filtreType').value = '';
+      document.getElementById('filtreStatut').value = '';
+      document.getElementById('filtreDateDebut').value = '';
+      document.getElementById('filtreDateFin').value = '';
+      document.getElementById('filtreRecherche').value = '';
+      currentOffset = 0;
+      chargerFactures();
+    }
+
+    function showModalNouvelle() {
+      document.getElementById('nouvelleType').value = 'facture';
+      document.getElementById('rechercheUsager').value = '';
+      document.getElementById('resultatsUsager').innerHTML = '';
+      document.getElementById('usagerSelectionneId').value = '';
+      document.getElementById('nouveauClientNom').value = '';
+      document.getElementById('nouveauClientPrenom').value = '';
+      document.getElementById('nouveauClientEmail').value = '';
+      document.getElementById('nouveauObjet').value = '';
+      new bootstrap.Modal(document.getElementById('modalNouvelle')).show();
+    }
+
+    async function rechercherUsager() {
+      const terme = document.getElementById('rechercheUsager').value;
+      if (terme.length < 2) {
+        document.getElementById('resultatsUsager').innerHTML = '';
+        return;
+      }
+
+      try {
+        const result = await apiAdmin.get(`/api/utilisateurs?search=${encodeURIComponent(terme)}&limit=5`);
+        const container = document.getElementById('resultatsUsager');
+        container.innerHTML = '';
+
+        (result.utilisateurs || result).forEach(u => {
+          container.innerHTML += `
+            <button type="button" class="list-group-item list-group-item-action"
+                    onclick="selectionnerUsager(${u.id}, '${u.nom}', '${u.prenom || ''}', '${u.email || ''}')">
+              ${u.prenom || ''} ${u.nom} - ${u.email || 'Pas d\'email'}
+            </button>
+          `;
+        });
+      } catch (error) {
+        console.error('Erreur recherche usager:', error);
+      }
+    }
+
+    function selectionnerUsager(id, nom, prenom, email) {
+      document.getElementById('usagerSelectionneId').value = id;
+      document.getElementById('nouveauClientNom').value = nom;
+      document.getElementById('nouveauClientPrenom').value = prenom;
+      document.getElementById('nouveauClientEmail').value = email;
+      document.getElementById('resultatsUsager').innerHTML = '';
+      document.getElementById('rechercheUsager').value = `${prenom} ${nom}`.trim();
+    }
+
+    async function creerFacture() {
+      try {
+        const data = {
+          type_document: document.getElementById('nouvelleType').value,
+          utilisateur_id: document.getElementById('usagerSelectionneId').value || null,
+          client_nom: document.getElementById('nouveauClientNom').value,
+          client_prenom: document.getElementById('nouveauClientPrenom').value,
+          client_email: document.getElementById('nouveauClientEmail').value,
+          objet: document.getElementById('nouveauObjet').value
+        };
+
+        const facture = await apiAdmin.post('/api/factures', data);
+        bootstrap.Modal.getInstance(document.getElementById('modalNouvelle')).hide();
+        showAlert('Facture créée', 'success');
+        await chargerFactures();
+        voirFacture(facture.id);
+      } catch (error) {
+        console.error('Erreur création facture:', error);
+        showAlert(error.message || 'Erreur lors de la création', 'danger');
+      }
+    }
+
+    async function voirFacture(id) {
+      try {
+        factureActuelle = await apiAdmin.get(`/api/factures/${id}`);
+        afficherDetailFacture(factureActuelle);
+        new bootstrap.Modal(document.getElementById('modalDetail')).show();
+      } catch (error) {
+        console.error('Erreur chargement facture:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    function afficherDetailFacture(f) {
+      document.getElementById('detailNumero').textContent = f.numero;
+      document.getElementById('detailClient').textContent =
+        `${f.client_prenom || ''} ${f.client_nom}`.trim();
+      document.getElementById('detailClientEmail').textContent = f.client_email || '';
+      document.getElementById('detailDate').textContent = formatDate(f.date_emission);
+
+      const statutBadge = `badge-${f.statut}`;
+      const statutLabel = {
+        'brouillon': 'Brouillon',
+        'emise': 'Émise',
+        'partiellement_reglee': 'Part. réglée',
+        'reglee': 'Réglée',
+        'annulee': 'Annulée'
+      }[f.statut];
+      document.getElementById('detailStatut').innerHTML = `<span class="badge ${statutBadge}">${statutLabel}</span>`;
+
+      // Lignes
+      const tbodyLignes = document.getElementById('detailLignes');
+      tbodyLignes.innerHTML = '';
+      (f.lignes || []).forEach(l => {
+        tbodyLignes.innerHTML += `
+          <tr>
+            <td>${l.description}</td>
+            <td class="text-center">${l.quantite} ${l.unite || ''}</td>
+            <td class="text-end">${formatMontant(l.prix_unitaire_ht)}</td>
+            <td class="text-end">${l.taux_tva}%</td>
+            <td class="text-end">${formatMontant(l.montant_ttc)}</td>
+            <td class="text-center">
+              ${f.statut === 'brouillon' ? `
+                <button class="btn btn-sm btn-outline-primary" onclick="editLigne(${l.id})"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteLigne(${l.id})"><i class="bi bi-trash"></i></button>
+              ` : ''}
+            </td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('detailTotalHT').textContent = formatMontant(f.montant_ht);
+      document.getElementById('detailTotalTVA').textContent = formatMontant(f.montant_tva);
+      document.getElementById('detailTotalTTC').textContent = formatMontant(f.montant_ttc);
+
+      // Règlements
+      const tbodyReglements = document.getElementById('detailReglements');
+      tbodyReglements.innerHTML = '';
+      (f.reglements || []).forEach(r => {
+        tbodyReglements.innerHTML += `
+          <tr>
+            <td>${formatDate(r.date_reglement)}</td>
+            <td>${r.mode_paiement_code || r.modePaiement?.nom || '-'}</td>
+            <td>${r.reference || '-'}</td>
+            <td class="text-end montant-positif">${formatMontant(r.montant)}</td>
+            <td class="text-center">
+              ${f.statut !== 'annulee' ? `
+                <button class="btn btn-sm btn-outline-danger" onclick="annulerReglement(${r.id})"><i class="bi bi-x"></i></button>
+              ` : ''}
+            </td>
+          </tr>
+        `;
+      });
+
+      const resteAPayer = parseFloat(f.montant_ttc) - parseFloat(f.montant_regle);
+      document.getElementById('detailTotalRegle').textContent = formatMontant(f.montant_regle);
+      document.getElementById('detailResteAPayer').textContent = formatMontant(resteAPayer);
+      document.getElementById('detailResteAPayer').className = resteAPayer > 0 ? 'montant-negatif' : 'montant-positif';
+
+      // Boutons selon statut
+      const isBrouillon = f.statut === 'brouillon';
+      const isEmise = ['emise', 'partiellement_reglee'].includes(f.statut);
+      const isReglee = f.statut === 'reglee';
+      const isAnnulee = f.statut === 'annulee';
+
+      document.getElementById('btnAjouterLigne').style.display = isBrouillon ? '' : 'none';
+      document.getElementById('btnEmettre').style.display = isBrouillon ? '' : 'none';
+      document.getElementById('btnAjouterReglement').style.display = isEmise ? '' : 'none';
+      document.getElementById('btnAnnulerFacture').style.display = (isBrouillon || (isEmise && parseFloat(f.montant_regle) === 0)) ? '' : 'none';
+      document.getElementById('btnCreerAvoir').style.display = (isReglee || (isEmise && parseFloat(f.montant_regle) > 0)) ? '' : 'none';
+      document.getElementById('colActionsLigne').style.display = isBrouillon ? '' : 'none';
+      document.getElementById('colActionsReglement').style.display = !isAnnulee ? '' : 'none';
+    }
+
+    function showModalLigne(ligneId = null) {
+      document.getElementById('ligneId').value = ligneId || '';
+      document.getElementById('modalLigneTitle').textContent = ligneId ? 'Modifier la ligne' : 'Ajouter une ligne';
+      document.getElementById('ligneDescription').value = '';
+      document.getElementById('ligneQuantite').value = '1';
+      document.getElementById('ligneUnite').value = 'unité';
+      document.getElementById('lignePrixUnitaire').value = '';
+      document.getElementById('ligneRemise').value = '0';
+      document.getElementById('ligneTVA').value = '0';
+      document.getElementById('ligneMontantHT').value = '';
+      document.getElementById('ligneMontantTTC').value = '';
+      new bootstrap.Modal(document.getElementById('modalLigne')).show();
+    }
+
+    function calculerLigne() {
+      const qte = parseFloat(document.getElementById('ligneQuantite').value) || 0;
+      const pu = parseFloat(document.getElementById('lignePrixUnitaire').value) || 0;
+      const remise = parseFloat(document.getElementById('ligneRemise').value) || 0;
+      const tva = parseFloat(document.getElementById('ligneTVA').value) || 0;
+
+      const brutHT = qte * pu;
+      const remiseMontant = brutHT * (remise / 100);
+      const montantHT = brutHT - remiseMontant;
+      const montantTVA = montantHT * (tva / 100);
+      const montantTTC = montantHT + montantTVA;
+
+      document.getElementById('ligneMontantHT').value = montantHT.toFixed(2) + ' €';
+      document.getElementById('ligneMontantTTC').value = montantTTC.toFixed(2) + ' €';
+    }
+
+    async function saveLigne() {
+      try {
+        const data = {
+          description: document.getElementById('ligneDescription').value,
+          quantite: parseFloat(document.getElementById('ligneQuantite').value),
+          unite: document.getElementById('ligneUnite').value,
+          prix_unitaire_ht: parseFloat(document.getElementById('lignePrixUnitaire').value),
+          remise_pourcent: parseFloat(document.getElementById('ligneRemise').value),
+          taux_tva: parseFloat(document.getElementById('ligneTVA').value)
+        };
+
+        const ligneId = document.getElementById('ligneId').value;
+        if (ligneId) {
+          await apiAdmin.put(`/api/factures/lignes/${ligneId}`, data);
+        } else {
+          await apiAdmin.post(`/api/factures/${factureActuelle.id}/lignes`, data);
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('modalLigne')).hide();
+        await voirFacture(factureActuelle.id);
+      } catch (error) {
+        console.error('Erreur sauvegarde ligne:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function editLigne(ligneId) {
+      const ligne = factureActuelle.lignes.find(l => l.id === ligneId);
+      if (!ligne) return;
+
+      document.getElementById('ligneId').value = ligneId;
+      document.getElementById('modalLigneTitle').textContent = 'Modifier la ligne';
+      document.getElementById('ligneDescription').value = ligne.description;
+      document.getElementById('ligneQuantite').value = ligne.quantite;
+      document.getElementById('ligneUnite').value = ligne.unite || 'unité';
+      document.getElementById('lignePrixUnitaire').value = ligne.prix_unitaire_ht;
+      document.getElementById('ligneRemise').value = ligne.remise_pourcent;
+      document.getElementById('ligneTVA').value = ligne.taux_tva;
+      calculerLigne();
+      new bootstrap.Modal(document.getElementById('modalLigne')).show();
+    }
+
+    async function deleteLigne(ligneId) {
+      if (!confirm('Supprimer cette ligne ?')) return;
+
+      try {
+        await apiAdmin.delete(`/api/factures/lignes/${ligneId}`);
+        await voirFacture(factureActuelle.id);
+      } catch (error) {
+        console.error('Erreur suppression ligne:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function emettreFacture() {
+      if (!confirm('Émettre cette facture ? Elle ne pourra plus être modifiée.')) return;
+
+      try {
+        await apiAdmin.post(`/api/factures/${factureActuelle.id}/emettre`);
+        showAlert('Facture émise', 'success');
+        await voirFacture(factureActuelle.id);
+        await chargerFactures();
+      } catch (error) {
+        console.error('Erreur émission:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    function showModalReglement() {
+      const resteAPayer = parseFloat(factureActuelle.montant_ttc) - parseFloat(factureActuelle.montant_regle);
+      document.getElementById('reglementMontant').value = resteAPayer.toFixed(2);
+      document.getElementById('reglementResteAPayer').textContent = formatMontant(resteAPayer);
+      document.getElementById('reglementMode').value = 'especes';
+      document.getElementById('reglementDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('reglementReference').value = '';
+      document.getElementById('reglementEnCaisse').checked = false;
+      new bootstrap.Modal(document.getElementById('modalReglement')).show();
+    }
+
+    async function saveReglement() {
+      try {
+        const data = {
+          montant: parseFloat(document.getElementById('reglementMontant').value),
+          mode_paiement_code: document.getElementById('reglementMode').value,
+          date_reglement: document.getElementById('reglementDate').value,
+          reference: document.getElementById('reglementReference').value || null,
+          enregistrer_en_caisse: document.getElementById('reglementEnCaisse').checked
+        };
+
+        await apiAdmin.post(`/api/factures/${factureActuelle.id}/reglements`, data);
+        bootstrap.Modal.getInstance(document.getElementById('modalReglement')).hide();
+        showAlert('Règlement enregistré', 'success');
+        await voirFacture(factureActuelle.id);
+        await chargerFactures();
+      } catch (error) {
+        console.error('Erreur règlement:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function annulerReglement(reglementId) {
+      const motif = prompt('Motif de l\'annulation:');
+      if (motif === null) return;
+
+      try {
+        await apiAdmin.post(`/api/factures/reglements/${reglementId}/annuler`, { motif });
+        showAlert('Règlement annulé', 'success');
+        await voirFacture(factureActuelle.id);
+        await chargerFactures();
+      } catch (error) {
+        console.error('Erreur annulation:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function annulerFacture() {
+      if (!confirm('Annuler cette facture ?')) return;
+
+      try {
+        await apiAdmin.post(`/api/factures/${factureActuelle.id}/annuler`);
+        showAlert('Facture annulée', 'success');
+        await voirFacture(factureActuelle.id);
+        await chargerFactures();
+      } catch (error) {
+        console.error('Erreur annulation:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function creerAvoir() {
+      const motif = prompt('Motif de l\'avoir:');
+      if (motif === null) return;
+
+      try {
+        const avoir = await apiAdmin.post(`/api/factures/${factureActuelle.id}/avoir`, { motif });
+        showAlert('Avoir créé', 'success');
+        bootstrap.Modal.getInstance(document.getElementById('modalDetail')).hide();
+        await chargerFactures();
+        voirFacture(avoir.id);
+      } catch (error) {
+        console.error('Erreur création avoir:', error);
+        showAlert(error.message || 'Erreur', 'danger');
+      }
+    }
+
+    async function telechargerPDF() {
+      try {
+        const response = await fetch(`/api/factures/${factureActuelle.id}/pdf`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Erreur téléchargement');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${factureActuelle.type_document === 'avoir' ? 'Avoir' : 'Facture'}_${factureActuelle.numero.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      } catch (error) {
+        console.error('Erreur PDF:', error);
+        showAlert(error.message || 'Erreur téléchargement PDF', 'danger');
+      }
+    }
+
+    async function afficherStatistiques() {
+      try {
+        const stats = await apiAdmin.get('/api/factures/statistiques');
+        let html = `
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Chiffre d'affaires</h6>
+              <table class="table table-sm">
+                <tr><td>Total HT</td><td class="text-end">${formatMontant(stats.chiffreAffaires.ht)}</td></tr>
+                <tr><td>TVA</td><td class="text-end">${formatMontant(stats.chiffreAffaires.tva)}</td></tr>
+                <tr class="table-primary"><td><strong>Total TTC</strong></td><td class="text-end"><strong>${formatMontant(stats.chiffreAffaires.ttc)}</strong></td></tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <h6>Avoirs</h6>
+              <table class="table table-sm">
+                <tr><td>Nombre</td><td class="text-end">${stats.avoirs.nombre}</td></tr>
+                <tr><td>Total</td><td class="text-end">${formatMontant(stats.avoirs.total)}</td></tr>
+              </table>
+            </div>
+          </div>
+          <h6>Par statut</h6>
+          <table class="table table-sm">
+            <thead><tr><th>Statut</th><th class="text-center">Nombre</th><th class="text-end">Total TTC</th><th class="text-end">Réglé</th></tr></thead>
+            <tbody>
+        `;
+
+        (stats.parStatut || []).forEach(s => {
+          html += `<tr>
+            <td>${s.statut}</td>
+            <td class="text-center">${s.nombre}</td>
+            <td class="text-end">${formatMontant(s.total_ttc)}</td>
+            <td class="text-end">${formatMontant(s.total_regle)}</td>
+          </tr>`;
+        });
+
+        html += '</tbody></table>';
+        document.getElementById('statsContent').innerHTML = html;
+        new bootstrap.Modal(document.getElementById('modalStats')).show();
+      } catch (error) {
+        console.error('Erreur stats:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    function formatMontant(montant) {
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(montant || 0);
+    }
+
+    function formatDate(date) {
+      if (!date) return '-';
+      return new Date(date).toLocaleDateString('fr-FR');
+    }
+
+    function showAlert(message, type) {
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+      alertDiv.style.zIndex = '9999';
+      alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+      document.body.appendChild(alertDiv);
+      setTimeout(() => alertDiv.remove(), 5000);
+    }
+  </script>
+</body>
+</html>

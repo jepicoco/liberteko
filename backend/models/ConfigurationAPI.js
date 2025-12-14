@@ -410,22 +410,26 @@ module.exports = (sequelize) => {
   ConfigurationAPI.getProviders = function() {
     return {
       ean_lookup: [
-        { value: 'upcitemdb', label: 'UPCitemdb', gratuit: true, limite: '100/jour', collections: ['jeu'] },
-        { value: 'bgg', label: 'BoardGameGeek', gratuit: true, limite: 'illimite', collections: ['jeu'] },
-        { value: 'openlibrary', label: 'Open Library', gratuit: true, limite: 'illimite', collections: ['livre'] },
-        { value: 'googlebooks', label: 'Google Books', gratuit: true, limite: '1000/jour', collections: ['livre'] },
-        { value: 'tmdb', label: 'TMDB', gratuit: true, limite: '1000/jour', collections: ['film'] },
-        { value: 'discogs', label: 'Discogs', gratuit: false, limite: '60/min', collections: ['disque'] },
-        { value: 'musicbrainz', label: 'MusicBrainz', gratuit: true, limite: '1/sec', collections: ['disque'] }
+        { value: 'upcitemdb', label: 'UPCitemdb', gratuit: true, limite: '100/jour', collections: ['jeu', 'livre', 'film', 'disque'], url_defaut: 'https://api.upcitemdb.com/prod/trial/lookup' },
+        { value: 'bgg', label: 'BoardGameGeek', gratuit: true, limite: 'illimite', collections: ['jeu'], url_defaut: 'https://boardgamegeek.com/xmlapi2' },
+        { value: 'wikiludo', label: 'Wikiludo (ALF)', gratuit: true, limite: 'illimite', collections: ['jeu'], url_defaut: 'https://www.wikiludo-alf.fr' },
+        { value: 'openlibrary', label: 'Open Library', gratuit: true, limite: 'illimite', collections: ['livre'], url_defaut: 'https://openlibrary.org' },
+        { value: 'googlebooks', label: 'Google Books', gratuit: true, limite: '1000/jour', collections: ['livre'], url_defaut: 'https://www.googleapis.com/books/v1' },
+        { value: 'bnf', label: 'BNF (Bibliothèque Nationale)', gratuit: true, limite: 'illimite', collections: ['livre'], url_defaut: 'https://catalogue.bnf.fr/api/SRU' },
+        { value: 'tmdb', label: 'TMDB (The Movie Database)', gratuit: true, limite: '1000/jour', collections: ['film'], url_defaut: 'https://api.themoviedb.org/3' },
+        { value: 'discogs', label: 'Discogs', gratuit: false, limite: '60/min', collections: ['disque'], url_defaut: 'https://api.discogs.com' },
+        { value: 'musicbrainz', label: 'MusicBrainz', gratuit: true, limite: '1/sec', collections: ['disque'], url_defaut: 'https://musicbrainz.org/ws/2' }
       ],
       isbn_lookup: [
-        { value: 'openlibrary', label: 'Open Library', gratuit: true, limite: 'illimite', collections: ['livre'] },
-        { value: 'googlebooks', label: 'Google Books', gratuit: true, limite: '1000/jour', collections: ['livre'] },
-        { value: 'isbndb', label: 'ISBNdb', gratuit: false, limite: 'selon plan', collections: ['livre'] }
+        { value: 'openlibrary', label: 'Open Library', gratuit: true, limite: 'illimite', collections: ['livre'], url_defaut: 'https://openlibrary.org' },
+        { value: 'googlebooks', label: 'Google Books', gratuit: true, limite: '1000/jour', collections: ['livre'], url_defaut: 'https://www.googleapis.com/books/v1' },
+        { value: 'bnf', label: 'BNF (Bibliothèque Nationale)', gratuit: true, limite: 'illimite', collections: ['livre'], url_defaut: 'https://catalogue.bnf.fr/api/SRU' },
+        { value: 'isbndb', label: 'ISBNdb', gratuit: false, limite: 'selon plan', collections: ['livre'], url_defaut: 'https://api2.isbndb.com' }
       ],
       enrichissement: [
-        { value: 'bgg', label: 'BoardGameGeek', gratuit: true, limite: 'illimite', collections: ['jeu'] },
-        { value: 'tmdb', label: 'TMDB', gratuit: true, limite: '1000/jour', collections: ['film'] }
+        { value: 'bgg', label: 'BoardGameGeek', gratuit: true, limite: 'illimite', collections: ['jeu'], url_defaut: 'https://boardgamegeek.com/xmlapi2' },
+        { value: 'wikiludo', label: 'Wikiludo (ALF)', gratuit: true, limite: 'illimite', collections: ['jeu'], url_defaut: 'https://www.wikiludo-alf.fr' },
+        { value: 'tmdb', label: 'TMDB (The Movie Database)', gratuit: true, limite: '1000/jour', collections: ['film'], url_defaut: 'https://api.themoviedb.org/3' }
       ]
     };
   };

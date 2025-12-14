@@ -153,7 +153,7 @@ const getJeuById = async (req, res) => {
           as: 'emprunts',
           include: [{
             model: Utilisateur,
-            as: 'adherent'
+            as: 'utilisateur'
           }],
           order: [['date_emprunt', 'DESC']],
           limit: 10

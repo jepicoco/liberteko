@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Mes factures - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .user-header {
+      background: var(--gradient-beach);
+      padding: var(--space-lg) var(--space-lg);
+      border-bottom: var(--border-light);
+    }
+
+    .user-header-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-lg);
+      flex-wrap: wrap;
+    }
+
+    .page-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .page-title h1 {
+      font-size: 1.5rem;
+      margin: 0;
+    }
+
+    .page-title i {
+      color: var(--summer-gold);
+    }
+
+    .user-nav {
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+    }
+
+    .user-nav a {
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--radius-full);
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .user-nav a:hover {
+      background: var(--summer-gold-pale);
+      color: var(--summer-orange);
+    }
+
+    .user-nav a.active {
+      background: var(--gradient-sunset);
+      color: white;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-md);
+      margin-bottom: var(--space-xl);
+    }
+
+    .stat-card {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .stat-icon.primary { background: var(--summer-gold-pale); color: var(--summer-orange); }
+    .stat-icon.success { background: #d1fae5; color: #065f46; }
+    .stat-icon.warning { background: #fef3c7; color: #92400e; }
+    .stat-icon.danger { background: #fee2e2; color: #991b1b; }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+    }
+
+    .tabs {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-xl);
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: var(--space-sm);
+    }
+
+    .tab {
+      padding: var(--space-sm) var(--space-md);
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .tab:hover {
+      color: var(--summer-orange);
+    }
+
+    .tab.active {
+      color: var(--summer-orange);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--summer-gold);
+      border-radius: 2px;
+    }
+
+    .factures-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: var(--space-md);
+    }
+
+    .facture-card {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--soft-shadow);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .facture-card:hover {
+      box-shadow: var(--card-shadow);
+      transform: translateY(-2px);
+    }
+
+    .facture-card.avoir {
+      border-left: 4px solid #a855f7;
+    }
+
+    .facture-card.impayee {
+      border-left: 4px solid var(--summer-gold);
+    }
+
+    .facture-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-md);
+    }
+
+    .facture-numero {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--color-text);
+    }
+
+    .facture-date {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+    }
+
+    .status-badge {
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .status-emise { background: #dbeafe; color: #1e40af; }
+    .status-partiellement_reglee { background: #fef3c7; color: #92400e; }
+    .status-reglee { background: #d1fae5; color: #065f46; }
+    .status-annulee { background: #fee2e2; color: #991b1b; }
+    .status-avoir { background: #f3e8ff; color: #7c3aed; }
+
+    .facture-montant {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text);
+      text-align: right;
+    }
+
+    .facture-montant.avoir {
+      color: #991b1b;
+    }
+
+    .facture-reste {
+      font-size: 0.85rem;
+      color: var(--summer-orange);
+      text-align: right;
+    }
+
+    .reglements-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    .reglement-item {
+      background: var(--summer-white);
+      border-radius: var(--radius-lg);
+      padding: var(--space-lg);
+      box-shadow: var(--soft-shadow);
+      border-left: 4px solid #10b981;
+    }
+
+    .reglement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-xs);
+    }
+
+    .reglement-montant {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #065f46;
+    }
+
+    .reglement-meta {
+      font-size: 0.85rem;
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-2xl);
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      color: var(--summer-gold);
+      margin-bottom: var(--space-md);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: var(--space-lg);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--summer-white);
+      border-radius: var(--radius-xl);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      padding: var(--space-lg);
+      border-bottom: var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: var(--space-lg);
+    }
+
+    .modal-footer {
+      padding: var(--space-lg);
+      border-top: var(--border-light);
+      display: flex;
+      justify-content: flex-end;
+      gap: var(--space-sm);
+    }
+
+    .ligne-facture {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .ligne-facture:last-child {
+      border-bottom: none;
+    }
+
+    .totaux-section {
+      background: var(--summer-cream);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-top: var(--space-md);
+    }
+
+    @media (max-width: 768px) {
+      .user-header-content {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .factures-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-sun logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+        </ul>
+      </nav>
+      <a href="#" class="btn-login" onclick="logout()">
+        <i class="bi bi-box-arrow-right"></i> Deconnexion
+      </a>
+    </div>
+  </header>
+
+  <!-- User Header -->
+  <div class="user-header">
+    <div class="user-header-content">
+      <div class="page-title">
+        <i class="bi bi-receipt"></i>
+        <h1>Mes factures</h1>
+      </div>
+      <nav class="user-nav">
+        <a href="/usager/dashboard.html"><i class="bi bi-house"></i> Accueil</a>
+        <a href="/usager/emprunts.html"><i class="bi bi-bookmark"></i> Emprunts</a>
+        <a href="/usager/factures.html" class="active"><i class="bi bi-receipt"></i> Factures</a>
+        <a href="/usager/profil.html"><i class="bi bi-person"></i> Profil</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="dashboard-container">
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon primary"><i class="bi bi-file-text"></i></div>
+        <div>
+          <div class="stat-value" id="nb-factures">-</div>
+          <div class="stat-label">Factures</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon success"><i class="bi bi-check-circle"></i></div>
+        <div>
+          <div class="stat-value" id="montant-regle">-</div>
+          <div class="stat-label">Regle</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon warning"><i class="bi bi-clock-history"></i></div>
+        <div>
+          <div class="stat-value" id="montant-impaye">-</div>
+          <div class="stat-label">Impaye</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon danger"><i class="bi bi-arrow-return-left"></i></div>
+        <div>
+          <div class="stat-value" id="montant-avoirs">-</div>
+          <div class="stat-label">Avoirs</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="factures" onclick="switchTab('factures')">
+        <i class="bi bi-file-earmark-text"></i> Factures
+      </button>
+      <button class="tab" data-tab="reglements" onclick="switchTab('reglements')">
+        <i class="bi bi-credit-card"></i> Reglements
+      </button>
+    </div>
+
+    <!-- Factures List -->
+    <div id="tab-factures">
+      <div class="factures-grid" id="factures-list">
+        <div class="empty-state">
+          <i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reglements List -->
+    <div id="tab-reglements" style="display: none;">
+      <div class="reglements-list" id="reglements-list">
+        <div class="empty-state">
+          <i class="bi bi-arrow-repeat" style="animation: spin 1s linear infinite;"></i>
+          <p>Chargement...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-facture">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Facture</h3>
+        <button class="btn btn-ghost" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal()">Fermer</button>
+        <button class="btn btn-primary" id="btn-download">
+          <i class="bi bi-download"></i> Telecharger PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits reserves</p>
+    </div>
+  </footer>
+
+  <script>
+    let token = null;
+    let currentTab = 'factures';
+    let factureSelectionnee = null;
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      token = localStorage.getItem('usager_token');
+      if (!token) {
+        window.location.href = '/usager/login.html';
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/public/config');
+        const config = await resp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Mes factures - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+
+      await loadResume();
+      await loadFactures();
+    }
+
+    async function loadResume() {
+      try {
+        const resp = await fetch('/api/usager/factures/resume', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) throw new Error('Failed');
+        const resume = await resp.json();
+
+        document.getElementById('nb-factures').textContent = resume.total_factures;
+        document.getElementById('montant-regle').textContent = formatMontant(resume.montant_regle);
+        document.getElementById('montant-impaye').textContent = formatMontant(resume.montant_impaye);
+        document.getElementById('montant-avoirs').textContent = formatMontant(resume.montant_total_avoirs);
+      } catch (e) {
+        console.error('Resume error:', e);
+      }
+    }
+
+    async function loadFactures() {
+      try {
+        const resp = await fetch('/api/usager/factures', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) {
+          if (resp.status === 401) { logout(); return; }
+          throw new Error('Failed');
+        }
+        const data = await resp.json();
+
+        if (data.factures.length === 0) {
+          document.getElementById('factures-list').innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-file-earmark-x"></i>
+              <h3>Aucune facture</h3>
+              <p>Vos factures apparaitront ici</p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById('factures-list').innerHTML = data.factures.map(f => {
+          const isAvoir = f.type_document === 'avoir';
+          const statusClass = isAvoir ? 'status-avoir' : `status-${f.statut}`;
+          const statusLabel = isAvoir ? 'Avoir' : getStatutLabel(f.statut);
+          const cardClass = isAvoir ? 'avoir' : (f.reste_a_payer > 0.01 ? 'impayee' : '');
+
+          return `
+            <div class="facture-card ${cardClass}" onclick="voirFacture(${f.id})">
+              <div class="facture-header">
+                <div>
+                  <div class="facture-numero"><i class="bi bi-${isAvoir ? 'arrow-return-left' : 'file-earmark-text'}"></i> ${f.numero}</div>
+                  <div class="facture-date">${formatDate(f.date_emission)}</div>
+                </div>
+                <span class="status-badge ${statusClass}">${statusLabel}</span>
+              </div>
+              <div class="facture-montant ${isAvoir ? 'avoir' : ''}">${isAvoir ? '-' : ''}${formatMontant(f.montant_ttc)}</div>
+              ${!isAvoir && f.reste_a_payer > 0.01 ? `<div class="facture-reste">Reste: ${formatMontant(f.reste_a_payer)}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Factures error:', e);
+        document.getElementById('factures-list').innerHTML = `
+          <div class="empty-state">
+            <i class="bi bi-exclamation-triangle"></i>
+            <h3>Erreur</h3>
+            <p>Impossible de charger les factures</p>
+          </div>
+        `;
+      }
+    }
+
+    async function loadReglements() {
+      try {
+        const resp = await fetch('/api/usager/factures/tous/reglements', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) throw new Error('Failed');
+        const data = await resp.json();
+
+        if (data.reglements.length === 0) {
+          document.getElementById('reglements-list').innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-credit-card"></i>
+              <h3>Aucun reglement</h3>
+              <p>Vos reglements apparaitront ici</p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById('reglements-list').innerHTML = data.reglements.map(r => `
+          <div class="reglement-item">
+            <div class="reglement-header">
+              <span><strong>${formatDate(r.date_reglement)}</strong> - ${formatModePaiement(r.mode_paiement)}</span>
+              <span class="reglement-montant">+${formatMontant(r.montant)}</span>
+            </div>
+            <div class="reglement-meta">
+              <a href="#" onclick="voirFacture(${r.facture_id}); return false;">
+                ${r.type_document === 'avoir' ? 'Avoir' : 'Facture'} ${r.facture_numero}
+              </a>
+              ${r.reference ? ` - Ref: ${r.reference}` : ''}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Reglements error:', e);
+      }
+    }
+
+    async function voirFacture(id) {
+      try {
+        const resp = await fetch(`/api/usager/factures/${id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) throw new Error('Failed');
+        const facture = await resp.json();
+        factureSelectionnee = facture;
+
+        const isAvoir = facture.type_document === 'avoir';
+        document.getElementById('modal-title').textContent = `${isAvoir ? 'Avoir' : 'Facture'} ${facture.numero}`;
+
+        let html = `
+          <div style="margin-bottom: var(--space-lg);">
+            <p><strong>Date:</strong> ${formatDate(facture.date_emission)}</p>
+            <p><strong>Statut:</strong> <span class="status-badge status-${facture.statut}">${getStatutLabel(facture.statut)}</span></p>
+          </div>
+          <h4 style="margin-bottom: var(--space-sm);">Lignes</h4>
+        `;
+
+        facture.lignes.forEach(l => {
+          html += `
+            <div class="ligne-facture">
+              <span>${l.description}</span>
+              <strong>${formatMontant(l.montant_ttc)}</strong>
+            </div>
+          `;
+        });
+
+        html += `
+          <div class="totaux-section">
+            <div class="ligne-facture"><span>Total HT</span><span>${formatMontant(facture.montant_ht)}</span></div>
+            <div class="ligne-facture"><span>TVA</span><span>${formatMontant(facture.montant_tva)}</span></div>
+            <div class="ligne-facture"><span><strong>Total TTC</strong></span><strong style="font-size: 1.25rem;">${formatMontant(facture.montant_ttc)}</strong></div>
+          </div>
+        `;
+
+        if (facture.reglements && facture.reglements.length > 0) {
+          html += `<h4 style="margin: var(--space-lg) 0 var(--space-sm);">Reglements</h4>`;
+          facture.reglements.forEach(r => {
+            html += `
+              <div class="ligne-facture">
+                <span>${formatDate(r.date_reglement)} - ${formatModePaiement(r.mode_paiement)}</span>
+                <strong style="color: #065f46;">+${formatMontant(r.montant)}</strong>
+              </div>
+            `;
+          });
+        }
+
+        document.getElementById('modal-body').innerHTML = html;
+        document.getElementById('modal-facture').classList.add('active');
+      } catch (e) {
+        console.error('Detail error:', e);
+        alert('Erreur lors du chargement');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal-facture').classList.remove('active');
+    }
+
+    document.getElementById('btn-download').addEventListener('click', async () => {
+      if (!factureSelectionnee) return;
+      try {
+        const resp = await fetch(`/api/usager/factures/${factureSelectionnee.id}/pdf`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) throw new Error('Failed');
+        const blob = await resp.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${factureSelectionnee.type_document === 'avoir' ? 'Avoir' : 'Facture'}_${factureSelectionnee.numero.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Erreur telechargement');
+      }
+    });
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.getElementById('tab-factures').style.display = tab === 'factures' ? 'block' : 'none';
+      document.getElementById('tab-reglements').style.display = tab === 'reglements' ? 'block' : 'none';
+      if (tab === 'reglements') loadReglements();
+    }
+
+    function formatMontant(m) {
+      return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(m || 0);
+    }
+
+    function formatDate(d) {
+      return d ? new Date(d).toLocaleDateString('fr-FR') : '-';
+    }
+
+    function getStatutLabel(s) {
+      const labels = { emise: 'Emise', partiellement_reglee: 'Partiel', reglee: 'Reglee', annulee: 'Annulee' };
+      return labels[s] || s;
+    }
+
+    function formatModePaiement(m) {
+      const modes = { especes: 'Especes', cheque: 'Cheque', carte_bancaire: 'CB', virement: 'Virement' };
+      return modes[m] || m;
+    }
+
+    function logout() {
+      localStorage.removeItem('usager_token');
+      window.location.href = '/usager/login.html';
+    }
+
+    init();
+  </script>
+</body>
+</html>

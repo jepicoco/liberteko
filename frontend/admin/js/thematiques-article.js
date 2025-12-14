@@ -13,7 +13,7 @@ const ThematiquesArticle = {
    */
   async loadSuggestions() {
     try {
-      const result = await apiRequest('/api/thematiques?limit=500&actif=true');
+      const result = await apiRequest('/thematiques?limit=500&actif=true');
       this.thematiquesSuggestions = result.thematiques || [];
     } catch (e) {
       console.error('Erreur chargement suggestions thematiques:', e);
@@ -25,7 +25,7 @@ const ThematiquesArticle = {
    */
   async getThematiques(typeArticle, articleId) {
     try {
-      const result = await apiRequest(`/api/thematiques/article/${typeArticle}/${articleId}`);
+      const result = await apiRequest(`/thematiques/article/${typeArticle}/${articleId}`);
       return result || [];
     } catch (e) {
       console.error('Erreur chargement thematiques article:', e);
@@ -127,7 +127,7 @@ const ThematiquesArticle = {
     }
 
     try {
-      await apiRequest(`/api/thematiques/article/${typeArticle}/${articleId}`, {
+      await apiRequest(`/thematiques/article/${typeArticle}/${articleId}`, {
         method: 'POST',
         body: {
           nom,
@@ -150,7 +150,7 @@ const ThematiquesArticle = {
    */
   async supprimerThematique(typeArticle, articleId, thematiqueId) {
     try {
-      await apiRequest(`/api/thematiques/article/${typeArticle}/${articleId}/${thematiqueId}`, {
+      await apiRequest(`/thematiques/article/${typeArticle}/${articleId}/${thematiqueId}`, {
         method: 'DELETE'
       });
 
@@ -170,7 +170,7 @@ const ThematiquesArticle = {
     try {
       showToast('Enrichissement en cours...', 'info');
 
-      const result = await apiRequest('/api/enrichissement/article', {
+      const result = await apiRequest('/enrichissement/article', {
         method: 'POST',
         body: { typeArticle, articleId }
       });
@@ -187,7 +187,7 @@ const ThematiquesArticle = {
       if (confirm(`L'IA propose: ${themList}\n\nAppliquer ces thematiques ?`)) {
         // Ajouter chaque thematique
         for (const t of thematiques) {
-          await apiRequest(`/api/thematiques/article/${typeArticle}/${articleId}`, {
+          await apiRequest(`/thematiques/article/${typeArticle}/${articleId}`, {
             method: 'POST',
             body: {
               nom: t.nom,

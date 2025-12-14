@@ -131,6 +131,9 @@
                 <button class="btn btn-primary" onclick="openCreateModal()">
                   <i class="bi bi-plus-circle"></i> Nouveau film
                 </button>
+                <button class="btn btn-success" onclick="openLookupModal()">
+                  <i class="bi bi-upc-scan"></i> Scanner EAN
+                </button>
                 <button class="btn btn-secondary" onclick="loadFilms()">
                   <i class="bi bi-arrow-clockwise"></i> Actualiser
                 </button>
@@ -187,136 +190,78 @@
   <div class="modal fade" id="filmModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalTitle">Nouveau film</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="modalTitle"><i class="bi bi-film me-2"></i>Nouveau film</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
+          <!-- Barre d'enrichissement (visible uniquement en mode edition) -->
+          <div id="enrichmentBar" class="alert alert-light border mb-3 d-none">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <i class="bi bi-magic me-1"></i>
+                <strong>Enrichir depuis une API :</strong>
+              </div>
+              <div id="enrichmentButtons" class="d-flex gap-2 flex-wrap">
+                <!-- Boutons generes dynamiquement -->
+              </div>
+            </div>
+            <div id="enrichmentStatus" class="mt-2 d-none">
+              <small class="text-muted">
+                <span class="badge bg-success me-1">&nbsp;</span> Identique
+                <span class="badge bg-warning text-dark ms-2 me-1">&nbsp;</span> Difference (cliquez pour appliquer)
+              </small>
+            </div>
+          </div>
+
           <form id="filmForm">
             <input type="hidden" id="filmId">
 
-            <!-- Nav tabs -->
-            <ul class="nav nav-tabs mb-3" role="tablist">
-              <li class="nav-item">
-                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general" type="button">
-                  <i class="bi bi-info-circle me-1"></i>General
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-casting" type="button">
-                  <i class="bi bi-people me-1"></i>Casting
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-classification" type="button">
-                  <i class="bi bi-tags me-1"></i>Classification
-                </button>
-              </li>
-              <li class="nav-item">
-                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button">
-                  <i class="bi bi-gear me-1"></i>Gestion
-                </button>
-              </li>
-            </ul>
+            <!-- Section: Identification -->
+            <div class="card mb-3 border-danger">
+              <div class="card-header bg-danger bg-opacity-10">
+                <i class="bi bi-info-circle me-1"></i> Identification
+              </div>
+              <div class="card-body">
+                <!-- Titre -->
+                <div class="mb-3">
+                  <label for="titre" class="form-label fw-bold">Titre *</label>
+                  <input type="text" id="titre" class="form-control form-control-lg" required placeholder="Titre du film">
+                </div>
 
-            <!-- Tab content -->
-            <div class="tab-content">
-              <!-- Tab General -->
-              <div class="tab-pane fade show active" id="tab-general">
+                <!-- Titre original et Annee -->
                 <div class="row mb-3">
                   <div class="col-md-8">
-                    <label class="form-label">Titre *</label>
-                    <input type="text" class="form-control" id="titre" required>
+                    <label for="titre_original" class="form-label">Titre original</label>
+                    <input type="text" id="titre_original" class="form-control" placeholder="Titre en version originale">
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Annee de sortie</label>
-                    <input type="number" class="form-control" id="annee_sortie" min="1895" max="2100">
+                    <label for="annee_sortie" class="form-label">
+                      <i class="bi bi-calendar me-1"></i>Annee de sortie
+                    </label>
+                    <input type="number" id="annee_sortie" class="form-control" min="1895" max="2100" placeholder="2024">
                   </div>
                 </div>
-                <div class="row mb-3">
-                  <div class="col-md-8">
-                    <label class="form-label">Titre original</label>
-                    <input type="text" class="form-control" id="titre_original">
-                  </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Duree (minutes)</label>
-                    <input type="number" class="form-control" id="duree" min="1">
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Synopsis</label>
-                  <textarea class="form-control" id="synopsis" rows="4"></textarea>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Code-barres interne</label>
-                    <input type="text" class="form-control" id="code_barre" readonly placeholder="Genere automatiquement">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">EAN (code-barres commercial)</label>
-                    <input type="text" class="form-control" id="ean" placeholder="Ex: 3700301033512">
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">URL de l'affiche</label>
-                    <input type="url" class="form-control" id="image_url" placeholder="https://...">
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">URL bande-annonce</label>
-                    <input type="url" class="form-control" id="bande_annonce_url" placeholder="https://youtube.com/...">
-                  </div>
-                </div>
-              </div>
 
-              <!-- Tab Casting -->
-              <div class="tab-pane fade" id="tab-casting">
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Realisateur(s)</label>
-                    <select id="select_realisateurs" multiple placeholder="Selectionnez..."></select>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Studio(s)</label>
-                    <select id="select_studios" multiple placeholder="Selectionnez..."></select>
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Acteurs</label>
-                  <div id="acteursContainer">
-                    <!-- Dynamic acteur rows -->
-                  </div>
-                  <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="addActeurRow()">
-                    <i class="bi bi-plus-lg me-1"></i>Ajouter un acteur
-                  </button>
-                </div>
-              </div>
-
-              <!-- Tab Classification -->
-              <div class="tab-pane fade" id="tab-classification">
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Genres</label>
-                    <select id="select_genres" multiple placeholder="Selectionnez..."></select>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Themes</label>
-                    <select id="select_themes" multiple placeholder="Selectionnez..."></select>
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Langues audio</label>
-                    <select id="select_langues" multiple placeholder="Selectionnez..."></select>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Sous-titres</label>
-                    <select id="select_soustitres" multiple placeholder="Selectionnez..."></select>
-                  </div>
-                </div>
+                <!-- Codes EAN et duree -->
                 <div class="row mb-3">
                   <div class="col-md-4">
-                    <label class="form-label">Classification</label>
+                    <label for="ean" class="form-label">
+                      <i class="bi bi-upc me-1"></i>Code EAN
+                    </label>
+                    <input type="text" id="ean" class="form-control font-monospace" placeholder="3700301033512" maxlength="20">
+                    <small class="text-muted">Code-barres commercial</small>
+                  </div>
+                  <div class="col-md-4">
+                    <label for="duree" class="form-label">
+                      <i class="bi bi-clock me-1"></i>Duree (minutes)
+                    </label>
+                    <input type="number" id="duree" class="form-control" min="1" placeholder="120">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="classification" class="form-label">
+                      <i class="bi bi-person-check me-1"></i>Classification
+                    </label>
                     <select class="form-select" id="classification">
                       <option value="TP">Tout Public</option>
                       <option value="-10">-10 ans</option>
@@ -326,38 +271,170 @@
                     </select>
                   </div>
                 </div>
-              </div>
 
-              <!-- Tab Gestion -->
-              <div class="tab-pane fade" id="tab-gestion">
+                <!-- Image et bande-annonce -->
+                <div class="row">
+                  <div class="col-md-6">
+                    <label for="image_url" class="form-label">
+                      <i class="bi bi-image me-1"></i>URL de l'affiche
+                    </label>
+                    <input type="url" id="image_url" class="form-control" placeholder="https://...">
+                  </div>
+                  <div class="col-md-6">
+                    <label for="bande_annonce_url" class="form-label">
+                      <i class="bi bi-play-circle me-1"></i>URL bande-annonce
+                    </label>
+                    <input type="url" id="bande_annonce_url" class="form-control" placeholder="https://youtube.com/...">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Casting -->
+            <div class="card mb-3 border-primary">
+              <div class="card-header bg-primary bg-opacity-10">
+                <i class="bi bi-people me-1"></i> Casting & Production
+              </div>
+              <div class="card-body">
                 <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-camera-reels me-1"></i>Realisateur(s)
+                    </label>
+                    <select id="select_realisateurs" multiple placeholder="Tapez pour rechercher ou ajouter..."></select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-building me-1"></i>Studio(s)
+                    </label>
+                    <select id="select_studios" multiple placeholder="Tapez pour rechercher ou ajouter..."></select>
+                  </div>
+                </div>
+                <div>
+                  <label class="form-label fw-bold">
+                    <i class="bi bi-person-video2 me-1"></i>Acteurs
+                  </label>
+                  <div id="acteursContainer">
+                    <!-- Dynamic acteur rows -->
+                  </div>
+                  <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="addActeurRow()">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter un acteur
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Classification -->
+            <div class="card mb-3 border-info">
+              <div class="card-header bg-info bg-opacity-10">
+                <i class="bi bi-tags me-1"></i> Classification
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-bookmark me-1"></i>Genre(s)
+                    </label>
+                    <select id="select_genres" multiple placeholder="Selectionnez un ou plusieurs genres..."></select>
+                    <small class="text-muted">Action, Comedie, Drame, Science-fiction...</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-palette me-1"></i>Theme(s)
+                    </label>
+                    <select id="select_themes" multiple placeholder="Selectionnez un ou plusieurs themes..."></select>
+                    <small class="text-muted">Guerre, Amour, Aventure, Historique...</small>
+                  </div>
+                </div>
+                <div class="row">
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-translate me-1"></i>Langues audio
+                    </label>
+                    <select id="select_langues" multiple placeholder="Selectionnez les langues audio..."></select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="bi bi-card-text me-1"></i>Sous-titres
+                    </label>
+                    <select id="select_soustitres" multiple placeholder="Selectionnez les sous-titres disponibles..."></select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Emplacement -->
+            <div class="card mb-3 border-secondary">
+              <div class="card-header bg-secondary bg-opacity-10">
+                <i class="bi bi-geo-alt me-1"></i> Support & Emplacement
+              </div>
+              <div class="card-body">
+                <div class="row align-items-end">
                   <div class="col-md-4">
-                    <label class="form-label">Support</label>
+                    <label for="support_id" class="form-label fw-bold">
+                      <i class="bi bi-disc me-1"></i>Support
+                    </label>
                     <select class="form-select" id="support_id">
                       <option value="">-- Selectionner --</option>
                     </select>
+                    <small class="text-muted">DVD, Blu-ray, 4K, VHS...</small>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Emplacement</label>
+                    <label for="emplacement_id" class="form-label fw-bold">
+                      <i class="bi bi-geo-alt-fill me-1"></i>Emplacement
+                    </label>
                     <select class="form-select" id="emplacement_id">
                       <option value="">-- Selectionner --</option>
                     </select>
+                    <small class="text-muted">Rayon, etagere</small>
                   </div>
                   <div class="col-md-4">
-                    <label class="form-label">Statut</label>
-                    <select class="form-select" id="statut">
+                    <div class="alert alert-light mb-0 py-2">
+                      <i class="bi bi-info-circle me-1"></i>
+                      <small>Le support et l'emplacement permettent de retrouver le film.</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Description -->
+            <div class="card mb-3 border-secondary">
+              <div class="card-header bg-secondary bg-opacity-10">
+                <i class="bi bi-text-paragraph me-1"></i> Synopsis
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label for="synopsis" class="form-label">Synopsis / Resume</label>
+                  <textarea id="synopsis" class="form-control" rows="4" placeholder="Synopsis du film..."></textarea>
+                </div>
+                <div>
+                  <label for="notes" class="form-label">Notes internes</label>
+                  <textarea id="notes" class="form-control" rows="2" placeholder="Notes pour la gestion interne..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section: Gestion -->
+            <div class="card border-warning">
+              <div class="card-header bg-warning bg-opacity-10">
+                <i class="bi bi-gear me-1"></i> Gestion
+              </div>
+              <div class="card-body">
+                <div class="row mb-3">
+                  <div class="col-md-3">
+                    <label for="statut" class="form-label fw-bold">Statut *</label>
+                    <select id="statut" class="form-select" required>
                       <option value="disponible">Disponible</option>
                       <option value="emprunte">Emprunte</option>
-                      <option value="maintenance">En maintenance</option>
+                      <option value="maintenance">Maintenance</option>
                       <option value="perdu">Perdu</option>
                       <option value="archive">Archive</option>
                     </select>
                   </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-md-4">
-                    <label class="form-label">Etat</label>
-                    <select class="form-select" id="etat">
+                  <div class="col-md-3">
+                    <label for="etat" class="form-label">Etat physique</label>
+                    <select id="etat" class="form-select">
                       <option value="neuf">Neuf</option>
                       <option value="tres_bon">Tres bon</option>
                       <option value="bon" selected>Bon</option>
@@ -365,42 +442,40 @@
                       <option value="mauvais">Mauvais</option>
                     </select>
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Date d'acquisition</label>
-                    <input type="date" class="form-control" id="date_acquisition">
+                  <div class="col-md-3">
+                    <label for="date_acquisition" class="form-label">Date acquisition</label>
+                    <input type="date" id="date_acquisition" class="form-control">
                   </div>
-                  <div class="col-md-4">
-                    <label class="form-label">Nombre d'emprunts</label>
-                    <input type="number" class="form-control" id="nb_emprunts" readonly>
-                  </div>
-                </div>
-                <div class="row mb-3">
-                  <div class="col-md-6">
-                    <label class="form-label">Prix indicatif</label>
-                    <div class="input-group">
-                      <input type="number" class="form-control" id="prix_indicatif" step="0.01" min="0">
-                      <span class="input-group-text">€</span>
-                    </div>
-                  </div>
-                  <div class="col-md-6">
-                    <label class="form-label">Prix d'achat</label>
-                    <div class="input-group">
-                      <input type="number" class="form-control" id="prix_achat" step="0.01" min="0">
-                      <span class="input-group-text">€</span>
-                    </div>
+                  <div class="col-md-3">
+                    <label for="prix_achat" class="form-label">Prix achat (EUR)</label>
+                    <input type="number" id="prix_achat" class="form-control" step="0.01" min="0" placeholder="0.00">
                   </div>
                 </div>
-                <div class="mb-3">
-                  <label class="form-label">Notes internes</label>
-                  <textarea class="form-control" id="notes" rows="3"></textarea>
+                <div class="row">
+                  <div class="col-md-3">
+                    <label for="prix_indicatif" class="form-label">Prix indicatif (EUR)</label>
+                    <input type="number" id="prix_indicatif" class="form-control" step="0.01" min="0" placeholder="0.00">
+                  </div>
+                  <div class="col-md-3">
+                    <label for="nb_emprunts" class="form-label">Nombre d'emprunts</label>
+                    <input type="number" id="nb_emprunts" class="form-control" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="code_barre" class="form-label">Code-barres interne</label>
+                    <input type="text" id="code_barre" class="form-control font-monospace" readonly placeholder="Genere automatiquement">
+                  </div>
                 </div>
               </div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="submit" form="filmForm" class="btn btn-primary" id="submitBtn">Enregistrer</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-lg me-1"></i>Annuler
+          </button>
+          <button type="submit" form="filmForm" class="btn btn-danger" id="submitBtn">
+            <i class="bi bi-check-lg me-1"></i>Enregistrer
+          </button>
         </div>
       </div>
     </div>
@@ -449,6 +524,199 @@
     </div>
   </div>
 
+  <!-- EAN Lookup Modal -->
+  <div class="modal fade" id="lookupModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title"><i class="bi bi-upc-scan"></i> Recherche par code-barre EAN</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Info APIs configurees -->
+          <div id="lookupApisInfo" class="alert alert-info small mb-3">
+            <i class="bi bi-info-circle"></i> <strong>APIs configurees:</strong>
+            <span id="lookupApisList">Chargement...</span>
+          </div>
+
+          <!-- Mode de scan -->
+          <ul class="nav nav-tabs mb-3" id="scanModeTabs">
+            <li class="nav-item">
+              <button class="nav-link active" id="tab-scanner" data-bs-toggle="tab" data-bs-target="#mode-scanner" type="button">
+                <i class="bi bi-upc-scan"></i> Scanner physique
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="tab-camera" data-bs-toggle="tab" data-bs-target="#mode-camera" type="button">
+                <i class="bi bi-camera"></i> Camera
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="tab-manual" data-bs-toggle="tab" data-bs-target="#mode-manual" type="button">
+                <i class="bi bi-keyboard"></i> Saisie manuelle
+              </button>
+            </li>
+          </ul>
+
+          <div class="tab-content">
+            <!-- Mode Scanner physique -->
+            <div class="tab-pane fade show active" id="mode-scanner">
+              <div id="scannerZone">
+                <!-- Etat initial: Scanner pret -->
+                <div id="scannerReady" class="text-center py-5 bg-light rounded border-2 border-dashed">
+                  <i class="bi bi-upc-scan text-success" style="font-size: 4rem;"></i>
+                  <h4 class="mt-3 text-success">Scanner pret</h4>
+                  <p class="text-muted">Scannez un code-barre EAN avec votre scanner physique</p>
+                  <p class="text-muted small">Le code sera detecte automatiquement</p>
+                  <div id="scannerBuffer" class="mt-3 font-monospace text-primary fw-bold" style="font-size: 1.5rem; min-height: 2rem;"></div>
+                </div>
+
+                <!-- Etat: Recherche en cours -->
+                <div id="scannerSearching" class="d-none text-center py-5">
+                  <div class="spinner-border text-success" style="width: 3rem; height: 3rem;"></div>
+                  <h5 class="mt-3">Recherche en cours...</h5>
+                  <p class="text-muted">Code: <span id="scannerSearchCode" class="font-monospace"></span></p>
+                </div>
+
+                <!-- Etat: Resultat trouve -->
+                <div id="scannerResult" class="d-none">
+                  <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-1"></i> Film trouve ! Source: <span id="scannerResultSource"></span>
+                  </div>
+                  <div class="card">
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-md-3 text-center">
+                          <img id="scannerResultImage" src="" alt="Affiche" class="img-fluid rounded" style="max-height: 150px;">
+                        </div>
+                        <div class="col-md-9">
+                          <h5 id="scannerResultTitre"></h5>
+                          <p class="text-muted small mb-1" id="scannerResultTitreOriginal"></p>
+                          <p class="mb-2">
+                            <span class="badge bg-secondary" id="scannerResultAnnee"></span>
+                            <span class="badge bg-info" id="scannerResultDuree"></span>
+                          </p>
+                          <p class="small" id="scannerResultSynopsis" style="max-height: 80px; overflow-y: auto;"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-3 d-flex gap-2">
+                    <button class="btn btn-success" onclick="useScannerResults()">
+                      <i class="bi bi-check-lg me-1"></i>Utiliser ces infos
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="resetScanner()">
+                      <i class="bi bi-arrow-repeat me-1"></i>Scanner un autre
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Etat: Non trouve -->
+                <div id="scannerNotFound" class="d-none text-center py-4">
+                  <i class="bi bi-question-circle text-warning" style="font-size: 3rem;"></i>
+                  <h5 class="mt-2">Aucun resultat</h5>
+                  <p class="text-muted">Code: <span id="scannerNotFoundCode" class="font-monospace"></span></p>
+                  <button class="btn btn-outline-primary" onclick="resetScanner()">
+                    <i class="bi bi-arrow-repeat me-1"></i>Reessayer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mode Camera -->
+            <div class="tab-pane fade" id="mode-camera">
+              <div id="cameraContainer" class="text-center">
+                <div id="cameraPlaceholder" class="py-5 bg-dark rounded">
+                  <i class="bi bi-camera text-white" style="font-size: 3rem;"></i>
+                  <p class="text-white mt-2">Cliquez pour activer la camera</p>
+                  <button class="btn btn-light" onclick="startCamera()">
+                    <i class="bi bi-camera-video me-1"></i>Activer la camera
+                  </button>
+                </div>
+                <div id="cameraPreview" class="d-none">
+                  <div id="cameraReader" style="width: 100%; max-width: 400px; margin: 0 auto;"></div>
+                  <button class="btn btn-outline-danger mt-2" onclick="stopCamera()">
+                    <i class="bi bi-x-circle me-1"></i>Arreter la camera
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mode Manuel -->
+            <div class="tab-pane fade" id="mode-manual">
+              <div class="mb-3">
+                <label class="form-label">Code EAN ou Titre du film</label>
+                <div class="input-group">
+                  <input type="text" id="lookupInput" class="form-control form-control-lg"
+                         placeholder="Ex: 3700301033512 ou Inception"
+                         onkeyup="handleLookupKeyup(event)">
+                  <button class="btn btn-success" type="button" onclick="doLookup()">
+                    <i class="bi bi-search"></i> Rechercher
+                  </button>
+                </div>
+                <small class="text-muted">Entrez un code EAN 13 chiffres ou un titre de film</small>
+              </div>
+
+              <!-- Loading -->
+              <div id="lookupLoading" class="d-none text-center py-4">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-2">Recherche en cours...</p>
+              </div>
+
+              <!-- Results -->
+              <div id="lookupResults" class="d-none">
+                <div class="alert alert-success mb-3">
+                  <i class="bi bi-check-circle"></i> Film trouve ! Source: <span id="lookupSource"></span>
+                </div>
+                <div class="card">
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-md-3 text-center">
+                        <img id="lookupImage" src="" alt="Affiche" class="img-fluid rounded" style="max-height: 150px;">
+                      </div>
+                      <div class="col-md-9">
+                        <h5 id="lookupTitre"></h5>
+                        <p class="text-muted small mb-1" id="lookupTitreOriginal"></p>
+                        <p class="mb-2">
+                          <i class="bi bi-camera-reels"></i> <span id="lookupRealisateur">-</span> |
+                          <i class="bi bi-calendar"></i> <span id="lookupAnnee">-</span> |
+                          <i class="bi bi-clock"></i> <span id="lookupDuree">-</span> min
+                        </p>
+                        <p id="lookupGenres" class="mb-2"></p>
+                        <p id="lookupSynopsis" class="small" style="max-height: 80px; overflow-y: auto;"></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Not found -->
+              <div id="lookupNotFound" class="d-none">
+                <div class="alert alert-warning">
+                  <i class="bi bi-exclamation-triangle"></i> Aucun resultat trouve.
+                </div>
+              </div>
+
+              <!-- Error -->
+              <div id="lookupError" class="d-none">
+                <div class="alert alert-danger">
+                  <i class="bi bi-x-circle"></i> <span id="lookupErrorMsg"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          <button type="button" class="btn btn-primary d-none" id="btnUseResults" onclick="useResults()">
+            <i class="bi bi-plus-circle"></i> Utiliser ces infos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
   <script src="js/api-admin.js"></script>
@@ -894,17 +1162,16 @@
     // ========== Modal functions ==========
 
     function openCreateModal() {
-      document.getElementById('modalTitle').textContent = 'Nouveau film';
+      document.getElementById('modalTitle').innerHTML = '<i class="bi bi-film me-2"></i>Nouveau film';
       document.getElementById('filmForm').reset();
       document.getElementById('filmId').value = '';
+
+      // Cacher la barre d'enrichissement pour les nouveaux films
+      document.getElementById('enrichmentBar').classList.add('d-none');
 
       clearTomSelects();
       document.getElementById('acteursContainer').innerHTML = '';
       addActeurRow();
-
-      // Show first tab
-      const firstTab = document.querySelector('#filmModal .nav-link');
-      bootstrap.Tab.getOrCreateInstance(firstTab).show();
 
       if (!modalInstance) {
         modalInstance = new bootstrap.Modal(document.getElementById('filmModal'));
@@ -1049,8 +1316,12 @@
       try {
         const film = await filmsAPI.getById(id);
 
-        document.getElementById('modalTitle').textContent = 'Modifier le film';
+        document.getElementById('modalTitle').innerHTML = '<i class="bi bi-film me-2"></i>Modifier le film';
         document.getElementById('filmId').value = film.id;
+
+        // Afficher la barre d'enrichissement
+        document.getElementById('enrichmentBar').classList.remove('d-none');
+        showEnrichmentBar(film);
 
         // General info
         document.getElementById('titre').value = film.titre || '';
@@ -1096,10 +1367,6 @@
         } else {
           addActeurRow();
         }
-
-        // Show first tab
-        const firstTab = document.querySelector('#filmModal .nav-link');
-        bootstrap.Tab.getOrCreateInstance(firstTab).show();
 
         if (!modalInstance) {
           modalInstance = new bootstrap.Modal(document.getElementById('filmModal'));
@@ -1237,6 +1504,503 @@
       loadSupportsFilter();
       loadFilms();
     });
+
+    // =========== ENRICHISSEMENT ===========
+
+    // Afficher la barre d'enrichissement avec les APIs disponibles
+    async function showEnrichmentBar(film) {
+      const bar = document.getElementById('enrichmentBar');
+      const buttonsContainer = document.getElementById('enrichmentButtons');
+
+      try {
+        // Charger les APIs actives pour les films
+        const response = await fetch('/api/parametres/apis-externes/actives?collection=film', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+
+        if (!response.ok) {
+          bar.classList.add('d-none');
+          return;
+        }
+
+        const data = await response.json();
+        const apis = data.configurations || [];
+
+        if (apis.length === 0) {
+          bar.classList.add('d-none');
+          return;
+        }
+
+        // Generer les boutons
+        buttonsContainer.innerHTML = apis.map(api => `
+          <button type="button" class="btn btn-sm btn-outline-${api.couleur || 'secondary'}"
+                  onclick="enrichFromApi('${api.provider}', '${film.titre || ''}', '${film.ean || ''}')"
+                  title="${api.description || ''}">
+            <i class="${api.icone || 'bi-search'}"></i> ${api.libelle}
+          </button>
+        `).join('');
+
+        bar.classList.remove('d-none');
+      } catch (error) {
+        console.warn('Erreur chargement APIs enrichissement:', error);
+        bar.classList.add('d-none');
+      }
+    }
+
+    // Enrichir depuis une API externe
+    async function enrichFromApi(provider, titre, ean) {
+      const query = ean || titre;
+      if (!query) {
+        showToast('Aucune donnee pour rechercher', 'warning');
+        return;
+      }
+
+      try {
+        showToast('Recherche en cours...', 'info');
+
+        const result = await lookupAPI.search(query, 'film');
+
+        if (result.found && result.data) {
+          // Proposer de mettre a jour les champs vides
+          const data = result.data;
+          let updated = 0;
+
+          // Titre original
+          if (!document.getElementById('titre_original').value && (data.titre_original || data.original_title)) {
+            document.getElementById('titre_original').value = data.titre_original || data.original_title;
+            updated++;
+          }
+
+          // Annee
+          if (!document.getElementById('annee_sortie').value && (data.annee || data.year)) {
+            document.getElementById('annee_sortie').value = data.annee || data.year;
+            updated++;
+          }
+
+          // Duree
+          if (!document.getElementById('duree').value && (data.duree || data.runtime)) {
+            document.getElementById('duree').value = data.duree || data.runtime;
+            updated++;
+          }
+
+          // Synopsis
+          if (!document.getElementById('synopsis').value && (data.synopsis || data.description)) {
+            document.getElementById('synopsis').value = data.synopsis || data.description;
+            updated++;
+          }
+
+          // Image
+          if (!document.getElementById('image_url').value && (data.image_url || data.poster)) {
+            document.getElementById('image_url').value = data.image_url || data.poster;
+            updated++;
+          }
+
+          // Bande-annonce
+          if (!document.getElementById('bande_annonce_url').value && (data.bande_annonce_url || data.trailer)) {
+            document.getElementById('bande_annonce_url').value = data.bande_annonce_url || data.trailer;
+            updated++;
+          }
+
+          if (updated > 0) {
+            showToast(`${updated} champ(s) mis a jour depuis ${result.source}`, 'success');
+          } else {
+            showToast('Aucun nouveau champ a completer', 'info');
+          }
+        } else {
+          showToast('Aucun resultat trouve', 'warning');
+        }
+      } catch (error) {
+        showToast('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    // =========== EAN LOOKUP ===========
+
+    let lookupModalInstance = null;
+    let cameraScanner = null;
+    let currentLookupResult = null;
+    let currentScannerResult = null;
+    let configuredApis = [];
+    let isLookupModalOpen = false;
+
+    // Scanner physique - variables
+    let scannerBuffer = '';
+    let scannerTimeout = null;
+
+    // Table de conversion AZERTY -> QWERTY pour les scanners
+    const azertyToQwerty = {
+      '&': '1', 'é': '2', '"': '3', "'": '4', '(': '5',
+      '-': '6', 'è': '7', '_': '8', 'ç': '9', 'à': '0',
+      ')': '-', '=': '='
+    };
+
+    // Charger les APIs configurees
+    async function loadConfiguredApis() {
+      try {
+        const response = await fetch('/api/parametres/apis-externes/actives?collection=film', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          configuredApis = data.configurations || [];
+          const apisList = document.getElementById('lookupApisList');
+          if (configuredApis.length > 0) {
+            apisList.innerHTML = configuredApis.map(api =>
+              `<span class="badge bg-${api.couleur || 'secondary'} me-1">${api.libelle}</span>`
+            ).join('');
+          } else {
+            apisList.innerHTML = '<span class="text-warning">Aucune API configuree pour les films</span>';
+          }
+        }
+      } catch (error) {
+        console.warn('Erreur chargement APIs:', error);
+      }
+    }
+
+    function openLookupModal() {
+      resetLookupUI();
+      resetScanner();
+      loadConfiguredApis();
+      isLookupModalOpen = true;
+
+      if (!lookupModalInstance) {
+        lookupModalInstance = new bootstrap.Modal(document.getElementById('lookupModal'));
+      }
+      lookupModalInstance.show();
+
+      // Activer l'ecoute du scanner physique
+      document.addEventListener('keypress', handleScannerKeypress);
+    }
+
+    function resetLookupUI() {
+      const lookupInput = document.getElementById('lookupInput');
+      if (lookupInput) lookupInput.value = '';
+      document.getElementById('lookupLoading').classList.add('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+      currentLookupResult = null;
+    }
+
+    // Gestion du scanner physique
+    function handleScannerKeypress(event) {
+      if (!isLookupModalOpen) return;
+
+      // Verifier qu'on est dans l'onglet scanner
+      const scannerTab = document.getElementById('mode-scanner');
+      if (!scannerTab || !scannerTab.classList.contains('active')) return;
+
+      // Ignorer si focus sur un input
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
+      // Convertir AZERTY -> QWERTY si necessaire
+      let char = event.key;
+      if (azertyToQwerty[char]) {
+        char = azertyToQwerty[char];
+      }
+
+      // Filtrer les caracteres non numeriques (sauf Enter)
+      if (char === 'Enter') {
+        if (scannerBuffer.length >= 8) {
+          // Code complet, lancer la recherche
+          const code = scannerBuffer;
+          scannerBuffer = '';
+          clearTimeout(scannerTimeout);
+          document.getElementById('scannerBuffer').textContent = '';
+          searchByScanner(code);
+        }
+        return;
+      }
+
+      if (!/[\d]/.test(char)) return;
+
+      // Ajouter au buffer
+      scannerBuffer += char;
+      document.getElementById('scannerBuffer').textContent = scannerBuffer;
+
+      // Reset du timeout
+      clearTimeout(scannerTimeout);
+      scannerTimeout = setTimeout(() => {
+        if (scannerBuffer.length >= 8) {
+          const code = scannerBuffer;
+          scannerBuffer = '';
+          document.getElementById('scannerBuffer').textContent = '';
+          searchByScanner(code);
+        } else {
+          scannerBuffer = '';
+          document.getElementById('scannerBuffer').textContent = '';
+        }
+      }, 200);
+    }
+
+    // Recherche via scanner physique
+    async function searchByScanner(code) {
+      // Afficher l'etat de recherche
+      document.getElementById('scannerReady').classList.add('d-none');
+      document.getElementById('scannerSearching').classList.remove('d-none');
+      document.getElementById('scannerResult').classList.add('d-none');
+      document.getElementById('scannerNotFound').classList.add('d-none');
+      document.getElementById('scannerSearchCode').textContent = code;
+
+      try {
+        const result = await lookupAPI.search(code, 'film');
+
+        document.getElementById('scannerSearching').classList.add('d-none');
+
+        if (result.found && result.data) {
+          currentScannerResult = result.data;
+          currentScannerResult.ean = code;
+          displayScannerResults(result);
+        } else {
+          document.getElementById('scannerNotFound').classList.remove('d-none');
+          document.getElementById('scannerNotFoundCode').textContent = code;
+        }
+      } catch (error) {
+        document.getElementById('scannerSearching').classList.add('d-none');
+        document.getElementById('scannerNotFound').classList.remove('d-none');
+        document.getElementById('scannerNotFoundCode').textContent = code + ' - ' + error.message;
+      }
+    }
+
+    function displayScannerResults(result) {
+      const data = result.data;
+
+      document.getElementById('scannerResultSource').textContent = result.source || 'inconnu';
+      document.getElementById('scannerResultTitre').textContent = data.titre || data.title || 'Sans titre';
+
+      const titreOriginal = data.titre_original || data.original_title;
+      const titreOriginalEl = document.getElementById('scannerResultTitreOriginal');
+      if (titreOriginal && titreOriginal !== (data.titre || data.title)) {
+        titreOriginalEl.textContent = titreOriginal;
+        titreOriginalEl.classList.remove('d-none');
+      } else {
+        titreOriginalEl.classList.add('d-none');
+      }
+
+      document.getElementById('scannerResultAnnee').textContent = data.annee || data.year || '-';
+      document.getElementById('scannerResultDuree').textContent = data.duree ? `${data.duree} min` : '-';
+      document.getElementById('scannerResultSynopsis').textContent = data.synopsis || data.description || '';
+
+      const img = document.getElementById('scannerResultImage');
+      if (data.image_url || data.poster) {
+        img.src = data.image_url || data.poster;
+        img.classList.remove('d-none');
+      } else {
+        img.classList.add('d-none');
+      }
+
+      document.getElementById('scannerResult').classList.remove('d-none');
+    }
+
+    function useScannerResults() {
+      if (!currentScannerResult) return;
+      useResultsData(currentScannerResult);
+    }
+
+    function resetScanner() {
+      scannerBuffer = '';
+      clearTimeout(scannerTimeout);
+      currentScannerResult = null;
+
+      document.getElementById('scannerReady').classList.remove('d-none');
+      document.getElementById('scannerSearching').classList.add('d-none');
+      document.getElementById('scannerResult').classList.add('d-none');
+      document.getElementById('scannerNotFound').classList.add('d-none');
+      document.getElementById('scannerBuffer').textContent = '';
+    }
+
+    // Camera
+    async function startCamera() {
+      document.getElementById('cameraPlaceholder').classList.add('d-none');
+      document.getElementById('cameraPreview').classList.remove('d-none');
+
+      try {
+        cameraScanner = new Html5Qrcode('cameraReader');
+        await cameraScanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 10,
+            qrbox: { width: 250, height: 100 },
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E
+            ]
+          },
+          async (decodedText) => {
+            await stopCamera();
+            // Passer a l'onglet scanner et afficher le resultat
+            document.getElementById('tab-scanner').click();
+            searchByScanner(decodedText);
+          },
+          () => {}
+        );
+      } catch (err) {
+        console.error('Camera error:', err);
+        alert('Impossible d\'acceder a la camera: ' + err);
+        document.getElementById('cameraPlaceholder').classList.remove('d-none');
+        document.getElementById('cameraPreview').classList.add('d-none');
+      }
+    }
+
+    async function stopCamera() {
+      if (cameraScanner) {
+        try {
+          await cameraScanner.stop();
+          cameraScanner.clear();
+        } catch (e) {
+          console.warn('Stop camera error:', e);
+        }
+        cameraScanner = null;
+      }
+      document.getElementById('cameraPlaceholder').classList.remove('d-none');
+      document.getElementById('cameraPreview').classList.add('d-none');
+    }
+
+    function handleLookupKeyup(event) {
+      if (event.key === 'Enter') {
+        doLookup();
+      }
+    }
+
+    async function doLookup() {
+      const input = document.getElementById('lookupInput').value.trim();
+      if (!input) {
+        alert('Veuillez saisir un code EAN ou un titre de film');
+        return;
+      }
+
+      // Reset UI
+      document.getElementById('lookupLoading').classList.remove('d-none');
+      document.getElementById('lookupResults').classList.add('d-none');
+      document.getElementById('lookupNotFound').classList.add('d-none');
+      document.getElementById('lookupError').classList.add('d-none');
+      document.getElementById('btnUseResults').classList.add('d-none');
+
+      try {
+        const result = await lookupAPI.search(input, 'film');
+
+        document.getElementById('lookupLoading').classList.add('d-none');
+
+        if (result.found && result.data) {
+          currentLookupResult = result.data;
+          currentLookupResult.ean = input.match(/^\d{8,13}$/) ? input : null;
+          displayLookupResults(result);
+        } else {
+          document.getElementById('lookupNotFound').classList.remove('d-none');
+        }
+      } catch (error) {
+        document.getElementById('lookupLoading').classList.add('d-none');
+        document.getElementById('lookupError').classList.remove('d-none');
+        document.getElementById('lookupErrorMsg').textContent = error.message;
+      }
+    }
+
+    function displayLookupResults(result) {
+      const data = result.data;
+
+      document.getElementById('lookupSource').textContent = result.source || 'inconnu';
+      document.getElementById('lookupTitre').textContent = data.titre || data.title || 'Sans titre';
+
+      const titreOriginal = data.titre_original || data.original_title;
+      const lookupTitreOriginalEl = document.getElementById('lookupTitreOriginal');
+      if (titreOriginal && titreOriginal !== (data.titre || data.title)) {
+        lookupTitreOriginalEl.textContent = titreOriginal;
+        lookupTitreOriginalEl.classList.remove('d-none');
+      } else {
+        lookupTitreOriginalEl.classList.add('d-none');
+      }
+
+      document.getElementById('lookupRealisateur').textContent = data.realisateur || data.director || '-';
+      document.getElementById('lookupAnnee').textContent = data.annee || data.year || '-';
+      document.getElementById('lookupDuree').textContent = data.duree || data.runtime || '-';
+
+      // Genres
+      let genres = data.genres || [];
+      if (Array.isArray(genres) && genres.length > 0) {
+        document.getElementById('lookupGenres').innerHTML = genres.map(g =>
+          `<span class="badge bg-info me-1">${typeof g === 'string' ? g : g.name}</span>`
+        ).join('');
+      } else {
+        document.getElementById('lookupGenres').innerHTML = '';
+      }
+
+      document.getElementById('lookupSynopsis').textContent = data.synopsis || data.description || 'Pas de synopsis';
+
+      const img = document.getElementById('lookupImage');
+      if (data.image_url || data.poster) {
+        img.src = data.image_url || data.poster;
+        img.classList.remove('d-none');
+      } else {
+        img.src = '';
+        img.classList.add('d-none');
+      }
+
+      document.getElementById('lookupResults').classList.remove('d-none');
+      document.getElementById('btnUseResults').classList.remove('d-none');
+    }
+
+    function useResults() {
+      if (!currentLookupResult) return;
+      useResultsData(currentLookupResult);
+    }
+
+    // Fonction partagee pour utiliser les resultats
+    function useResultsData(data) {
+      if (lookupModalInstance) lookupModalInstance.hide();
+
+      document.getElementById('modalTitle').innerHTML = '<i class="bi bi-film me-2"></i>Nouveau film (depuis API)';
+      document.getElementById('filmForm').reset();
+      document.getElementById('filmId').value = '';
+
+      // Pre-remplir les champs de base
+      document.getElementById('titre').value = data.titre || data.title || '';
+      document.getElementById('titre_original').value = data.titre_original || data.original_title || '';
+      document.getElementById('annee_sortie').value = data.annee || data.year || '';
+      document.getElementById('duree').value = data.duree || data.runtime || '';
+      document.getElementById('synopsis').value = data.synopsis || data.description || '';
+      document.getElementById('image_url').value = data.image_url || data.poster || '';
+      document.getElementById('ean').value = data.ean || '';
+
+      // Bande-annonce si disponible
+      if (data.bande_annonce_url || data.trailer) {
+        document.getElementById('bande_annonce_url').value = data.bande_annonce_url || data.trailer || '';
+      }
+
+      clearTomSelects();
+      document.getElementById('acteursContainer').innerHTML = '';
+      addActeurRow();
+
+      if (!modalInstance) {
+        modalInstance = new bootstrap.Modal(document.getElementById('filmModal'));
+      }
+      modalInstance.show();
+
+      currentLookupResult = null;
+      currentScannerResult = null;
+    }
+
+    // Cleanup quand la modale se ferme
+    document.getElementById('lookupModal').addEventListener('hidden.bs.modal', () => {
+      isLookupModalOpen = false;
+      document.removeEventListener('keypress', handleScannerKeypress);
+      stopCamera();
+      resetScanner();
+    });
+
+    // Gestion des onglets de la modale scanner
+    document.querySelectorAll('#scanModeTabs button').forEach(tab => {
+      tab.addEventListener('shown.bs.tab', (e) => {
+        if (e.target.id === 'tab-camera') {
+          // Ne pas demarrer automatiquement
+        } else {
+          stopCamera();
+        }
+      });
+    });
+
   </script>
 </body>
 </html>

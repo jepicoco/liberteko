@@ -148,6 +148,39 @@ const adherentsAPI = {
     return await apiRequest(`/adherents/${id}`, {
       method: 'DELETE'
     });
+  },
+
+  // ===== Famille =====
+  async getFamille(id) {
+    return await apiRequest(`/adherents/${id}/famille`);
+  },
+
+  async getEnfants(id) {
+    return await apiRequest(`/adherents/${id}/enfants`);
+  },
+
+  async ajouterEnfant(parentId, enfantId, typeLien = 'parent') {
+    return await apiRequest(`/adherents/${parentId}/enfants`, {
+      method: 'POST',
+      body: JSON.stringify({ enfantId, typeLien })
+    });
+  },
+
+  async retirerEnfant(parentId, enfantId) {
+    return await apiRequest(`/adherents/${parentId}/enfants/${enfantId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  async getCoutFamille(id) {
+    return await apiRequest(`/adherents/${id}/famille/cout`);
+  },
+
+  async rechercherDisponibles(query, excludeId = null) {
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (excludeId) params.append('exclude', excludeId);
+    return await apiRequest(`/adherents/recherche/disponibles?${params.toString()}`);
   }
 };
 
@@ -759,7 +792,8 @@ const livresAPI = {
   },
 
   async getById(id) {
-    return await apiRequest(`/livres/${id}`);
+    const result = await apiRequest(`/livres/${id}`);
+    return result.livre || result;
   },
 
   async create(livreData) {
@@ -797,6 +831,10 @@ const livresAPI = {
 
   async getEmplacements() {
     return await apiRequest('/livres/emplacements');
+  },
+
+  async getRolesContributeurs() {
+    return await apiRequest('/livres/roles-contributeurs');
   },
 
   async getStats() {
@@ -968,6 +1006,45 @@ const disquesAPI = {
     return await apiRequest('/disques/referentiels/labels', {
       method: 'POST',
       body: JSON.stringify(data)
+    });
+  }
+};
+
+// ============ API ADMIN (generic helper) ============
+
+/**
+ * Helper generique pour les appels API
+ * Usage: apiAdmin.get('/endpoint'), apiAdmin.post('/endpoint', data), etc.
+ */
+const apiAdmin = {
+  async get(endpoint) {
+    return await apiRequest(endpoint);
+  },
+
+  async post(endpoint, data = {}) {
+    return await apiRequest(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async put(endpoint, data = {}) {
+    return await apiRequest(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async patch(endpoint, data = {}) {
+    return await apiRequest(endpoint, {
+      method: 'PATCH',
+      body: JSON.stringify(data)
+    });
+  },
+
+  async delete(endpoint) {
+    return await apiRequest(endpoint, {
+      method: 'DELETE'
     });
   }
 };

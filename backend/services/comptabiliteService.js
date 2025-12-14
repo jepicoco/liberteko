@@ -1,15 +1,55 @@
-const { CompteurPiece, EcritureComptable, Cotisation, Utilisateur } = require('../models');
+const {
+  CompteurPiece,
+  EcritureComptable,
+  Cotisation,
+  Utilisateur,
+  JournalComptable,
+  CompteComptable,
+  ParametrageComptableOperation,
+  CompteEncaissementModePaiement
+} = require('../models');
 const { sequelize } = require('../models');
 
 /**
  * Service de gestion comptable
- * Gère la génération des écritures comptables et la numérotation des pièces
+ * Gere la generation des ecritures comptables et la numerotation des pieces
+ * Utilise le parametrage configurable en base de donnees
  */
 class ComptabiliteService {
+  // Cache pour les libelles (evite les requetes repetees)
+  static _cacheJournaux = new Map();
+  static _cacheComptes = new Map();
+
   /**
-   * Obtient le libellé d'un journal comptable à partir de son code
+   * Obtient le libelle d'un journal comptable a partir de son code
+   * Utilise le parametrage en base avec fallback sur valeurs par defaut
    * @param {string} code - Code du journal
-   * @returns {string} Libellé du journal
+   * @returns {Promise<string>} Libelle du journal
+   */
+  static async getJournalLibelleAsync(code) {
+    // Verifier le cache
+    if (this._cacheJournaux.has(code)) {
+      return this._cacheJournaux.get(code);
+    }
+
+    try {
+      const journal = await JournalComptable.getByCode(code);
+      if (journal) {
+        this._cacheJournaux.set(code, journal.libelle);
+        return journal.libelle;
+      }
+    } catch (e) {
+      // Fallback si table non disponible
+    }
+
+    // Fallback sur valeurs par defaut
+    return this.getJournalLibelle(code);
+  }
+
+  /**
+   * Obtient le libelle d'un journal comptable (synchrone, fallback)
+   * @param {string} code - Code du journal
+   * @returns {string} Libelle du journal
    */
   static getJournalLibelle(code) {
     const journaux = {
@@ -17,22 +57,48 @@ class ComptabiliteService {
       'AC': 'Journal des achats',
       'BQ': 'Journal de banque',
       'CA': 'Journal de caisse',
-      'OD': 'Journal des opérations diverses',
-      'AN': 'Journal des à-nouveaux'
+      'OD': 'Journal des operations diverses',
+      'AN': 'Journal des a-nouveaux'
     };
 
     return journaux[code] || `Journal ${code}`;
   }
 
   /**
-   * Obtient le libellé d'un compte comptable à partir de son numéro
-   * @param {string} numero - Numéro du compte
-   * @returns {string} Libellé du compte
+   * Obtient le libelle d'un compte comptable a partir de son numero
+   * Utilise le parametrage en base avec fallback sur valeurs par defaut
+   * @param {string} numero - Numero du compte
+   * @returns {Promise<string>} Libelle du compte
+   */
+  static async getCompteLibelleAsync(numero) {
+    // Verifier le cache
+    if (this._cacheComptes.has(numero)) {
+      return this._cacheComptes.get(numero);
+    }
+
+    try {
+      const compte = await CompteComptable.getByNumero(numero);
+      if (compte) {
+        this._cacheComptes.set(numero, compte.libelle);
+        return compte.libelle;
+      }
+    } catch (e) {
+      // Fallback si table non disponible
+    }
+
+    // Fallback sur valeurs par defaut
+    return this.getCompteLibelle(numero);
+  }
+
+  /**
+   * Obtient le libelle d'un compte comptable (synchrone, fallback)
+   * @param {string} numero - Numero du compte
+   * @returns {string} Libelle du compte
    */
   static getCompteLibelle(numero) {
-    // Plan comptable simplifié pour les opérations courantes
+    // Plan comptable simplifie pour les operations courantes
     const comptes = {
-      // Comptes de trésorerie
+      // Comptes de tresorerie
       '512': 'Banque',
       '5121': 'Compte courant',
       '5122': 'Livret A',
@@ -42,23 +108,26 @@ class ComptabiliteService {
       // Comptes de tiers
       '411': 'Clients',
       '4110': 'Clients divers',
-      '467': 'Autres comptes débiteurs ou créditeurs',
+      '467': 'Autres comptes debiteurs ou crediteurs',
 
       // Comptes de produits
       '706': 'Prestations de services',
       '7061': 'Cotisations',
       '7062': 'Locations',
+      '7063': 'Animations et ateliers',
       '758': 'Produits divers de gestion courante',
+      '754': 'Dons',
+      '741': 'Subventions exploitation',
 
       // Comptes de charges
-      '606': 'Achats non stockés de matières et fournitures',
+      '606': 'Achats non stockes de matieres et fournitures',
       '613': 'Locations',
-      '625': 'Déplacements, missions et réceptions',
-      '627': 'Services bancaires et assimilés',
+      '625': 'Deplacements, missions et receptions',
+      '627': 'Services bancaires et assimiles',
 
       // TVA
-      '4457': 'TVA collectée',
-      '4456': 'TVA déductible'
+      '4457': 'TVA collectee',
+      '4456': 'TVA deductible'
     };
 
     // Si le compte exact existe, le retourner
@@ -78,38 +147,79 @@ class ComptabiliteService {
   }
 
   /**
-   * Génère les écritures comptables pour une cotisation
-   * Crée 2 écritures: débit (encaissement) et crédit (produit)
+   * Recupere le parametrage comptable pour un type d'operation
+   * @param {string} typeOperation - Type d'operation (cotisation, location, etc.)
+   * @returns {Promise<Object|null>} Parametrage ou null
+   */
+  static async getParametrage(typeOperation) {
+    try {
+      return await ParametrageComptableOperation.getByType(typeOperation);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * Recupere le compte d'encaissement pour un mode de paiement
+   * @param {string} modePaiement - Code du mode de paiement
+   * @returns {Promise<{numero: string, libelle: string, journal: string|null}>}
+   */
+  static async getCompteEncaissement(modePaiement) {
+    try {
+      return await CompteEncaissementModePaiement.getCompte(modePaiement);
+    } catch (e) {
+      // Fallback
+      const comptesDefaut = {
+        'especes': { numero: '5300', libelle: 'Caisse' },
+        'cheque': { numero: '5121', libelle: 'Banque' },
+        'carte_bancaire': { numero: '5121', libelle: 'Banque' },
+        'virement': { numero: '5121', libelle: 'Banque' },
+        'prelevement': { numero: '5121', libelle: 'Banque' }
+      };
+      return comptesDefaut[modePaiement] || { numero: '5121', libelle: 'Banque', journal: null };
+    }
+  }
+
+  /**
+   * Vide les caches de libelles
+   */
+  static clearCache() {
+    this._cacheJournaux.clear();
+    this._cacheComptes.clear();
+  }
+
+  /**
+   * Genere les ecritures comptables pour une cotisation
+   * Cree 2 ecritures: debit (encaissement) et credit (produit)
+   * Utilise le parametrage configurable en base de donnees
    *
    * @param {Object} cotisation - Instance de la cotisation
-   * @param {Object} options - Options de génération
-   * @param {string} options.journalCode - Code du journal (par défaut: 'VT')
-   * @param {string} options.compteEncaissement - Compte d'encaissement (par défaut: selon mode paiement)
-   * @param {string} options.compteProduit - Compte de produit (par défaut: '7061')
-   * @returns {Promise<Array>} Tableau des écritures créées
+   * @param {Object} options - Options de generation (surcharge du parametrage)
+   * @param {string} options.journalCode - Code du journal (sinon: parametrage ou 'VT')
+   * @param {string} options.compteEncaissement - Compte d'encaissement (sinon: selon mode paiement)
+   * @param {string} options.compteProduit - Compte de produit (sinon: parametrage ou '7061')
+   * @returns {Promise<Array>} Tableau des ecritures creees
    */
   static async genererEcrituresCotisation(cotisation, options = {}) {
-    const {
-      journalCode = 'VT',
-      compteEncaissement = null,
-      compteProduit = '7061'
-    } = options;
+    // Recuperer le parametrage comptable pour les cotisations
+    const parametrage = await this.getParametrage('cotisation');
 
-    // Déterminer le compte d'encaissement selon le mode de paiement
-    let compteEncaissementFinal = compteEncaissement;
+    // Determiner les parametres finaux (options > parametrage > defaut)
+    const journalCode = options.journalCode || (parametrage?.journal_code) || 'VT';
+    const compteProduit = options.compteProduit || (parametrage?.compte_produit) || '7061';
+    const prefixePiece = parametrage?.prefixe_piece || 'COT';
+
+    // Determiner le compte d'encaissement selon le mode de paiement
+    let compteEncaissementFinal = options.compteEncaissement;
+    let compteEncaissementLibelle = null;
+
     if (!compteEncaissementFinal) {
-      const comptesEncaissement = {
-        'especes': '5300',
-        'cheque': '5121',
-        'carte_bancaire': '5121',
-        'virement': '5121',
-        'prelevement': '5121',
-        'autre': '5121'
-      };
-      compteEncaissementFinal = comptesEncaissement[cotisation.mode_paiement] || '5121';
+      const compteConfig = await this.getCompteEncaissement(cotisation.mode_paiement);
+      compteEncaissementFinal = compteConfig.numero;
+      compteEncaissementLibelle = compteConfig.libelle;
     }
 
-    // Déterminer l'exercice comptable (année de la date de paiement)
+    // Determiner l'exercice comptable (annee de la date de paiement)
     const datePaiement = new Date(cotisation.date_paiement);
     const exercice = datePaiement.getFullYear();
 
@@ -120,34 +230,39 @@ class ComptabiliteService {
 
     const ecritures = [];
 
-    // Utiliser une transaction pour garantir l'atomicité
+    // Utiliser une transaction pour garantir l'atomicite
     const result = await sequelize.transaction(async (transaction) => {
-      // Générer le numéro de pièce si absent
+      // Generer le numero de piece si absent
       let numeroPiece = cotisation.numero_piece_comptable;
       if (!numeroPiece) {
-        numeroPiece = await CompteurPiece.genererNumero('COT', exercice, transaction);
+        numeroPiece = await CompteurPiece.genererNumero(prefixePiece, exercice, transaction);
 
-        // Mettre à jour la cotisation avec le numéro de pièce
+        // Mettre a jour la cotisation avec le numero de piece
         cotisation.numero_piece_comptable = numeroPiece;
         cotisation.date_comptabilisation = datePaiement;
         await cotisation.save({ transaction });
       }
 
-      // Générer un numéro d'écriture unique
+      // Generer un numero d'ecriture unique
       const numeroEcriture = `${journalCode}${exercice}-${numeroPiece}`;
 
-      // Libellé de l'opération
-      const libelle = `Cotisation ${utilisateurNom} - ${cotisation.periode_debut} à ${cotisation.periode_fin}`;
+      // Libelle de l'operation
+      const libelle = `Cotisation ${utilisateurNom} - ${cotisation.periode_debut} a ${cotisation.periode_fin}`;
 
-      // 1. Écriture de débit (Encaissement)
+      // Recuperer les libelles (utilise le cache ou la base)
+      const journalLibelle = await this.getJournalLibelleAsync(journalCode);
+      const compteEncLibelle = compteEncaissementLibelle || await this.getCompteLibelleAsync(compteEncaissementFinal);
+      const compteProdLibelle = parametrage?.compte_produit_libelle || await this.getCompteLibelleAsync(compteProduit);
+
+      // 1. Ecriture de debit (Encaissement)
       const ecritureDebit = await EcritureComptable.create({
         journal_code: journalCode,
-        journal_libelle: this.getJournalLibelle(journalCode),
+        journal_libelle: journalLibelle,
         exercice: exercice,
         numero_ecriture: numeroEcriture,
         date_ecriture: datePaiement,
         compte_numero: compteEncaissementFinal,
-        compte_libelle: this.getCompteLibelle(compteEncaissementFinal),
+        compte_libelle: compteEncLibelle,
         compte_auxiliaire: compteAuxiliaire,
         piece_reference: numeroPiece,
         piece_date: datePaiement,
@@ -155,20 +270,21 @@ class ComptabiliteService {
         debit: parseFloat(cotisation.montant_paye),
         credit: 0,
         date_validation: datePaiement,
-        cotisation_id: cotisation.id
+        cotisation_id: cotisation.id,
+        section_analytique_id: parametrage?.section_analytique_id || null
       }, { transaction });
 
       ecritures.push(ecritureDebit);
 
-      // 2. Écriture de crédit (Produit - Cotisation)
+      // 2. Ecriture de credit (Produit - Cotisation)
       const ecritureCredit = await EcritureComptable.create({
         journal_code: journalCode,
-        journal_libelle: this.getJournalLibelle(journalCode),
+        journal_libelle: journalLibelle,
         exercice: exercice,
         numero_ecriture: numeroEcriture,
         date_ecriture: datePaiement,
         compte_numero: compteProduit,
-        compte_libelle: this.getCompteLibelle(compteProduit),
+        compte_libelle: compteProdLibelle,
         compte_auxiliaire: compteAuxiliaire,
         piece_reference: numeroPiece,
         piece_date: datePaiement,
@@ -176,7 +292,8 @@ class ComptabiliteService {
         debit: 0,
         credit: parseFloat(cotisation.montant_paye),
         date_validation: datePaiement,
-        cotisation_id: cotisation.id
+        cotisation_id: cotisation.id,
+        section_analytique_id: parametrage?.section_analytique_id || null
       }, { transaction });
 
       ecritures.push(ecritureCredit);

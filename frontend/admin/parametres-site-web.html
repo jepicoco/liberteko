@@ -47,13 +47,6 @@
     .module-card .form-check-input:checked ~ .form-check-label {
       color: #198754;
     }
-    .color-preview {
-      width: 40px;
-      height: 40px;
-      border-radius: 0.375rem;
-      border: 1px solid #dee2e6;
-      cursor: pointer;
-    }
     .ql-container {
       min-height: 200px;
     }
@@ -159,11 +152,6 @@
             <li class="nav-item" role="presentation">
               <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button">
                 <i class="bi bi-person-lines-fill"></i> Contact
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="personnalisation-tab" data-bs-toggle="tab" data-bs-target="#personnalisation" type="button">
-                <i class="bi bi-palette"></i> Personnalisation
               </button>
             </li>
             <li class="nav-item" role="presentation">
@@ -621,61 +609,6 @@
             </div>
 
             <!-- ======================== -->
-            <!-- Personnalisation Tab    -->
-            <!-- ======================== -->
-            <div class="tab-pane fade" id="personnalisation" role="tabpanel">
-              <div class="card section-card">
-                <div class="card-header">
-                  <i class="bi bi-palette"></i> Couleurs
-                </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="mb-3">
-                        <label for="couleur_primaire" class="form-label">Couleur primaire</label>
-                        <div class="d-flex gap-2">
-                          <input type="color" class="form-control form-control-color color-preview"
-                                 id="couleur_primaire_picker" value="#0d6efd"
-                                 onchange="document.getElementById('couleur_primaire').value = this.value">
-                          <input type="text" class="form-control" id="couleur_primaire" value="#0d6efd"
-                                 pattern="^#[0-9A-Fa-f]{6}$"
-                                 onchange="document.getElementById('couleur_primaire_picker').value = this.value">
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-4">
-                      <div class="mb-3">
-                        <label for="couleur_secondaire" class="form-label">Couleur secondaire</label>
-                        <div class="d-flex gap-2">
-                          <input type="color" class="form-control form-control-color color-preview"
-                                 id="couleur_secondaire_picker" value="#6c757d"
-                                 onchange="document.getElementById('couleur_secondaire').value = this.value">
-                          <input type="text" class="form-control" id="couleur_secondaire" value="#6c757d"
-                                 pattern="^#[0-9A-Fa-f]{6}$"
-                                 onchange="document.getElementById('couleur_secondaire_picker').value = this.value">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="card section-card">
-                <div class="card-header">
-                  <i class="bi bi-code-slash"></i> CSS personnalise
-                </div>
-                <div class="card-body">
-                  <div class="mb-3">
-                    <textarea class="form-control font-monospace" id="css_personnalise" rows="10"
-                              placeholder="/* Ajoutez votre CSS personnalise ici */"></textarea>
-                    <div class="form-text">CSS injecte dans toutes les pages du site public</div>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- ======================== -->
             <!-- Maintenance Tab          -->
             <!-- ======================== -->
             <div class="tab-pane fade" id="maintenance" role="tabpanel">
@@ -953,13 +886,6 @@
       document.getElementById('twitter_url').value = data.twitter_url || '';
       document.getElementById('youtube_url').value = data.youtube_url || '';
 
-      // Personnalisation
-      document.getElementById('couleur_primaire').value = data.couleur_primaire || '#0d6efd';
-      document.getElementById('couleur_primaire_picker').value = data.couleur_primaire || '#0d6efd';
-      document.getElementById('couleur_secondaire').value = data.couleur_secondaire || '#6c757d';
-      document.getElementById('couleur_secondaire_picker').value = data.couleur_secondaire || '#6c757d';
-      document.getElementById('css_personnalise').value = data.css_personnalise || '';
-
       // Maintenance
       document.getElementById('mode_maintenance').checked = data.mode_maintenance || false;
       document.getElementById('message_maintenance').value = data.message_maintenance || '';
@@ -1018,11 +944,6 @@
         instagram_url: document.getElementById('instagram_url').value || null,
         twitter_url: document.getElementById('twitter_url').value || null,
         youtube_url: document.getElementById('youtube_url').value || null,
-
-        // Personnalisation
-        couleur_primaire: document.getElementById('couleur_primaire').value,
-        couleur_secondaire: document.getElementById('couleur_secondaire').value,
-        css_personnalise: document.getElementById('css_personnalise').value || null,
 
         // Maintenance
         mode_maintenance: document.getElementById('mode_maintenance').checked,

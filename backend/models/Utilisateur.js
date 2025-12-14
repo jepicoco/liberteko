@@ -150,6 +150,32 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: false,
       comment: 'Mot de passe deja cree par usager'
+    },
+    // Relations familiales
+    utilisateur_parent_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'utilisateurs',
+        key: 'id'
+      },
+      comment: 'ID du parent/tuteur responsable'
+    },
+    type_lien_famille: {
+      type: DataTypes.ENUM('parent', 'tuteur', 'autre'),
+      allowNull: true,
+      comment: 'Type de lien avec le responsable'
+    },
+    date_lien_famille: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Date de creation du lien familial'
+    },
+    est_compte_enfant: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Indique si c\'est un compte enfant rattache a un parent'
     }
   }, {
     tableName: 'utilisateurs',

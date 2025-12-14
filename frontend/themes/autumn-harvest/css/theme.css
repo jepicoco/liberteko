@@ -1089,3 +1089,53 @@ select.form-control, select.form-input {
 
 .shadow-sm { box-shadow: var(--soft-shadow); }
 .shadow-lg { box-shadow: var(--card-shadow); }
+
+/* ========================================
+   NO ANIMATIONS MODE
+   Styles appliques quand les animations sont desactivees
+   ======================================== */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Cacher les feuilles qui tombent */
+body.no-animations::before {
+  display: none !important;
+}
+
+/* Desactiver le shimmer du titre hero */
+body.no-animations .hero h1 {
+  animation: none !important;
+}
+
+/* Desactiver les decorations animees */
+body.no-animations .autumn-decoration {
+  display: none !important;
+}
+
+/* Respect automatique de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    display: none !important;
+  }
+
+  .hero h1 {
+    animation: none !important;
+  }
+
+  .autumn-decoration {
+    display: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

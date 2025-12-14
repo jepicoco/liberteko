@@ -591,3 +591,66 @@ h1, h2, h3, h4 {
     font-size: 1rem;
   }
 }
+
+/* ========================================
+   NO ANIMATIONS MODE
+   Disables all decorative animations when
+   body has .no-animations class
+======================================== */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0.1s !important;
+}
+
+/* Hide scanlines effect */
+body.no-animations::before {
+  display: none !important;
+}
+
+/* Hide stars animation */
+body.no-animations::after {
+  animation: none !important;
+}
+
+/* Hide floating pixel elements */
+body.no-animations .pixel-particle,
+body.no-animations .floating-pixel,
+body.no-animations .pixel-star {
+  display: none !important;
+}
+
+/* Disable glitch effects */
+body.no-animations .glitch-effect,
+body.no-animations .pixel-glitch {
+  animation: none !important;
+}
+
+body.no-animations .pixel-glow {
+  animation: none !important;
+  box-shadow: var(--pixel-shadow-colored);
+}
+
+/* Prefers reduced motion - automatic */
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    display: none !important;
+  }
+
+  .pixel-particle,
+  .floating-pixel,
+  .pixel-star {
+    display: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

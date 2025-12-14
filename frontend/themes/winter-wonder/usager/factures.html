@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-name" content="winter-wonder">
+  <title>Mes factures - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    .page-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.75rem; color: var(--snow-white); margin-bottom: 0.5rem; }
+    .page-header p { color: var(--text-secondary); }
+    .user-nav { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .user-nav a { padding: 0.5rem 1rem; border-radius: var(--border-radius-sm); color: var(--text-secondary); text-decoration: none; transition: all 0.3s ease; background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: var(--border-frost); }
+    .user-nav a:hover, .user-nav a.active { color: var(--frost-medium); background: rgba(125, 211, 252, 0.15); }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: var(--border-frost); border-radius: var(--border-radius); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; }
+    .stat-icon.primary { background: rgba(125, 211, 252, 0.2); color: var(--frost-medium); }
+    .stat-icon.success { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+    .stat-icon.warning { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .stat-icon.danger { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+    .stat-value { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); }
+    .stat-label { font-size: 0.8rem; color: var(--text-secondary); }
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: var(--border-frost); padding-bottom: 0.5rem; }
+    .tab-btn { background: transparent; border: none; color: var(--text-secondary); padding: 0.75rem 1.25rem; font-size: 0.95rem; font-weight: 500; cursor: pointer; border-radius: var(--border-radius-sm) var(--border-radius-sm) 0 0; transition: all 0.3s ease; position: relative; }
+    .tab-btn:hover { color: var(--text-primary); background: var(--bg-glass); }
+    .tab-btn.active { color: var(--frost-medium); background: var(--bg-glass); }
+    .tab-btn.active::after { content: ''; position: absolute; bottom: -0.5rem; left: 0; right: 0; height: 3px; background: var(--frost-medium); border-radius: 3px; }
+    .factures-list { display: flex; flex-direction: column; gap: 1rem; }
+    .facture-card { background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: var(--border-frost); border-radius: var(--border-radius); padding: 1.25rem; cursor: pointer; transition: all 0.3s ease; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .facture-card:hover { transform: translateY(-2px); box-shadow: var(--glow-frost); }
+    .facture-card.avoir { border-left: 3px solid #a78bfa; }
+    .facture-card.impayee { border-left: 3px solid #fbbf24; }
+    .facture-info h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .facture-info .date { font-size: 0.85rem; color: var(--text-secondary); }
+    .status-badge { padding: 0.35rem 0.75rem; border-radius: 100px; font-size: 0.75rem; font-weight: 500; }
+    .status-emise { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+    .status-partiellement_reglee { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .status-reglee { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+    .status-annulee { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+    .status-avoir { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+    .facture-montant { text-align: right; }
+    .facture-montant .total { font-size: 1.25rem; font-weight: 600; color: var(--text-primary); }
+    .facture-montant .total.avoir { color: #f87171; }
+    .facture-montant .reste { font-size: 0.8rem; color: #fbbf24; }
+    .reglement-item { background: var(--bg-glass); backdrop-filter: var(--glass-blur); border: var(--border-frost); border-left: 3px solid #4ade80; border-radius: var(--border-radius); padding: 1rem; margin-bottom: 1rem; }
+    .reglement-header { display: flex; justify-content: space-between; align-items: center; }
+    .reglement-montant { font-size: 1.1rem; font-weight: 600; color: #4ade80; }
+    .empty-state { text-align: center; padding: 3rem; background: var(--bg-glass); border-radius: var(--border-radius); border: var(--border-frost); }
+    .empty-state i { font-size: 3rem; color: var(--frost-medium); margin-bottom: 1rem; opacity: 0.5; }
+    .empty-state h3 { color: var(--text-primary); margin-bottom: 0.5rem; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: var(--midnight); border: var(--border-frost); border-radius: var(--border-radius-lg); max-width: 550px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal-header { padding: 1.25rem; border-bottom: var(--border-frost); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h3 { color: var(--frost-medium); margin: 0; }
+    .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-secondary); }
+    .modal-body { padding: 1.25rem; }
+    .modal-footer { padding: 1.25rem; border-top: var(--border-frost); display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .ligne-facture { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid rgba(125, 211, 252, 0.1); }
+    .ligne-facture:last-child { border-bottom: none; }
+    .totaux-box { background: rgba(125, 211, 252, 0.1); border-radius: var(--border-radius); padding: 1rem; margin-top: 1rem; }
+    @media (max-width: 768px) { .facture-card { flex-direction: column; text-align: center; } .facture-montant { text-align: center; } }
+  </style>
+</head>
+<body>
+  <div class="snowflakes" aria-hidden="true"><div class="snowflake">❄</div><div class="snowflake">❅</div><div class="snowflake">❆</div><div class="snowflake">❄</div><div class="snowflake">❅</div></div>
+
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo"><i class="bi bi-snow logo-icon"></i><span class="logo-text" id="header-title">ASSOTHEQUE</span></a>
+      <nav><ul class="nav-menu"><li><a href="/">Accueil</a></li><li><a href="/catalogue.html">Catalogue</a></li><li><a href="/infos.html">Infos</a></li></ul></nav>
+      <a href="/usager/dashboard.html" class="btn btn-primary"><i class="bi bi-person"></i> Mon espace</a>
+    </div>
+  </header>
+
+  <div class="page-container">
+    <div class="page-header">
+      <h1><i class="bi bi-receipt"></i> Mes factures</h1>
+      <p>Consultez vos factures et reglements</p>
+    </div>
+
+    <nav class="user-nav">
+      <a href="/usager/dashboard.html"><i class="bi bi-house"></i> Accueil</a>
+      <a href="/usager/emprunts.html"><i class="bi bi-bookmark"></i> Emprunts</a>
+      <a href="/usager/factures.html" class="active"><i class="bi bi-receipt"></i> Factures</a>
+      <a href="/usager/profil.html"><i class="bi bi-person"></i> Profil</a>
+      <a href="#" onclick="logout()"><i class="bi bi-box-arrow-right"></i> Deconnexion</a>
+    </nav>
+
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-icon primary"><i class="bi bi-file-text"></i></div><div><div class="stat-value" id="nb-factures">-</div><div class="stat-label">Factures</div></div></div>
+      <div class="stat-card"><div class="stat-icon success"><i class="bi bi-check-circle"></i></div><div><div class="stat-value" id="montant-regle">-</div><div class="stat-label">Regle</div></div></div>
+      <div class="stat-card"><div class="stat-icon warning"><i class="bi bi-clock"></i></div><div><div class="stat-value" id="montant-impaye">-</div><div class="stat-label">Impaye</div></div></div>
+      <div class="stat-card"><div class="stat-icon danger"><i class="bi bi-arrow-return-left"></i></div><div><div class="stat-value" id="montant-avoirs">-</div><div class="stat-label">Avoirs</div></div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="factures" onclick="switchTab('factures')"><i class="bi bi-file-text"></i> Factures</button>
+      <button class="tab-btn" data-tab="reglements" onclick="switchTab('reglements')"><i class="bi bi-credit-card"></i> Reglements</button>
+    </div>
+
+    <div id="tab-factures"><div class="factures-list" id="factures-list"><div class="empty-state"><i class="bi bi-arrow-repeat"></i><h3>Chargement...</h3></div></div></div>
+    <div id="tab-reglements" style="display:none;"><div id="reglements-list"><div class="empty-state"><i class="bi bi-arrow-repeat"></i><h3>Chargement...</h3></div></div></div>
+  </div>
+
+  <div class="modal-overlay" id="modal-facture">
+    <div class="modal">
+      <div class="modal-header"><h3 id="modal-title">Facture</h3><button class="modal-close" onclick="closeModal()">&times;</button></div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">Fermer</button>
+        <button class="btn btn-primary" id="btn-download"><i class="bi bi-download"></i> PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer"><div class="footer-content"><p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p></div></footer>
+
+  <script>
+    let token = null, factureSelectionnee = null;
+
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+      token = localStorage.getItem('usager_token');
+      if (!token) { window.location.href = '/usager/login.html'; return; }
+      try {
+        const resp = await fetch('/api/public/config');
+        const config = await resp.json();
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+      } catch (e) {}
+      await loadResume(); await loadFactures();
+    }
+
+    async function loadResume() {
+      try {
+        const resp = await fetch('/api/usager/factures/resume', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) return;
+        const r = await resp.json();
+        document.getElementById('nb-factures').textContent = r.total_factures;
+        document.getElementById('montant-regle').textContent = formatMontant(r.montant_regle);
+        document.getElementById('montant-impaye').textContent = formatMontant(r.montant_impaye);
+        document.getElementById('montant-avoirs').textContent = formatMontant(r.montant_total_avoirs);
+      } catch (e) {}
+    }
+
+    async function loadFactures() {
+      try {
+        const resp = await fetch('/api/usager/factures', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) { if (resp.status === 401) logout(); return; }
+        const data = await resp.json();
+        if (data.factures.length === 0) {
+          document.getElementById('factures-list').innerHTML = '<div class="empty-state"><i class="bi bi-file-earmark-x"></i><h3>Aucune facture</h3></div>';
+          return;
+        }
+        document.getElementById('factures-list').innerHTML = data.factures.map(f => {
+          const isAvoir = f.type_document === 'avoir';
+          return `<div class="facture-card ${isAvoir ? 'avoir' : (f.reste_a_payer > 0.01 ? 'impayee' : '')}" onclick="voirFacture(${f.id})">
+            <div class="facture-info"><h3><i class="bi bi-${isAvoir ? 'arrow-return-left' : 'file-text'}"></i> ${f.numero}</h3><div class="date">${formatDate(f.date_emission)}</div></div>
+            <span class="status-badge status-${isAvoir ? 'avoir' : f.statut}">${isAvoir ? 'Avoir' : getStatutLabel(f.statut)}</span>
+            <div class="facture-montant"><div class="total ${isAvoir ? 'avoir' : ''}">${isAvoir ? '-' : ''}${formatMontant(f.montant_ttc)}</div>${!isAvoir && f.reste_a_payer > 0.01 ? `<div class="reste">Reste: ${formatMontant(f.reste_a_payer)}</div>` : ''}</div>
+          </div>`;
+        }).join('');
+      } catch (e) { document.getElementById('factures-list').innerHTML = '<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><h3>Erreur</h3></div>'; }
+    }
+
+    async function loadReglements() {
+      try {
+        const resp = await fetch('/api/usager/factures/tous/reglements', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data.reglements.length === 0) {
+          document.getElementById('reglements-list').innerHTML = '<div class="empty-state"><i class="bi bi-credit-card"></i><h3>Aucun reglement</h3></div>';
+          return;
+        }
+        document.getElementById('reglements-list').innerHTML = data.reglements.map(r => `
+          <div class="reglement-item">
+            <div class="reglement-header"><span>${formatDate(r.date_reglement)} - ${formatModePaiement(r.mode_paiement)}</span><span class="reglement-montant">+${formatMontant(r.montant)}</span></div>
+            <small style="color: var(--text-secondary);"><a href="#" onclick="voirFacture(${r.facture_id}); return false;" style="color: var(--frost-medium);">${r.facture_numero}</a></small>
+          </div>
+        `).join('');
+      } catch (e) {}
+    }
+
+    async function voirFacture(id) {
+      try {
+        const resp = await fetch(`/api/usager/factures/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) throw new Error();
+        const f = await resp.json();
+        factureSelectionnee = f;
+        const isAvoir = f.type_document === 'avoir';
+        document.getElementById('modal-title').textContent = `${isAvoir ? 'Avoir' : 'Facture'} ${f.numero}`;
+        let html = `<p><strong>Date:</strong> ${formatDate(f.date_emission)}</p><p><strong>Statut:</strong> <span class="status-badge status-${f.statut}">${getStatutLabel(f.statut)}</span></p><hr style="border-color: rgba(125, 211, 252, 0.2);"><h4 style="color: var(--frost-medium);">Lignes</h4>`;
+        f.lignes.forEach(l => { html += `<div class="ligne-facture"><span>${l.description}</span><strong>${formatMontant(l.montant_ttc)}</strong></div>`; });
+        html += `<div class="totaux-box"><div class="ligne-facture"><span>Total HT</span><span>${formatMontant(f.montant_ht)}</span></div><div class="ligne-facture"><span>TVA</span><span>${formatMontant(f.montant_tva)}</span></div><div class="ligne-facture"><span><strong>Total TTC</strong></span><strong>${formatMontant(f.montant_ttc)}</strong></div></div>`;
+        if (f.reglements?.length) { html += '<hr style="border-color: rgba(125, 211, 252, 0.2);"><h4 style="color: #4ade80;">Reglements</h4>'; f.reglements.forEach(r => { html += `<div class="ligne-facture"><span>${formatDate(r.date_reglement)} - ${formatModePaiement(r.mode_paiement)}</span><strong style="color:#4ade80">+${formatMontant(r.montant)}</strong></div>`; }); }
+        document.getElementById('modal-body').innerHTML = html;
+        document.getElementById('modal-facture').classList.add('show');
+      } catch (e) { alert('Erreur'); }
+    }
+
+    function closeModal() { document.getElementById('modal-facture').classList.remove('show'); }
+
+    document.getElementById('btn-download').addEventListener('click', async () => {
+      if (!factureSelectionnee) return;
+      try {
+        const resp = await fetch(`/api/usager/factures/${factureSelectionnee.id}/pdf`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!resp.ok) throw new Error();
+        const blob = await resp.blob();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `${factureSelectionnee.type_document === 'avoir' ? 'Avoir' : 'Facture'}_${factureSelectionnee.numero.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        a.click(); URL.revokeObjectURL(a.href);
+      } catch (e) { alert('Erreur'); }
+    });
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+      document.getElementById('tab-factures').style.display = tab === 'factures' ? 'block' : 'none';
+      document.getElementById('tab-reglements').style.display = tab === 'reglements' ? 'block' : 'none';
+      if (tab === 'reglements') loadReglements();
+    }
+
+    function formatMontant(m) { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(m || 0); }
+    function formatDate(d) { return d ? new Date(d).toLocaleDateString('fr-FR') : '-'; }
+    function getStatutLabel(s) { return { emise: 'Emise', partiellement_reglee: 'Partiel', reglee: 'Reglee', annulee: 'Annulee' }[s] || s; }
+    function formatModePaiement(m) { return { especes: 'Especes', cheque: 'Cheque', carte_bancaire: 'CB', virement: 'Virement' }[m] || m; }
+    function logout() { localStorage.removeItem('usager_token'); window.location.href = '/usager/login.html'; }
+
+    init();
+  </script>
+</body>
+</html>

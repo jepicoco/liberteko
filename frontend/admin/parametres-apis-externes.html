@@ -147,30 +147,39 @@
               </div>
             </div>
 
-            <hr>
-            <h6 class="mb-3"><i class="bi bi-key"></i> Authentification</h6>
-
-            <div class="row">
-              <div class="col-md-12">
-                <div class="mb-3">
-                  <label for="config_api_url" class="form-label">URL de l'API</label>
-                  <input type="url" class="form-control" id="config_api_url" placeholder="https://api.example.com/v1">
-                </div>
-              </div>
+            <!-- Message informatif pour APIs gratuites sans authentification -->
+            <div class="alert alert-success d-none" id="alert_free_api">
+              <i class="bi bi-check-circle"></i>
+              <strong>API gratuite et ouverte</strong> - Aucune cle API requise.
+              <span id="alert_free_api_details"></span>
             </div>
 
-            <div class="row">
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="config_api_key" class="form-label">Cle API</label>
-                  <input type="password" class="form-control" id="config_api_key" placeholder="••••••••">
-                  <small class="text-muted">Laissez vide pour conserver la cle actuelle</small>
+            <div id="section_auth">
+              <hr>
+              <h6 class="mb-3"><i class="bi bi-key"></i> Authentification</h6>
+
+              <div class="row">
+                <div class="col-md-12">
+                  <div class="mb-3">
+                    <label for="config_api_url" class="form-label">URL de l'API</label>
+                    <input type="url" class="form-control" id="config_api_url" placeholder="https://api.example.com/v1">
+                  </div>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="mb-3">
-                  <label for="config_api_secret" class="form-label">Secret API (optionnel)</label>
-                  <input type="password" class="form-control" id="config_api_secret" placeholder="••••••••">
+
+              <div class="row" id="row_api_keys">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="config_api_key" class="form-label">Cle API</label>
+                    <input type="password" class="form-control" id="config_api_key" placeholder="••••••••">
+                    <small class="text-muted">Laissez vide pour conserver la cle actuelle</small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="config_api_secret" class="form-label">Secret API (optionnel)</label>
+                    <input type="password" class="form-control" id="config_api_secret" placeholder="••••••••">
+                  </div>
                 </div>
               </div>
             </div>
@@ -276,6 +285,18 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="toastTest" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <i class="bi me-2" id="toastIcon"></i>
+        <strong class="me-auto" id="toastTitle">Test API</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+      </div>
+      <div class="toast-body" id="toastBody"></div>
     </div>
   </div>
 
@@ -455,9 +476,48 @@
       document.getElementById('configs-container').innerHTML = html;
     }
 
+    // Informations detaillees sur les providers gratuits sans cle API
+    const freeApiInfo = {
+      bnf: {
+        message: 'L\'API SRU de la Bibliotheque Nationale de France est entierement gratuite et ne necessite aucune inscription.',
+        details: `
+          <div class="mt-2 small">
+            <strong>Index de recherche disponibles :</strong>
+            <ul class="mb-1">
+              <li><code>bib.isbn</code> - Recherche par ISBN</li>
+              <li><code>bib.title</code> - Recherche par titre</li>
+              <li><code>bib.author</code> - Recherche par auteur</li>
+              <li><code>bib.publisher</code> - Recherche par editeur</li>
+              <li><code>bib.publicationdate</code> - Date de publication (YYYY)</li>
+              <li><code>bib.anywhere</code> - Tous les champs</li>
+            </ul>
+            <a href="https://api.bnf.fr/fr/node/33" target="_blank" class="text-decoration-none">
+              <i class="bi bi-box-arrow-up-right"></i> Documentation officielle
+            </a>
+          </div>
+        `
+      },
+      openlibrary: {
+        message: 'Open Library est un projet ouvert de l\'Internet Archive. Aucune cle API requise.',
+        details: ''
+      },
+      musicbrainz: {
+        message: 'MusicBrainz est une base de donnees musicale ouverte. Limite: 1 requete/seconde sans cle API.',
+        details: ''
+      },
+      bgg: {
+        message: 'L\'API BoardGameGeek est gratuite et ouverte. Pas de limite officielle mais soyez raisonnable.',
+        details: ''
+      }
+    };
+
     function onProviderChange() {
       const provider = document.getElementById('config_provider').value;
       const providerInfo = providers.find(p => p.code === provider);
+
+      // Reset
+      document.getElementById('alert_free_api').classList.add('d-none');
+      document.getElementById('row_api_keys').classList.remove('d-none');
 
       if (providerInfo) {
         document.getElementById('config_api_url').value = providerInfo.url_defaut || '';
@@ -467,6 +527,14 @@
         ['jeu', 'livre', 'film', 'disque'].forEach(c => {
           document.getElementById(`coll_${c}`).checked = (providerInfo.collections || []).includes(c);
         });
+
+        // Afficher message pour APIs gratuites sans cle
+        if (freeApiInfo[provider]) {
+          const info = freeApiInfo[provider];
+          document.getElementById('alert_free_api').classList.remove('d-none');
+          document.getElementById('alert_free_api_details').innerHTML = info.message + (info.details || '');
+          document.getElementById('row_api_keys').classList.add('d-none');
+        }
       }
     }
 
@@ -476,12 +544,16 @@
       document.getElementById('modalConfigTitle').textContent = 'Nouvelle configuration API';
       document.getElementById('config_cache_active').checked = true;
       document.getElementById('config_cache_duree').value = 90;
+      // Reset l'affichage
+      document.getElementById('alert_free_api').classList.add('d-none');
+      document.getElementById('row_api_keys').classList.remove('d-none');
       modalConfig.show();
     }
 
     async function openEditModal(id) {
       try {
-        const config = await apiRequest(`/parametres/apis-externes/${id}`);
+        const response = await apiRequest(`/parametres/apis-externes/${id}`);
+        const config = response.configuration || response;
 
         document.getElementById('config_id').value = config.id;
         document.getElementById('config_libelle').value = config.libelle;
@@ -505,6 +577,16 @@
         ['jeu', 'livre', 'film', 'disque'].forEach(c => {
           document.getElementById(`coll_${c}`).checked = collections.includes(c);
         });
+
+        // Afficher/masquer les champs selon le provider
+        document.getElementById('alert_free_api').classList.add('d-none');
+        document.getElementById('row_api_keys').classList.remove('d-none');
+        if (freeApiInfo[config.provider]) {
+          const info = freeApiInfo[config.provider];
+          document.getElementById('alert_free_api').classList.remove('d-none');
+          document.getElementById('alert_free_api_details').innerHTML = info.message + (info.details || '');
+          document.getElementById('row_api_keys').classList.add('d-none');
+        }
 
         document.getElementById('modalConfigTitle').textContent = `Modifier: ${config.libelle}`;
         modalConfig.show();
@@ -585,30 +667,48 @@
       }
     }
 
+    function showToast(success, title, message) {
+      const toast = document.getElementById('toastTest');
+      const toastIcon = document.getElementById('toastIcon');
+      const toastTitle = document.getElementById('toastTitle');
+      const toastBody = document.getElementById('toastBody');
+
+      toast.classList.remove('text-bg-success', 'text-bg-danger');
+      toast.classList.add(success ? 'text-bg-success' : 'text-bg-danger');
+      toastIcon.className = `bi me-2 ${success ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'}`;
+      toastTitle.textContent = title;
+      toastBody.innerHTML = message;
+
+      const bsToast = new bootstrap.Toast(toast, { delay: 5000 });
+      bsToast.show();
+    }
+
     async function testConnection() {
       const id = document.getElementById('config_id').value;
       if (!id) {
-        alert('Enregistrez d\'abord la configuration avant de tester');
+        showToast(false, 'Test impossible', 'Enregistrez d\'abord la configuration avant de tester.');
         return;
       }
 
+      const btn = document.querySelector('[onclick="testConnection()"]');
+      const originalContent = btn.innerHTML;
+
       try {
-        const btn = event.target;
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Test...';
 
         const result = await apiRequest(`/parametres/apis-externes/${id}/test`, { method: 'POST' });
 
         if (result.success) {
-          alert('Connexion reussie !\n\n' + (result.message || ''));
+          showToast(true, 'Connexion reussie', result.message || 'L\'API repond correctement.');
         } else {
-          alert('Echec de connexion:\n' + (result.error || 'Erreur inconnue'));
+          showToast(false, 'Echec de connexion', result.error || result.message || 'Erreur inconnue');
         }
       } catch (error) {
-        alert('Erreur de test: ' + error.message);
+        showToast(false, 'Erreur de test', error.message);
       } finally {
-        event.target.disabled = false;
-        event.target.innerHTML = '<i class="bi bi-wifi"></i> Tester';
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
       }
     }
 

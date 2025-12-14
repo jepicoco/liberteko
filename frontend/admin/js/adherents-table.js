@@ -73,6 +73,7 @@ function renderAdherents(list) {
                 <td>
                   <strong>${adherent.prenom} ${adherent.nom}</strong>
                   ${adherent.adhesion_association ? '<i class="bi bi-building-fill text-success ms-1" title="Membre association"></i>' : ''}
+                  ${adherent.est_compte_enfant ? '<i class="bi bi-person-heart text-info ms-1" title="Compte enfant rattache a un parent"></i>' : ''}
                 </td>
                 <td><small>${adherent.email}</small></td>
                 <td><small>${adherent.telephone || '-'}</small></td>

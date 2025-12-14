@@ -2,16 +2,18 @@ const {
   Livre, Emprunt, Utilisateur,
   GenreLitteraire, FormatLivre, CollectionLivre, EmplacementLivre,
   Auteur, Editeur, Theme, Langue,
-  LivreAuteur, LivreEditeur, LivreGenre, LivreTheme, LivreLangue
+  LivreAuteur, LivreEditeur, LivreGenre, LivreTheme, LivreLangue,
+  RoleContributeurLivre
 } = require('../models');
 const { Op } = require('sequelize');
 
 // Configuration des includes pour les associations
+// Note: auteursRef inclut maintenant le champ 'role' de la table de jonction
 const INCLUDE_REFS = [
   { model: GenreLitteraire, as: 'genresRef', through: { attributes: [] } },
   { model: Theme, as: 'themesRef', through: { attributes: [] } },
   { model: Langue, as: 'languesRef', through: { attributes: [] } },
-  { model: Auteur, as: 'auteursRef', through: { attributes: [] } },
+  { model: Auteur, as: 'auteursRef', through: { attributes: ['role'] } },
   { model: Editeur, as: 'editeursRef', through: { attributes: [] } },
   { model: FormatLivre, as: 'formatRef' },
   { model: CollectionLivre, as: 'collectionRef' },
@@ -142,15 +144,19 @@ const getLivreById = async (req, res) => {
 
 /**
  * Synchronise les relations many-to-many pour un livre
+ * Gère aussi la création de nouveaux auteurs/éditeurs si {nouveau: 'nom'} est passé
  */
 async function syncLivreRelations(livre, data) {
   // Genres littéraires
   if (data.genre_ids !== undefined) {
     await LivreGenre.destroy({ where: { livre_id: livre.id } });
     if (data.genre_ids && data.genre_ids.length > 0) {
-      await LivreGenre.bulkCreate(
-        data.genre_ids.map(id => ({ livre_id: livre.id, genre_id: id }))
-      );
+      const validIds = data.genre_ids.filter(id => typeof id === 'number' && !isNaN(id));
+      if (validIds.length > 0) {
+        await LivreGenre.bulkCreate(
+          validIds.map(id => ({ livre_id: livre.id, genre_id: id }))
+        );
+      }
     }
   }
 
@@ -158,9 +164,12 @@ async function syncLivreRelations(livre, data) {
   if (data.theme_ids !== undefined) {
     await LivreTheme.destroy({ where: { livre_id: livre.id } });
     if (data.theme_ids && data.theme_ids.length > 0) {
-      await LivreTheme.bulkCreate(
-        data.theme_ids.map(id => ({ livre_id: livre.id, theme_id: id }))
-      );
+      const validIds = data.theme_ids.filter(id => typeof id === 'number' && !isNaN(id));
+      if (validIds.length > 0) {
+        await LivreTheme.bulkCreate(
+          validIds.map(id => ({ livre_id: livre.id, theme_id: id }))
+        );
+      }
     }
   }
 
@@ -168,29 +177,88 @@ async function syncLivreRelations(livre, data) {
   if (data.langue_ids !== undefined) {
     await LivreLangue.destroy({ where: { livre_id: livre.id } });
     if (data.langue_ids && data.langue_ids.length > 0) {
-      await LivreLangue.bulkCreate(
-        data.langue_ids.map(id => ({ livre_id: livre.id, langue_id: id }))
-      );
+      const validIds = data.langue_ids.filter(id => typeof id === 'number' && !isNaN(id));
+      if (validIds.length > 0) {
+        await LivreLangue.bulkCreate(
+          validIds.map(id => ({ livre_id: livre.id, langue_id: id }))
+        );
+      }
     }
   }
 
-  // Auteurs
-  if (data.auteur_ids !== undefined) {
+  // Contributeurs avec rôles (nouveau format)
+  // Format attendu: [{auteur_id: 1, role: 'auteur'}, {nouveau: 'Nom', role: 'scenariste'}]
+  if (data.contributeurs !== undefined) {
+    await LivreAuteur.destroy({ where: { livre_id: livre.id } });
+    if (data.contributeurs && data.contributeurs.length > 0) {
+      const records = [];
+      for (const item of data.contributeurs) {
+        let auteurId = item.auteur_id;
+        const role = item.role || 'auteur';
+
+        if (item.nouveau) {
+          // Créer un nouvel auteur
+          const [auteur] = await Auteur.findOrCreate({
+            where: { nom: item.nouveau },
+            defaults: { nom: item.nouveau }
+          });
+          auteurId = auteur.id;
+        }
+
+        if (auteurId) {
+          records.push({ livre_id: livre.id, auteur_id: auteurId, role });
+        }
+      }
+      if (records.length > 0) {
+        await LivreAuteur.bulkCreate(records, { ignoreDuplicates: true });
+      }
+    }
+  }
+  // Rétrocompatibilité: ancien format auteur_ids (sans rôle, défaut = 'auteur')
+  else if (data.auteur_ids !== undefined) {
     await LivreAuteur.destroy({ where: { livre_id: livre.id } });
     if (data.auteur_ids && data.auteur_ids.length > 0) {
-      await LivreAuteur.bulkCreate(
-        data.auteur_ids.map(id => ({ livre_id: livre.id, auteur_id: id }))
-      );
+      const records = [];
+      for (const item of data.auteur_ids) {
+        if (typeof item === 'number') {
+          records.push({ livre_id: livre.id, auteur_id: item, role: 'auteur' });
+        } else if (item && item.nouveau) {
+          // Créer un nouvel auteur
+          const [auteur] = await Auteur.findOrCreate({
+            where: { nom: item.nouveau },
+            defaults: { nom: item.nouveau }
+          });
+          records.push({ livre_id: livre.id, auteur_id: auteur.id, role: 'auteur' });
+        }
+      }
+      if (records.length > 0) {
+        await LivreAuteur.bulkCreate(records, { ignoreDuplicates: true });
+      }
     }
   }
 
-  // Éditeurs
+  // Éditeurs (peut contenir des IDs ou {nouveau: 'nom'})
   if (data.editeur_ids !== undefined) {
     await LivreEditeur.destroy({ where: { livre_id: livre.id } });
     if (data.editeur_ids && data.editeur_ids.length > 0) {
-      await LivreEditeur.bulkCreate(
-        data.editeur_ids.map(id => ({ livre_id: livre.id, editeur_id: id }))
-      );
+      const editeurIds = [];
+      for (const item of data.editeur_ids) {
+        if (typeof item === 'number') {
+          editeurIds.push(item);
+        } else if (item && item.nouveau) {
+          // Créer un nouvel éditeur
+          const [editeur] = await Editeur.findOrCreate({
+            where: { nom: item.nouveau },
+            defaults: { nom: item.nouveau }
+          });
+          editeurIds.push(editeur.id);
+        }
+      }
+      if (editeurIds.length > 0) {
+        await LivreEditeur.bulkCreate(
+          editeurIds.map(id => ({ livre_id: livre.id, editeur_id: id }))
+        );
+      }
     }
   }
 }
@@ -206,9 +274,12 @@ const createLivre = async (req, res) => {
       annee_publication, nb_pages, resume, notes,
       format_id, collection_id, emplacement_id,
       prix_indicatif, prix_achat, date_acquisition,
-      etat, image_url,
-      // Relations normalisées (tableaux d'IDs)
-      genre_ids, theme_ids, langue_ids, auteur_ids, editeur_ids
+      etat, image_url, code_ean, valeur_achat,
+      // Relations normalisées (tableaux d'IDs) - accepte les deux formats
+      genre_ids, theme_ids, langue_ids, auteur_ids, editeur_ids,
+      genres, themes, langues, auteurs, editeurs,
+      // Nouveau format contributeurs avec rôles
+      contributeurs
     } = req.body;
 
     // Validate required fields
@@ -219,7 +290,8 @@ const createLivre = async (req, res) => {
       });
     }
 
-    const livre = await Livre.create({
+    // Construire l'objet de création (ne pas inclure code_barre si vide pour laisser le hook le générer)
+    const createData = {
       titre,
       sous_titre,
       isbn,
@@ -232,16 +304,28 @@ const createLivre = async (req, res) => {
       collection_id,
       emplacement_id,
       prix_indicatif,
-      prix_achat,
+      prix_achat: prix_achat || valeur_achat,
       date_acquisition,
       etat,
       statut: 'disponible',
       image_url
-    });
+    };
 
-    // Synchroniser les relations many-to-many
+    // Ajouter code_barre seulement si code_ean est fourni
+    if (code_ean) {
+      createData.code_barre = code_ean;
+    }
+
+    const livre = await Livre.create(createData);
+
+    // Synchroniser les relations many-to-many (accepte les deux formats de noms)
     await syncLivreRelations(livre, {
-      genre_ids, theme_ids, langue_ids, auteur_ids, editeur_ids
+      genre_ids: genre_ids || genres,
+      theme_ids: theme_ids || themes,
+      langue_ids: langue_ids || langues,
+      contributeurs,
+      auteur_ids: auteur_ids || auteurs,
+      editeur_ids: editeur_ids || editeurs
     });
 
     // Recharger avec les associations
@@ -287,9 +371,12 @@ const updateLivre = async (req, res) => {
       annee_publication, nb_pages, resume, notes,
       format_id, collection_id, emplacement_id,
       prix_indicatif, prix_achat, date_acquisition,
-      etat, statut, image_url,
-      // Relations normalisées
-      genre_ids, theme_ids, langue_ids, auteur_ids, editeur_ids
+      etat, statut, image_url, code_ean, valeur_achat,
+      // Relations normalisées - accepte les deux formats
+      genre_ids, theme_ids, langue_ids, auteur_ids, editeur_ids,
+      genres, themes, langues, auteurs, editeurs,
+      // Nouveau format contributeurs avec rôles
+      contributeurs
     } = req.body;
 
     const livre = await Livre.findByPk(id);
@@ -319,12 +406,20 @@ const updateLivre = async (req, res) => {
     if (etat !== undefined) livre.etat = etat;
     if (statut) livre.statut = statut;
     if (image_url !== undefined) livre.image_url = image_url;
+    // Ne mettre à jour code_barre que si code_ean est fourni et non vide
+    if (code_ean) livre.code_barre = code_ean;
+    if (valeur_achat !== undefined) livre.prix_achat = valeur_achat;
 
     await livre.save();
 
-    // Synchroniser les relations many-to-many
+    // Synchroniser les relations many-to-many (accepte les deux formats)
     await syncLivreRelations(livre, {
-      genre_ids, theme_ids, langue_ids, auteur_ids, editeur_ids
+      genre_ids: genre_ids || genres,
+      theme_ids: theme_ids || themes,
+      langue_ids: langue_ids || langues,
+      contributeurs,
+      auteur_ids: auteur_ids || auteurs,
+      editeur_ids: editeur_ids || editeurs
     });
 
     // Recharger avec les associations
@@ -515,6 +610,36 @@ const getStats = async (req, res) => {
   }
 };
 
+/**
+ * Get roles contributeurs disponibles
+ * GET /api/livres/roles-contributeurs
+ */
+const getRolesContributeurs = async (req, res) => {
+  try {
+    const roles = await RoleContributeurLivre.findAll({
+      where: { actif: true },
+      order: [['ordre', 'ASC']]
+    });
+
+    res.json({ roles });
+  } catch (error) {
+    console.error('Get roles contributeurs error:', error);
+    // Fallback si la table n'existe pas encore
+    res.json({
+      roles: [
+        { code: 'auteur', libelle: 'Auteur', ordre: 1 },
+        { code: 'scenariste', libelle: 'Scénariste', ordre: 2 },
+        { code: 'dessinateur', libelle: 'Dessinateur', ordre: 3 },
+        { code: 'coloriste', libelle: 'Coloriste', ordre: 4 },
+        { code: 'illustrateur', libelle: 'Illustrateur', ordre: 5 },
+        { code: 'traducteur', libelle: 'Traducteur', ordre: 6 },
+        { code: 'adaptateur', libelle: 'Adaptateur', ordre: 7 },
+        { code: 'prefacier', libelle: 'Préfacier', ordre: 8 }
+      ]
+    });
+  }
+};
+
 module.exports = {
   getAllLivres,
   getLivreById,
@@ -525,5 +650,6 @@ module.exports = {
   getFormats,
   getCollections,
   getEmplacements,
-  getStats
+  getStats,
+  getRolesContributeurs
 };

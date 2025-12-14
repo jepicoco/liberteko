@@ -1,11 +1,12 @@
 /**
  * Service de recherche EAN/ISBN
  * Interroge les APIs externes configurees pour obtenir des informations sur un produit
- * Supporte: UPCitemdb, BGG, OpenLibrary, GoogleBooks, BNF, TMDB, MusicBrainz, Discogs
+ * Supporte: UPCitemdb, BGG, Wikiludo, OpenLibrary, GoogleBooks, BNF, TMDB, MusicBrainz, Discogs
  */
 
 const { ConfigurationAPI } = require('../models');
 const logger = require('../utils/logger');
+const WikiludoProvider = require('./providers/WikiludoProvider');
 
 // Cache en memoire pour eviter les requetes repetees
 const cache = new Map();
@@ -94,31 +95,115 @@ class BGGProvider extends BaseProvider {
   }
 
   async searchByName(name) {
+    const results = await this.searchByTitle(name, 1);
+    return results && results.length > 0 ? results[0] : null;
+  }
+
+  async searchByTitle(name, maxResults = 10) {
     const cleanedName = this.cleanTitleForSearch(name);
     const encodedName = encodeURIComponent(cleanedName);
     const searchUrl = `https://boardgamegeek.com/xmlapi2/search?query=${encodedName}&type=boardgame`;
 
-    const searchResponse = await fetch(searchUrl, { timeout: 15000 });
-    const searchText = await searchResponse.text();
+    const searchResponse = await fetch(searchUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Assotheque/1.0 (Library Management System)',
+        'Accept': 'application/xml, text/xml, */*'
+      }
+    });
 
-    // Trouver le premier resultat exact ou le premier resultat
-    const exactMatch = searchText.match(new RegExp(`<item.*?id="(\\d+)"[^>]*>\\s*<name[^>]*value="${cleanedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`, 'i'));
-    const firstMatch = searchText.match(/<item.*?id="(\d+)"/);
-
-    const gameId = exactMatch ? exactMatch[1] : (firstMatch ? firstMatch[1] : null);
-    if (!gameId) {
-      return null;
+    if (!searchResponse.ok) {
+      logger.warn(`BGG search failed with status ${searchResponse.status}`);
+      return [];
     }
 
-    return this.getGameById(gameId);
+    const searchText = await searchResponse.text();
+
+    // Extraire tous les IDs de jeux
+    const gameIds = [];
+    const itemRegex = /<item[^>]*id="(\d+)"[^>]*>[\s\S]*?<name[^>]*value="([^"]*)"[^>]*\/?>[\s\S]*?(?:<yearpublished[^>]*value="(\d+)")?/gi;
+    let match;
+
+    while ((match = itemRegex.exec(searchText)) !== null && gameIds.length < maxResults) {
+      gameIds.push({
+        id: match[1],
+        name: match[2],
+        year: match[3] || null
+      });
+    }
+
+    if (gameIds.length === 0) {
+      return [];
+    }
+
+    // Recuperer les details pour chaque jeu (max 5 a la fois pour eviter timeout)
+    const results = [];
+    const batchSize = 5;
+
+    for (let i = 0; i < gameIds.length && results.length < maxResults; i += batchSize) {
+      const batch = gameIds.slice(i, i + batchSize);
+      const ids = batch.map(g => g.id).join(',');
+
+      try {
+        const detailUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${ids}&stats=1`;
+        const response = await fetch(detailUrl, {
+          timeout: 15000,
+          headers: {
+            'User-Agent': 'Assotheque/1.0 (Library Management System)',
+            'Accept': 'application/xml, text/xml, */*'
+          }
+        });
+        const text = await response.text();
+
+        // Parser chaque item
+        const itemsRegex = /<item[^>]*id="(\d+)"[^>]*>([\s\S]*?)<\/item>/gi;
+        let itemMatch;
+
+        while ((itemMatch = itemsRegex.exec(text)) !== null) {
+          const gameId = itemMatch[1];
+          const itemXml = itemMatch[2];
+          const parsed = this.parseGameXML('<item>' + itemXml + '</item>', gameId);
+
+          if (parsed && parsed.titre) {
+            // Ajouter un objet _display pour l'affichage uniforme
+            parsed._display = {
+              titre: parsed.titre,
+              auteurs: parsed.auteur || '',
+              editeur: parsed.editeur || '',
+              annee: parsed.annee_sortie ? String(parsed.annee_sortie) : '',
+              image_url: parsed.thumbnail_url || parsed.image_url || null,
+              joueurs: parsed.joueurs_min && parsed.joueurs_max ?
+                `${parsed.joueurs_min}-${parsed.joueurs_max} joueurs` : '',
+              duree: parsed.duree_partie ? `${parsed.duree_partie} min` : ''
+            };
+            results.push(parsed);
+          }
+        }
+      } catch (error) {
+        logger.warn(`BGG batch fetch error: ${error.message}`);
+      }
+    }
+
+    return results;
   }
 
   async getGameById(gameId) {
     const detailUrl = `https://boardgamegeek.com/xmlapi2/thing?id=${gameId}&stats=1`;
 
-    const response = await fetch(detailUrl, { timeout: 15000 });
-    const text = await response.text();
+    const response = await fetch(detailUrl, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Assotheque/1.0 (Library Management System)',
+        'Accept': 'application/xml, text/xml, */*'
+      }
+    });
 
+    if (!response.ok) {
+      logger.warn(`BGG getGameById failed with status ${response.status}`);
+      return null;
+    }
+
+    const text = await response.text();
     return this.parseGameXML(text, gameId);
   }
 
@@ -309,21 +394,26 @@ class GoogleBooksProvider extends BaseProvider {
   }
 
   async searchByName(name) {
+    const results = await this.searchByTitle(name);
+    return results && results.length > 0 ? results[0] : null;
+  }
+
+  async searchByTitle(name, maxResults = 10) {
     const apiKey = this.config.getDecryptedApiKey();
     const encodedName = encodeURIComponent(name);
-    let url = `https://www.googleapis.com/books/v1/volumes?q=${encodedName}&maxResults=5`;
+    let url = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodedName}&maxResults=${maxResults}&langRestrict=fr`;
 
     if (apiKey) {
       url += `&key=${apiKey}`;
     }
 
     const response = await fetch(url, { timeout: 10000 });
-    if (!response.ok) return null;
+    if (!response.ok) return [];
 
     const data = await response.json();
-    if (!data.items || data.items.length === 0) return null;
+    if (!data.items || data.items.length === 0) return [];
 
-    return this.normalizeResult(data.items[0]);
+    return data.items.map(item => this.normalizeResult(item));
   }
 
   normalizeResult(item, isbn = null) {
@@ -381,20 +471,141 @@ class BNFProvider extends BaseProvider {
   }
 
   async searchByName(name) {
+    const results = await this.searchByTitle(name);
+    return results && results.length > 0 ? results[0] : null;
+  }
+
+  async searchByTitle(name, maxResults = 10) {
     const encodedName = encodeURIComponent(name);
-    const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=bib.title%20all%20%22${encodedName}%22&recordSchema=dublincore&maximumRecords=5`;
+    const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=bib.title%20all%20%22${encodedName}%22&recordSchema=dublincore&maximumRecords=${maxResults}`;
 
     const response = await fetch(url, { timeout: 15000 });
-    if (!response.ok) return null;
+    if (!response.ok) return [];
 
     const text = await response.text();
 
     const numberOfRecords = text.match(/<srw:numberOfRecords>(\d+)<\/srw:numberOfRecords>/);
     if (!numberOfRecords || parseInt(numberOfRecords[1]) === 0) {
-      return null;
+      return [];
     }
 
-    return this.parseXML(text);
+    return this.parseMultipleXML(text);
+  }
+
+  parseMultipleXML(xml) {
+    const results = [];
+    // Extraire chaque record
+    const recordRegex = /<srw:record>([\s\S]*?)<\/srw:record>/g;
+    let match;
+
+    while ((match = recordRegex.exec(xml)) !== null) {
+      const recordXml = match[1];
+      const parsed = this.parseSingleRecord(recordXml);
+      if (parsed && parsed.titre) {
+        results.push(parsed);
+      }
+    }
+
+    return results;
+  }
+
+  parseSingleRecord(xml) {
+    // Fonctions d'extraction XML
+    const getValue = (tag) => {
+      const regex = new RegExp(`<dc:${tag}>([^<]*)</dc:${tag}>`, 'i');
+      const match = xml.match(regex);
+      return match ? this.decodeXmlEntities(match[1]) : null;
+    };
+
+    const getAllValues = (tag) => {
+      const regex = new RegExp(`<dc:${tag}>([^<]*)</dc:${tag}>`, 'gi');
+      const matches = [];
+      let match;
+      while ((match = regex.exec(xml)) !== null) {
+        matches.push(this.decodeXmlEntities(match[1]));
+      }
+      return matches;
+    };
+
+    const title = getValue('title');
+    if (!title) return null;
+
+    // Auteurs (creator)
+    const creators = getAllValues('creator');
+
+    // Editeur et date depuis publisher
+    const publishers = getAllValues('publisher');
+    let editeur = null;
+    let annee = null;
+
+    for (const pub of publishers) {
+      const parts = pub.split(/[,:]/).map(p => p.trim());
+      if (parts.length >= 2) {
+        for (const part of parts) {
+          if (/^\d{4}$/.test(part)) {
+            annee = part;
+          } else if (part.length > 3 && !/^[A-Z][a-z]+$/.test(part)) {
+            if (!editeur || part.length > editeur.length) {
+              editeur = part;
+            }
+          }
+        }
+      }
+    }
+
+    // Date directe
+    const dates = getAllValues('date');
+    if (!annee && dates.length > 0) {
+      const yearMatch = dates[0].match(/(\d{4})/);
+      if (yearMatch) annee = yearMatch[1];
+    }
+
+    // Description
+    const description = getValue('description');
+
+    // Sujets
+    const subjects = getAllValues('subject');
+
+    // Langue
+    const language = getValue('language');
+
+    // Identifiant BNF (ark) et ISBN
+    const identifiers = getAllValues('identifier');
+    let arkId = null;
+    let foundIsbn = null;
+    for (const id of identifiers) {
+      if (id.includes('ark:/')) {
+        arkId = id;
+      } else if (/^\d{10,13}$/.test(id.replace(/[- ]/g, ''))) {
+        foundIsbn = id;
+      }
+    }
+
+    // Format/type - nombre de pages
+    const formats = getAllValues('format');
+    let nombrePages = null;
+    for (const fmt of formats) {
+      const pagesMatch = fmt.match(/(\d+)\s*p/i);
+      if (pagesMatch) {
+        nombrePages = parseInt(pagesMatch[1]);
+        break;
+      }
+    }
+
+    return {
+      provider: 'bnf',
+      titre: title,
+      auteurs: creators,
+      editeur: editeur,
+      annee_publication: annee,
+      isbn: foundIsbn,
+      nombre_pages: nombrePages,
+      description: description,
+      sujets: subjects.slice(0, 10),
+      langue: language,
+      ark_id: arkId,
+      url_bnf: arkId ? `https://data.bnf.fr/${arkId}` : null
+    };
   }
 
   parseXML(xml, isbn = null) {
@@ -799,6 +1010,8 @@ function createProvider(config) {
       return new MusicBrainzProvider(config);
     case 'discogs':
       return new DiscogsProvider(config);
+    case 'wikiludo':
+      return new WikiludoProvider(config);
     default:
       logger.warn(`Unknown provider: ${config.provider}`);
       return null;
@@ -851,7 +1064,7 @@ function guessCollection(code) {
  * @param {object} options - Options de recherche
  */
 async function lookupEAN(code, collection = null, options = {}) {
-  const { forceRefresh = false } = options;
+  const { forceRefresh = false, specificProvider = null } = options;
 
   // Normaliser le code
   code = code.toString().trim().replace(/\D/g, '');
@@ -901,6 +1114,14 @@ async function lookupEAN(code, collection = null, options = {}) {
   if (filteredConfigs.length === 0 && configs.length > 0) {
     // Utiliser toutes les configs si aucune ne correspond a la collection
     filteredConfigs = configs;
+  }
+
+  // Si un provider specifique est demande, filtrer
+  if (specificProvider) {
+    filteredConfigs = filteredConfigs.filter(c => c.provider === specificProvider);
+    if (filteredConfigs.length === 0) {
+      throw new Error(`Provider '${specificProvider}' non configure ou non disponible`);
+    }
   }
 
   const result = {
@@ -1207,6 +1428,170 @@ async function lookupByTitle(title, collection = 'jeu') {
 }
 
 /**
+ * Recherche par titre avec resultats multiples
+ * @param {string} title - Titre a rechercher
+ * @param {string} collection - Type de collection (livre, jeu, film, disque)
+ * @param {number} maxResults - Nombre maximum de resultats
+ * @param {string} specificProvider - Provider specifique a utiliser (optionnel)
+ */
+async function searchByTitleMultiple(title, collection = 'livre', maxResults = 10, specificProvider = null) {
+  try {
+    let configs = [];
+    try {
+      configs = await ConfigurationAPI.getByType('ean_lookup', true);
+      // Ajouter aussi les providers ISBN pour les livres
+      if (collection === 'livre') {
+        const isbnConfigs = await ConfigurationAPI.getByType('isbn_lookup', true);
+        configs = [...configs, ...isbnConfigs];
+      }
+      configs = configs.filter(c =>
+        !c.collections_supportees || c.collections_supportees.includes(collection)
+      );
+    } catch (e) { /* ignore */ }
+
+    const results = [];
+    const providersUsed = [];
+
+    // Pour les jeux, utiliser BGG
+    if (collection === 'jeu') {
+      if (!specificProvider || specificProvider === 'bgg') {
+        const bggConfig = configs.find(c => c.provider === 'bgg');
+        const bggProvider = bggConfig ? createProvider(bggConfig) : new BGGProvider({ provider: 'bgg' });
+
+        try {
+          if (bggConfig && !bggConfig.peutFaireRequete()) {
+            providersUsed.push({ provider: 'bgg', status: 'rate_limited' });
+          } else {
+            const bggResults = await bggProvider.searchByTitle(title, maxResults);
+
+            if (bggConfig) {
+              await bggConfig.incrementerCompteur(bggResults.length > 0);
+            }
+
+            if (bggResults && bggResults.length > 0) {
+              providersUsed.push({ provider: 'bgg', status: 'success', count: bggResults.length });
+
+              for (const data of bggResults) {
+                results.push({
+                  ...data,
+                  provider: 'bgg'
+                  // _display deja inclus par BGGProvider.searchByTitle
+                });
+              }
+            } else {
+              providersUsed.push({ provider: 'bgg', status: 'not_found' });
+            }
+          }
+        } catch (error) {
+          logger.warn(`[Title Search] BGG error:`, error.message);
+          providersUsed.push({ provider: 'bgg', status: 'error', error: error.message });
+        }
+      }
+    }
+
+    // Pour les livres, utiliser BNF et Google Books en priorite
+    if (collection === 'livre') {
+      const providers = [];
+
+      // BNF (gratuit, pas de cle)
+      if (!specificProvider || specificProvider === 'bnf') {
+        const bnfConfig = configs.find(c => c.provider === 'bnf');
+        providers.push({
+          name: 'bnf',
+          provider: bnfConfig ? createProvider(bnfConfig) : new BNFProvider({ provider: 'bnf' }),
+          config: bnfConfig
+        });
+      }
+
+      // Google Books
+      if (!specificProvider || specificProvider === 'googlebooks') {
+        const gbConfig = configs.find(c => c.provider === 'googlebooks');
+        if (gbConfig || !specificProvider) {
+          providers.push({
+            name: 'googlebooks',
+            provider: gbConfig ? createProvider(gbConfig) : new GoogleBooksProvider({ provider: 'googlebooks' }),
+            config: gbConfig
+          });
+        }
+      }
+
+      // Open Library (fallback)
+      if (!specificProvider || specificProvider === 'openlibrary') {
+        const olConfig = configs.find(c => c.provider === 'openlibrary');
+        providers.push({
+          name: 'openlibrary',
+          provider: olConfig ? createProvider(olConfig) : new OpenLibraryProvider({ provider: 'openlibrary' }),
+          config: olConfig
+        });
+      }
+
+      // Rechercher avec chaque provider
+      for (const { name, provider, config } of providers) {
+        try {
+          if (config && !config.peutFaireRequete()) {
+            providersUsed.push({ provider: name, status: 'rate_limited' });
+            continue;
+          }
+
+          let providerResults = [];
+
+          // Utiliser searchByTitle si disponible (retourne un tableau)
+          if (typeof provider.searchByTitle === 'function') {
+            providerResults = await provider.searchByTitle(title, maxResults);
+          } else if (typeof provider.searchByName === 'function') {
+            const single = await provider.searchByName(title);
+            if (single) providerResults = [single];
+          }
+
+          if (config) {
+            await config.incrementerCompteur(providerResults.length > 0);
+          }
+
+          if (providerResults && providerResults.length > 0) {
+            providersUsed.push({ provider: name, status: 'success', count: providerResults.length });
+
+            // Ajouter les resultats avec le nom du provider
+            for (const data of providerResults) {
+              results.push({
+                ...data,
+                provider: name,
+                _display: {
+                  titre: data.titre,
+                  auteurs: data.auteurs?.join(', ') || '',
+                  editeur: data.editeur || '',
+                  annee: data.annee_publication || '',
+                  isbn: data.isbn || '',
+                  image_url: data.image_url || null
+                }
+              });
+            }
+          } else {
+            providersUsed.push({ provider: name, status: 'not_found' });
+          }
+        } catch (error) {
+          logger.warn(`[Title Search] ${name} error:`, error.message);
+          providersUsed.push({ provider: name, status: 'error', error: error.message });
+        }
+      }
+    }
+
+    // Limiter le nombre total de resultats
+    const limitedResults = results.slice(0, maxResults);
+
+    return {
+      found: limitedResults.length > 0,
+      count: limitedResults.length,
+      results: limitedResults,
+      providers_used: providersUsed
+    };
+
+  } catch (error) {
+    logger.error('[Title Search Multiple] Error:', error.message);
+    throw error;
+  }
+}
+
+/**
  * Vide le cache
  */
 function clearCache() {
@@ -1224,12 +1609,50 @@ function getCacheStats() {
   };
 }
 
+/**
+ * Retourne la liste des providers configures pour une collection
+ * @param {string} collection - Type de collection (livre, jeu, film, disque)
+ */
+async function getConfiguredProviders(collection = null) {
+  try {
+    let configs = await ConfigurationAPI.getByType('ean_lookup', true);
+
+    // Ajouter aussi les providers ISBN pour les livres
+    if (collection === 'livre') {
+      const isbnConfigs = await ConfigurationAPI.getByType('isbn_lookup', true);
+      configs = [...configs, ...isbnConfigs];
+    }
+
+    // Filtrer par collection si specifie
+    if (collection) {
+      configs = configs.filter(c =>
+        !c.collections_supportees || c.collections_supportees.includes(collection)
+      );
+    }
+
+    // Retourner les infos necessaires
+    return configs.map(c => ({
+      id: c.id,
+      libelle: c.libelle,
+      provider: c.provider,
+      priorite: c.priorite,
+      collections: c.collections_supportees,
+      limite_atteinte: !c.peutFaireRequete()
+    }));
+  } catch (error) {
+    logger.error('[getConfiguredProviders] Error:', error.message);
+    return [];
+  }
+}
+
 module.exports = {
   lookupEAN,
   lookupByTitle,
+  searchByTitleMultiple,
   clearCache,
   getCacheStats,
   detectCodeType,
+  getConfiguredProviders,
   // Export des providers pour tests
   providers: {
     UPCitemdbProvider,

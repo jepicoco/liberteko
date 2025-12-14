@@ -1,0 +1,47 @@
+{
+  "manifest_version": 3,
+  "name": "Assotheque - Import MyLudo",
+  "version": "1.0.0",
+  "description": "Importe les jeux depuis MyLudo vers votre base Assotheque",
+  "author": "Assotheque",
+
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "https://www.myludo.fr/*",
+    "https://myludo.fr/*"
+  ],
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    },
+    "default_title": "Importer vers Assotheque",
+    "default_popup": "popup.html"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://www.myludo.fr/*", "https://myludo.fr/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "options_page": "options.html"
+}

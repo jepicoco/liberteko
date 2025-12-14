@@ -22,7 +22,16 @@
       "Bash(npm run setup-nouveautes:*)",
       "Bash(del \"C:\\Users\\jepic\\Documents\\Projets\\assotheque\\frontend\\themes\\pixel-geek\\images\\cat-spritesheet.png\")",
       "Bash(timeout 10 npm run dev:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(timeout 8 npm run dev:*)",
+      "Bash(timeout 6 npm run dev:*)",
+      "Bash(timeout 5 npm run dev:*)",
+      "Bash(curl:*)",
+      "WebSearch",
+      "WebFetch(domain:www.gameupc.com)",
+      "WebFetch(domain:www.myludo.fr)",
+      "WebFetch(domain:api.myludo.fr)",
+      "WebFetch(domain:www.wikiludo-alf.fr)"
     ],
     "deny": [],
     "ask": []

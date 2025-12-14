@@ -1370,3 +1370,51 @@ tr:hover {
 .bloom-hover:hover {
   transform: scale(1.05);
 }
+
+/* ========================================
+   NO ANIMATIONS MODE
+   Disables all decorative animations when
+   body has .no-animations class
+   ======================================== */
+body.no-animations *,
+body.no-animations *::before,
+body.no-animations *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  transition-duration: 0.1s !important;
+}
+
+body.no-animations .petal,
+body.no-animations .butterfly,
+body.no-animations .floating-flower {
+  display: none !important;
+}
+
+body.no-animations .hero::before,
+body.no-animations .hero::after,
+body.no-animations .page-header::before,
+body.no-animations .page-header::after {
+  animation: none !important;
+  opacity: 0.1 !important;
+}
+
+body.no-animations .bloom-hover:hover {
+  transform: none !important;
+}
+
+/* Prefers reduced motion - automatic */
+@media (prefers-reduced-motion: reduce) {
+  .petal,
+  .butterfly,
+  .floating-flower {
+    display: none !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
