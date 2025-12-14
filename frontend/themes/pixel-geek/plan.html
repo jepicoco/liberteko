@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-name" content="pixel-geek">
+  <title id="site-title">Plan interactif - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    /* ========================================
+       PLAN CONTAINER - Pixel Art Map Style
+       ======================================== */
+    .plan-container {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 2rem;
+    }
+
+    .plan-header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .plan-header h1 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 1.2rem;
+      color: var(--pixel-cyan);
+      text-shadow: 4px 4px 0 var(--pixel-purple);
+      margin-bottom: 1rem;
+    }
+
+    .plan-header p {
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.5rem;
+    }
+
+    /* Site Selector - Game Menu Style */
+    .site-selector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .site-selector label {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-yellow);
+      text-shadow: 2px 2px 0 #000;
+    }
+
+    .site-selector select {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 4px solid var(--pixel-cyan);
+      cursor: pointer;
+      transition: all 0.1s;
+      min-width: 200px;
+    }
+
+    .site-selector select:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--pixel-pink);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 0 var(--pixel-purple);
+    }
+
+    .site-selector select:focus {
+      outline: none;
+      border-color: var(--pixel-mint);
+      box-shadow: 0 0 20px var(--pixel-cyan);
+    }
+
+    /* Floor Tabs - Level Select */
+    .floor-tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .floor-tab {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      border: 3px solid var(--pixel-purple);
+      cursor: pointer;
+      transition: all 0.1s;
+      text-transform: uppercase;
+    }
+
+    .floor-tab:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      transform: translateY(-2px);
+    }
+
+    .floor-tab.active {
+      background: var(--pixel-pink);
+      color: white;
+      border-color: var(--pixel-yellow);
+      box-shadow: 0 0 20px var(--pixel-pink);
+    }
+
+    /* Map Display - Pixel Art Canvas */
+    .map-display {
+      position: relative;
+      background: var(--bg-card);
+      border: 6px solid var(--pixel-cyan);
+      box-shadow:
+        inset 0 0 30px rgba(0, 212, 255, 0.2),
+        0 8px 0 var(--pixel-purple);
+      padding: 2rem;
+      min-height: 500px;
+      overflow: hidden;
+    }
+
+    /* Pixel grid effect */
+    .map-display::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background:
+        linear-gradient(90deg, rgba(107, 63, 160, 0.05) 1px, transparent 1px),
+        linear-gradient(rgba(107, 63, 160, 0.05) 1px, transparent 1px);
+      background-size: 20px 20px;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .map-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #planCanvas {
+      max-width: 100%;
+      max-height: 100%;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: rgba(13, 13, 26, 0.5);
+      cursor: crosshair;
+      image-rendering: pixelated;
+    }
+
+    /* Loading State - Retro Loading */
+    .loading-state {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .loading-state .pixel-spinner {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 1rem;
+      border: 4px solid var(--pixel-purple);
+      border-top-color: var(--pixel-cyan);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-state p {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-cyan);
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Error State - Game Over Style */
+    .error-state {
+      text-align: center;
+      padding: 4rem 2rem;
+    }
+
+    .error-state .error-icon {
+      font-size: 4rem;
+      color: var(--pixel-red);
+      margin-bottom: 1rem;
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .error-state h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.8rem;
+      color: var(--pixel-red);
+      margin-bottom: 1rem;
+    }
+
+    .error-state p {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Side Panel - Sliding Inventory Panel */
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 450px;
+      height: 100vh;
+      background: var(--bg-dark);
+      border-left: 6px solid var(--pixel-pink);
+      box-shadow: -8px 0 30px rgba(0, 0, 0, 0.8);
+      z-index: 2000;
+      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-panel.open {
+      right: 0;
+    }
+
+    /* Panel Header */
+    .panel-header {
+      background: var(--bg-card);
+      border-bottom: 4px solid var(--pixel-cyan);
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .panel-header h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.7rem;
+      color: var(--pixel-cyan);
+      text-shadow: 2px 2px 0 var(--pixel-purple);
+      margin: 0;
+    }
+
+    .panel-close {
+      background: var(--pixel-red);
+      color: white;
+      border: 3px solid var(--pixel-orange);
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.1s;
+      font-size: 1.5rem;
+    }
+
+    .panel-close:hover {
+      background: var(--pixel-orange);
+      transform: rotate(90deg) scale(1.1);
+    }
+
+    /* Element Info */
+    .element-info {
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border-bottom: 3px solid var(--pixel-purple);
+    }
+
+    .element-info .element-type {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      color: var(--pixel-yellow);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .element-info .element-name {
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .element-info .element-description {
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Articles List */
+    .articles-list {
+      padding: 1rem;
+      flex: 1;
+    }
+
+    .articles-header {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-mint);
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+      background: rgba(123, 255, 160, 0.1);
+      border-left: 4px solid var(--pixel-mint);
+    }
+
+    .article-item {
+      background: var(--bg-card);
+      border: 3px solid var(--pixel-blue);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      transition: all 0.2s;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .article-item:hover {
+      border-color: var(--pixel-cyan);
+      transform: translateX(-4px);
+      box-shadow: 4px 4px 0 var(--pixel-purple);
+    }
+
+    .article-item-header {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .article-image {
+      width: 60px;
+      height: 60px;
+      border: 2px solid var(--pixel-purple);
+      object-fit: cover;
+      flex-shrink: 0;
+      image-rendering: pixelated;
+    }
+
+    .article-info {
+      flex: 1;
+    }
+
+    .article-title {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+      font-weight: bold;
+    }
+
+    .article-meta {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.5rem;
+    }
+
+    .article-badge {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      padding: 0.25rem 0.5rem;
+      border: 2px solid;
+      text-transform: uppercase;
+      display: inline-block;
+    }
+
+    .badge-type {
+      background: rgba(107, 63, 160, 0.3);
+      border-color: var(--pixel-purple);
+      color: var(--pixel-purple);
+    }
+
+    .badge-status {
+      border-color: var(--pixel-mint);
+      color: var(--pixel-mint);
+    }
+
+    .badge-status.emprunte {
+      background: rgba(255, 71, 87, 0.3);
+      border-color: var(--pixel-red);
+      color: var(--pixel-red);
+    }
+
+    .badge-status.disponible {
+      background: rgba(123, 255, 160, 0.3);
+      border-color: var(--pixel-mint);
+      color: var(--pixel-mint);
+    }
+
+    .badge-status.reserve {
+      background: rgba(255, 235, 59, 0.3);
+      border-color: var(--pixel-yellow);
+      color: var(--pixel-yellow);
+    }
+
+    .no-articles {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .no-articles i {
+      font-size: 3rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .no-articles p {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Legend - Pixel HUD Style */
+    .map-legend {
+      margin-top: 2rem;
+      padding: 1.5rem;
+      background: var(--bg-card);
+      border: 4px solid var(--pixel-purple);
+      box-shadow: 4px 4px 0 rgba(200, 80, 192, 0.5);
+    }
+
+    .map-legend h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-yellow);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .legend-color {
+      width: 30px;
+      height: 30px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      flex-shrink: 0;
+    }
+
+    .legend-label {
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+      color: var(--text-secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .plan-container {
+        padding: 0 1rem;
+      }
+
+      .plan-header h1 {
+        font-size: 0.8rem;
+      }
+
+      .site-selector {
+        flex-direction: column;
+      }
+
+      .floor-tabs {
+        gap: 0.25rem;
+      }
+
+      .floor-tab {
+        font-size: 0.4rem;
+        padding: 0.5rem 1rem;
+      }
+
+      .map-display {
+        padding: 1rem;
+      }
+
+      .map-canvas-wrapper {
+        height: 400px;
+      }
+
+      .side-panel {
+        width: 100%;
+        right: -100%;
+      }
+
+      .panel-header h3 {
+        font-size: 0.5rem;
+      }
+
+      .legend-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Tooltip for hovering elements */
+    .element-tooltip {
+      position: absolute;
+      background: var(--bg-dark);
+      border: 3px solid var(--pixel-cyan);
+      padding: 0.5rem 1rem;
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+      color: var(--text-primary);
+      pointer-events: none;
+      z-index: 1000;
+      white-space: nowrap;
+      display: none;
+      box-shadow: 4px 4px 0 var(--pixel-purple);
+    }
+
+    .element-tooltip.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-controller"></i>
+        <span id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/catalogue.html">CATALOGUE</a></li>
+          <li><a href="/infos.html">INFOS</a></li>
+          <li><a href="/aide.html">AIDE</a></li>
+          <li><a href="/plan.html" class="active">PLAN</a></li>
+          <li><a href="/contact.html">CONTACT</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">LOGIN</a>
+    </div>
+  </header>
+
+  <!-- Plan Container -->
+  <div class="plan-container" id="planContainer">
+    <div class="plan-header">
+      <h1>[ PLAN INTERACTIF ]</h1>
+      <p>Explorez notre espace et localisez vos articles favoris</p>
+    </div>
+
+    <!-- Site Selector -->
+    <div class="site-selector" id="siteSelector" style="display: none;">
+      <label for="siteSelect">SELECT SITE:</label>
+      <select id="siteSelect">
+        <option value="">Chargement...</option>
+      </select>
+    </div>
+
+    <!-- Floor Tabs -->
+    <div class="floor-tabs" id="floorTabs" style="display: none;"></div>
+
+    <!-- Map Display -->
+    <div class="map-display">
+      <div class="loading-state" id="loadingState">
+        <div class="pixel-spinner"></div>
+        <p>LOADING MAP DATA...</p>
+      </div>
+
+      <div class="error-state" id="errorState" style="display: none;">
+        <div class="error-icon">
+          <i class="bi bi-x-octagon"></i>
+        </div>
+        <h3>ERROR: MAP NOT FOUND</h3>
+        <p id="errorMessage">Le module de plan interactif n'est pas activé.</p>
+      </div>
+
+      <div class="map-canvas-wrapper" id="mapCanvasWrapper" style="display: none;">
+        <canvas id="planCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="map-legend" id="mapLegend" style="display: none;">
+      <h3>LEGENDE</h3>
+      <div class="legend-grid" id="legendGrid"></div>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <div class="side-panel" id="sidePanel">
+    <div class="panel-header">
+      <h3 id="panelTitle">ELEMENT</h3>
+      <div class="panel-close" id="panelClose">
+        <i class="bi bi-x"></i>
+      </div>
+    </div>
+
+    <div class="element-info" id="elementInfo">
+      <div class="element-type" id="elementType">TYPE</div>
+      <div class="element-name" id="elementName">Nom de l'élément</div>
+      <div class="element-description" id="elementDescription"></div>
+    </div>
+
+    <div class="articles-list">
+      <div class="articles-header">
+        ARTICLES LIES (<span id="articlesCount">0</span>)
+      </div>
+      <div id="articlesList"></div>
+    </div>
+  </div>
+
+  <!-- Tooltip -->
+  <div class="element-tooltip" id="elementTooltip"></div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>CONTACT</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>HORAIRES</h4>
+        <div id="footer-horaires">
+          <p>CHECK PAGE INFOS</p>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>LINKS</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">MENTIONS LEGALES</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/contact.html">CONTACT</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>[ <span id="year"></span> ] <span id="footer-name">ASSOTHEQUE</span> - POWERED BY PIXEL MAGIC</p>
+    </div>
+  </footer>
+
+  <script>
+    // =============================================
+    // PLAN INTERACTIF - PIXEL GEEK THEME
+    // =============================================
+
+    const PlanInteractif = (function() {
+      // Elements
+      const loadingState = document.getElementById('loadingState');
+      const errorState = document.getElementById('errorState');
+      const errorMessage = document.getElementById('errorMessage');
+      const siteSelector = document.getElementById('siteSelector');
+      const siteSelect = document.getElementById('siteSelect');
+      const floorTabs = document.getElementById('floorTabs');
+      const mapCanvasWrapper = document.getElementById('mapCanvasWrapper');
+      const planCanvas = document.getElementById('planCanvas');
+      const mapLegend = document.getElementById('mapLegend');
+      const legendGrid = document.getElementById('legendGrid');
+      const sidePanel = document.getElementById('sidePanel');
+      const panelClose = document.getElementById('panelClose');
+      const elementTooltip = document.getElementById('elementTooltip');
+
+      // Canvas context
+      const ctx = planCanvas.getContext('2d');
+
+      // State
+      let currentSiteId = null;
+      let currentFloor = 0;
+      let sites = [];
+      let planData = null;
+      let hoveredElement = null;
+
+      // Colors for different element types (pixel art palette)
+      const ELEMENT_COLORS = {
+        mur: '#4a4a6a',
+        etagere: '#ff6b9d',
+        meuble: '#c850c0',
+        table: '#4158d0',
+        zone: '#00d4ff'
+      };
+
+      // ========================================
+      // INITIALIZATION
+      // ========================================
+
+      async function init() {
+        // Check if module is enabled
+        const moduleEnabled = await checkModuleEnabled();
+        if (!moduleEnabled) {
+          showError('Le module de plan interactif n\'est pas activé.');
+          return;
+        }
+
+        // Load sites
+        await loadSites();
+
+        // Event listeners
+        panelClose.addEventListener('click', closeSidePanel);
+        siteSelect.addEventListener('change', handleSiteChange);
+        planCanvas.addEventListener('click', handleCanvasClick);
+        planCanvas.addEventListener('mousemove', handleCanvasMouseMove);
+        planCanvas.addEventListener('mouseleave', hideTooltip);
+        window.addEventListener('resize', handleResize);
+      }
+
+      // ========================================
+      // API CALLS
+      // ========================================
+
+      async function checkModuleEnabled() {
+        try {
+          const resp = await fetch('/api/public/parametres');
+          const data = await resp.json();
+          return data.module_plan_interactif === true;
+        } catch (error) {
+          console.error('Error checking module:', error);
+          return false;
+        }
+      }
+
+      async function loadSites() {
+        try {
+          const resp = await fetch('/api/sites');
+          const data = await resp.json();
+
+          if (data && data.length > 0) {
+            sites = data;
+
+            // Populate select
+            siteSelect.innerHTML = sites.map(site =>
+              `<option value="${site.id}">${site.nom.toUpperCase()}</option>`
+            ).join('');
+
+            // Show selector if multiple sites
+            if (sites.length > 1) {
+              siteSelector.style.display = 'flex';
+            }
+
+            // Load first site
+            currentSiteId = sites[0].id;
+            siteSelect.value = currentSiteId;
+            await loadPlanForSite(currentSiteId);
+          } else {
+            showError('Aucun site disponible.');
+          }
+        } catch (error) {
+          console.error('Error loading sites:', error);
+          showError('Erreur lors du chargement des sites.');
+        }
+      }
+
+      async function loadPlanForSite(siteId) {
+        try {
+          showLoading();
+          const resp = await fetch(`/api/plans/public/site/${siteId}`);
+
+          if (!resp.ok) {
+            throw new Error('Plan non trouvé pour ce site');
+          }
+
+          const data = await resp.json();
+          planData = data;
+
+          // Create floor tabs if multiple floors
+          createFloorTabs();
+
+          // Render plan
+          renderPlan();
+
+          // Create legend
+          createLegend();
+
+          // Show map
+          hideLoading();
+          mapCanvasWrapper.style.display = 'flex';
+          mapLegend.style.display = 'block';
+
+        } catch (error) {
+          console.error('Error loading plan:', error);
+          showError('Aucun plan disponible pour ce site.');
+        }
+      }
+
+      async function loadArticlesForElement(elementId) {
+        try {
+          const resp = await fetch(`/api/plans/public/elements/${elementId}/articles`);
+          const data = await resp.json();
+          return data.articles || [];
+        } catch (error) {
+          console.error('Error loading articles:', error);
+          return [];
+        }
+      }
+
+      // ========================================
+      // RENDERING
+      // ========================================
+
+      function createFloorTabs() {
+        if (!planData || !planData.elements) return;
+
+        // Get unique floors
+        const floors = [...new Set(planData.elements.map(el => el.etage || 0))].sort();
+
+        if (floors.length > 1) {
+          floorTabs.style.display = 'flex';
+          floorTabs.innerHTML = floors.map(floor =>
+            `<div class="floor-tab ${floor === currentFloor ? 'active' : ''}" data-floor="${floor}">
+              NIVEAU ${floor}
+            </div>`
+          ).join('');
+
+          // Add click handlers
+          floorTabs.querySelectorAll('.floor-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+              currentFloor = parseInt(tab.dataset.floor);
+              floorTabs.querySelectorAll('.floor-tab').forEach(t => t.classList.remove('active'));
+              tab.classList.add('active');
+              renderPlan();
+            });
+          });
+        } else {
+          floorTabs.style.display = 'none';
+        }
+      }
+
+      function renderPlan() {
+        if (!planData || !planData.elements) return;
+
+        // Filter elements by current floor
+        const elements = planData.elements.filter(el => (el.etage || 0) === currentFloor);
+
+        if (elements.length === 0) {
+          ctx.clearRect(0, 0, planCanvas.width, planCanvas.height);
+          ctx.fillStyle = '#666';
+          ctx.font = '20px VT323';
+          ctx.textAlign = 'center';
+          ctx.fillText('AUCUN ELEMENT SUR CE NIVEAU', planCanvas.width / 2, planCanvas.height / 2);
+          return;
+        }
+
+        // Calculate canvas size based on elements
+        const bounds = calculateBounds(elements);
+        const padding = 40;
+        const canvasWidth = bounds.maxX - bounds.minX + padding * 2;
+        const canvasHeight = bounds.maxY - bounds.minY + padding * 2;
+
+        // Set canvas size
+        planCanvas.width = canvasWidth;
+        planCanvas.height = canvasHeight;
+
+        // Clear canvas
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        // Draw elements
+        elements.forEach(element => {
+          drawElement(element, bounds.minX - padding, bounds.minY - padding);
+        });
+      }
+
+      function calculateBounds(elements) {
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+        elements.forEach(el => {
+          const coords = parseCoordinates(el.coordonnees);
+          coords.forEach(point => {
+            minX = Math.min(minX, point.x);
+            minY = Math.min(minY, point.y);
+            maxX = Math.max(maxX, point.x);
+            maxY = Math.max(maxY, point.y);
+          });
+        });
+
+        return { minX, minY, maxX, maxY };
+      }
+
+      function parseCoordinates(coordStr) {
+        try {
+          const coords = JSON.parse(coordStr);
+          return coords.map(c => ({ x: c.x, y: c.y }));
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function drawElement(element, offsetX, offsetY) {
+        const coords = parseCoordinates(element.coordonnees);
+        if (coords.length === 0) return;
+
+        const color = ELEMENT_COLORS[element.type] || '#7bffa0';
+        const isHovered = hoveredElement && hoveredElement.id === element.id;
+
+        ctx.save();
+
+        // Draw shape
+        ctx.beginPath();
+        coords.forEach((point, index) => {
+          const x = point.x - offsetX;
+          const y = point.y - offsetY;
+          if (index === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.closePath();
+
+        // Fill with color (semi-transparent)
+        ctx.fillStyle = isHovered ? color : color + '80';
+        ctx.fill();
+
+        // Stroke (pixel art style)
+        ctx.strokeStyle = isHovered ? '#ffffff' : color;
+        ctx.lineWidth = isHovered ? 3 : 2;
+        ctx.stroke();
+
+        // Draw label
+        const center = calculateCenter(coords, offsetX, offsetY);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = isHovered ? 'bold 14px VT323' : '12px VT323';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Add shadow for readability
+        ctx.shadowColor = '#000000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(element.nom.toUpperCase(), center.x, center.y);
+
+        ctx.restore();
+
+        // Store element data for hit detection
+        element._coords = coords.map(p => ({ x: p.x - offsetX, y: p.y - offsetY }));
+      }
+
+      function calculateCenter(coords, offsetX, offsetY) {
+        let sumX = 0, sumY = 0;
+        coords.forEach(point => {
+          sumX += point.x - offsetX;
+          sumY += point.y - offsetY;
+        });
+        return {
+          x: sumX / coords.length,
+          y: sumY / coords.length
+        };
+      }
+
+      function createLegend() {
+        const types = [...new Set(planData.elements.map(el => el.type))];
+        legendGrid.innerHTML = types.map(type => `
+          <div class="legend-item">
+            <div class="legend-color" style="background: ${ELEMENT_COLORS[type] || '#7bffa0'}"></div>
+            <div class="legend-label">${type.toUpperCase()}</div>
+          </div>
+        `).join('');
+      }
+
+      // ========================================
+      // EVENT HANDLERS
+      // ========================================
+
+      function handleSiteChange(e) {
+        currentSiteId = e.target.value;
+        currentFloor = 0;
+        loadPlanForSite(currentSiteId);
+      }
+
+      function handleCanvasClick(e) {
+        const rect = planCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const clickedElement = findElementAtPoint(x, y);
+        if (clickedElement) {
+          showSidePanel(clickedElement);
+        }
+      }
+
+      function handleCanvasMouseMove(e) {
+        const rect = planCanvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const element = findElementAtPoint(x, y);
+
+        if (element !== hoveredElement) {
+          hoveredElement = element;
+          renderPlan();
+
+          if (element) {
+            showTooltip(element, e.clientX, e.clientY);
+            planCanvas.style.cursor = 'pointer';
+          } else {
+            hideTooltip();
+            planCanvas.style.cursor = 'crosshair';
+          }
+        } else if (element) {
+          updateTooltipPosition(e.clientX, e.clientY);
+        }
+      }
+
+      function findElementAtPoint(x, y) {
+        if (!planData || !planData.elements) return null;
+
+        const elements = planData.elements.filter(el => (el.etage || 0) === currentFloor);
+
+        for (const element of elements) {
+          if (!element._coords) continue;
+
+          if (isPointInPolygon(x, y, element._coords)) {
+            return element;
+          }
+        }
+
+        return null;
+      }
+
+      function isPointInPolygon(x, y, polygon) {
+        let inside = false;
+        for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+          const xi = polygon[i].x, yi = polygon[i].y;
+          const xj = polygon[j].x, yj = polygon[j].y;
+
+          const intersect = ((yi > y) !== (yj > y))
+            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
+
+      function handleResize() {
+        if (mapCanvasWrapper.style.display !== 'none') {
+          renderPlan();
+        }
+      }
+
+      // ========================================
+      // UI FUNCTIONS
+      // ========================================
+
+      function showLoading() {
+        loadingState.style.display = 'block';
+        errorState.style.display = 'none';
+        mapCanvasWrapper.style.display = 'none';
+        mapLegend.style.display = 'none';
+      }
+
+      function hideLoading() {
+        loadingState.style.display = 'none';
+      }
+
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorState.style.display = 'block';
+        loadingState.style.display = 'none';
+        mapCanvasWrapper.style.display = 'none';
+        mapLegend.style.display = 'none';
+      }
+
+      function showTooltip(element, x, y) {
+        elementTooltip.textContent = element.nom.toUpperCase();
+        elementTooltip.classList.add('show');
+        updateTooltipPosition(x, y);
+      }
+
+      function updateTooltipPosition(x, y) {
+        elementTooltip.style.left = (x + 10) + 'px';
+        elementTooltip.style.top = (y + 10) + 'px';
+      }
+
+      function hideTooltip() {
+        elementTooltip.classList.remove('show');
+      }
+
+      async function showSidePanel(element) {
+        // Update panel header
+        document.getElementById('panelTitle').textContent = element.nom.toUpperCase();
+        document.getElementById('elementType').textContent = element.type.toUpperCase();
+        document.getElementById('elementName').textContent = element.nom;
+        document.getElementById('elementDescription').textContent = element.description || '';
+
+        // Load articles
+        const articles = await loadArticlesForElement(element.id);
+        document.getElementById('articlesCount').textContent = articles.length;
+
+        const articlesList = document.getElementById('articlesList');
+        if (articles.length === 0) {
+          articlesList.innerHTML = `
+            <div class="no-articles">
+              <i class="bi bi-inbox"></i>
+              <p>Aucun article lié à cet élément</p>
+            </div>
+          `;
+        } else {
+          articlesList.innerHTML = articles.map(article => `
+            <div class="article-item" onclick="window.location.href='/fiche.html?type=${article.type}&id=${article.id}'">
+              <div class="article-item-header">
+                <img src="${article.image_url || '/images/placeholder.png'}" alt="${article.titre}" class="article-image">
+                <div class="article-info">
+                  <div class="article-title">${article.titre}</div>
+                  <div class="article-meta">
+                    <span class="article-badge badge-type">${article.type}</span>
+                    <span class="article-badge badge-status ${article.statut}">${article.statut}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Show panel
+        sidePanel.classList.add('open');
+      }
+
+      function closeSidePanel() {
+        sidePanel.classList.remove('open');
+      }
+
+      // ========================================
+      // PUBLIC API
+      // ========================================
+
+      return {
+        init
+      };
+    })();
+
+    // =============================================
+    // SITE INITIALIZATION
+    // =============================================
+
+    // Load config
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/config');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        const nom = (data.nom_site || 'ASSOTHEQUE').toUpperCase();
+        document.getElementById('site-title').textContent = `Plan interactif - ${nom}`;
+        document.getElementById('header-title').textContent = nom;
+        document.getElementById('footer-name').textContent = nom;
+
+        if (data.contact && data.contact.adresse) {
+          document.getElementById('footer-address').textContent = data.contact.adresse.toUpperCase();
+        }
+        if (data.contact && data.contact.telephone) {
+          document.getElementById('footer-phone').textContent = data.contact.telephone;
+        }
+        if (data.contact && data.contact.email) {
+          document.getElementById('footer-email').textContent = data.contact.email.toUpperCase();
+        }
+      } catch (e) {
+        console.error('Config error:', e);
+      }
+    }
+
+    // Year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Init
+    loadConfig();
+    PlanInteractif.init();
+  </script>
+  <script src="/js/animation-toggle.js"></script>
+</body>
+</html>

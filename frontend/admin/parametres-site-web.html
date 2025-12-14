@@ -455,6 +455,17 @@
                         <p class="mb-0 mt-2 text-muted small">Recherche IA dans le catalogue (themes, suggestions)</p>
                       </div>
                     </div>
+                    <div class="col-md-4">
+                      <div class="card module-card p-3" id="card-module-plan-interactif" style="border-left: 4px solid #0d6efd; background-color: rgba(13,110,253,0.05);">
+                        <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="module_plan_interactif" onchange="updateModuleCard('plan-interactif')">
+                          <label class="form-check-label" for="module_plan_interactif">
+                            <strong><i class="bi bi-map"></i> Plan interactif</strong>
+                          </label>
+                        </div>
+                        <p class="mb-0 mt-2 text-muted small">Afficher le plan des locaux sur le site public</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -867,7 +878,8 @@
       document.getElementById('module_reservations').checked = data.module_reservations || false;
       document.getElementById('module_paiement_en_ligne').checked = data.module_paiement_en_ligne || false;
       document.getElementById('module_recherche_ia').checked = data.module_recherche_ia || false;
-      ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque', 'inscriptions', 'reservations', 'paiement', 'recherche-ia'].forEach(updateModuleCard);
+      document.getElementById('module_plan_interactif').checked = data.module_plan_interactif || false;
+      ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque', 'inscriptions', 'reservations', 'paiement', 'recherche-ia', 'plan-interactif'].forEach(updateModuleCard);
 
       // Legal (Quill editors)
       if (data.cgv) editors.cgv.root.innerHTML = data.cgv;
@@ -927,6 +939,7 @@
         module_reservations: document.getElementById('module_reservations').checked,
         module_paiement_en_ligne: document.getElementById('module_paiement_en_ligne').checked,
         module_recherche_ia: document.getElementById('module_recherche_ia').checked,
+        module_plan_interactif: document.getElementById('module_plan_interactif').checked,
 
         // Legal
         cgv: editors.cgv.root.innerHTML,
@@ -967,6 +980,9 @@
       } else if (module === 'recherche-ia') {
         checkboxId = 'module_recherche_ia';
         cardId = 'card-module-recherche-ia';
+      } else if (module === 'plan-interactif') {
+        checkboxId = 'module_plan_interactif';
+        cardId = 'card-module-plan-interactif';
       } else {
         checkboxId = `module_${module}`;
         cardId = `card-module-${module}`;

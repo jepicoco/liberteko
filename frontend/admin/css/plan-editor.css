@@ -1,0 +1,332 @@
+/**
+ * Styles pour l'editeur de plan
+ */
+
+/* Container du canvas */
+.canvas-container {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  height: calc(100vh - 250px);
+  min-height: 500px;
+}
+
+.plan-canvas {
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+  background: #ffffff;
+}
+
+.plan-canvas.tool-select {
+  cursor: default;
+}
+
+.plan-canvas.tool-pan {
+  cursor: grab;
+}
+
+.plan-canvas.tool-pan:active {
+  cursor: grabbing;
+}
+
+/* Toolbar */
+.editor-toolbar {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-toolbar .btn {
+  padding: 0.375rem 0.5rem;
+}
+
+.editor-toolbar .btn.active,
+.editor-toolbar .tool-btn.active {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.editor-toolbar .tool-btn[data-tool="mur"].active {
+  background-color: #333333;
+  border-color: #333333;
+}
+
+.editor-toolbar .tool-btn[data-tool="etagere"].active {
+  background-color: #8B4513;
+  border-color: #8B4513;
+}
+
+.editor-toolbar .tool-btn[data-tool="meuble"].active {
+  background-color: #4a4a4a;
+  border-color: #4a4a4a;
+}
+
+.editor-toolbar .tool-btn[data-tool="table"].active {
+  background-color: #2c3e50;
+  border-color: #2c3e50;
+}
+
+.editor-toolbar .tool-btn[data-tool="zone"].active {
+  background-color: #3498db;
+  border-color: #3498db;
+}
+
+/* Onglets etages */
+#etagesTabs {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+#etagesTabs .nav-link {
+  border-radius: 4px 4px 0 0;
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+#etagesTabs .nav-link.active {
+  background-color: #ffffff;
+  border-bottom-color: #ffffff;
+}
+
+#etagesTabs .btn-add-etage {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* Panneau proprietes */
+.properties-panel {
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 12px;
+  height: calc(100vh - 250px);
+  min-height: 500px;
+  overflow-y: auto;
+}
+
+.properties-panel h6 {
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.properties-panel .form-label {
+  margin-bottom: 0.25rem;
+  font-weight: 500;
+}
+
+.properties-panel .form-control-sm,
+.properties-panel .form-select-sm {
+  font-size: 0.8rem;
+}
+
+/* Elements SVG */
+.element-mur {
+  stroke: #333333;
+  stroke-width: 6;
+  stroke-linecap: round;
+  fill: none;
+}
+
+.element-etagere {
+  stroke: #8B4513;
+  stroke-width: 2;
+  fill: #DEB887;
+  fill-opacity: 0.8;
+}
+
+.element-meuble {
+  stroke: #4a4a4a;
+  stroke-width: 2;
+  fill: #a0a0a0;
+  fill-opacity: 0.7;
+}
+
+.element-table {
+  stroke: #2c3e50;
+  stroke-width: 2;
+  fill: #bdc3c7;
+  fill-opacity: 0.6;
+}
+
+.element-zone {
+  stroke: #3498db;
+  stroke-width: 2;
+  stroke-dasharray: 5,5;
+  fill: #3498db;
+  fill-opacity: 0.2;
+}
+
+/* Elements interactifs */
+.plan-element {
+  cursor: move;
+}
+
+.plan-element:hover {
+  filter: brightness(1.05);
+}
+
+/* Selection */
+.element-selected {
+  outline: 2px dashed #0d6efd;
+  outline-offset: 2px;
+}
+
+.selection-handle {
+  fill: #ffffff;
+  stroke: #0d6efd;
+  stroke-width: 2;
+  cursor: pointer;
+  transition: fill 0.15s;
+}
+
+.selection-handle:hover {
+  fill: #0d6efd;
+}
+
+.selection-handle.handle-rotate {
+  cursor: grab;
+}
+
+.selection-box {
+  fill: none;
+  stroke: #0d6efd;
+  stroke-width: 1;
+  stroke-dasharray: 4,4;
+  pointer-events: none;
+}
+
+/* Dessin en cours */
+.drawing-preview {
+  stroke: #0d6efd;
+  stroke-width: 2;
+  stroke-dasharray: 4,4;
+  fill: rgba(13, 110, 253, 0.1);
+  pointer-events: none;
+}
+
+.drawing-point {
+  fill: #0d6efd;
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+/* Grille */
+#gridBackground {
+  pointer-events: none;
+}
+
+.grid-hidden #gridBackground {
+  display: none;
+}
+
+/* Templates */
+.template-card {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-card:hover {
+  border-color: #0d6efd;
+  background-color: #f0f7ff;
+}
+
+.template-card .template-name {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.template-card .template-desc {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+/* Emplacements lies */
+.emplacement-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+}
+
+.emplacement-item .badge {
+  font-size: 0.65rem;
+}
+
+.emplacement-item .btn-remove {
+  padding: 0;
+  line-height: 1;
+  color: #dc3545;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .canvas-container,
+  .properties-panel {
+    height: auto;
+    min-height: 400px;
+  }
+
+  .properties-panel {
+    margin-top: 10px;
+  }
+}
+
+/* Indicateur modification non sauvegardee */
+.unsaved-indicator {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #ffc107;
+  border-radius: 50%;
+  margin-left: 5px;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Tooltip element */
+.element-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  pointer-events: none;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+/* Loading overlay */
+.editor-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}

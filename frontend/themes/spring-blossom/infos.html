@@ -57,6 +57,8 @@
         <li><a href="/">Accueil</a></li>
         <li><a href="/catalogue.html">Catalogue</a></li>
         <li><a href="/infos.html" class="active">Infos</a></li>
+        <li><a href="/aide.html">Aide</a></li>
+        <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
         <li><a href="/contact.html">Contact</a></li>
       </ul></nav>
       <a href="/usager/login.html" class="btn-login"><i class="bi bi-person-circle"></i> Connexion</a>
@@ -136,6 +138,14 @@
           if (config.contact.email) { document.getElementById('contact-email').innerHTML = `<a href="mailto:${config.contact.email}">${config.contact.email}</a>`; document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${config.contact.email}`; }
         }
         if (config.horaires) renderHoraires(config.horaires);
+
+        // Check for Plan link visibility
+        const parametresResp = await fetch('/api/public/parametres');
+        const parametres = await parametresResp.json();
+        if (parametres.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
       } catch (e) { console.error('Config error:', e); }
 
       await loadTarifs();

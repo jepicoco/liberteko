@@ -144,6 +144,8 @@
           <li><a href="/">Accueil</a></li>
           <li><a href="/catalogue.html">Catalogue</a></li>
           <li><a href="/infos.html" class="active">Informations</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -300,6 +302,12 @@
         document.getElementById('footer-address').textContent = data.adresse || '';
         document.getElementById('footer-phone').textContent = data.telephone || '';
         document.getElementById('footer-email').textContent = data.email || '';
+
+        // Show Plan link if module is active
+        if (data.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
       } catch (e) {
         console.error('Erreur chargement config:', e);
       }

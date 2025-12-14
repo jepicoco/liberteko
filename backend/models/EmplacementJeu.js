@@ -29,6 +29,18 @@ module.exports = (sequelize) => {
       },
       comment: 'Site/local concerne'
     },
+    couleur: {
+      type: DataTypes.STRING(7),
+      allowNull: true,
+      defaultValue: '#6c757d',
+      comment: 'Couleur hex pour affichage'
+    },
+    icone: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      defaultValue: 'geo-alt',
+      comment: 'Icone Bootstrap Icons'
+    },
     actif: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

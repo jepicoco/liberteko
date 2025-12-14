@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aide - Administration</title>
+    <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .search-container {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
+            padding: 1rem 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .module-card {
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .module-card:hover {
+            transform: translateX(5px);
+            border-left-color: var(--bs-primary);
+            background-color: #f8f9fa;
+        }
+        .module-card.active {
+            border-left-color: var(--bs-primary);
+            background-color: #e7f1ff;
+        }
+        .feature-card {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .feature-card:hover {
+            background-color: #f8f9fa;
+        }
+        .feature-card.active {
+            border-color: var(--bs-primary) !important;
+        }
+        .search-result {
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .search-result:hover {
+            background-color: #f8f9fa;
+            border-left-color: var(--bs-primary);
+        }
+        .procedure-step {
+            position: relative;
+            padding-left: 2.5rem;
+            padding-bottom: 1rem;
+            border-left: 2px solid #dee2e6;
+            margin-left: 0.75rem;
+        }
+        .procedure-step:last-child {
+            border-left-color: transparent;
+        }
+        .procedure-step-number {
+            position: absolute;
+            left: -0.85rem;
+            top: 0;
+            width: 1.7rem;
+            height: 1.7rem;
+            background: var(--bs-primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .faq-question {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .faq-question:hover {
+            background-color: #f8f9fa;
+        }
+        .keyword-badge {
+            cursor: default;
+            font-size: 0.75rem;
+        }
+        .match-badge {
+            font-size: 0.7rem;
+        }
+        .back-btn {
+            cursor: pointer;
+        }
+        .back-btn:hover {
+            color: var(--bs-primary);
+        }
+        #featureDetail {
+            display: none;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        .role-badge {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="admin-navbar"></nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+            <!-- Main Content -->
+            <div class="col-md-10">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2><i class="bi bi-question-circle"></i> Centre d'aide</h2>
+                </div>
+
+                <!-- Barre de recherche -->
+                <div class="search-container mb-4">
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchInput" class="form-control"
+                               placeholder="Rechercher une fonctionnalite, une procedure..."
+                               autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch" style="display:none;">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                    <div id="searchResults" class="mt-3" style="display:none;"></div>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alertContainer"></div>
+
+                <!-- Contenu principal -->
+                <div class="row">
+                    <!-- Liste des modules -->
+                    <div class="col-md-4" id="modulesList">
+                        <h5 class="mb-3"><i class="bi bi-collection"></i> Modules</h5>
+                        <div id="modulesContainer">
+                            <div class="text-center p-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Chargement...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Liste des features du module selectionne -->
+                    <div class="col-md-8" id="featuresPanel">
+                        <div id="featuresListView">
+                            <h5 class="mb-3"><i class="bi bi-list-ul"></i> <span id="selectedModuleTitle">Selectionnez un module</span></h5>
+                            <div id="featuresContainer">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle"></i> Selectionnez un module pour voir ses fonctionnalites.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detail d'une feature -->
+                        <div id="featureDetail">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="back-btn me-3" onclick="showFeaturesList()">
+                                    <i class="bi bi-arrow-left fs-4"></i>
+                                </span>
+                                <h5 class="mb-0" id="featureTitle">Titre de la feature</h5>
+                            </div>
+                            <div id="featureContent"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/api-admin.js"></script>
+    <script src="js/auth-admin.js"></script>
+    <script src="js/admin-navigation.js"></script>
+    <script src="js/admin-template.js"></script>
+    <script>
+        let modules = [];
+        let currentModule = null;
+        let searchTimeout = null;
+
+        const ROLE_COLORS = {
+            'benevole': 'success',
+            'agent': 'info',
+            'gestionnaire': 'warning',
+            'comptable': 'primary',
+            'administrateur': 'danger'
+        };
+
+        const ROLE_LABELS = {
+            'benevole': 'Benevole+',
+            'agent': 'Agent+',
+            'gestionnaire': 'Gestionnaire+',
+            'comptable': 'Comptable+',
+            'administrateur': 'Admin'
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTemplate('aide');
+            loadModules();
+            setupSearch();
+        });
+
+        async function loadModules() {
+            try {
+                modules = await apiRequest('/aide/modules');
+                renderModules();
+            } catch (error) {
+                showAlert('Erreur lors du chargement des modules: ' + error.message, 'danger');
+            }
+        }
+
+        function renderModules() {
+            const container = document.getElementById('modulesContainer');
+
+            if (!modules || modules.length === 0) {
+                container.innerHTML = '<div class="alert alert-warning">Aucun module disponible</div>';
+                return;
+            }
+
+            container.innerHTML = modules.map(module => `
+                <div class="card module-card mb-2" id="module-${module.code}" onclick="selectModule('${module.code}')">
+                    <div class="card-body py-2">
+                        <div class="d-flex align-items-center">
+                            <i class="${module.icone} fs-4 text-primary me-3"></i>
+                            <div>
+                                <h6 class="mb-0">${module.titre}</h6>
+                                <small class="text-muted">${module.featureCount} fonctionnalites</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function selectModule(code) {
+            // Mettre a jour l'UI
+            document.querySelectorAll('.module-card').forEach(card => {
+                card.classList.remove('active');
+            });
+            const activeCard = document.getElementById(`module-${code}`);
+            if (activeCard) {
+                activeCard.classList.add('active');
+            }
+
+            try {
+                currentModule = await apiRequest(`/aide/modules/${code}`);
+                renderFeatures();
+            } catch (error) {
+                showAlert('Erreur lors du chargement du module: ' + error.message, 'danger');
+            }
+        }
+
+        function renderFeatures() {
+            if (!currentModule) return;
+
+            document.getElementById('selectedModuleTitle').innerHTML =
+                `<i class="${currentModule.icone}"></i> ${currentModule.titre}`;
+
+            const container = document.getElementById('featuresContainer');
+
+            if (!currentModule.features || currentModule.features.length === 0) {
+                container.innerHTML = '<div class="alert alert-warning">Aucune fonctionnalite documentee</div>';
+                return;
+            }
+
+            container.innerHTML = currentModule.features.map(feature => `
+                <div class="card feature-card mb-2" onclick="showFeatureDetail('${feature.id}')">
+                    <div class="card-body py-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">${feature.titre}</h6>
+                                <small class="text-muted">${feature.description || ''}</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                ${feature.role_min ? `<span class="badge bg-${ROLE_COLORS[feature.role_min] || 'secondary'} role-badge me-2">${ROLE_LABELS[feature.role_min] || feature.role_min}</span>` : ''}
+                                <i class="bi bi-chevron-right text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            showFeaturesList();
+        }
+
+        function showFeaturesList() {
+            document.getElementById('featuresListView').style.display = 'block';
+            document.getElementById('featureDetail').style.display = 'none';
+        }
+
+        function showFeatureDetail(featureId) {
+            const feature = currentModule.features.find(f => f.id === featureId);
+            if (!feature) return;
+
+            document.getElementById('featuresListView').style.display = 'none';
+            document.getElementById('featureDetail').style.display = 'block';
+
+            document.getElementById('featureTitle').innerHTML = `
+                ${feature.titre}
+                ${feature.role_min ? `<span class="badge bg-${ROLE_COLORS[feature.role_min] || 'secondary'} role-badge ms-2">${ROLE_LABELS[feature.role_min] || feature.role_min}</span>` : ''}
+            `;
+
+            let html = '';
+
+            // Description
+            if (feature.description) {
+                html += `
+                    <div class="alert alert-light mb-4">
+                        <i class="bi bi-info-circle me-2"></i>${feature.description}
+                    </div>
+                `;
+            }
+
+            // Procedure
+            if (feature.procedure && feature.procedure.length > 0) {
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3"><i class="bi bi-list-ol"></i> Procedure</h6>
+                        <div class="procedure-steps">
+                            ${feature.procedure.map((step, index) => `
+                                <div class="procedure-step">
+                                    <span class="procedure-step-number">${index + 1}</span>
+                                    <div>${step}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // FAQ
+            if (feature.faq && feature.faq.length > 0) {
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-primary mb-3"><i class="bi bi-question-circle"></i> Questions frequentes</h6>
+                        <div class="accordion" id="faqAccordion">
+                            ${feature.faq.map((item, index) => `
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed faq-question" type="button"
+                                                data-bs-toggle="collapse" data-bs-target="#faq-${index}">
+                                            ${item.question}
+                                        </button>
+                                    </h2>
+                                    <div id="faq-${index}" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                        <div class="accordion-body">
+                                            ${item.reponse}
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Mots-cles
+            if (feature.mots_cles && feature.mots_cles.length > 0) {
+                html += `
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2"><i class="bi bi-tags"></i> Mots-cles</h6>
+                        <div>
+                            ${feature.mots_cles.map(mc => `<span class="badge bg-light text-dark keyword-badge me-1 mb-1">${mc}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            document.getElementById('featureContent').innerHTML = html;
+        }
+
+        // Recherche
+        function setupSearch() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            const resultsContainer = document.getElementById('searchResults');
+
+            input.addEventListener('input', function() {
+                const query = this.value.trim();
+
+                clearBtn.style.display = query ? 'block' : 'none';
+
+                if (query.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
+
+                // Debounce
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => performSearch(query), 300);
+            });
+
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                clearBtn.style.display = 'none';
+                resultsContainer.style.display = 'none';
+                input.focus();
+            });
+
+            // Fermer les resultats au clic ailleurs
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.search-container')) {
+                    resultsContainer.style.display = 'none';
+                }
+            });
+        }
+
+        async function performSearch(query) {
+            const resultsContainer = document.getElementById('searchResults');
+
+            try {
+                const data = await apiRequest(`/aide/search?q=${encodeURIComponent(query)}`);
+
+                if (data.results.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="bi bi-search"></i> Aucun resultat pour "${query}"
+                        </div>
+                    `;
+                } else {
+                    resultsContainer.innerHTML = `
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><strong>${data.count}</strong> resultat(s) pour "${query}"</span>
+                                ${data.totalMatches > data.count ? `<small class="text-muted">(${data.totalMatches} au total)</small>` : ''}
+                            </div>
+                            <div class="list-group list-group-flush" style="max-height: 400px; overflow-y: auto;">
+                                ${data.results.map(result => `
+                                    <div class="list-group-item search-result" onclick="openSearchResult('${result.moduleCode}', '${result.featureId}')">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <span class="badge bg-secondary me-2">${result.moduleTitre}</span>
+                                                    <strong>${result.featureTitre}</strong>
+                                                </div>
+                                                <small class="text-muted">${result.featureDescription || ''}</small>
+                                            </div>
+                                            <div class="d-flex flex-column align-items-end">
+                                                ${result.roleMin ? `<span class="badge bg-${ROLE_COLORS[result.roleMin] || 'secondary'} role-badge mb-1">${ROLE_LABELS[result.roleMin] || result.roleMin}</span>` : ''}
+                                                <div>
+                                                    ${result.matches.titre ? '<span class="badge bg-primary match-badge me-1">titre</span>' : ''}
+                                                    ${result.matches.mots_cles ? '<span class="badge bg-success match-badge me-1">mot-cle</span>' : ''}
+                                                    ${result.matches.faq ? '<span class="badge bg-info match-badge me-1">FAQ</span>' : ''}
+                                                    ${result.matches.procedure ? '<span class="badge bg-warning match-badge">procedure</span>' : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                resultsContainer.style.display = 'block';
+            } catch (error) {
+                resultsContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> Erreur de recherche: ${error.message}
+                    </div>
+                `;
+                resultsContainer.style.display = 'block';
+            }
+        }
+
+        async function openSearchResult(moduleCode, featureId) {
+            // Fermer les resultats de recherche
+            document.getElementById('searchResults').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').style.display = 'none';
+
+            // Selectionner le module
+            await selectModule(moduleCode);
+
+            // Afficher le detail de la feature
+            showFeatureDetail(featureId);
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            alertContainer.appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

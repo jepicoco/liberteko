@@ -23,6 +23,8 @@
         <ul class="nav-menu">
           <li><a href="/catalogue.html" class="active">Catalogue</a></li>
           <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none"><a href="/plan.html">Plan</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -188,6 +190,12 @@
         }
         if (data.email) {
           document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${data.email}`;
+        }
+
+        // Show Plan link if module is active
+        if (data.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
         }
       } catch (e) {
         console.error('Erreur config:', e);

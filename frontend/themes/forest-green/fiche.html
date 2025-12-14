@@ -367,6 +367,8 @@
           <li><a href="/">Accueil</a></li>
           <li><a href="/catalogue.html">Catalogue</a></li>
           <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none"><a href="/plan.html">Plan</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -598,7 +600,38 @@
       return key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 
+    // Load config for Plan link
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+
+        if (data.adresse) {
+          document.getElementById('footer-address').innerHTML = `<i class="bi bi-geo-alt"></i> ${data.adresse}`;
+        }
+        if (data.telephone) {
+          document.getElementById('footer-phone').innerHTML = `<i class="bi bi-telephone"></i> ${data.telephone}`;
+        }
+        if (data.email) {
+          document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${data.email}`;
+        }
+
+        // Show Plan link if module is active
+        if (data.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+      } catch (e) {
+        console.error('Erreur config:', e);
+      }
+    }
+
     document.getElementById('year').textContent = new Date().getFullYear();
+    loadConfig();
     loadFiche();
   </script>
 </body>

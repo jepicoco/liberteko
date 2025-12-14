@@ -419,6 +419,8 @@
           <li><a href="/">HOME</a></li>
           <li><a href="/catalogue.html">CATALOGUE</a></li>
           <li><a href="/infos.html">INFOS</a></li>
+          <li><a href="/aide.html">AIDE</a></li>
+          <li id="nav-plan" style="display:none"><a href="/plan.html">PLAN</a></li>
         </ul>
       </nav>
       <a href="/usager/login.html" class="btn-login">LOGIN</a>
@@ -627,6 +629,22 @@
       return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
     }
 
+    // Check if Plan module is enabled
+    async function checkPlanModule() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        if (data.module_plan_interactif === true) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+      } catch (e) {
+        console.error('Plan module check error:', e);
+      }
+    }
+
     // Init
     const params = new URLSearchParams(window.location.search);
     if (params.get('collection')) {
@@ -641,6 +659,7 @@
     }
 
     document.getElementById('year').textContent = new Date().getFullYear();
+    checkPlanModule();
     loadItems();
   </script>
   <script src="/js/animation-toggle.js"></script>

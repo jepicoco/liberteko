@@ -1080,8 +1080,33 @@
       });
 
       tsEmplacement = new TomSelect('#select_emplacement', {
-        options: [{ value: '', text: '-- Aucun --' }, ...refCache.emplacements.map(e => ({ value: e.id, text: e.libelle }))],
-        allowEmptyOption: true
+        options: [{ value: '', text: '-- Aucun --' }, ...refCache.emplacements.map(e => ({
+          value: e.id,
+          text: e.libelle,
+          couleur: e.couleur || '#6c757d',
+          icone: e.icone || 'geo-alt',
+          code: e.code || ''
+        }))],
+        allowEmptyOption: true,
+        render: {
+          option: function(data, escape) {
+            if (!data.value) return `<div class="option">${escape(data.text)}</div>`;
+            return `<div class="option d-flex align-items-center gap-2">
+              <span style="width:12px;height:12px;border-radius:50%;background:${data.couleur};display:inline-block;border:1px solid rgba(0,0,0,0.2);"></span>
+              <i class="bi bi-${data.icone}" style="color:${data.couleur};"></i>
+              ${data.code ? `<span class="badge bg-secondary" style="font-size:0.65rem;">${escape(data.code)}</span>` : ''}
+              <span>${escape(data.text)}</span>
+            </div>`;
+          },
+          item: function(data, escape) {
+            if (!data.value) return `<div class="item">${escape(data.text)}</div>`;
+            return `<div class="item d-flex align-items-center gap-1">
+              <span style="width:10px;height:10px;border-radius:50%;background:${data.couleur};display:inline-block;"></span>
+              <i class="bi bi-${data.icone}" style="color:${data.couleur};font-size:0.85rem;"></i>
+              <span>${escape(data.text)}</span>
+            </div>`;
+          }
+        }
       });
     }
 
@@ -1240,7 +1265,13 @@
                 <div class="col-6">
                   <p class="mb-1"><strong>Code-barres:</strong> ${jeu.code_barre || '-'}</p>
                   <p class="mb-1"><strong>Gamme:</strong> ${jeu.gammeRef?.nom || '-'}</p>
-                  <p class="mb-1"><strong>Emplacement:</strong> ${jeu.emplacementRef?.libelle || '-'}</p>
+                  <p class="mb-1"><strong>Emplacement:</strong> ${jeu.emplacementRef ? `
+                    <span class="d-inline-flex align-items-center gap-1">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${jeu.emplacementRef.couleur || '#6c757d'};display:inline-block;"></span>
+                      <i class="bi bi-${jeu.emplacementRef.icone || 'geo-alt'}" style="color:${jeu.emplacementRef.couleur || '#6c757d'};"></i>
+                      ${jeu.emplacementRef.code ? `[${jeu.emplacementRef.code}]` : ''} ${jeu.emplacementRef.libelle}
+                    </span>
+                  ` : '-'}</p>
                 </div>
                 <div class="col-6">
                   <p class="mb-1"><strong>Langues:</strong> ${jeu.languesRef?.map(l => l.nom).join(', ') || '-'}</p>

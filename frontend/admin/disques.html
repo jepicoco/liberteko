@@ -635,7 +635,8 @@
       const emplacementSelect = document.getElementById('emplacement_id');
       emplacementSelect.innerHTML = '<option value="">-- Selectionner --</option>';
       refCache.emplacements.forEach(e => {
-        emplacementSelect.innerHTML += `<option value="${e.id}">${e.libelle}</option>`;
+        const codeText = e.code ? `[${e.code}] ` : '';
+        emplacementSelect.innerHTML += `<option value="${e.id}" data-couleur="${e.couleur || '#6c757d'}" data-icone="${e.icone || 'geo-alt'}">${codeText}${e.libelle}</option>`;
       });
     }
 
@@ -999,7 +1000,13 @@
 
               <div class="row small text-muted">
                 <div class="col-6">
-                  <p class="mb-1"><strong>Emplacement:</strong> ${disque.emplacementRef?.libelle || '-'}</p>
+                  <p class="mb-1"><strong>Emplacement:</strong> ${disque.emplacementRef ? `
+                    <span class="d-inline-flex align-items-center gap-1">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${disque.emplacementRef.couleur || '#6c757d'};display:inline-block;"></span>
+                      <i class="bi bi-${disque.emplacementRef.icone || 'geo-alt'}" style="color:${disque.emplacementRef.couleur || '#6c757d'};"></i>
+                      ${disque.emplacementRef.code ? `[${disque.emplacementRef.code}]` : ''} ${disque.emplacementRef.libelle}
+                    </span>
+                  ` : '-'}</p>
                   <p class="mb-1"><strong>Code-barres:</strong> ${disque.code_barre || '-'}</p>
                   <p class="mb-1"><strong>N catalogue:</strong> ${disque.catalogue_number || '-'}</p>
                 </div>

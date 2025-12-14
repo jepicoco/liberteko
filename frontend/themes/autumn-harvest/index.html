@@ -27,6 +27,8 @@
         <ul class="nav-menu">
           <li><a href="/catalogue.html"><i class="bi bi-grid-3x3-gap me-1"></i>Catalogue</a></li>
           <li><a href="/infos.html"><i class="bi bi-info-circle me-1"></i>Informations</a></li>
+          <li><a href="/aide.html"><i class="bi bi-question-circle me-1"></i>Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html"><i class="bi bi-map me-1"></i>Plan</a></li>
           <li><a href="/contact.html"><i class="bi bi-envelope me-1"></i>Contact</a></li>
         </ul>
       </nav>
@@ -152,6 +154,12 @@
         document.getElementById('footer-address').textContent = data.adresse || '';
         document.getElementById('footer-phone').textContent = data.telephone || '';
         document.getElementById('footer-email').textContent = data.email || '';
+
+        // Show Plan link if module is active
+        if (data.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
       } catch (e) {
         console.error('Erreur chargement config:', e);
       }

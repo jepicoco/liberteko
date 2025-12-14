@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-name" content="default">
+  <title id="site-title">Aide - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    .page-header {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      padding: 3rem 2rem;
+      text-align: center;
+      color: white;
+    }
+    .page-header h1 {
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    .aide-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+    }
+    .search-faq {
+      background: var(--color-bg-card);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .search-faq input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 1rem;
+      background: var(--color-bg);
+      color: var(--color-text);
+    }
+    .search-faq input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    }
+    .faq-section {
+      background: var(--color-bg-card);
+      border-radius: 8px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .faq-section-title {
+      color: var(--color-primary);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.5rem;
+    }
+    .faq-section-title i {
+      font-size: 1.3rem;
+    }
+    .faq-item {
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      margin-bottom: 0.75rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .faq-item:hover {
+      border-color: var(--color-primary);
+    }
+    .faq-question {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem;
+      cursor: pointer;
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-weight: 500;
+      user-select: none;
+      transition: all 0.3s ease;
+    }
+    .faq-question:hover {
+      background: rgba(139, 92, 246, 0.05);
+    }
+    .faq-question.active {
+      background: rgba(139, 92, 246, 0.1);
+      color: var(--color-primary);
+    }
+    .faq-question i {
+      font-size: 1.2rem;
+      transition: transform 0.3s ease;
+    }
+    .faq-question.active i {
+      transform: rotate(180deg);
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      background: var(--color-bg);
+    }
+    .faq-answer-content {
+      padding: 1.25rem;
+      color: var(--color-text-secondary);
+      line-height: 1.8;
+      border-top: 1px solid var(--color-border);
+    }
+    .faq-answer-content p {
+      margin-bottom: 0.75rem;
+    }
+    .faq-answer-content p:last-child {
+      margin-bottom: 0;
+    }
+    .faq-answer-content ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+    .faq-answer-content li {
+      margin-bottom: 0.5rem;
+    }
+    .faq-answer-content strong {
+      color: var(--color-primary);
+    }
+    .contact-cta {
+      background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+      border-radius: 8px;
+      padding: 2.5rem;
+      text-align: center;
+      color: white;
+      margin-top: 3rem;
+    }
+    .contact-cta h3 {
+      color: white;
+      margin-bottom: 1rem;
+    }
+    .contact-cta p {
+      margin-bottom: 1.5rem;
+      opacity: 0.9;
+    }
+    .contact-cta .btn {
+      background: white;
+      color: var(--color-primary);
+      padding: 0.75rem 2rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+    }
+    .contact-cta .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .hidden {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      .page-header h1 {
+        font-size: 2rem;
+      }
+      .aide-container {
+        padding: 2rem 1rem;
+      }
+      .faq-section {
+        padding: 1.5rem;
+      }
+      .faq-question {
+        padding: 1rem;
+        font-size: 0.95rem;
+      }
+      .faq-answer-content {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-collection"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Informations</a></li>
+          <li><a href="/aide.html" class="active">Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Espace Usager
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Aide et FAQ</h1>
+    <p>Trouvez rapidement les reponses a vos questions</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="aide-container">
+    <!-- Search Box -->
+    <div class="search-faq">
+      <input type="text" id="search-input" placeholder="Rechercher dans la FAQ...">
+    </div>
+
+    <!-- FAQ Section: Inscription -->
+    <section class="faq-section" data-category="inscription">
+      <h2 class="faq-section-title"><i class="bi bi-person-plus"></i> Inscription et adhesion</h2>
+
+      <div class="faq-item" data-keywords="inscription adherer membre">
+        <div class="faq-question">
+          <span>Comment s'inscrire et devenir membre ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Pour devenir membre de notre association, suivez ces etapes :</p>
+            <ul>
+              <li>Presentez-vous a l'accueil avec une piece d'identite</li>
+              <li>Remplissez le formulaire d'adhesion</li>
+              <li>Reglez votre cotisation annuelle (tarifs disponibles dans la section Informations)</li>
+              <li>Recevez votre carte de membre et vos identifiants pour l'espace usager</li>
+            </ul>
+            <p>L'adhesion est valable un an a compter de la date de souscription.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="tarif cotisation prix">
+        <div class="faq-question">
+          <span>Quels sont les tarifs de cotisation ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Nos tarifs varient selon le type d'adhesion :</p>
+            <ul>
+              <li><strong>Individuelle :</strong> Tarif standard pour une personne</li>
+              <li><strong>Familiale :</strong> Pour 2 adultes et les enfants du foyer</li>
+              <li><strong>Reduite :</strong> Pour les etudiants et demandeurs d'emploi (sur justificatif)</li>
+            </ul>
+            <p>Consultez la page <a href="/infos.html">Informations</a> pour connaitre les tarifs exacts en vigueur.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="renouvellement renouveler adhesion">
+        <div class="faq-question">
+          <span>Comment renouveler mon adhesion ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Le renouvellement de votre adhesion peut se faire de deux manieres :</p>
+            <ul>
+              <li>Sur place : Rendez-vous a l'accueil pendant nos horaires d'ouverture</li>
+              <li>En ligne : Connectez-vous a votre espace usager et suivez la procedure de renouvellement</li>
+            </ul>
+            <p>Nous vous envoyons un rappel par email quelques semaines avant l'echeance de votre adhesion.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Emprunts -->
+    <section class="faq-section" data-category="emprunts">
+      <h2 class="faq-section-title"><i class="bi bi-box-arrow-right"></i> Emprunts</h2>
+
+      <div class="faq-item" data-keywords="emprunter preter reservation">
+        <div class="faq-question">
+          <span>Comment emprunter un article ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Pour emprunter un article de nos collections :</p>
+            <ul>
+              <li>Consultez notre catalogue en ligne ou sur place</li>
+              <li>Verifiez la disponibilite de l'article</li>
+              <li>Presentez-vous a l'accueil avec votre carte de membre</li>
+              <li>L'emprunt est enregistre et vous recevez un recepisse avec la date de retour</li>
+            </ul>
+            <p>Vous pouvez egalement consulter vos emprunts en cours dans votre espace usager en ligne.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="duree combien temps emprunt">
+        <div class="faq-question">
+          <span>Quelle est la duree d'emprunt ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>La duree d'emprunt varie selon le type d'article :</p>
+            <ul>
+              <li><strong>Jeux de societe :</strong> Generalement 2 a 4 semaines</li>
+              <li><strong>Livres :</strong> Generalement 3 a 4 semaines</li>
+              <li><strong>Films :</strong> Generalement 1 a 2 semaines</li>
+              <li><strong>Disques :</strong> Generalement 2 a 3 semaines</li>
+            </ul>
+            <p>Les durees exactes sont configurees par l'association et peuvent varier. Consultez votre recepisse d'emprunt pour connaitre la date de retour precise.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="nombre limite quota emprunts">
+        <div class="faq-question">
+          <span>Combien d'articles puis-je emprunter simultanement ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Le nombre d'emprunts simultanes depend de votre type d'adhesion et des regles de l'association.</p>
+            <p>En general, vous pouvez emprunter plusieurs articles de differentes collections. Les limites specifiques vous sont communiquees lors de votre inscription.</p>
+            <p>Consultez votre espace usager pour voir le nombre d'emprunts en cours et la disponibilite restante.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Prolongations -->
+    <section class="faq-section" data-category="prolongations">
+      <h2 class="faq-section-title"><i class="bi bi-arrow-repeat"></i> Prolongations</h2>
+
+      <div class="faq-item" data-keywords="prolonger prolongation renouveler emprunt">
+        <div class="faq-question">
+          <span>Comment prolonger un emprunt ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Vous pouvez prolonger vos emprunts de deux manieres :</p>
+            <ul>
+              <li><strong>En ligne :</strong> Connectez-vous a votre espace usager et cliquez sur le bouton "Prolonger" a cote de l'article concerne</li>
+              <li><strong>Sur place :</strong> Presentez-vous a l'accueil ou contactez-nous par telephone</li>
+            </ul>
+            <p><strong>Important :</strong> La prolongation doit etre effectuee avant la date d'echeance de l'emprunt. Les emprunts en retard ne peuvent pas etre prolonges en ligne.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="fois prolongations limite">
+        <div class="faq-question">
+          <span>Combien de fois puis-je prolonger un emprunt ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Le nombre de prolongations autorisees depend de plusieurs facteurs :</p>
+            <ul>
+              <li>Le type d'article emprunte</li>
+              <li>La presence ou non de reservations sur l'article</li>
+              <li>Les regles definies par l'association</li>
+            </ul>
+            <p>En general, une ou deux prolongations sont possibles si personne n'a reserve l'article. Votre espace usager vous indique si la prolongation est possible.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="refuse prolongation impossible">
+        <div class="faq-question">
+          <span>Pourquoi ma prolongation a-t-elle ete refusee ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Une prolongation peut etre refusee pour plusieurs raisons :</p>
+            <ul>
+              <li>L'article est reserve par un autre usager</li>
+              <li>Vous avez atteint le nombre maximum de prolongations autorisees</li>
+              <li>L'emprunt est deja en retard</li>
+              <li>Votre adhesion a expire</li>
+              <li>Vous avez d'autres emprunts en retard</li>
+            </ul>
+            <p>Dans ce cas, veuillez rapporter l'article avant la date d'echeance ou contactez-nous pour plus d'informations.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Retards -->
+    <section class="faq-section" data-category="retards">
+      <h2 class="faq-section-title"><i class="bi bi-exclamation-triangle"></i> Retards et penalites</h2>
+
+      <div class="faq-item" data-keywords="retard amende penalite">
+        <div class="faq-question">
+          <span>Que se passe-t-il si je rends un article en retard ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>En cas de retard, plusieurs consequences peuvent s'appliquer :</p>
+            <ul>
+              <li>Des penalites financieres peuvent etre appliquees (montant defini par l'association)</li>
+              <li>Vous recevrez des rappels par email ou SMS</li>
+              <li>Les emprunts futurs peuvent etre suspendus jusqu'au retour de l'article</li>
+              <li>Les prolongations ne seront plus possibles pour cet emprunt</li>
+            </ul>
+            <p>Nous vous encourageons a respecter les dates de retour ou a prolonger vos emprunts a temps.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="rappel notification email sms">
+        <div class="faq-question">
+          <span>Est-ce que je recois des rappels avant l'echeance ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Oui, notre systeme envoie automatiquement des rappels :</p>
+            <ul>
+              <li><strong>Rappel d'echeance :</strong> Quelques jours avant la date de retour</li>
+              <li><strong>Rappel le jour J :</strong> Le jour de l'echeance</li>
+              <li><strong>Relance en cas de retard :</strong> Apres la date d'echeance</li>
+            </ul>
+            <p>Assurez-vous que votre adresse email et votre numero de telephone sont a jour dans votre espace usager pour recevoir ces notifications.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="perdu casse endommage article">
+        <div class="faq-question">
+          <span>Que faire si j'ai perdu ou endommage un article ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>En cas de perte ou de deterioration d'un article :</p>
+            <ul>
+              <li>Informez-nous immediatement en vous presentant a l'accueil ou par telephone</li>
+              <li>Un constat sera etabli pour evaluer les degats ou la perte</li>
+              <li>Des frais de remplacement ou de reparation pourront vous etre demandes</li>
+              <li>Le montant depend de l'etat de l'article et de sa valeur</li>
+            </ul>
+            <p>Notre priorite est de maintenir nos collections en bon etat pour tous nos usagers.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Reservations -->
+    <section class="faq-section" data-category="reservations">
+      <h2 class="faq-section-title"><i class="bi bi-bookmark"></i> Reservations</h2>
+
+      <div class="faq-item" data-keywords="reserver reservation disponible">
+        <div class="faq-question">
+          <span>Comment reserver un article ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Pour reserver un article actuellement emprunte :</p>
+            <ul>
+              <li>Consultez la fiche de l'article dans le catalogue</li>
+              <li>Si l'article est emprunte, une option de reservation peut etre disponible</li>
+              <li>Connectez-vous a votre espace usager pour effectuer la reservation</li>
+              <li>Vous serez notifie par email lorsque l'article sera disponible</li>
+            </ul>
+            <p>La disponibilite de la fonction de reservation depend de la configuration de l'association.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="notifie disponible pret">
+        <div class="faq-question">
+          <span>Comment savoir quand mon article reserve est disponible ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Lorsqu'un article que vous avez reserve devient disponible :</p>
+            <ul>
+              <li>Vous recevez une notification par email et/ou SMS</li>
+              <li>L'article est mis de cote pour vous pendant une duree limitee</li>
+              <li>Presentez-vous pendant les horaires d'ouverture pour recuperer l'article</li>
+            </ul>
+            <p>Attention : si vous ne venez pas recuperer l'article dans le delai imparti, la reservation sera annulee et l'article sera propose au prochain usager en file d'attente.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Espace Usager -->
+    <section class="faq-section" data-category="espace-usager">
+      <h2 class="faq-section-title"><i class="bi bi-person-circle"></i> Espace usager</h2>
+
+      <div class="faq-item" data-keywords="connexion identifiant mot de passe">
+        <div class="faq-question">
+          <span>Comment acceder a mon espace usager ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Pour acceder a votre espace personnel :</p>
+            <ul>
+              <li>Cliquez sur le bouton "Espace Usager" en haut a droite du site</li>
+              <li>Saisissez votre adresse email et votre mot de passe</li>
+              <li>Si c'est votre premiere connexion, utilisez les identifiants qui vous ont ete fournis lors de votre inscription</li>
+            </ul>
+            <p>Vous pourrez ensuite consulter vos emprunts, prolonger vos prets, et gerer vos informations personnelles.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="mot de passe oublie reinitialiser">
+        <div class="faq-question">
+          <span>J'ai oublie mon mot de passe, que faire ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Si vous avez oublie votre mot de passe :</p>
+            <ul>
+              <li>Cliquez sur "Mot de passe oublie ?" sur la page de connexion</li>
+              <li>Saisissez votre adresse email</li>
+              <li>Vous recevrez un lien de reinitialisation par email</li>
+              <li>Suivez les instructions pour creer un nouveau mot de passe</li>
+            </ul>
+            <p>Si vous ne recevez pas l'email, verifiez vos spams ou contactez-nous directement.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="modifier informations coordonnees email">
+        <div class="faq-question">
+          <span>Comment modifier mes informations personnelles ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Pour mettre a jour vos informations :</p>
+            <ul>
+              <li>Connectez-vous a votre espace usager</li>
+              <li>Acces a la section "Mon profil" ou "Mes informations"</li>
+              <li>Modifiez les champs souhaites (adresse, telephone, email, etc.)</li>
+              <li>Enregistrez vos modifications</li>
+            </ul>
+            <p>Pour certaines modifications (nom, prenom), il peut etre necessaire de contacter directement l'association.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Contact -->
+    <section class="faq-section" data-category="contact">
+      <h2 class="faq-section-title"><i class="bi bi-headset"></i> Contact et assistance</h2>
+
+      <div class="faq-item" data-keywords="contacter joindre telephone email">
+        <div class="faq-question">
+          <span>Comment contacter l'association ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Plusieurs moyens sont a votre disposition pour nous contacter :</p>
+            <ul>
+              <li><strong>Par telephone :</strong> Pendant nos horaires d'ouverture</li>
+              <li><strong>Par email :</strong> Nous repondons generalement sous 48h</li>
+              <li><strong>Sur place :</strong> Rendez-vous a l'accueil pendant les horaires d'ouverture</li>
+              <li><strong>Via le formulaire de contact :</strong> Disponible sur notre site</li>
+            </ul>
+            <p>Consultez la page <a href="/contact.html">Contact</a> pour obtenir toutes nos coordonnees.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="horaire ouverture fermeture vacances">
+        <div class="faq-question">
+          <span>Quels sont vos horaires d'ouverture ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Nos horaires d'ouverture sont disponibles sur la page <a href="/infos.html">Informations</a>.</p>
+            <p>Attention : nos horaires peuvent varier pendant les vacances scolaires et les jours feries. Nous vous recommandons de consulter notre site ou de nous contacter avant de vous deplacer.</p>
+            <p>Des fermetures exceptionnelles peuvent egalement survenir et seront communiquees sur notre page d'accueil.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-item" data-keywords="suggestion amelioration idee feedback">
+        <div class="faq-question">
+          <span>Comment proposer une amelioration ou faire une suggestion ?</span>
+          <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-content">
+            <p>Nous sommes toujours ravis de recevoir vos suggestions :</p>
+            <ul>
+              <li>Utilisez le formulaire de contact sur notre site</li>
+              <li>Envoyez-nous un email avec vos idees</li>
+              <li>Parlez-en directement a notre equipe lors de votre visite</li>
+              <li>Participez a nos assemblees generales ou reunions de membres</li>
+            </ul>
+            <p>Votre feedback nous aide a ameliorer nos services et notre offre pour tous nos usagers.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <div class="contact-cta">
+      <h3>Vous n'avez pas trouve la reponse a votre question ?</h3>
+      <p>Notre equipe est la pour vous aider. N'hesitez pas a nous contacter directement.</p>
+      <a href="/contact.html" class="btn">
+        <i class="bi bi-envelope"></i> Nous contacter
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Horaires</h4>
+        <div id="footer-horaires"></div>
+      </div>
+      <div class="footer-section">
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions legales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/contact.html">Nous contacter</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulse par Assotheque.</p>
+    </div>
+  </footer>
+
+  <script>
+    // FAQ Accordion functionality
+    document.querySelectorAll('.faq-question').forEach(question => {
+      question.addEventListener('click', function() {
+        const faqItem = this.parentElement;
+        const answer = faqItem.querySelector('.faq-answer');
+        const isActive = this.classList.contains('active');
+
+        // Close all other FAQ items
+        document.querySelectorAll('.faq-question.active').forEach(activeQuestion => {
+          if (activeQuestion !== this) {
+            activeQuestion.classList.remove('active');
+            activeQuestion.parentElement.querySelector('.faq-answer').style.maxHeight = null;
+          }
+        });
+
+        // Toggle current item
+        this.classList.toggle('active');
+        if (!isActive) {
+          answer.style.maxHeight = answer.scrollHeight + 'px';
+        } else {
+          answer.style.maxHeight = null;
+        }
+      });
+    });
+
+    // Search functionality
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', function(e) {
+      const searchTerm = e.target.value.toLowerCase();
+      const faqItems = document.querySelectorAll('.faq-item');
+      const faqSections = document.querySelectorAll('.faq-section');
+
+      if (searchTerm === '') {
+        // Show all items and sections
+        faqItems.forEach(item => item.classList.remove('hidden'));
+        faqSections.forEach(section => section.classList.remove('hidden'));
+      } else {
+        // Filter items based on search
+        faqItems.forEach(item => {
+          const question = item.querySelector('.faq-question span').textContent.toLowerCase();
+          const answer = item.querySelector('.faq-answer-content').textContent.toLowerCase();
+          const keywords = item.getAttribute('data-keywords') || '';
+
+          if (question.includes(searchTerm) || answer.includes(searchTerm) || keywords.includes(searchTerm)) {
+            item.classList.remove('hidden');
+          } else {
+            item.classList.add('hidden');
+          }
+        });
+
+        // Hide sections with no visible items
+        faqSections.forEach(section => {
+          const visibleItems = section.querySelectorAll('.faq-item:not(.hidden)');
+          if (visibleItems.length === 0) {
+            section.classList.add('hidden');
+          } else {
+            section.classList.remove('hidden');
+          }
+        });
+      }
+    });
+
+    // Load site configuration
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        // Update titles
+        document.getElementById('site-title').textContent = `Aide - ${data.nom || 'Assotheque'}`;
+        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+
+        // Footer
+        document.getElementById('footer-address').textContent = data.adresse || '';
+        document.getElementById('footer-phone').textContent = data.telephone || '';
+        document.getElementById('footer-email').textContent = data.email || '';
+
+        // Show/hide Plan link based on module_plan_interactif
+        if (data.module_plan_interactif === true) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+      } catch (e) {
+        console.error('Erreur chargement config:', e);
+      }
+    }
+
+    // Set current year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Initialize
+    loadConfig();
+  </script>
+</body>
+</html>

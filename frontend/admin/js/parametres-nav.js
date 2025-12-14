@@ -22,7 +22,9 @@ const PARAMETRES_CATEGORIES = {
     pages: [
       { id: 'tarifs', label: 'Tarifs cotisation', href: 'tarifs-cotisation.html', icon: 'bi-currency-euro' },
       { id: 'codes-reduction', label: 'Codes reduction', href: 'parametres-codes-reduction.html', icon: 'bi-ticket-perforated' },
-      { id: 'comptes-bancaires', label: 'Comptes bancaires', href: 'parametres-comptes-bancaires.html', icon: 'bi-bank' }
+      { id: 'comptes-bancaires', label: 'Comptes bancaires', href: 'parametres-comptes-bancaires.html', icon: 'bi-bank' },
+      { id: 'exports-comptables', label: 'Exports', href: 'parametres-exports-comptables.html', icon: 'bi-file-earmark-spreadsheet' },
+      { id: 'parametrage-comptable', label: 'Parametrage', href: 'parametres-comptabilite.html', icon: 'bi-gear-wide-connected' }
     ]
   },
   communication: {
@@ -57,8 +59,7 @@ const PARAMETRES_CATEGORIES = {
     label: 'Catalogue',
     icon: 'bi-collection',
     pages: [
-      { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' },
-      { id: 'exports-comptables', label: 'Exports Comptables', href: 'parametres-exports-comptables.html', icon: 'bi-file-earmark-spreadsheet' }
+      { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' }
     ]
   },
   'site-web': {

@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-name" content="winter-wonder">
+  <title id="site-title">Aide - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    /* Page hero */
+    .page-hero {
+      padding: 3rem 2rem;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.2);
+      border-bottom: var(--border-frost);
+    }
+
+    .page-hero h1 {
+      font-size: 2rem;
+      color: var(--snow-white);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+    }
+
+    .page-hero h1 i {
+      font-size: 2.5rem;
+      color: var(--frost-medium);
+    }
+
+    .page-hero p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    /* Main content */
+    .aide-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .intro-section {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .intro-section p {
+      color: var(--text-secondary);
+      margin: 0;
+      line-height: 1.6;
+    }
+
+    /* FAQ Section */
+    .faq-section {
+      margin-bottom: 2rem;
+    }
+
+    .faq-section-title {
+      font-size: 1.5rem;
+      color: var(--frost-medium);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .faq-section-title i {
+      font-size: 1.75rem;
+    }
+
+    /* Accordion items */
+    .accordion-item {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .accordion-item:hover {
+      box-shadow: var(--shadow-frost);
+    }
+
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      user-select: none;
+      background: rgba(0, 0, 0, 0.1);
+      border-bottom: var(--border-frost);
+      transition: background 0.3s ease;
+    }
+
+    .accordion-header:hover {
+      background: rgba(125, 211, 252, 0.1);
+    }
+
+    .accordion-header.active {
+      background: rgba(125, 211, 252, 0.15);
+    }
+
+    .accordion-title {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex: 1;
+    }
+
+    .accordion-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(125, 211, 252, 0.1);
+      border: var(--border-frost);
+      border-radius: var(--border-radius-sm);
+      color: var(--frost-medium);
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .accordion-question {
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .accordion-toggle {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(125, 211, 252, 0.1);
+      border: var(--border-frost);
+      border-radius: 50%;
+      color: var(--frost-medium);
+      font-size: 1.25rem;
+      transition: transform 0.3s ease;
+    }
+
+    .accordion-header.active .accordion-toggle {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .accordion-content.active {
+      max-height: 1000px;
+    }
+
+    .accordion-body {
+      padding: 1.5rem;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .accordion-body h4 {
+      font-size: 0.95rem;
+      color: var(--frost-medium);
+      margin: 1rem 0 0.5rem;
+      font-weight: 600;
+    }
+
+    .accordion-body h4:first-child {
+      margin-top: 0;
+    }
+
+    .accordion-body p {
+      margin: 0 0 0.75rem;
+    }
+
+    .accordion-body ul {
+      margin: 0.5rem 0;
+      padding-left: 1.5rem;
+    }
+
+    .accordion-body li {
+      margin: 0.5rem 0;
+    }
+
+    .accordion-body strong {
+      color: var(--text-primary);
+    }
+
+    .accordion-body a {
+      color: var(--frost-medium);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .accordion-body a:hover {
+      color: var(--warm-amber);
+      text-decoration: underline;
+    }
+
+    /* Highlight boxes */
+    .info-box {
+      background: rgba(125, 211, 252, 0.1);
+      border: 1px solid rgba(125, 211, 252, 0.3);
+      border-radius: var(--border-radius-sm);
+      padding: 1rem;
+      margin: 1rem 0;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .info-box i {
+      font-size: 1.5rem;
+      color: var(--frost-medium);
+      flex-shrink: 0;
+    }
+
+    .warning-box {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--border-radius-sm);
+      padding: 1rem;
+      margin: 1rem 0;
+      display: flex;
+      gap: 1rem;
+    }
+
+    .warning-box i {
+      font-size: 1.5rem;
+      color: var(--warm-amber);
+      flex-shrink: 0;
+    }
+
+    /* Contact CTA */
+    .contact-cta {
+      background: var(--bg-glass);
+      backdrop-filter: var(--glass-blur);
+      border: var(--border-frost);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      margin-top: 3rem;
+      text-align: center;
+    }
+
+    .contact-cta h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--frost-medium);
+      margin: 0 0 1rem;
+    }
+
+    .contact-cta p {
+      color: var(--text-secondary);
+      margin: 0 0 1.5rem;
+    }
+
+    .contact-cta .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: var(--frost-blue);
+      color: white;
+      text-decoration: none;
+      border-radius: 100px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: 2px solid var(--frost-blue);
+    }
+
+    .contact-cta .btn:hover {
+      background: transparent;
+      color: var(--frost-medium);
+      border-color: var(--frost-medium);
+    }
+
+    @media (max-width: 768px) {
+      .page-hero h1 {
+        font-size: 1.5rem;
+      }
+
+      .accordion-header {
+        padding: 1rem;
+      }
+
+      .accordion-body {
+        padding: 1rem;
+      }
+
+      .accordion-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 1.1rem;
+      }
+
+      .accordion-question {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-snow2 logo-icon"></i>
+        <span class="logo-text" id="header-title">ASSOTHEQUE</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
+          <li><a href="/aide.html" class="active">Aide</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Hero -->
+  <section class="page-hero">
+    <h1>
+      <i class="bi bi-question-circle"></i>
+      Aide & FAQ
+    </h1>
+    <p>Trouvez rapidement les réponses à vos questions</p>
+  </section>
+
+  <!-- Main Content -->
+  <div class="aide-container">
+    <!-- Intro -->
+    <div class="intro-section">
+      <p>
+        Bienvenue dans notre centre d'aide. Vous trouverez ci-dessous les réponses aux questions les plus fréquemment posées.
+        Si vous ne trouvez pas l'information recherchée, n'hésitez pas à nous contacter.
+      </p>
+    </div>
+
+    <!-- FAQ Section: Emprunts -->
+    <section class="faq-section">
+      <h2 class="faq-section-title">
+        <i class="bi bi-box-arrow-right"></i>
+        Emprunts et retours
+      </h2>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-book"></i>
+            </div>
+            <h3 class="accordion-question">Comment emprunter un jeu, un livre, un film ou un disque ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Pour emprunter un article de notre collection, suivez ces étapes :</p>
+            <ul>
+              <li>Consultez notre <a href="/catalogue.html">catalogue en ligne</a> pour vérifier la disponibilité</li>
+              <li>Rendez-vous sur place pendant nos horaires d'ouverture</li>
+              <li>Présentez votre carte de membre à jour de cotisation</li>
+              <li>Choisissez vos articles et présentez-les à l'accueil</li>
+              <li>L'emprunt sera enregistré dans votre espace membre</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Bon à savoir :</strong> Vous pouvez consulter vos emprunts en cours et leurs dates de retour depuis votre <a href="/usager/login.html">espace membre</a>.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-clock-history"></i>
+            </div>
+            <h3 class="accordion-question">Quelle est la durée des emprunts ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>La durée d'emprunt varie selon le type d'article :</p>
+            <h4>Durées standards :</h4>
+            <ul>
+              <li><strong>Jeux de société :</strong> généralement 2 à 4 semaines</li>
+              <li><strong>Livres :</strong> généralement 3 à 4 semaines</li>
+              <li><strong>Films :</strong> généralement 1 à 2 semaines</li>
+              <li><strong>Disques :</strong> généralement 2 à 3 semaines</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Note :</strong> Les durées exactes peuvent varier selon les paramètres de votre structure. Consultez votre espace membre pour connaître les dates de retour précises.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <h3 class="accordion-question">Comment prolonger un emprunt ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Vous pouvez prolonger vos emprunts de deux manières :</p>
+            <h4>En ligne :</h4>
+            <ul>
+              <li>Connectez-vous à votre <a href="/usager/login.html">espace membre</a></li>
+              <li>Accédez à la liste de vos emprunts en cours</li>
+              <li>Cliquez sur le bouton "Prolonger" à côté de l'article concerné</li>
+              <li>La prolongation sera accordée si aucune réservation n'est en attente</li>
+            </ul>
+            <h4>Sur place :</h4>
+            <ul>
+              <li>Présentez-vous à l'accueil avec votre carte de membre</li>
+              <li>Demandez la prolongation de vos emprunts</li>
+            </ul>
+            <div class="warning-box">
+              <i class="bi bi-exclamation-triangle"></i>
+              <div>
+                <strong>Attention :</strong> Les prolongations ne sont généralement pas possibles si l'article est réservé par un autre membre ou si vous avez déjà dépassé la date de retour.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <h3 class="accordion-question">Que se passe-t-il en cas de retard ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>En cas de retard dans le retour d'un article emprunté :</p>
+            <ul>
+              <li>Vous recevrez des <strong>rappels par email</strong> quelques jours avant et après la date d'échéance</li>
+              <li>Des <strong>pénalités de retard</strong> peuvent s'appliquer selon le règlement de votre structure</li>
+              <li>L'accès aux nouveaux emprunts peut être suspendu en cas de retard important</li>
+              <li>En cas de perte ou de dégradation, des frais de remplacement peuvent être demandés</li>
+            </ul>
+            <div class="warning-box">
+              <i class="bi bi-exclamation-triangle"></i>
+              <div>
+                <strong>Important :</strong> Veillez à respecter les dates de retour pour permettre à tous les membres de profiter de nos collections.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-bookmark"></i>
+            </div>
+            <h3 class="accordion-question">Comment réserver un article ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Si un article est actuellement emprunté, vous pouvez le réserver :</p>
+            <h4>Vérification de disponibilité :</h4>
+            <ul>
+              <li>Consultez la <a href="/catalogue.html">fiche de l'article</a> dans le catalogue</li>
+              <li>Vérifiez le statut de disponibilité et la date de retour prévue</li>
+            </ul>
+            <h4>Réservation :</h4>
+            <ul>
+              <li>Contactez-nous par téléphone, email ou en personne</li>
+              <li>Indiquez l'article que vous souhaitez réserver</li>
+              <li>Vous serez informé dès que l'article sera disponible</li>
+              <li>Vous disposerez d'un délai pour venir le récupérer</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>À venir :</strong> La fonctionnalité de réservation en ligne directement depuis votre espace membre sera bientôt disponible.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Inscription -->
+    <section class="faq-section">
+      <h2 class="faq-section-title">
+        <i class="bi bi-person-plus"></i>
+        Inscription et adhésion
+      </h2>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-pencil-square"></i>
+            </div>
+            <h3 class="accordion-question">Comment devenir membre ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Pour devenir membre et profiter de nos services :</p>
+            <h4>Démarches :</h4>
+            <ul>
+              <li>Rendez-vous sur place pendant nos horaires d'ouverture</li>
+              <li>Présentez une pièce d'identité et un justificatif de domicile</li>
+              <li>Remplissez le formulaire d'inscription</li>
+              <li>Réglez votre cotisation annuelle</li>
+              <li>Recevez votre carte de membre</li>
+            </ul>
+            <h4>Documents nécessaires :</h4>
+            <ul>
+              <li>Pièce d'identité en cours de validité</li>
+              <li>Justificatif de domicile de moins de 3 mois</li>
+              <li>Photo d'identité (selon les structures)</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Bon à savoir :</strong> Certaines structures proposent des tarifs réduits pour les familles, les étudiants ou les demandeurs d'emploi. Renseignez-vous auprès de notre équipe.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-wallet2"></i>
+            </div>
+            <h3 class="accordion-question">Quel est le montant de la cotisation ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Le montant de la cotisation varie selon votre situation :</p>
+            <h4>Tarifs types :</h4>
+            <ul>
+              <li><strong>Tarif individuel :</strong> cotisation standard pour un membre</li>
+              <li><strong>Tarif famille :</strong> tarif préférentiel pour plusieurs membres du même foyer</li>
+              <li><strong>Tarif réduit :</strong> pour étudiants, demandeurs d'emploi, seniors</li>
+            </ul>
+            <h4>Moyens de paiement :</h4>
+            <ul>
+              <li>Espèces</li>
+              <li>Chèque</li>
+              <li>Carte bancaire (selon les structures)</li>
+              <li>Chèques-vacances ou autres dispositifs d'aide (selon disponibilité)</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Information :</strong> Contactez-nous pour connaître les tarifs exacts et les éventuelles promotions en cours.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-calendar-check"></i>
+            </div>
+            <h3 class="accordion-question">Quelle est la durée de validité de l'adhésion ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>L'adhésion est généralement valable pour une année civile ou une période de 12 mois à partir de la date d'inscription.</p>
+            <h4>Renouvellement :</h4>
+            <ul>
+              <li>Vous serez informé par email avant l'expiration de votre adhésion</li>
+              <li>Le renouvellement peut se faire sur place ou parfois en ligne</li>
+              <li>Vos données personnelles sont conservées d'une année sur l'autre</li>
+            </ul>
+            <div class="warning-box">
+              <i class="bi bi-exclamation-triangle"></i>
+              <div>
+                <strong>Attention :</strong> Une adhésion expirée ne permet plus d'emprunter de nouveaux articles. Pensez à renouveler à temps.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Espace membre -->
+    <section class="faq-section">
+      <h2 class="faq-section-title">
+        <i class="bi bi-person-circle"></i>
+        Espace membre
+      </h2>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-box-arrow-in-right"></i>
+            </div>
+            <h3 class="accordion-question">Comment accéder à mon espace membre ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Votre espace membre vous permet de gérer vos emprunts et informations personnelles :</p>
+            <h4>Première connexion :</h4>
+            <ul>
+              <li>Rendez-vous sur la page de <a href="/usager/login.html">connexion</a></li>
+              <li>Utilisez l'email fourni lors de votre inscription</li>
+              <li>Créez votre mot de passe si ce n'est pas déjà fait</li>
+            </ul>
+            <h4>Fonctionnalités disponibles :</h4>
+            <ul>
+              <li>Consulter vos emprunts en cours et leur date de retour</li>
+              <li>Prolonger vos emprunts en ligne</li>
+              <li>Consulter votre historique d'emprunts</li>
+              <li>Mettre à jour vos informations personnelles</li>
+              <li>Consulter l'état de votre cotisation</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Sécurité :</strong> Votre mot de passe est personnel et confidentiel. Ne le communiquez à personne.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-key"></i>
+            </div>
+            <h3 class="accordion-question">J'ai oublié mon mot de passe, que faire ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Pour réinitialiser votre mot de passe :</p>
+            <ul>
+              <li>Cliquez sur "Mot de passe oublié" sur la page de connexion</li>
+              <li>Saisissez l'adresse email associée à votre compte</li>
+              <li>Vous recevrez un email avec un lien de réinitialisation</li>
+              <li>Suivez les instructions pour créer un nouveau mot de passe</li>
+            </ul>
+            <div class="warning-box">
+              <i class="bi bi-exclamation-triangle"></i>
+              <div>
+                <strong>Problème persistant ?</strong> Si vous ne recevez pas l'email de réinitialisation, vérifiez vos spams ou contactez-nous directement.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-pencil"></i>
+            </div>
+            <h3 class="accordion-question">Comment modifier mes informations personnelles ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Pour mettre à jour vos informations :</p>
+            <h4>Via votre espace membre :</h4>
+            <ul>
+              <li>Connectez-vous à votre <a href="/usager/login.html">espace membre</a></li>
+              <li>Accédez à la section "Mon profil" ou "Mes informations"</li>
+              <li>Modifiez les informations souhaitées (adresse, téléphone, email)</li>
+              <li>Enregistrez vos modifications</li>
+            </ul>
+            <h4>Sur place :</h4>
+            <ul>
+              <li>Présentez-vous à l'accueil avec votre carte de membre</li>
+              <li>Communiquez les nouvelles informations à l'équipe</li>
+              <li>Un justificatif peut être demandé pour certains changements</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Important :</strong> Maintenez vos coordonnées à jour pour recevoir les rappels d'échéance et les informations importantes.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FAQ Section: Contact -->
+    <section class="faq-section">
+      <h2 class="faq-section-title">
+        <i class="bi bi-headset"></i>
+        Contact et assistance
+      </h2>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-telephone"></i>
+            </div>
+            <h3 class="accordion-question">Comment nous contacter ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Plusieurs moyens sont à votre disposition pour nous joindre :</p>
+            <h4>Par téléphone :</h4>
+            <p id="phone-info">Consultez la page <a href="/infos.html">Infos pratiques</a> pour nos coordonnées téléphoniques.</p>
+            <h4>Par email :</h4>
+            <p id="email-info">Écrivez-nous à l'adresse disponible sur la page <a href="/contact.html">Contact</a>.</p>
+            <h4>Sur place :</h4>
+            <p>Rendez-vous à l'une de nos adresses pendant les horaires d'ouverture (voir <a href="/infos.html">Infos pratiques</a>).</p>
+            <h4>Formulaire de contact :</h4>
+            <p>Utilisez notre <a href="/contact.html">formulaire en ligne</a> pour nous envoyer un message.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-clock"></i>
+            </div>
+            <h3 class="accordion-question">Quels sont vos horaires d'ouverture ?</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Nos horaires varient selon les sites et les périodes de l'année.</p>
+            <p>Consultez la page <a href="/infos.html">Infos pratiques</a> pour connaître :</p>
+            <ul>
+              <li>Les horaires détaillés de chaque site</li>
+              <li>Les fermetures exceptionnelles (vacances, jours fériés)</li>
+              <li>Les horaires spéciaux en période de vacances scolaires</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Astuce :</strong> Vérifiez toujours les horaires avant de vous déplacer, notamment pendant les périodes de vacances et jours fériés.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <div class="accordion-header" onclick="toggleAccordion(this)">
+          <div class="accordion-title">
+            <div class="accordion-icon">
+              <i class="bi bi-chat-dots"></i>
+            </div>
+            <h3 class="accordion-question">Je n'ai pas trouvé la réponse à ma question</h3>
+          </div>
+          <div class="accordion-toggle">
+            <i class="bi bi-chevron-down"></i>
+          </div>
+        </div>
+        <div class="accordion-content">
+          <div class="accordion-body">
+            <p>Si votre question n'a pas trouvé de réponse dans cette FAQ, nous sommes là pour vous aider :</p>
+            <ul>
+              <li>Consultez la page <a href="/contact.html">Contact</a> pour nous envoyer un message détaillé</li>
+              <li>Appelez-nous directement pendant nos heures d'ouverture</li>
+              <li>Passez nous voir sur place pour un échange en personne</li>
+              <li>Consultez la page <a href="/infos.html">Infos pratiques</a> pour plus d'informations</li>
+            </ul>
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Nous sommes à votre écoute :</strong> Notre équipe se fera un plaisir de répondre à toutes vos questions et de vous accompagner dans vos démarches.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact CTA -->
+    <div class="contact-cta">
+      <h3>Besoin d'aide supplémentaire ?</h3>
+      <p>Notre équipe est à votre disposition pour répondre à toutes vos questions</p>
+      <a href="/contact.html" class="btn">
+        <i class="bi bi-envelope"></i>
+        Nous contacter
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="/">Accueil</a></li>
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Légal</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/cgv.html">CGV</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Espace membre</h4>
+        <ul>
+          <li><a href="/usager/login.html">Connexion</a></li>
+          <li><a href="/admin/login.html">Administration</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits réservés</p>
+    </div>
+  </footer>
+
+  <!-- Snowfall Animation -->
+  <script src="/theme/js/snowfall.js"></script>
+
+  <script>
+    // Initialize
+    async function init() {
+      document.getElementById('year').textContent = new Date().getFullYear();
+
+      try {
+        // Load config
+        const configResp = await fetch('/api/public/config');
+        const config = await configResp.json();
+
+        const siteName = config.nom_site || 'Assotheque';
+        document.getElementById('site-title').textContent = `Aide - ${siteName}`;
+        document.getElementById('header-title').textContent = siteName.toUpperCase();
+        document.getElementById('footer-name').textContent = siteName;
+
+        // Update contact info in FAQ if available
+        if (config.telephone_contact) {
+          document.getElementById('phone-info').innerHTML =
+            `Appelez-nous au <strong><a href="tel:${config.telephone_contact}">${config.telephone_contact}</a></strong> pendant nos heures d'ouverture.`;
+        }
+        if (config.email_contact) {
+          document.getElementById('email-info').innerHTML =
+            `Écrivez-nous à <strong><a href="mailto:${config.email_contact}">${config.email_contact}</a></strong> et nous vous répondrons dans les plus brefs délais.`;
+        }
+
+        // Check for Plan link visibility
+        const parametresResp = await fetch('/api/public/parametres');
+        const parametres = await parametresResp.json();
+        if (parametres.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+
+      } catch (e) {
+        console.error('Init error:', e);
+      }
+    }
+
+    // Toggle accordion
+    function toggleAccordion(header) {
+      const item = header.parentElement;
+      const content = item.querySelector('.accordion-content');
+      const isActive = header.classList.contains('active');
+
+      // Close all accordions
+      document.querySelectorAll('.accordion-header').forEach(h => {
+        h.classList.remove('active');
+        h.parentElement.querySelector('.accordion-content').classList.remove('active');
+      });
+
+      // Open this one if it wasn't active
+      if (!isActive) {
+        header.classList.add('active');
+        content.classList.add('active');
+      }
+    }
+
+    init();
+  </script>
+  <script src="/js/animation-toggle.js"></script>
+</body>
+</html>

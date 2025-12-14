@@ -1,0 +1,72 @@
+{
+  "titre": "Aide Assotheque",
+  "description": "Centre d'aide pour l'administration de la ludothèque",
+  "modules": [
+    {
+      "code": "emprunts",
+      "titre": "Emprunts et Retours",
+      "icone": "bi-arrow-left-right",
+      "fichier": "emprunts.json"
+    },
+    {
+      "code": "adherents",
+      "titre": "Usagers et Familles",
+      "icone": "bi-people",
+      "fichier": "adherents.json"
+    },
+    {
+      "code": "catalogue",
+      "titre": "Catalogue (Collections)",
+      "icone": "bi-collection",
+      "fichier": "catalogue.json"
+    },
+    {
+      "code": "cotisations",
+      "titre": "Cotisations",
+      "icone": "bi-receipt",
+      "fichier": "cotisations.json"
+    },
+    {
+      "code": "comptabilite",
+      "titre": "Comptabilite",
+      "icone": "bi-calculator",
+      "fichier": "comptabilite.json"
+    },
+    {
+      "code": "parametres",
+      "titre": "Parametres",
+      "icone": "bi-gear-fill",
+      "fichier": "parametres.json"
+    },
+    {
+      "code": "communications",
+      "titre": "Communications (Email/SMS)",
+      "icone": "bi-send",
+      "fichier": "communications.json"
+    },
+    {
+      "code": "statistiques",
+      "titre": "Statistiques et Tableaux de bord",
+      "icone": "bi-graph-up",
+      "fichier": "statistiques.json"
+    },
+    {
+      "code": "utilisateurs_admin",
+      "titre": "Utilisateurs Admin et Roles",
+      "icone": "bi-shield-lock",
+      "fichier": "utilisateurs_admin.json"
+    },
+    {
+      "code": "codes_barres",
+      "titre": "Codes-barres",
+      "icone": "bi-upc",
+      "fichier": "codes_barres.json"
+    },
+    {
+      "code": "fonctionnalites_avancees",
+      "titre": "Fonctionnalites Avancees",
+      "icone": "bi-cpu",
+      "fichier": "fonctionnalites_avancees.json"
+    }
+  ]
+}

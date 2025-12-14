@@ -213,6 +213,8 @@ app.use('/api/caisses', require('./routes/caisse'));
 app.use('/api/factures', require('./routes/factures'));
 app.use('/api/api-keys', require('./routes/apiKeys'));
 app.use('/api/external', require('./routes/external'));
+app.use('/api/plans', require('./routes/plans'));
+app.use('/api/aide', require('./routes/aide'));
 
 // Routes espace usager (adherents)
 app.use('/api/usager/auth', require('./routes/usagerAuth'));

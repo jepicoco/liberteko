@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Plan du site - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Plan-specific styles */
+    .content-wrapper {
+      background: white;
+      min-height: calc(100vh - 300px);
+    }
+
+    .plan-page {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      color: white;
+      padding: 2rem 0;
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .page-header p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+    }
+
+    /* Site selector */
+    .site-selector {
+      background: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .site-selector label {
+      font-weight: 600;
+      color: var(--text-color);
+      margin: 0;
+    }
+
+    .site-selector select {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--secondary-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .site-selector select:focus {
+      border-color: var(--primary-color);
+    }
+
+    /* Plan container */
+    .plan-container {
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .plan-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .plan-title {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .etages-tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .etage-tab {
+      padding: 0.5rem 1rem;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+
+    .etage-tab:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .etage-tab.active {
+      background: white;
+      color: var(--primary-color);
+    }
+
+    /* Canvas wrapper */
+    .plan-canvas-wrapper {
+      position: relative;
+      min-height: 500px;
+      background: #f8f9fa;
+    }
+
+    .plan-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+
+    .plan-svg:active {
+      cursor: grabbing;
+    }
+
+    /* SVG Elements */
+    .element-mur {
+      stroke: #333333;
+      stroke-width: 6;
+      stroke-linecap: round;
+      fill: none;
+    }
+
+    .element-etagere {
+      stroke: #8B4513;
+      stroke-width: 2;
+      fill: #DEB887;
+      fill-opacity: 0.8;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+
+    .element-etagere:hover {
+      filter: brightness(1.1);
+    }
+
+    .element-meuble {
+      stroke: #4a4a4a;
+      stroke-width: 2;
+      fill: #a0a0a0;
+      fill-opacity: 0.7;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+
+    .element-meuble:hover {
+      filter: brightness(1.1);
+    }
+
+    .element-table {
+      stroke: #2c3e50;
+      stroke-width: 2;
+      fill: #bdc3c7;
+      fill-opacity: 0.6;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+
+    .element-table:hover {
+      filter: brightness(1.1);
+    }
+
+    .element-zone {
+      stroke: #3498db;
+      stroke-width: 2;
+      stroke-dasharray: 5,5;
+      fill: #3498db;
+      fill-opacity: 0.2;
+      cursor: pointer;
+      transition: fill-opacity 0.2s;
+    }
+
+    .element-zone:hover {
+      fill-opacity: 0.35;
+    }
+
+    .element-label {
+      font-size: 12px;
+      fill: #333;
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: middle;
+      font-weight: 500;
+    }
+
+    /* Tooltip */
+    .plan-tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      pointer-events: none;
+      z-index: 1000;
+      max-width: 300px;
+      display: none;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .plan-tooltip.visible {
+      display: block;
+    }
+
+    .tooltip-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .tooltip-info {
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    /* Zoom controls */
+    .zoom-controls {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .zoom-controls button {
+      width: 44px;
+      height: 44px;
+      background: white;
+      border: none;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--primary-color);
+      transition: all 0.3s;
+    }
+
+    .zoom-controls button:hover {
+      background: var(--primary-color);
+      color: white;
+      transform: scale(1.1);
+    }
+
+    /* Loading & No plan */
+    .plan-loading, .no-plan {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--text-light);
+    }
+
+    .plan-loading .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid var(--secondary-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .no-plan i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+      color: var(--primary-light);
+    }
+
+    /* Legend */
+    .plan-legend {
+      background: var(--secondary-color);
+      padding: 1rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      justify-content: center;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--text-color);
+    }
+
+    .legend-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+    }
+
+    .legend-color.mur {
+      background: #333333;
+    }
+
+    .legend-color.etagere {
+      background: #DEB887;
+      border: 2px solid #8B4513;
+    }
+
+    .legend-color.meuble {
+      background: #a0a0a0;
+      border: 2px solid #4a4a4a;
+    }
+
+    .legend-color.table {
+      background: #bdc3c7;
+      border: 2px solid #2c3e50;
+    }
+
+    .legend-color.zone {
+      background: rgba(52, 152, 219, 0.3);
+      border: 2px dashed #3498db;
+    }
+
+    /* Side panel */
+    .side-panel {
+      position: fixed;
+      top: 0;
+      right: -450px;
+      width: 450px;
+      max-width: 90vw;
+      height: 100vh;
+      background: white;
+      box-shadow: -5px 0 20px rgba(0, 0, 0, 0.2);
+      transition: right 0.3s ease;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-panel.open {
+      right: 0;
+    }
+
+    .side-panel-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1999;
+      display: none;
+    }
+
+    .side-panel-overlay.visible {
+      display: block;
+    }
+
+    .side-panel-header {
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+      color: white;
+      padding: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .side-panel-header h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .close-panel {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      line-height: 1;
+      transition: opacity 0.3s;
+    }
+
+    .close-panel:hover {
+      opacity: 0.7;
+    }
+
+    .side-panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    .articles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .article-item {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: var(--secondary-color);
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text-color);
+      transition: all 0.3s;
+    }
+
+    .article-item:hover {
+      transform: translateX(5px);
+      box-shadow: var(--shadow);
+    }
+
+    .article-image {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 1rem;
+      background: white;
+    }
+
+    .article-info {
+      flex: 1;
+    }
+
+    .article-title {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .article-meta {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .type-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .type-badge.jeu {
+      background: #FFE5B4;
+      color: #c9a227;
+    }
+
+    .type-badge.livre {
+      background: #B4D8E7;
+      color: #2980b9;
+    }
+
+    .type-badge.film {
+      background: #E7B4D8;
+      color: #8e44ad;
+    }
+
+    .type-badge.disque {
+      background: #B4E7C4;
+      color: #27ae60;
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .status-badge.disponible {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-badge.emprunte {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .no-articles {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-light);
+    }
+
+    .no-articles i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .loading-articles {
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+
+    .loading-articles .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid var(--secondary-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    /* Search bar */
+    .search-bar-plan {
+      background: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 2rem;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input-wrapper > i.bi-search {
+      position: absolute;
+      left: 1rem;
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    .search-input-wrapper input {
+      flex: 1;
+      padding: 0.75rem 3rem;
+      border: 2px solid var(--secondary-color);
+      border-radius: 50px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .search-input-wrapper input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    }
+
+    .clear-search {
+      position: absolute;
+      right: 0.75rem;
+      background: none;
+      border: none;
+      color: var(--text-light);
+      cursor: pointer;
+      padding: 0.5rem;
+      font-size: 1rem;
+      transition: color 0.3s;
+    }
+
+    .clear-search:hover {
+      color: var(--text-color);
+    }
+
+    .search-results {
+      margin-top: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      border-radius: 8px;
+    }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: var(--secondary-color);
+      margin-bottom: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .search-result-item:hover {
+      background: var(--primary-light);
+      transform: translateX(4px);
+    }
+
+    .search-result-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .search-result-image {
+      width: 45px;
+      height: 45px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 1rem;
+      background: white;
+    }
+
+    .search-result-info {
+      flex: 1;
+    }
+
+    .search-result-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      margin-bottom: 0.2rem;
+    }
+
+    .search-result-meta {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .search-result-locate {
+      color: var(--primary-color);
+      font-size: 1.1rem;
+      margin-left: 0.5rem;
+    }
+
+    .search-no-results {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--text-light);
+    }
+
+    .search-loading {
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .search-loading .spinner-small {
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--secondary-color);
+      border-top-color: var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    /* Highlighted element on plan */
+    .element-highlighted {
+      animation: pulse-highlight 1s ease-in-out 3;
+    }
+
+    @keyframes pulse-highlight {
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.5) drop-shadow(0 0 10px var(--primary-color)); }
+    }
+
+    /* Module disabled message */
+    .module-disabled {
+      max-width: 600px;
+      margin: 3rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .module-disabled i {
+      font-size: 3rem;
+      color: var(--primary-light);
+      margin-bottom: 1rem;
+    }
+
+    .module-disabled h2 {
+      color: var(--text-color);
+      margin-bottom: 1rem;
+    }
+
+    .module-disabled p {
+      color: var(--text-light);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .plan-page {
+        padding: 1rem;
+      }
+
+      .site-selector {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .plan-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .etages-tabs {
+        justify-content: center;
+      }
+
+      .side-panel {
+        width: 100%;
+        right: -100%;
+      }
+
+      .zoom-controls {
+        bottom: 10px;
+        right: 10px;
+      }
+
+      .zoom-controls button {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-collection"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/catalogue.html">Catalogue</a></li>
+          <li><a href="/infos.html">Informations</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li><a href="/plan.html" class="active">Plan</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-person-circle"></i> Espace Usager
+      </a>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <section class="page-header">
+    <h1><i class="bi bi-map"></i> Plan du site</h1>
+    <p>Localisez facilement nos collections dans notre espace</p>
+  </section>
+
+  <!-- Content -->
+  <div class="content-wrapper">
+    <div class="plan-page" id="planPage">
+      <!-- Module disabled message -->
+      <div class="module-disabled d-none" id="moduleDisabled">
+        <i class="bi bi-info-circle"></i>
+        <h2>Fonctionnalité non disponible</h2>
+        <p>Le plan interactif n'est pas activé pour le moment.</p>
+      </div>
+
+      <!-- Site selector -->
+      <div class="site-selector d-none" id="siteSelector">
+        <label for="selectSite"><i class="bi bi-building"></i> Site :</label>
+        <select id="selectSite">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+
+      <!-- Search bar -->
+      <div class="search-bar-plan d-none" id="searchBarPlan">
+        <div class="search-input-wrapper">
+          <i class="bi bi-search"></i>
+          <input type="text" id="searchArticle" placeholder="Rechercher un article pour le localiser sur le plan...">
+          <button class="clear-search d-none" id="clearSearch" title="Effacer">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="search-results d-none" id="searchResults">
+          <!-- Search results will appear here -->
+        </div>
+      </div>
+
+      <!-- Plan container -->
+      <div class="plan-container d-none" id="planContainer">
+        <div class="plan-header">
+          <h2 class="plan-title" id="planTitle">Plan</h2>
+          <div class="etages-tabs" id="etagesTabs">
+            <!-- Tabs generated dynamically -->
+          </div>
+        </div>
+
+        <div class="plan-canvas-wrapper" id="canvasWrapper">
+          <!-- Loading -->
+          <div class="plan-loading" id="loadingIndicator">
+            <div class="spinner"></div>
+            <p>Chargement du plan...</p>
+          </div>
+
+          <!-- No plan -->
+          <div class="no-plan d-none" id="noPlan">
+            <i class="bi bi-map"></i>
+            <h4>Aucun plan disponible</h4>
+            <p>Le plan de ce site n'a pas encore été créé.</p>
+          </div>
+
+          <!-- SVG Canvas -->
+          <svg class="plan-svg d-none" id="planSvg" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+              </pattern>
+            </defs>
+            <g id="planContent"></g>
+          </svg>
+
+          <!-- Zoom controls -->
+          <div class="zoom-controls d-none" id="zoomControls">
+            <button id="btnZoomIn" title="Zoom avant">
+              <i class="bi bi-plus-lg"></i>
+            </button>
+            <button id="btnZoomOut" title="Zoom arrière">
+              <i class="bi bi-dash-lg"></i>
+            </button>
+            <button id="btnZoomReset" title="Réinitialiser">
+              <i class="bi bi-arrows-fullscreen"></i>
+            </button>
+          </div>
+
+          <!-- Tooltip -->
+          <div class="plan-tooltip" id="planTooltip">
+            <div class="tooltip-title"></div>
+            <div class="tooltip-info"></div>
+          </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="plan-legend d-none" id="planLegend">
+          <div class="legend-item">
+            <div class="legend-color mur"></div>
+            <span>Murs</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color etagere"></div>
+            <span>Étagères</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color meuble"></div>
+            <span>Meubles</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color table"></div>
+            <span>Tables</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color zone"></div>
+            <span>Zones</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Panel for Articles -->
+  <div class="side-panel-overlay" id="sidePanelOverlay"></div>
+  <div class="side-panel" id="sidePanel">
+    <div class="side-panel-header">
+      <h2>
+        <i class="bi bi-geo-alt"></i>
+        <span id="elementName">Articles</span>
+      </h2>
+      <button class="close-panel" id="closePanel">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+    <div class="side-panel-content">
+      <div class="loading-articles d-none" id="loadingArticles">
+        <div class="spinner"></div>
+        <p>Chargement des articles...</p>
+      </div>
+      <div class="articles-list" id="articlesList">
+        <!-- Articles will be loaded here -->
+      </div>
+      <div class="no-articles d-none" id="noArticles">
+        <i class="bi bi-inbox"></i>
+        <p>Aucun article à cet emplacement</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Contact</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p id="footer-email"></p>
+      </div>
+      <div class="footer-section">
+        <h4>Horaires</h4>
+        <div id="footer-horaires"></div>
+      </div>
+      <div class="footer-section">
+        <h4>Liens utiles</h4>
+        <ul>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">CGU</a></li>
+          <li><a href="/contact.html">Nous contacter</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulsé par Assotheque.</p>
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * Plan Viewer - Interactive floor plan viewer for default theme
+     */
+    const PlanApp = {
+      moduleEnabled: false,
+      sites: [],
+      currentSiteId: null,
+      plan: null,
+      currentEtage: null,
+      zoom: 1,
+      panX: 0,
+      panY: 0,
+      isDragging: false,
+      lastMousePos: { x: 0, y: 0 },
+      searchTimeout: null,
+      searchCache: new Map(),
+
+      async init() {
+        // Load site config for footer
+        await this.loadSiteConfig();
+
+        // Check if module is enabled
+        await this.checkModuleEnabled();
+
+        if (this.moduleEnabled) {
+          await this.loadSites();
+          this.bindEvents();
+        }
+
+        // Set year
+        document.getElementById('year').textContent = new Date().getFullYear();
+      },
+
+      async loadSiteConfig() {
+        try {
+          const resp = await fetch('/api/public/parametres');
+          if (!resp.ok) return;
+          const data = await resp.json();
+
+          document.getElementById('site-title').textContent = `Plan du site - ${data.nom || 'Assotheque'}`;
+          document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+          document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+          document.getElementById('footer-address').textContent = data.adresse || '';
+          document.getElementById('footer-phone').textContent = data.telephone || '';
+          document.getElementById('footer-email').textContent = data.email || '';
+        } catch (e) {
+          console.error('Erreur chargement config:', e);
+        }
+      },
+
+      async checkModuleEnabled() {
+        try {
+          const resp = await fetch('/api/public/parametres');
+          if (!resp.ok) return;
+          const data = await resp.json();
+
+          this.moduleEnabled = data.module_plan_interactif === true;
+
+          if (!this.moduleEnabled) {
+            document.getElementById('moduleDisabled').classList.remove('d-none');
+          }
+        } catch (e) {
+          console.error('Erreur:', e);
+          document.getElementById('moduleDisabled').classList.remove('d-none');
+        }
+      },
+
+      async loadSites() {
+        try {
+          const resp = await fetch('/api/sites');
+          if (!resp.ok) throw new Error('Erreur chargement sites');
+
+          this.sites = await resp.json();
+
+          if (this.sites.length === 0) {
+            document.getElementById('moduleDisabled').classList.remove('d-none');
+            return;
+          }
+
+          // Show site selector if multiple sites
+          if (this.sites.length > 1) {
+            const select = document.getElementById('selectSite');
+            select.innerHTML = this.sites.map(site =>
+              `<option value="${site.id}">${this.escapeHtml(site.nom)}</option>`
+            ).join('');
+            document.getElementById('siteSelector').classList.remove('d-none');
+
+            select.addEventListener('change', (e) => {
+              this.currentSiteId = parseInt(e.target.value);
+              this.loadPlan();
+            });
+          }
+
+          // Load first site
+          this.currentSiteId = this.sites[0].id;
+          await this.loadPlan();
+
+        } catch (e) {
+          console.error('Erreur:', e);
+          document.getElementById('moduleDisabled').classList.remove('d-none');
+        }
+      },
+
+      async loadPlan() {
+        if (!this.currentSiteId) return;
+
+        document.getElementById('planContainer').classList.remove('d-none');
+        document.getElementById('loadingIndicator').classList.remove('d-none');
+        document.getElementById('noPlan').classList.add('d-none');
+        document.getElementById('planSvg').classList.add('d-none');
+
+        try {
+          const resp = await fetch(`/api/plans/public/site/${this.currentSiteId}`);
+
+          if (!resp.ok) {
+            if (resp.status === 404) {
+              this.showNoPlan();
+              return;
+            }
+            throw new Error('Erreur chargement plan');
+          }
+
+          this.plan = await resp.json();
+          this.renderPlan();
+
+        } catch (e) {
+          console.error('Erreur:', e);
+          this.showNoPlan();
+        }
+      },
+
+      showNoPlan() {
+        document.getElementById('loadingIndicator').classList.add('d-none');
+        document.getElementById('noPlan').classList.remove('d-none');
+      },
+
+      renderPlan() {
+        if (!this.plan || !this.plan.etages || this.plan.etages.length === 0) {
+          this.showNoPlan();
+          return;
+        }
+
+        document.getElementById('loadingIndicator').classList.add('d-none');
+        document.getElementById('planSvg').classList.remove('d-none');
+        document.getElementById('zoomControls').classList.remove('d-none');
+        document.getElementById('planLegend').classList.remove('d-none');
+        document.getElementById('searchBarPlan').classList.remove('d-none');
+
+        document.getElementById('planTitle').textContent = this.plan.nom || 'Plan du site';
+
+        this.renderEtagesTabs();
+
+        if (this.plan.etages.length > 0) {
+          this.selectEtage(this.plan.etages[0].id);
+        }
+      },
+
+      renderEtagesTabs() {
+        const container = document.getElementById('etagesTabs');
+        container.innerHTML = '';
+
+        this.plan.etages.forEach(etage => {
+          const btn = document.createElement('button');
+          btn.className = 'etage-tab';
+          btn.dataset.etageId = etage.id;
+
+          let label = etage.nom;
+          if (etage.type === 'etage' && etage.numero !== null) {
+            label = etage.numero === 0 ? 'RDC' : `Étage ${etage.numero}`;
+            if (etage.nom && etage.nom !== label) {
+              label += ` - ${etage.nom}`;
+            }
+          }
+
+          btn.textContent = label;
+          btn.addEventListener('click', () => this.selectEtage(etage.id));
+          container.appendChild(btn);
+        });
+      },
+
+      selectEtage(etageId) {
+        document.querySelectorAll('.etage-tab').forEach(tab => {
+          tab.classList.toggle('active', parseInt(tab.dataset.etageId) === etageId);
+        });
+
+        this.currentEtage = this.plan.etages.find(e => e.id === etageId);
+        if (!this.currentEtage) return;
+
+        this.resetView();
+        this.renderElements();
+      },
+
+      renderElements() {
+        const content = document.getElementById('planContent');
+        content.innerHTML = '';
+
+        if (!this.currentEtage || !this.currentEtage.elements) return;
+
+        const svg = document.getElementById('planSvg');
+        const width = this.plan.largeur_defaut || 1200;
+        const height = this.plan.hauteur_defaut || 800;
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+        // Background
+        if (this.currentEtage.couleur_fond) {
+          const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          bg.setAttribute('x', 0);
+          bg.setAttribute('y', 0);
+          bg.setAttribute('width', width);
+          bg.setAttribute('height', height);
+          bg.setAttribute('fill', this.currentEtage.couleur_fond);
+          content.appendChild(bg);
+        }
+
+        // Sort elements
+        const sorted = [...this.currentEtage.elements].sort((a, b) => {
+          const order = { zone: 0, mur: 1, etagere: 2, meuble: 3, table: 4 };
+          return (order[a.type_element] || 5) - (order[b.type_element] || 5);
+        });
+
+        sorted.forEach(el => this.renderElement(el, content));
+        this.updateTransform();
+      },
+
+      renderElement(element, container) {
+        const points = element.points || [];
+        if (points.length === 0) return;
+
+        if (element.type_element === 'mur') {
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+          line.setAttribute('points', points.map(p => `${p.x},${p.y}`).join(' '));
+          line.classList.add('element-mur');
+          container.appendChild(line);
+        } else if (points.length >= 2) {
+          const x = Math.min(points[0].x, points[1].x);
+          const y = Math.min(points[0].y, points[1].y);
+          const w = Math.abs(points[1].x - points[0].x);
+          const h = Math.abs(points[1].y - points[0].y);
+
+          const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+          group.dataset.elementId = element.id;
+
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', x);
+          rect.setAttribute('y', y);
+          rect.setAttribute('width', w);
+          rect.setAttribute('height', h);
+          rect.classList.add(`element-${element.type_element}`);
+
+          if (element.rotation) {
+            const cx = x + w / 2;
+            const cy = y + h / 2;
+            rect.setAttribute('transform', `rotate(${element.rotation} ${cx} ${cy})`);
+          }
+
+          if (element.style) {
+            if (element.style.couleur) rect.style.fill = element.style.couleur;
+            if (element.style.couleur_bordure) rect.style.stroke = element.style.couleur_bordure;
+          }
+
+          group.appendChild(rect);
+
+          if (element.nom) {
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', x + w / 2);
+            label.setAttribute('y', y + h / 2);
+            label.classList.add('element-label');
+            label.textContent = element.nom;
+            group.appendChild(label);
+          }
+
+          if (element.emplacements && element.emplacements.length > 0) {
+            group.style.cursor = 'pointer';
+            group.addEventListener('click', () => this.showArticles(element));
+            group.addEventListener('mouseenter', (e) => this.showTooltip(e, element));
+            group.addEventListener('mousemove', (e) => this.moveTooltip(e));
+            group.addEventListener('mouseleave', () => this.hideTooltip());
+          }
+
+          container.appendChild(group);
+        }
+      },
+
+      showTooltip(event, element) {
+        const tooltip = document.getElementById('planTooltip');
+        const title = tooltip.querySelector('.tooltip-title');
+        const info = tooltip.querySelector('.tooltip-info');
+
+        title.textContent = element.nom || this.getTypeName(element.type_element);
+
+        const nbEmp = element.emplacements ? element.emplacements.length : 0;
+        const nbArt = element.emplacements ?
+          element.emplacements.reduce((sum, e) => sum + (e.nb_articles || 0), 0) : 0;
+
+        info.innerHTML = `
+          <i class="bi bi-geo-alt"></i> ${nbEmp} emplacement(s)<br>
+          <i class="bi bi-box"></i> ${nbArt} article(s)
+        `;
+
+        tooltip.classList.add('visible');
+        this.moveTooltip(event);
+      },
+
+      moveTooltip(event) {
+        const tooltip = document.getElementById('planTooltip');
+        const wrapper = document.getElementById('canvasWrapper');
+        const rect = wrapper.getBoundingClientRect();
+
+        let x = event.clientX - rect.left + 15;
+        let y = event.clientY - rect.top + 15;
+
+        if (x + tooltip.offsetWidth > rect.width) {
+          x = event.clientX - rect.left - tooltip.offsetWidth - 15;
+        }
+        if (y + tooltip.offsetHeight > rect.height) {
+          y = event.clientY - rect.top - tooltip.offsetHeight - 15;
+        }
+
+        tooltip.style.left = x + 'px';
+        tooltip.style.top = y + 'px';
+      },
+
+      hideTooltip() {
+        document.getElementById('planTooltip').classList.remove('visible');
+      },
+
+      getTypeName(type) {
+        const names = { mur: 'Mur', etagere: 'Étagère', meuble: 'Meuble', table: 'Table', zone: 'Zone' };
+        return names[type] || type;
+      },
+
+      async showArticles(element) {
+        const panel = document.getElementById('sidePanel');
+        const overlay = document.getElementById('sidePanelOverlay');
+        const name = document.getElementById('elementName');
+        const list = document.getElementById('articlesList');
+        const loading = document.getElementById('loadingArticles');
+        const noArticles = document.getElementById('noArticles');
+
+        name.textContent = element.nom || this.getTypeName(element.type_element);
+
+        list.innerHTML = '';
+        loading.classList.remove('d-none');
+        noArticles.classList.add('d-none');
+
+        panel.classList.add('open');
+        overlay.classList.add('visible');
+
+        try {
+          const resp = await fetch(`/api/plans/public/elements/${element.id}/articles`);
+          if (!resp.ok) throw new Error('Erreur');
+
+          const articles = await resp.json();
+          loading.classList.add('d-none');
+
+          if (articles.length === 0) {
+            noArticles.classList.remove('d-none');
+            return;
+          }
+
+          list.innerHTML = articles.map(art => `
+            <a href="/fiche.html?type=${art.type}&id=${art.id}" class="article-item">
+              <img src="${art.image || '/images/placeholder.png'}" alt="" class="article-image">
+              <div class="article-info">
+                <div class="article-title">${this.escapeHtml(art.nom)}</div>
+                <div class="article-meta">
+                  <span class="type-badge ${art.type}">${this.getTypeLabel(art.type)}</span>
+                  ${art.emplacement ? `<span><i class="bi bi-geo-alt"></i> ${this.escapeHtml(art.emplacement)}</span>` : ''}
+                </div>
+              </div>
+              <span class="status-badge ${art.disponible ? 'disponible' : 'emprunte'}">
+                ${art.disponible ? 'Disponible' : 'Emprunté'}
+              </span>
+            </a>
+          `).join('');
+
+        } catch (e) {
+          console.error('Erreur:', e);
+          loading.classList.add('d-none');
+          list.innerHTML = '<p class="text-center" style="color: var(--text-light);">Erreur de chargement</p>';
+        }
+      },
+
+      closePanel() {
+        document.getElementById('sidePanel').classList.remove('open');
+        document.getElementById('sidePanelOverlay').classList.remove('visible');
+      },
+
+      getTypeLabel(type) {
+        const labels = { jeu: 'Jeu', livre: 'Livre', film: 'Film', disque: 'Disque' };
+        return labels[type] || type;
+      },
+
+      bindEvents() {
+        document.getElementById('btnZoomIn').addEventListener('click', () => this.setZoom(this.zoom * 1.2));
+        document.getElementById('btnZoomOut').addEventListener('click', () => this.setZoom(this.zoom / 1.2));
+        document.getElementById('btnZoomReset').addEventListener('click', () => this.resetView());
+
+        const svg = document.getElementById('planSvg');
+        svg.addEventListener('mousedown', (e) => this.onMouseDown(e));
+        svg.addEventListener('mousemove', (e) => this.onMouseMove(e));
+        svg.addEventListener('mouseup', () => this.onMouseUp());
+        svg.addEventListener('mouseleave', () => this.onMouseUp());
+        svg.addEventListener('wheel', (e) => this.onWheel(e));
+
+        document.getElementById('closePanel').addEventListener('click', () => this.closePanel());
+        document.getElementById('sidePanelOverlay').addEventListener('click', () => this.closePanel());
+
+        // Search events
+        const searchInput = document.getElementById('searchArticle');
+        const clearBtn = document.getElementById('clearSearch');
+
+        searchInput.addEventListener('input', (e) => this.onSearchInput(e.target.value));
+        clearBtn.addEventListener('click', () => this.clearSearch());
+      },
+
+      // Search functionality
+      onSearchInput(query) {
+        const clearBtn = document.getElementById('clearSearch');
+        clearBtn.classList.toggle('d-none', !query);
+
+        if (this.searchTimeout) {
+          clearTimeout(this.searchTimeout);
+        }
+
+        if (query.length < 2) {
+          this.hideSearchResults();
+          return;
+        }
+
+        this.searchTimeout = setTimeout(() => this.performSearch(query), 300);
+      },
+
+      async performSearch(query) {
+        const results = document.getElementById('searchResults');
+        results.classList.remove('d-none');
+        results.innerHTML = '<div class="search-loading"><div class="spinner-small"></div></div>';
+
+        try {
+          // Search in all article types
+          const types = ['jeux', 'livres', 'films', 'disques'];
+          const searchPromises = types.map(type =>
+            fetch(`/api/${type}?search=${encodeURIComponent(query)}&limit=5`)
+              .then(r => r.ok ? r.json() : { data: [] })
+              .catch(() => ({ data: [] }))
+          );
+
+          const responses = await Promise.all(searchPromises);
+          const allResults = [];
+
+          responses.forEach((resp, index) => {
+            const items = resp.data || resp || [];
+            const type = ['jeu', 'livre', 'film', 'disque'][index];
+            items.forEach(item => {
+              allResults.push({
+                ...item,
+                type,
+                emplacement_id: item.emplacement_id || item.emplacementId
+              });
+            });
+          });
+
+          // Filter only those with emplacement
+          const locatableResults = allResults.filter(r => r.emplacement_id);
+
+          if (locatableResults.length === 0) {
+            results.innerHTML = `
+              <div class="search-no-results">
+                <i class="bi bi-search"></i>
+                <p>${allResults.length > 0 ? 'Aucun résultat localisable sur le plan' : 'Aucun résultat trouvé'}</p>
+              </div>
+            `;
+            return;
+          }
+
+          results.innerHTML = locatableResults.slice(0, 10).map(art => `
+            <div class="search-result-item" data-type="${art.type}" data-id="${art.id}" data-emplacement="${art.emplacement_id}">
+              <img src="${art.image_url || art.image || '/images/placeholder.png'}" alt="" class="search-result-image">
+              <div class="search-result-info">
+                <div class="search-result-title">${this.escapeHtml(art.nom || art.titre)}</div>
+                <div class="search-result-meta">
+                  <span class="type-badge ${art.type}">${this.getTypeLabel(art.type)}</span>
+                </div>
+              </div>
+              <i class="bi bi-geo-alt-fill search-result-locate" title="Localiser sur le plan"></i>
+            </div>
+          `).join('');
+
+          // Bind click events
+          results.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', () => {
+              const type = item.dataset.type;
+              const emplacementId = parseInt(item.dataset.emplacementId);
+              this.locateArticle(type, emplacementId);
+            });
+          });
+
+        } catch (e) {
+          console.error('Erreur recherche:', e);
+          results.innerHTML = '<div class="search-no-results"><p>Erreur de recherche</p></div>';
+        }
+      },
+
+      hideSearchResults() {
+        document.getElementById('searchResults').classList.add('d-none');
+      },
+
+      clearSearch() {
+        document.getElementById('searchArticle').value = '';
+        document.getElementById('clearSearch').classList.add('d-none');
+        this.hideSearchResults();
+      },
+
+      locateArticle(type, emplacementId) {
+        if (!this.plan || !this.plan.etages) return;
+
+        // Find element with this emplacement
+        for (const etage of this.plan.etages) {
+          if (!etage.elements) continue;
+
+          for (const element of etage.elements) {
+            if (!element.emplacements) continue;
+
+            const hasEmplacement = element.emplacements.some(emp => {
+              // Check if emplacement matches based on type
+              const typeKey = type + '_id';
+              return emp.id === emplacementId || emp[typeKey] === emplacementId;
+            });
+
+            if (hasEmplacement) {
+              // Switch to this floor if needed
+              if (this.currentEtage?.id !== etage.id) {
+                this.selectEtage(etage.id);
+              }
+
+              // Center and highlight the element
+              setTimeout(() => {
+                this.highlightElement(element);
+              }, 300);
+
+              return;
+            }
+          }
+        }
+
+        // If not found on plan, show message
+        alert('Cet article n\'a pas pu être localisé sur le plan.');
+      },
+
+      highlightElement(element) {
+        const points = element.points || [];
+        if (points.length < 2) return;
+
+        // Calculate center
+        const x = (points[0].x + points[1].x) / 2;
+        const y = (points[0].y + points[1].y) / 2;
+
+        // Center view on element
+        const svg = document.getElementById('planSvg');
+        const wrapper = document.getElementById('canvasWrapper');
+        const rect = wrapper.getBoundingClientRect();
+
+        this.zoom = 1.5;
+        this.panX = rect.width / 2 - x * this.zoom;
+        this.panY = rect.height / 2 - y * this.zoom;
+        this.updateTransform();
+
+        // Find and highlight the element
+        const group = document.querySelector(`g[data-element-id="${element.id}"]`);
+        if (group) {
+          group.classList.add('element-highlighted');
+          setTimeout(() => group.classList.remove('element-highlighted'), 3000);
+
+          // Show articles panel
+          this.showArticles(element);
+        }
+      },
+
+      setZoom(newZoom) {
+        this.zoom = Math.max(0.25, Math.min(4, newZoom));
+        this.updateTransform();
+      },
+
+      resetView() {
+        this.zoom = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+      },
+
+      updateTransform() {
+        const content = document.getElementById('planContent');
+        content.setAttribute('transform', `translate(${this.panX}, ${this.panY}) scale(${this.zoom})`);
+      },
+
+      onMouseDown(e) {
+        if (e.button === 0 && !e.target.closest('g[data-element-id]')) {
+          this.isDragging = true;
+          this.lastMousePos = { x: e.clientX, y: e.clientY };
+        }
+      },
+
+      onMouseMove(e) {
+        if (this.isDragging) {
+          const dx = e.clientX - this.lastMousePos.x;
+          const dy = e.clientY - this.lastMousePos.y;
+          this.panX += dx;
+          this.panY += dy;
+          this.lastMousePos = { x: e.clientX, y: e.clientY };
+          this.updateTransform();
+        }
+      },
+
+      onMouseUp() {
+        this.isDragging = false;
+      },
+
+      onWheel(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        this.setZoom(this.zoom * delta);
+      },
+
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => PlanApp.init());
+  </script>
+</body>
+</html>

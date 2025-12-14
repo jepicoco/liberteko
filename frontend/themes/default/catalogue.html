@@ -355,6 +355,8 @@
           <li><a href="/">Accueil</a></li>
           <li><a href="/catalogue.html" style="color: var(--primary-color);">Catalogue</a></li>
           <li><a href="/infos.html">Informations</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -655,6 +657,12 @@
         document.getElementById('site-title').textContent = `Catalogue - ${data.nom || 'Assotheque'}`;
         document.getElementById('header-title').textContent = data.nom || 'Assotheque';
         document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+
+        // Show/hide Plan link based on module_plan_interactif
+        if (data.module_plan_interactif === true) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
       } catch (e) {}
     }
 

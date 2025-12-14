@@ -358,6 +358,8 @@
         <ul class="nav-menu">
           <li><a href="/catalogue.html">CATALOGUE</a></li>
           <li><a href="/infos.html" class="active">INFOS</a></li>
+          <li><a href="/aide.html">AIDE</a></li>
+          <li id="nav-plan" style="display:none"><a href="/plan.html">PLAN</a></li>
           <li><a href="/contact.html">CONTACT</a></li>
         </ul>
       </nav>
@@ -467,8 +469,27 @@
 
         renderContact();
         renderSocial();
+
+        // Check for Plan module
+        await checkPlanModule();
       } catch (e) {
         console.error('Config error:', e);
+      }
+    }
+
+    // Check if Plan module is enabled
+    async function checkPlanModule() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        if (data.module_plan_interactif === true) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+      } catch (e) {
+        console.error('Plan module check error:', e);
       }
     }
 

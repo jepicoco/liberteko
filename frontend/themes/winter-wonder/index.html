@@ -22,6 +22,8 @@
           <li><a href="/" class="active">Accueil</a></li>
           <li><a href="/catalogue.html">Catalogue</a></li>
           <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -241,6 +243,14 @@
 
         // Load nouveautes
         await loadNouveautes();
+
+        // Check for Plan link visibility
+        const parametresResp = await fetch('/api/public/parametres');
+        const parametres = await parametresResp.json();
+        if (parametres.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
 
       } catch (e) {
         console.error('Init error:', e);

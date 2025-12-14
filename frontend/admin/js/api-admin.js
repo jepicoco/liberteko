@@ -63,7 +63,7 @@ const apiRequest = async (endpoint, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(data.message || 'API request failed');
+    throw new Error(data.message || data.error || `API request failed (${response.status})`);
   }
 
   return data;

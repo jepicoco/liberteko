@@ -165,6 +165,12 @@ const ApiKeyModel = require('./ApiKey');
 const RegroupementAnalytiqueModel = require('./RegroupementAnalytique');
 const RegroupementAnalytiqueDetailModel = require('./RegroupementAnalytiqueDetail');
 
+// Import Plans (editeur de plans interactifs)
+const PlanModel = require('./Plan');
+const EtageModel = require('./Etage');
+const ElementPlanModel = require('./ElementPlan');
+const ElementEmplacementModel = require('./ElementEmplacement');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -326,6 +332,12 @@ const ApiKey = ApiKeyModel(sequelize);
 // Initialize Regroupements analytiques
 const RegroupementAnalytique = RegroupementAnalytiqueModel(sequelize);
 const RegroupementAnalytiqueDetail = RegroupementAnalytiqueDetailModel(sequelize);
+
+// Initialize Plans (editeur de plans interactifs)
+const Plan = PlanModel(sequelize);
+const Etage = EtageModel(sequelize);
+const ElementPlan = ElementPlanModel(sequelize);
+const ElementEmplacement = ElementEmplacementModel(sequelize);
 
 // Define associations
 
@@ -1559,6 +1571,95 @@ RegroupementAnalytique.hasMany(ParametrageComptableOperation, {
   as: 'parametragesOperations'
 });
 
+// ============================================
+// Plans (Editeur de plans interactifs)
+// ============================================
+
+// Site <-> Plan (One-to-One)
+Site.hasOne(Plan, {
+  foreignKey: 'site_id',
+  as: 'plan'
+});
+
+Plan.belongsTo(Site, {
+  foreignKey: 'site_id',
+  as: 'site'
+});
+
+// Plan <-> Etage (One-to-Many)
+Plan.hasMany(Etage, {
+  foreignKey: 'plan_id',
+  as: 'etages'
+});
+
+Etage.belongsTo(Plan, {
+  foreignKey: 'plan_id',
+  as: 'plan'
+});
+
+// Etage <-> ElementPlan (One-to-Many)
+Etage.hasMany(ElementPlan, {
+  foreignKey: 'etage_id',
+  as: 'elements'
+});
+
+ElementPlan.belongsTo(Etage, {
+  foreignKey: 'etage_id',
+  as: 'etage'
+});
+
+// ElementPlan <-> ElementEmplacement (One-to-Many)
+ElementPlan.hasMany(ElementEmplacement, {
+  foreignKey: 'element_plan_id',
+  as: 'emplacements'
+});
+
+ElementEmplacement.belongsTo(ElementPlan, {
+  foreignKey: 'element_plan_id',
+  as: 'elementPlan'
+});
+
+// ElementEmplacement <-> Emplacements (Many-to-One pour chaque type)
+ElementEmplacement.belongsTo(EmplacementJeu, {
+  foreignKey: 'emplacement_jeu_id',
+  as: 'emplacementJeu'
+});
+
+EmplacementJeu.hasMany(ElementEmplacement, {
+  foreignKey: 'emplacement_jeu_id',
+  as: 'elementsPlan'
+});
+
+ElementEmplacement.belongsTo(EmplacementLivre, {
+  foreignKey: 'emplacement_livre_id',
+  as: 'emplacementLivre'
+});
+
+EmplacementLivre.hasMany(ElementEmplacement, {
+  foreignKey: 'emplacement_livre_id',
+  as: 'elementsPlan'
+});
+
+ElementEmplacement.belongsTo(EmplacementFilm, {
+  foreignKey: 'emplacement_film_id',
+  as: 'emplacementFilm'
+});
+
+EmplacementFilm.hasMany(ElementEmplacement, {
+  foreignKey: 'emplacement_film_id',
+  as: 'elementsPlan'
+});
+
+ElementEmplacement.belongsTo(EmplacementDisque, {
+  foreignKey: 'emplacement_disque_id',
+  as: 'emplacementDisque'
+});
+
+EmplacementDisque.hasMany(ElementEmplacement, {
+  foreignKey: 'emplacement_disque_id',
+  as: 'elementsPlan'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -1697,5 +1798,10 @@ module.exports = {
   ApiKey,
   // Regroupements analytiques (ventilation multi-sections)
   RegroupementAnalytique,
-  RegroupementAnalytiqueDetail
+  RegroupementAnalytiqueDetail,
+  // Plans (editeur de plans interactifs)
+  Plan,
+  Etage,
+  ElementPlan,
+  ElementEmplacement
 };

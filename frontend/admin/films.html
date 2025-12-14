@@ -865,7 +865,10 @@
         emplacements.forEach(e => {
           const option = document.createElement('option');
           option.value = e.id;
-          option.textContent = e.libelle;
+          option.dataset.couleur = e.couleur || '#6c757d';
+          option.dataset.icone = e.icone || 'geo-alt';
+          const codeText = e.code ? `[${e.code}] ` : '';
+          option.textContent = `${codeText}${e.libelle}`;
           emplacementSelect.appendChild(option);
         });
       } catch (error) {
@@ -1253,7 +1256,13 @@
               <div class="row small text-muted">
                 <div class="col-6">
                   <p class="mb-1"><strong>Support:</strong> ${film.supportRef?.nom || '-'}</p>
-                  <p class="mb-1"><strong>Emplacement:</strong> ${film.emplacementRef?.libelle || '-'}</p>
+                  <p class="mb-1"><strong>Emplacement:</strong> ${film.emplacementRef ? `
+                    <span class="d-inline-flex align-items-center gap-1">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${film.emplacementRef.couleur || '#6c757d'};display:inline-block;"></span>
+                      <i class="bi bi-${film.emplacementRef.icone || 'geo-alt'}" style="color:${film.emplacementRef.couleur || '#6c757d'};"></i>
+                      ${film.emplacementRef.code ? `[${film.emplacementRef.code}]` : ''} ${film.emplacementRef.libelle}
+                    </span>
+                  ` : '-'}</p>
                   <p class="mb-1"><strong>Code-barres:</strong> ${film.code_barre || '-'}</p>
                 </div>
                 <div class="col-6">

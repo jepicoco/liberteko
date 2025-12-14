@@ -439,7 +439,9 @@
         <ul class="nav-menu">
           <li><a href="/">Accueil</a></li>
           <li><a href="/catalogue.html" style="color: var(--text-color);">Catalogue</a></li>
+          <li id="nav-plan" style="display:none"><a href="/plan.html">Plan</a></li>
           <li><a href="/infos.html">À propos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -697,8 +699,26 @@
       searchInput.value = search;
     }
 
+    // Load site config for Plan link
+    async function loadSiteConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        // Show Plan link if module is enabled
+        if (data.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+      } catch (e) {
+        console.error('Erreur config:', e);
+      }
+    }
+
     document.getElementById('year').textContent = new Date().getFullYear();
     loadItems();
+    loadSiteConfig();
   </script>
 </body>
 </html>

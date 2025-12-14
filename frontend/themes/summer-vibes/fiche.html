@@ -269,6 +269,8 @@
           <li><a href="/">Accueil</a></li>
           <li><a href="/catalogue.html" class="active">Catalogue</a></li>
           <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </nav>
@@ -386,6 +388,16 @@
           if (config.contact.adresse) document.getElementById('footer-address').innerHTML = `<i class="bi bi-geo-alt"></i> ${config.contact.adresse}`;
           if (config.contact.telephone) document.getElementById('footer-phone').innerHTML = `<i class="bi bi-telephone"></i> ${config.contact.telephone}`;
           if (config.contact.email) document.getElementById('footer-email').innerHTML = `<i class="bi bi-envelope"></i> ${config.contact.email}`;
+        }
+
+        // Load parametres for module settings
+        const paramsResp = await fetch('/api/public/parametres');
+        const params = await paramsResp.json();
+
+        // Show Plan link if module is active
+        if (params.module_plan_interactif === true) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
         }
       } catch (e) {
         console.error('Config error:', e);

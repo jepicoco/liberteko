@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editeur de Plan - Assotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/plan-editor.css">
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-3">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <!-- Header avec selection site -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h1 class="h3 mb-0"><i class="bi bi-map"></i> Editeur de Plan</h1>
+            <small class="text-muted">Dessinez le plan de votre lieu avec les emplacements</small>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <label class="me-2">Site :</label>
+            <select id="siteSelect" class="form-select form-select-sm" style="width: 200px;">
+              <option value="">Chargement...</option>
+            </select>
+            <button id="btnCreerPlan" class="btn btn-success btn-sm d-none">
+              <i class="bi bi-plus-lg"></i> Creer le plan
+            </button>
+          </div>
+        </div>
+
+        <!-- Container principal de l'editeur (cache tant qu'aucun plan) -->
+        <div id="editorContainer" class="d-none">
+          <!-- Toolbar -->
+          <div class="editor-toolbar mb-2">
+            <div class="btn-group me-3" role="group">
+              <button type="button" class="btn btn-outline-secondary tool-btn active" data-tool="select" title="Selection (V)">
+                <i class="bi bi-cursor"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary tool-btn" data-tool="pan" title="Deplacer la vue (H)">
+                <i class="bi bi-arrows-move"></i>
+              </button>
+            </div>
+
+            <div class="btn-group me-3" role="group">
+              <button type="button" class="btn btn-outline-primary tool-btn" data-tool="mur" title="Mur (W)">
+                <i class="bi bi-slash-lg"></i> Mur
+              </button>
+              <button type="button" class="btn btn-outline-primary tool-btn" data-tool="etagere" title="Etagere (E)">
+                <i class="bi bi-bookshelf"></i> Etagere
+              </button>
+              <button type="button" class="btn btn-outline-primary tool-btn" data-tool="meuble" title="Meuble (M)">
+                <i class="bi bi-box"></i> Meuble
+              </button>
+              <button type="button" class="btn btn-outline-primary tool-btn" data-tool="table" title="Table (T)">
+                <i class="bi bi-square"></i> Table
+              </button>
+              <button type="button" class="btn btn-outline-primary tool-btn" data-tool="zone" title="Zone (Z)">
+                <i class="bi bi-bounding-box"></i> Zone
+              </button>
+            </div>
+
+            <div class="btn-group me-3" role="group">
+              <button type="button" class="btn btn-outline-secondary" id="btnUndo" title="Annuler (Ctrl+Z)" disabled>
+                <i class="bi bi-arrow-counterclockwise"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="btnRedo" title="Retablir (Ctrl+Y)" disabled>
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+
+            <div class="btn-group me-3" role="group">
+              <button type="button" class="btn btn-outline-secondary" id="btnZoomOut" title="Zoom -">
+                <i class="bi bi-zoom-out"></i>
+              </button>
+              <span class="btn btn-outline-secondary" id="zoomLevel" style="min-width: 60px;">100%</span>
+              <button type="button" class="btn btn-outline-secondary" id="btnZoomIn" title="Zoom +">
+                <i class="bi bi-zoom-in"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="btnZoomFit" title="Ajuster">
+                <i class="bi bi-fullscreen"></i>
+              </button>
+            </div>
+
+            <div class="btn-group me-3" role="group">
+              <button type="button" class="btn btn-outline-secondary" id="btnToggleGrid" title="Afficher/masquer grille">
+                <i class="bi bi-grid-3x3"></i>
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="btnToggleSnap" title="Magnetisme grille" data-active="true">
+                <i class="bi bi-magnet"></i>
+              </button>
+            </div>
+
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-outline-success" id="btnSave" title="Sauvegarder (Ctrl+S)">
+                <i class="bi bi-save"></i> Sauvegarder
+              </button>
+              <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-info dropdown-toggle" data-bs-toggle="dropdown" title="Exporter">
+                  <i class="bi bi-download"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  <li><a class="dropdown-item" href="#" id="exportPNG"><i class="bi bi-file-image"></i> Export PNG</a></li>
+                  <li><a class="dropdown-item" href="#" id="exportSVG"><i class="bi bi-filetype-svg"></i> Export SVG</a></li>
+                  <li><a class="dropdown-item" href="#" id="exportPDF"><i class="bi bi-file-pdf"></i> Export PDF</a></li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="#" id="printPlan"><i class="bi bi-printer"></i> Imprimer</a></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Onglets Etages -->
+          <ul class="nav nav-tabs" id="etagesTabs" role="tablist">
+            <!-- Genere dynamiquement -->
+          </ul>
+
+          <!-- Zone principale : Canvas + Panneau lateral -->
+          <div class="row g-0">
+            <!-- Canvas SVG -->
+            <div class="col-md-9">
+              <div id="canvasContainer" class="canvas-container">
+                <svg id="planCanvas" class="plan-canvas">
+                  <defs>
+                    <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+                    </pattern>
+                  </defs>
+                  <rect id="gridBackground" width="100%" height="100%" fill="url(#gridPattern)"/>
+                  <g id="elementsGroup"></g>
+                  <g id="selectionGroup"></g>
+                  <g id="drawingGroup"></g>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Panneau lateral -->
+            <div class="col-md-3">
+              <div class="properties-panel">
+                <!-- Onglets du panneau -->
+                <ul class="nav nav-pills nav-fill mb-2" id="panelTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active py-1" id="props-tab" data-bs-toggle="pill" data-bs-target="#propsPanel">
+                      <i class="bi bi-sliders"></i>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link py-1" id="emplacements-tab" data-bs-toggle="pill" data-bs-target="#emplacementsPanel">
+                      <i class="bi bi-geo-alt"></i>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link py-1" id="templates-tab" data-bs-toggle="pill" data-bs-target="#templatesPanel">
+                      <i class="bi bi-columns-gap"></i>
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link py-1" id="settings-tab" data-bs-toggle="pill" data-bs-target="#settingsPanel">
+                      <i class="bi bi-gear"></i>
+                    </button>
+                  </li>
+                </ul>
+
+                <div class="tab-content" id="panelTabContent">
+                  <!-- Proprietes element -->
+                  <div class="tab-pane fade show active" id="propsPanel">
+                    <div id="noSelection" class="text-muted text-center py-4">
+                      <i class="bi bi-cursor fs-1 d-block mb-2"></i>
+                      Selectionnez un element pour voir ses proprietes
+                    </div>
+                    <div id="elementProps" class="d-none">
+                      <h6 class="border-bottom pb-2 mb-3">
+                        <i class="bi bi-sliders"></i> Proprietes
+                      </h6>
+
+                      <div class="mb-3">
+                        <label class="form-label small">Type</label>
+                        <input type="text" class="form-control form-control-sm" id="propType" readonly>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label small">Libelle</label>
+                        <input type="text" class="form-control form-control-sm" id="propLibelle" placeholder="Nom de l'element">
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label small">Description</label>
+                        <textarea class="form-control form-control-sm" id="propDescription" rows="2"></textarea>
+                      </div>
+
+                      <div class="row mb-3">
+                        <div class="col-6">
+                          <label class="form-label small">Couleur</label>
+                          <input type="color" class="form-control form-control-sm form-control-color" id="propCouleur">
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small">Remplissage</label>
+                          <input type="color" class="form-control form-control-sm form-control-color" id="propRemplissage">
+                        </div>
+                      </div>
+
+                      <div class="row mb-3">
+                        <div class="col-6">
+                          <label class="form-label small">Epaisseur</label>
+                          <input type="range" class="form-range" id="propEpaisseur" min="1" max="20" value="2">
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small">Opacite</label>
+                          <input type="range" class="form-range" id="propOpacite" min="0" max="100" value="100">
+                        </div>
+                      </div>
+
+                      <div class="mb-3">
+                        <label class="form-label small">Calque</label>
+                        <input type="number" class="form-control form-control-sm" id="propCalque" min="0" max="10" value="0">
+                      </div>
+
+                      <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" id="propVisible" checked>
+                        <label class="form-check-label small" for="propVisible">Visible publiquement</label>
+                      </div>
+
+                      <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="propVerrouille">
+                        <label class="form-check-label small" for="propVerrouille">Verrouille</label>
+                      </div>
+
+                      <div class="d-grid gap-2">
+                        <button class="btn btn-sm btn-outline-primary" id="btnApplyProps">
+                          <i class="bi bi-check"></i> Appliquer
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" id="btnDeleteElement">
+                          <i class="bi bi-trash"></i> Supprimer
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Emplacements -->
+                  <div class="tab-pane fade" id="emplacementsPanel">
+                    <h6 class="border-bottom pb-2 mb-3">
+                      <i class="bi bi-geo-alt"></i> Emplacements lies
+                    </h6>
+
+                    <div id="noElementForEmplacement" class="text-muted text-center py-3">
+                      Selectionnez un element pour gerer ses emplacements
+                    </div>
+
+                    <div id="elementEmplacements" class="d-none">
+                      <div id="listeEmplacements" class="mb-3">
+                        <!-- Liste des emplacements lies -->
+                      </div>
+
+                      <hr>
+
+                      <h6 class="small">Ajouter un emplacement</h6>
+                      <div class="mb-2">
+                        <select class="form-select form-select-sm" id="typeEmplacement">
+                          <option value="">Type de collection...</option>
+                          <option value="jeu">Jeux</option>
+                          <option value="livre">Livres</option>
+                          <option value="film">Films</option>
+                          <option value="disque">Disques</option>
+                        </select>
+                      </div>
+                      <div class="mb-2">
+                        <select class="form-select form-select-sm" id="selectEmplacement" disabled>
+                          <option value="">Choisir un emplacement...</option>
+                        </select>
+                      </div>
+                      <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-success flex-grow-1" id="btnAddEmplacement" disabled>
+                          <i class="bi bi-link-45deg"></i> Lier
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" id="btnCreateEmplacement" disabled title="Creer un nouvel emplacement">
+                          <i class="bi bi-plus-lg"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Templates -->
+                  <div class="tab-pane fade" id="templatesPanel">
+                    <h6 class="border-bottom pb-2 mb-3">
+                      <i class="bi bi-columns-gap"></i> Templates
+                    </h6>
+                    <div id="templatesList">
+                      <!-- Genere dynamiquement -->
+                    </div>
+                  </div>
+
+                  <!-- Parametres Plan -->
+                  <div class="tab-pane fade" id="settingsPanel">
+                    <h6 class="border-bottom pb-2 mb-3">
+                      <i class="bi bi-gear"></i> Parametres du plan
+                    </h6>
+
+                    <div class="mb-3">
+                      <label class="form-label small">Nom du plan</label>
+                      <input type="text" class="form-control form-control-sm" id="planNom">
+                    </div>
+
+                    <div class="row mb-3">
+                      <div class="col-6">
+                        <label class="form-label small">Largeur (px)</label>
+                        <input type="number" class="form-control form-control-sm" id="planLargeur" min="400" max="4000">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small">Hauteur (px)</label>
+                        <input type="number" class="form-control form-control-sm" id="planHauteur" min="300" max="3000">
+                      </div>
+                    </div>
+
+                    <div class="mb-3">
+                      <label class="form-label small">Taille grille</label>
+                      <input type="range" class="form-range" id="planTailleGrille" min="10" max="50" value="20">
+                      <small class="text-muted"><span id="tailleGrilleValue">20</span> px</small>
+                    </div>
+
+                    <div class="form-check form-switch mb-2">
+                      <input class="form-check-input" type="checkbox" id="planAfficherGrille" checked>
+                      <label class="form-check-label small" for="planAfficherGrille">Afficher la grille</label>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                      <input class="form-check-input" type="checkbox" id="planMagnetisme" checked>
+                      <label class="form-check-label small" for="planMagnetisme">Magnetisme a la grille</label>
+                    </div>
+
+                    <button class="btn btn-sm btn-primary w-100" id="btnSavePlanSettings">
+                      <i class="bi bi-save"></i> Sauvegarder parametres
+                    </button>
+
+                    <hr>
+
+                    <h6 class="small">Gestion des etages</h6>
+                    <button class="btn btn-sm btn-outline-success w-100 mb-2" id="btnAddEtage">
+                      <i class="bi bi-plus-lg"></i> Ajouter un etage
+                    </button>
+                    <button class="btn btn-sm btn-outline-warning w-100 mb-2" id="btnEditEtage">
+                      <i class="bi bi-pencil"></i> Modifier l'etage actif
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger w-100" id="btnDeleteEtage">
+                      <i class="bi bi-trash"></i> Supprimer l'etage actif
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Message quand pas de plan -->
+        <div id="noPlanMessage" class="text-center py-5 d-none">
+          <i class="bi bi-map text-muted" style="font-size: 5rem;"></i>
+          <h3 class="mt-3">Aucun plan pour ce site</h3>
+          <p class="text-muted">Cliquez sur "Creer le plan" pour commencer a dessiner le plan de votre lieu.</p>
+        </div>
+
+        <!-- Message selection site -->
+        <div id="selectSiteMessage" class="text-center py-5">
+          <i class="bi bi-building text-muted" style="font-size: 5rem;"></i>
+          <h3 class="mt-3">Selectionnez un site</h3>
+          <p class="text-muted">Choisissez un site dans la liste pour voir ou creer son plan.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajout/Edition Etage -->
+  <div class="modal fade" id="modalEtage" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-layers"></i> <span id="modalEtageTitle">Nouvel etage</span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="etageId">
+          <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="etageType">
+              <option value="etage">Etage</option>
+              <option value="annexe">Annexe</option>
+              <option value="exterieur">Exterieur</option>
+            </select>
+          </div>
+          <div class="mb-3" id="etageNumeroGroup">
+            <label class="form-label">Numero</label>
+            <input type="number" class="form-control" id="etageNumero" placeholder="-1 = sous-sol, 0 = RDC, 1 = 1er...">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nom</label>
+            <input type="text" class="form-control" id="etageNom" placeholder="Ex: Rez-de-chaussee, 1er etage, Annexe Nord">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Couleur de fond</label>
+            <input type="color" class="form-control form-control-color" id="etageCouleurFond" value="#ffffff">
+          </div>
+          <div class="mb-3" id="etageAdresseGroup" style="display: none;">
+            <label class="form-label">Adresse (pour annexes)</label>
+            <textarea class="form-control" id="etageAdresse" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="btnSaveEtage">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Creation rapide Emplacement -->
+  <div class="modal fade" id="modalCreateEmplacement" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-geo-alt-fill"></i> Nouvel emplacement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Libelle <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="newEmplacementLibelle" placeholder="Ex: Etagere A, Bac enfants...">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Code</label>
+            <input type="text" class="form-control" id="newEmplacementCode" placeholder="Ex: A1, B2..." maxlength="20">
+            <small class="text-muted">Code court pour reperage rapide</small>
+          </div>
+          <div class="row mb-3">
+            <div class="col-6">
+              <label class="form-label">Couleur</label>
+              <input type="color" class="form-control form-control-color w-100" id="newEmplacementCouleur" value="#6c757d">
+            </div>
+            <div class="col-6">
+              <label class="form-label">Icone</label>
+              <div class="input-group">
+                <span class="input-group-text" id="newEmplacementIconePreview"><i class="bi bi-geo-alt"></i></span>
+                <input type="text" class="form-control" id="newEmplacementIcone" value="geo-alt" placeholder="geo-alt">
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="newEmplacementDescription" rows="2" placeholder="Description optionnelle..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="btnSaveNewEmplacement">
+            <i class="bi bi-check-lg"></i> Creer et lier
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/plan-editor.js"></script>
+  <script src="js/plan-editor-tools.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      initTemplate('plans');
+      initPlanEditor();
+    });
+  </script>
+</body>
+</html>

@@ -97,11 +97,29 @@ const MENU_ITEMS = [
         minRole: 'benevole'  // Accessible aux benevoles et au-dessus
     },
     {
+        id: 'plans',
+        label: 'Plans',
+        icon: 'map',
+        href: 'editeur-plan.html',
+        module: 'plans',
+        minRole: 'gestionnaire'  // Accessible aux gestionnaires et au-dessus
+    },
+    {
         id: 'parametres',
         label: 'Paramètres',
         icon: 'gear-fill',
         href: 'parametres.html',
         adminOnly: true  // Visible uniquement pour les administrateurs
+    },
+    // === Séparation 4 ===
+    { separator: true },
+    // === Section 5: Aide ===
+    {
+        id: 'aide',
+        label: 'Aide',
+        icon: 'question-circle',
+        href: 'aide.html',
+        minRole: 'benevole'  // Accessible à tous les utilisateurs admin
     }
 ];
 

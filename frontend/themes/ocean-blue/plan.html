@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="site-title">Plan Interactif - Assotheque</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme/css/theme.css">
+  <style>
+    /* Plan Page Styles - Ocean Blue Theme */
+    .page-content {
+      padding: 2rem;
+      max-width: 1800px;
+      margin: 0 auto;
+      min-height: calc(100vh - 200px);
+    }
+
+    .page-header {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow);
+      text-align: center;
+    }
+
+    .page-header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    .controls-bar {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .control-label {
+      font-weight: 600;
+      color: var(--text-color);
+      font-size: 0.9rem;
+    }
+
+    .site-selector {
+      padding: 0.75rem 1.25rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: 500;
+      background: white;
+      color: var(--text-color);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 200px;
+    }
+
+    .site-selector:hover {
+      border-color: var(--primary-color);
+    }
+
+    .site-selector:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
+    }
+
+    .floor-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: #f1f5f9;
+      padding: 0.5rem;
+      border-radius: 50px;
+    }
+
+    .floor-tab {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: transparent;
+      border-radius: 50px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-color);
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .floor-tab:hover {
+      background: rgba(14, 165, 233, 0.1);
+    }
+
+    .floor-tab.active {
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+    }
+
+    .plan-container {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      position: relative;
+      min-height: 600px;
+    }
+
+    .plan-canvas {
+      width: 100%;
+      height: auto;
+      min-height: 600px;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--border-radius);
+      background: white;
+      cursor: default;
+    }
+
+    .plan-element {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .plan-element:hover {
+      filter: brightness(0.9);
+      stroke-width: 3;
+    }
+
+    .element-wall { fill: #94a3b8; stroke: #64748b; }
+    .element-shelf { fill: #bfdbfe; stroke: #3b82f6; }
+    .element-furniture { fill: #fde68a; stroke: #f59e0b; }
+    .element-table { fill: #d9f99d; stroke: #84cc16; }
+    .element-zone { fill: #e9d5ff; stroke: #a855f7; opacity: 0.3; }
+
+    .element-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      fill: var(--text-color);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* Side Panel */
+    .side-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 450px;
+      height: 100vh;
+      background: var(--card-bg);
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .side-panel.open {
+      transform: translateX(0);
+    }
+
+    .panel-header {
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .panel-close {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      font-size: 1.5rem;
+    }
+
+    .panel-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: rotate(90deg);
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    .panel-section {
+      margin-bottom: 2rem;
+    }
+
+    .panel-section-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-light);
+      margin-bottom: 1rem;
+    }
+
+    .articles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .article-card {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: var(--border-radius);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: var(--text-color);
+    }
+
+    .article-card:hover {
+      border-color: var(--primary-color);
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .article-image {
+      width: 80px;
+      height: 80px;
+      border-radius: 10px;
+      object-fit: cover;
+      background: #f1f5f9;
+      flex-shrink: 0;
+    }
+
+    .article-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .article-title {
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+      line-height: 1.3;
+    }
+
+    .article-meta {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-type {
+      background: #e0f2fe;
+      color: var(--primary-dark);
+    }
+
+    .badge-disponible {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-emprunte {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-reserve {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-light);
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+
+    .loading-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--text-light);
+    }
+
+    .loading-spinner {
+      border: 4px solid #f1f5f9;
+      border-top: 4px solid var(--primary-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .error-message i {
+      font-size: 1.5rem;
+    }
+
+    .module-disabled {
+      text-align: center;
+      padding: 4rem 2rem;
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+    }
+
+    .module-disabled i {
+      font-size: 4rem;
+      color: var(--text-light);
+      margin-bottom: 1.5rem;
+    }
+
+    .module-disabled h2 {
+      color: var(--text-color);
+      margin-bottom: 1rem;
+    }
+
+    .module-disabled p {
+      color: var(--text-light);
+      font-size: 1.1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .page-header h1 {
+        font-size: 1.75rem;
+      }
+
+      .controls-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .control-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .site-selector {
+        width: 100%;
+      }
+
+      .floor-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .side-panel {
+        width: 100%;
+      }
+
+      .plan-canvas {
+        min-height: 400px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header - Glassmorphism -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="/" class="logo">
+        <i class="bi bi-tsunami"></i>
+        <span id="header-title">Assotheque</span>
+      </a>
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="/catalogue.html"><i class="bi bi-grid-3x3-gap"></i> Catalogue</a></li>
+          <li><a href="/infos.html"><i class="bi bi-info-circle"></i> Infos</a></li>
+          <li><a href="/aide.html"><i class="bi bi-question-circle"></i> Aide</a></li>
+          <li><a href="/plan.html" class="active"><i class="bi bi-map"></i> Plan</a></li>
+          <li><a href="/contact.html"><i class="bi bi-envelope"></i> Contact</a></li>
+        </ul>
+      </nav>
+      <a href="/usager/login.html" class="btn-login">
+        <i class="bi bi-box-arrow-in-right"></i> Connexion
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="page-content">
+    <div id="module-check">
+      <div class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Chargement...</p>
+      </div>
+    </div>
+
+    <div id="main-content" style="display: none;">
+      <!-- Page Header -->
+      <div class="page-header">
+        <h1><i class="bi bi-map"></i> Plan Interactif</h1>
+        <p>Explorez notre espace et localisez facilement les articles</p>
+      </div>
+
+      <!-- Controls Bar -->
+      <div class="controls-bar">
+        <div class="control-group">
+          <label class="control-label" for="site-select">
+            <i class="bi bi-building"></i> Site :
+          </label>
+          <select id="site-select" class="site-selector">
+            <option value="">Chargement...</option>
+          </select>
+        </div>
+
+        <div id="floor-tabs-container" class="control-group" style="display: none;">
+          <label class="control-label">
+            <i class="bi bi-layers"></i> Niveau :
+          </label>
+          <div id="floor-tabs" class="floor-tabs"></div>
+        </div>
+      </div>
+
+      <!-- Plan Container -->
+      <div class="plan-container">
+        <div id="plan-loading" class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Chargement du plan...</p>
+        </div>
+
+        <div id="plan-error" style="display: none;"></div>
+
+        <svg id="plan-canvas" class="plan-canvas" viewBox="0 0 1000 800"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Side Panel -->
+  <div id="side-panel" class="side-panel">
+    <div class="panel-header">
+      <h2 id="panel-title" class="panel-title">Articles</h2>
+      <button id="panel-close" class="panel-close">
+        <i class="bi bi-x"></i>
+      </button>
+    </div>
+    <div class="panel-content">
+      <div id="panel-loading" class="loading-state">
+        <div class="loading-spinner"></div>
+        <p>Chargement des articles...</p>
+      </div>
+
+      <div id="panel-error" style="display: none;"></div>
+
+      <div id="panel-articles" style="display: none;">
+        <div class="panel-section">
+          <div class="panel-section-title">
+            <i class="bi bi-box-seam"></i> Articles disponibles
+          </div>
+          <div id="articles-list" class="articles-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h4>Nous trouver</h4>
+        <p id="footer-address"></p>
+        <p id="footer-phone"></p>
+        <p><a href="mailto:" id="footer-email-link"></a></p>
+      </div>
+      <div class="footer-section">
+        <h4>Horaires d'ouverture</h4>
+        <div id="footer-horaires">
+          <p>Consultez notre page infos</p>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Informations</h4>
+        <ul>
+          <li><a href="/infos.html">Présentation</a></li>
+          <li><a href="/mentions-legales.html">Mentions légales</a></li>
+          <li><a href="/cgu.html">Conditions d'utilisation</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p>
+    </div>
+  </footer>
+
+  <script>
+    // Global state
+    let currentSite = null;
+    let currentFloor = 0;
+    let planData = null;
+    let sites = [];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('year').textContent = new Date().getFullYear();
+      await loadConfig();
+      await checkModule();
+    });
+
+    // Load configuration
+    async function loadConfig() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        document.getElementById('site-title').textContent = `Plan Interactif - ${data.nom || 'Assotheque'}`;
+        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-address').innerHTML = data.adresse ? `<i class="bi bi-geo-alt"></i> ${data.adresse}` : '';
+        document.getElementById('footer-phone').innerHTML = data.telephone ? `<i class="bi bi-telephone"></i> ${data.telephone}` : '';
+
+        const emailLink = document.getElementById('footer-email-link');
+        if (data.email) {
+          emailLink.href = `mailto:${data.email}`;
+          emailLink.innerHTML = `<i class="bi bi-envelope"></i> ${data.email}`;
+        }
+      } catch (e) {
+        console.error('Erreur config:', e);
+      }
+    }
+
+    // Check if module is enabled
+    async function checkModule() {
+      try {
+        const resp = await fetch('/api/public/parametres');
+        if (!resp.ok) throw new Error('Erreur de chargement');
+        const data = await resp.json();
+
+        if (!data.module_plan_interactif) {
+          document.getElementById('module-check').innerHTML = `
+            <div class="module-disabled">
+              <i class="bi bi-map"></i>
+              <h2>Plan interactif non disponible</h2>
+              <p>Cette fonctionnalité n'est pas activée pour le moment.</p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById('module-check').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+        await loadSites();
+      } catch (e) {
+        console.error('Erreur module check:', e);
+        document.getElementById('module-check').innerHTML = `
+          <div class="error-message">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>Erreur lors du chargement de la configuration</span>
+          </div>
+        `;
+      }
+    }
+
+    // Load sites
+    async function loadSites() {
+      try {
+        const resp = await fetch('/api/sites');
+        if (!resp.ok) throw new Error('Erreur de chargement des sites');
+        sites = await resp.json();
+
+        const select = document.getElementById('site-select');
+        select.innerHTML = sites.map(site =>
+          `<option value="${site.id}">${site.nom}</option>`
+        ).join('');
+
+        if (sites.length > 0) {
+          currentSite = sites[0].id;
+          select.value = currentSite;
+          await loadPlan(currentSite);
+        } else {
+          select.innerHTML = '<option value="">Aucun site disponible</option>';
+        }
+
+        select.addEventListener('change', async (e) => {
+          currentSite = e.target.value;
+          currentFloor = 0;
+          if (currentSite) {
+            await loadPlan(currentSite);
+          }
+        });
+      } catch (e) {
+        console.error('Erreur chargement sites:', e);
+        document.getElementById('site-select').innerHTML = '<option value="">Erreur de chargement</option>';
+      }
+    }
+
+    // Load plan data
+    async function loadPlan(siteId) {
+      const loadingEl = document.getElementById('plan-loading');
+      const errorEl = document.getElementById('plan-error');
+      const canvas = document.getElementById('plan-canvas');
+
+      loadingEl.style.display = 'block';
+      errorEl.style.display = 'none';
+      canvas.style.display = 'none';
+
+      try {
+        const resp = await fetch(`/api/plans/public/site/${siteId}`);
+        if (!resp.ok) {
+          if (resp.status === 404) {
+            throw new Error('Aucun plan disponible pour ce site');
+          }
+          throw new Error('Erreur de chargement du plan');
+        }
+        planData = await resp.json();
+
+        loadingEl.style.display = 'none';
+        canvas.style.display = 'block';
+
+        renderFloorTabs();
+        renderPlan();
+      } catch (e) {
+        console.error('Erreur chargement plan:', e);
+        loadingEl.style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.innerHTML = `
+          <div class="error-message">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>${e.message}</span>
+          </div>
+        `;
+      }
+    }
+
+    // Render floor tabs
+    function renderFloorTabs() {
+      if (!planData || !planData.elements) return;
+
+      const floors = [...new Set(planData.elements.map(el => el.etage || 0))].sort();
+
+      if (floors.length <= 1) {
+        document.getElementById('floor-tabs-container').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('floor-tabs-container').style.display = 'flex';
+      const tabsContainer = document.getElementById('floor-tabs');
+
+      tabsContainer.innerHTML = floors.map(floor => `
+        <button class="floor-tab ${floor === currentFloor ? 'active' : ''}" data-floor="${floor}">
+          ${floor === 0 ? 'RDC' : `Étage ${floor}`}
+        </button>
+      `).join('');
+
+      tabsContainer.querySelectorAll('.floor-tab').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          currentFloor = parseInt(e.target.dataset.floor);
+          renderFloorTabs();
+          renderPlan();
+        });
+      });
+    }
+
+    // Render plan on SVG canvas
+    function renderPlan() {
+      const canvas = document.getElementById('plan-canvas');
+      if (!planData || !planData.elements) return;
+
+      const elements = planData.elements.filter(el => (el.etage || 0) === currentFloor);
+
+      if (elements.length === 0) {
+        canvas.innerHTML = `
+          <text x="500" y="400" text-anchor="middle" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text-light')}" font-size="18">
+            Aucun élément sur ce niveau
+          </text>
+        `;
+        return;
+      }
+
+      const svgElements = elements.map(el => {
+        const coords = typeof el.coordonnees === 'string' ? JSON.parse(el.coordonnees) : el.coordonnees;
+
+        let shape = '';
+        const className = `element-${el.type}`;
+
+        if (el.type === 'zone') {
+          // Rectangle for zones
+          const width = coords.width || 100;
+          const height = coords.height || 100;
+          shape = `<rect x="${coords.x}" y="${coords.y}" width="${width}" height="${height}"
+                    class="plan-element ${className}" data-element-id="${el.id}" />`;
+        } else if (el.type === 'wall') {
+          // Line for walls
+          shape = `<line x1="${coords.x1}" y1="${coords.y1}" x2="${coords.x2}" y2="${coords.y2}"
+                    class="plan-element ${className}" stroke-width="6" data-element-id="${el.id}" />`;
+        } else {
+          // Rectangle for shelves, furniture, tables
+          const width = coords.width || 80;
+          const height = coords.height || 60;
+          shape = `<rect x="${coords.x}" y="${coords.y}" width="${width}" height="${height}"
+                    rx="5" class="plan-element ${className}" data-element-id="${el.id}" />`;
+        }
+
+        // Add label
+        const labelX = el.type === 'wall' ? (coords.x1 + coords.x2) / 2 : coords.x + (coords.width || 80) / 2;
+        const labelY = el.type === 'wall' ? (coords.y1 + coords.y2) / 2 : coords.y + (coords.height || 60) / 2;
+
+        const label = `<text x="${labelX}" y="${labelY}" text-anchor="middle" dominant-baseline="middle"
+                        class="element-label">${el.nom}</text>`;
+
+        return shape + label;
+      }).join('');
+
+      canvas.innerHTML = svgElements;
+
+      // Add click handlers
+      canvas.querySelectorAll('.plan-element').forEach(el => {
+        el.addEventListener('click', (e) => {
+          const elementId = e.target.dataset.elementId;
+          if (elementId) {
+            openSidePanel(elementId);
+          }
+        });
+      });
+    }
+
+    // Open side panel with articles
+    async function openSidePanel(elementId) {
+      const panel = document.getElementById('side-panel');
+      const element = planData.elements.find(el => el.id == elementId);
+
+      if (!element) return;
+
+      document.getElementById('panel-title').textContent = element.nom;
+      document.getElementById('panel-loading').style.display = 'block';
+      document.getElementById('panel-error').style.display = 'none';
+      document.getElementById('panel-articles').style.display = 'none';
+
+      panel.classList.add('open');
+
+      try {
+        const resp = await fetch(`/api/plans/public/elements/${elementId}/articles`);
+        if (!resp.ok) throw new Error('Erreur de chargement des articles');
+        const articles = await resp.json();
+
+        document.getElementById('panel-loading').style.display = 'none';
+
+        if (articles.length === 0) {
+          document.getElementById('panel-error').style.display = 'block';
+          document.getElementById('panel-error').innerHTML = `
+            <div class="empty-state">
+              <i class="bi bi-inbox"></i>
+              <p>Aucun article associé à cet élément</p>
+            </div>
+          `;
+          return;
+        }
+
+        document.getElementById('panel-articles').style.display = 'block';
+        renderArticles(articles);
+      } catch (e) {
+        console.error('Erreur chargement articles:', e);
+        document.getElementById('panel-loading').style.display = 'none';
+        document.getElementById('panel-error').style.display = 'block';
+        document.getElementById('panel-error').innerHTML = `
+          <div class="error-message">
+            <i class="bi bi-exclamation-triangle"></i>
+            <span>${e.message}</span>
+          </div>
+        `;
+      }
+    }
+
+    // Render articles in panel
+    function renderArticles(articles) {
+      const container = document.getElementById('articles-list');
+
+      container.innerHTML = articles.map(article => {
+        const typeLabels = {
+          jeux: 'Jeu',
+          livres: 'Livre',
+          films: 'Film',
+          disques: 'Disque'
+        };
+
+        const statusLabels = {
+          disponible: 'Disponible',
+          emprunte: 'Emprunté',
+          reserve: 'Réservé'
+        };
+
+        const statusClass = article.statut === 'disponible' ? 'badge-disponible' :
+                           article.statut === 'emprunte' ? 'badge-emprunte' :
+                           'badge-reserve';
+
+        const imageUrl = article.image_url || '/images/placeholder.png';
+        const detailUrl = `/fiche.html?type=${article.type}&id=${article.id}`;
+
+        return `
+          <a href="${detailUrl}" class="article-card">
+            <img src="${imageUrl}" alt="${article.titre}" class="article-image"
+                 onerror="this.src='/images/placeholder.png'">
+            <div class="article-info">
+              <div class="article-title">${article.titre}</div>
+              <div class="article-meta">
+                <span class="badge badge-type">
+                  <i class="bi bi-${article.type === 'jeux' ? 'dice-6' :
+                                     article.type === 'livres' ? 'book' :
+                                     article.type === 'films' ? 'film' : 'vinyl'}"></i>
+                  ${typeLabels[article.type] || article.type}
+                </span>
+                <span class="badge ${statusClass}">
+                  ${statusLabels[article.statut] || article.statut}
+                </span>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    // Close side panel
+    document.getElementById('panel-close').addEventListener('click', () => {
+      document.getElementById('side-panel').classList.remove('open');
+    });
+
+    // Close panel on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.getElementById('side-panel').classList.remove('open');
+      }
+    });
+  </script>
+</body>
+</html>

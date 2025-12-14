@@ -355,6 +355,8 @@
           <li><a href="/">Accueil</a></li>
           <li><a href="/catalogue.html" class="active">Catalogue</a></li>
           <li><a href="/infos.html">Infos</a></li>
+          <li><a href="/aide.html">Aide</a></li>
+          <li id="nav-plan" style="display:none;"><a href="/plan.html">Plan</a></li>
         </ul>
       </nav>
       <a href="/usager/login.html" class="btn-login">
@@ -581,6 +583,21 @@
     }
 
     document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Check for Plan link visibility
+    (async () => {
+      try {
+        const parametresResp = await fetch('/api/public/parametres');
+        const parametres = await parametresResp.json();
+        if (parametres.module_plan_interactif) {
+          const navPlan = document.getElementById('nav-plan');
+          if (navPlan) navPlan.style.display = '';
+        }
+      } catch (e) {
+        console.error('Error loading parametres:', e);
+      }
+    })();
+
     loadFiche();
   </script>
   <script src="/js/animation-toggle.js"></script>

@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan du site - Assotheque</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/theme/css/theme.css" rel="stylesheet">
+    <style>
+        :root {
+            --element-mur: #333333;
+            --element-etagere: #8B4513;
+            --element-etagere-fill: #DEB887;
+            --element-meuble: #4a4a4a;
+            --element-meuble-fill: #a0a0a0;
+            --element-table: #2c3e50;
+            --element-table-fill: #bdc3c7;
+            --element-zone: #3498db;
+        }
+
+        .plan-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .plan-header {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .plan-title {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .plan-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .etages-tabs {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .etage-tab {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .etage-tab:hover {
+            border-color: #0d6efd;
+        }
+
+        .etage-tab.active {
+            background: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+
+        .plan-canvas-wrapper {
+            position: relative;
+            min-height: 500px;
+            background: white;
+        }
+
+        .plan-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Elements SVG */
+        .element-mur {
+            stroke: var(--element-mur);
+            stroke-width: 6;
+            stroke-linecap: round;
+            fill: none;
+        }
+
+        .element-etagere {
+            stroke: var(--element-etagere);
+            stroke-width: 2;
+            fill: var(--element-etagere-fill);
+            fill-opacity: 0.8;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .element-etagere:hover {
+            filter: brightness(1.1);
+        }
+
+        .element-meuble {
+            stroke: var(--element-meuble);
+            stroke-width: 2;
+            fill: var(--element-meuble-fill);
+            fill-opacity: 0.7;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .element-meuble:hover {
+            filter: brightness(1.1);
+        }
+
+        .element-table {
+            stroke: var(--element-table);
+            stroke-width: 2;
+            fill: var(--element-table-fill);
+            fill-opacity: 0.6;
+            cursor: pointer;
+            transition: filter 0.2s;
+        }
+
+        .element-table:hover {
+            filter: brightness(1.1);
+        }
+
+        .element-zone {
+            stroke: var(--element-zone);
+            stroke-width: 2;
+            stroke-dasharray: 5,5;
+            fill: var(--element-zone);
+            fill-opacity: 0.2;
+            cursor: pointer;
+            transition: fill-opacity 0.2s;
+        }
+
+        .element-zone:hover {
+            fill-opacity: 0.35;
+        }
+
+        .element-label {
+            font-size: 12px;
+            fill: #333;
+            pointer-events: none;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+
+        /* Tooltip */
+        .plan-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+
+        .plan-tooltip.visible {
+            display: block;
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .tooltip-info {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        /* Modal articles */
+        .articles-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .article-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .article-item:hover {
+            background: #f8f9fa;
+        }
+
+        .article-item:last-child {
+            border-bottom: none;
+        }
+
+        .article-image {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 12px;
+            background: #f0f0f0;
+        }
+
+        .article-info {
+            flex: 1;
+        }
+
+        .article-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .article-meta {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .article-status {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .article-status.disponible {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .article-status.emprunte {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Legend */
+        .plan-legend {
+            background: white;
+            padding: 15px 20px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+        }
+
+        .legend-color.mur {
+            background: var(--element-mur);
+        }
+
+        .legend-color.etagere {
+            background: var(--element-etagere-fill);
+            border: 2px solid var(--element-etagere);
+        }
+
+        .legend-color.meuble {
+            background: var(--element-meuble-fill);
+            border: 2px solid var(--element-meuble);
+        }
+
+        .legend-color.table {
+            background: var(--element-table-fill);
+            border: 2px solid var(--element-table);
+        }
+
+        .legend-color.zone {
+            background: rgba(52, 152, 219, 0.3);
+            border: 2px dashed var(--element-zone);
+        }
+
+        /* Loading */
+        .plan-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        /* No plan */
+        .no-plan {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .no-plan i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        /* Zoom controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .zoom-controls .btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .plan-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .plan-controls {
+                justify-content: center;
+            }
+
+            .etages-tabs {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">Accueil</a></li>
+                        <li class="breadcrumb-item active">Plan du site</li>
+                    </ol>
+                </nav>
+
+                <!-- Plan container -->
+                <div class="plan-container" id="planContainer">
+                    <div class="plan-header">
+                        <h1 class="plan-title" id="planTitle">Plan</h1>
+                        <div class="plan-controls">
+                            <div class="etages-tabs" id="etagesTabs">
+                                <!-- Tabs generated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="plan-canvas-wrapper" id="canvasWrapper">
+                        <div class="plan-loading" id="loadingIndicator">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <p class="text-muted">Chargement du plan...</p>
+                        </div>
+
+                        <div class="no-plan d-none" id="noPlan">
+                            <i class="bi bi-map"></i>
+                            <h4>Aucun plan disponible</h4>
+                            <p>Le plan de ce site n'a pas encore été créé.</p>
+                        </div>
+
+                        <svg class="plan-svg d-none" id="planSvg" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <pattern id="gridPattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e0e0" stroke-width="0.5"/>
+                                </pattern>
+                            </defs>
+                            <g id="planContent"></g>
+                        </svg>
+
+                        <!-- Zoom controls -->
+                        <div class="zoom-controls d-none" id="zoomControls">
+                            <button class="btn" id="btnZoomIn" title="Zoom avant">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                            <button class="btn" id="btnZoomOut" title="Zoom arrière">
+                                <i class="bi bi-dash-lg"></i>
+                            </button>
+                            <button class="btn" id="btnZoomReset" title="Réinitialiser">
+                                <i class="bi bi-arrows-fullscreen"></i>
+                            </button>
+                        </div>
+
+                        <!-- Tooltip -->
+                        <div class="plan-tooltip" id="planTooltip">
+                            <div class="tooltip-title"></div>
+                            <div class="tooltip-info"></div>
+                        </div>
+                    </div>
+
+                    <div class="plan-legend d-none" id="planLegend">
+                        <div class="legend-items">
+                            <div class="legend-item">
+                                <div class="legend-color mur"></div>
+                                <span>Murs</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color etagere"></div>
+                                <span>Étagères</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color meuble"></div>
+                                <span>Meubles</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color table"></div>
+                                <span>Tables</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color zone"></div>
+                                <span>Zones</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Articles -->
+    <div class="modal fade" id="articlesModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        <span id="emplacementName">Emplacement</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="articles-list" id="articlesList">
+                        <!-- Articles list -->
+                    </div>
+                    <div class="text-center text-muted py-4 d-none" id="noArticles">
+                        <i class="bi bi-inbox fs-1"></i>
+                        <p class="mt-2">Aucun article à cet emplacement</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        /**
+         * Plan Viewer - Vue publique interactive du plan
+         */
+        const PlanViewer = {
+            siteId: null,
+            plan: null,
+            currentEtage: null,
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+            isDragging: false,
+            lastMousePos: { x: 0, y: 0 },
+
+            async init() {
+                // Get site ID from URL or default
+                const params = new URLSearchParams(window.location.search);
+                this.siteId = params.get('site') || 1;
+
+                this.bindEvents();
+                await this.loadPlan();
+            },
+
+            bindEvents() {
+                // Zoom controls
+                document.getElementById('btnZoomIn').addEventListener('click', () => this.setZoom(this.zoom * 1.2));
+                document.getElementById('btnZoomOut').addEventListener('click', () => this.setZoom(this.zoom / 1.2));
+                document.getElementById('btnZoomReset').addEventListener('click', () => this.resetView());
+
+                // Pan with mouse drag
+                const svg = document.getElementById('planSvg');
+                svg.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                svg.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                svg.addEventListener('mouseup', () => this.onMouseUp());
+                svg.addEventListener('mouseleave', () => this.onMouseUp());
+
+                // Zoom with wheel
+                svg.addEventListener('wheel', (e) => this.onWheel(e));
+            },
+
+            async loadPlan() {
+                try {
+                    const response = await fetch(`/api/plans/public/site/${this.siteId}`);
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            this.showNoPlan();
+                            return;
+                        }
+                        throw new Error('Erreur lors du chargement');
+                    }
+
+                    this.plan = await response.json();
+                    this.renderPlan();
+
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    this.showNoPlan();
+                }
+            },
+
+            showNoPlan() {
+                document.getElementById('loadingIndicator').classList.add('d-none');
+                document.getElementById('noPlan').classList.remove('d-none');
+            },
+
+            renderPlan() {
+                if (!this.plan || !this.plan.etages || this.plan.etages.length === 0) {
+                    this.showNoPlan();
+                    return;
+                }
+
+                // Hide loading, show plan
+                document.getElementById('loadingIndicator').classList.add('d-none');
+                document.getElementById('planSvg').classList.remove('d-none');
+                document.getElementById('zoomControls').classList.remove('d-none');
+                document.getElementById('planLegend').classList.remove('d-none');
+
+                // Update title
+                document.getElementById('planTitle').textContent = this.plan.nom || 'Plan du site';
+
+                // Render etages tabs
+                this.renderEtagesTabs();
+
+                // Select first etage
+                if (this.plan.etages.length > 0) {
+                    this.selectEtage(this.plan.etages[0].id);
+                }
+            },
+
+            renderEtagesTabs() {
+                const container = document.getElementById('etagesTabs');
+                container.innerHTML = '';
+
+                this.plan.etages.forEach(etage => {
+                    const tab = document.createElement('button');
+                    tab.className = 'etage-tab';
+                    tab.dataset.etageId = etage.id;
+
+                    let label = etage.nom;
+                    if (etage.type === 'etage' && etage.numero !== null) {
+                        label = etage.numero === 0 ? 'RDC' : `Étage ${etage.numero}`;
+                        if (etage.nom && etage.nom !== label) {
+                            label += ` - ${etage.nom}`;
+                        }
+                    }
+
+                    tab.textContent = label;
+                    tab.addEventListener('click', () => this.selectEtage(etage.id));
+                    container.appendChild(tab);
+                });
+            },
+
+            selectEtage(etageId) {
+                // Update active tab
+                document.querySelectorAll('.etage-tab').forEach(tab => {
+                    tab.classList.toggle('active', parseInt(tab.dataset.etageId) === etageId);
+                });
+
+                // Find etage
+                this.currentEtage = this.plan.etages.find(e => e.id === etageId);
+                if (!this.currentEtage) return;
+
+                // Reset view
+                this.resetView();
+
+                // Render elements
+                this.renderElements();
+            },
+
+            renderElements() {
+                const content = document.getElementById('planContent');
+                content.innerHTML = '';
+
+                if (!this.currentEtage || !this.currentEtage.elements) return;
+
+                // Set SVG viewBox
+                const svg = document.getElementById('planSvg');
+                const width = this.plan.largeur_defaut || 1200;
+                const height = this.plan.hauteur_defaut || 800;
+                svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+                // Background
+                if (this.currentEtage.couleur_fond) {
+                    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    bg.setAttribute('x', 0);
+                    bg.setAttribute('y', 0);
+                    bg.setAttribute('width', width);
+                    bg.setAttribute('height', height);
+                    bg.setAttribute('fill', this.currentEtage.couleur_fond);
+                    content.appendChild(bg);
+                }
+
+                // Sort elements: zones first (so they're behind), then others
+                const sortedElements = [...this.currentEtage.elements].sort((a, b) => {
+                    const order = { zone: 0, mur: 1, etagere: 2, meuble: 3, table: 4 };
+                    return (order[a.type_element] || 5) - (order[b.type_element] || 5);
+                });
+
+                // Render each element
+                sortedElements.forEach(element => {
+                    this.renderElement(element, content);
+                });
+
+                this.updateTransform();
+            },
+
+            renderElement(element, container) {
+                const points = element.points || [];
+                if (points.length === 0) return;
+
+                let svgElement;
+
+                if (element.type_element === 'mur') {
+                    // Wall: polyline
+                    svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                    const pointsStr = points.map(p => `${p.x},${p.y}`).join(' ');
+                    svgElement.setAttribute('points', pointsStr);
+                    svgElement.classList.add('element-mur');
+                } else {
+                    // Rectangle elements
+                    if (points.length >= 2) {
+                        const x = Math.min(points[0].x, points[1].x);
+                        const y = Math.min(points[0].y, points[1].y);
+                        const w = Math.abs(points[1].x - points[0].x);
+                        const h = Math.abs(points[1].y - points[0].y);
+
+                        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        group.dataset.elementId = element.id;
+                        group.dataset.type = element.type_element;
+
+                        // Rectangle
+                        svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        svgElement.setAttribute('x', x);
+                        svgElement.setAttribute('y', y);
+                        svgElement.setAttribute('width', w);
+                        svgElement.setAttribute('height', h);
+                        svgElement.classList.add(`element-${element.type_element}`);
+
+                        // Apply rotation if exists
+                        if (element.rotation) {
+                            const cx = x + w / 2;
+                            const cy = y + h / 2;
+                            svgElement.setAttribute('transform', `rotate(${element.rotation} ${cx} ${cy})`);
+                        }
+
+                        // Apply custom style
+                        if (element.style) {
+                            if (element.style.couleur) svgElement.style.fill = element.style.couleur;
+                            if (element.style.couleur_bordure) svgElement.style.stroke = element.style.couleur_bordure;
+                        }
+
+                        group.appendChild(svgElement);
+
+                        // Label
+                        if (element.nom) {
+                            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            label.setAttribute('x', x + w / 2);
+                            label.setAttribute('y', y + h / 2);
+                            label.classList.add('element-label');
+                            label.textContent = element.nom;
+                            group.appendChild(label);
+                        }
+
+                        // Interactive elements (with emplacements)
+                        if (element.emplacements && element.emplacements.length > 0) {
+                            group.style.cursor = 'pointer';
+                            group.addEventListener('click', () => this.showArticles(element));
+                            group.addEventListener('mouseenter', (e) => this.showTooltip(e, element));
+                            group.addEventListener('mousemove', (e) => this.moveTooltip(e));
+                            group.addEventListener('mouseleave', () => this.hideTooltip());
+                        }
+
+                        container.appendChild(group);
+                        return;
+                    }
+                }
+
+                if (svgElement) {
+                    container.appendChild(svgElement);
+                }
+            },
+
+            showTooltip(event, element) {
+                const tooltip = document.getElementById('planTooltip');
+                const title = tooltip.querySelector('.tooltip-title');
+                const info = tooltip.querySelector('.tooltip-info');
+
+                title.textContent = element.nom || this.getTypeName(element.type_element);
+
+                const nbEmplacements = element.emplacements ? element.emplacements.length : 0;
+                const nbArticles = element.emplacements ?
+                    element.emplacements.reduce((sum, e) => sum + (e.nb_articles || 0), 0) : 0;
+
+                info.innerHTML = `
+                    <i class="bi bi-geo-alt"></i> ${nbEmplacements} emplacement(s)<br>
+                    <i class="bi bi-box"></i> ${nbArticles} article(s)
+                `;
+
+                tooltip.classList.add('visible');
+                this.moveTooltip(event);
+            },
+
+            moveTooltip(event) {
+                const tooltip = document.getElementById('planTooltip');
+                const wrapper = document.getElementById('canvasWrapper');
+                const rect = wrapper.getBoundingClientRect();
+
+                let x = event.clientX - rect.left + 15;
+                let y = event.clientY - rect.top + 15;
+
+                // Keep tooltip in bounds
+                if (x + tooltip.offsetWidth > rect.width) {
+                    x = event.clientX - rect.left - tooltip.offsetWidth - 15;
+                }
+                if (y + tooltip.offsetHeight > rect.height) {
+                    y = event.clientY - rect.top - tooltip.offsetHeight - 15;
+                }
+
+                tooltip.style.left = x + 'px';
+                tooltip.style.top = y + 'px';
+            },
+
+            hideTooltip() {
+                document.getElementById('planTooltip').classList.remove('visible');
+            },
+
+            getTypeName(type) {
+                const names = {
+                    mur: 'Mur',
+                    etagere: 'Étagère',
+                    meuble: 'Meuble',
+                    table: 'Table',
+                    zone: 'Zone'
+                };
+                return names[type] || type;
+            },
+
+            async showArticles(element) {
+                const modal = new bootstrap.Modal(document.getElementById('articlesModal'));
+                document.getElementById('emplacementName').textContent = element.nom || this.getTypeName(element.type_element);
+
+                const listContainer = document.getElementById('articlesList');
+                const noArticles = document.getElementById('noArticles');
+
+                listContainer.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+                noArticles.classList.add('d-none');
+
+                modal.show();
+
+                try {
+                    // Fetch articles for this element
+                    const response = await fetch(`/api/plans/public/elements/${element.id}/articles`);
+
+                    if (!response.ok) throw new Error('Erreur');
+
+                    const articles = await response.json();
+
+                    if (articles.length === 0) {
+                        listContainer.innerHTML = '';
+                        noArticles.classList.remove('d-none');
+                        return;
+                    }
+
+                    listContainer.innerHTML = articles.map(article => `
+                        <a href="fiche.html?type=${article.type}&id=${article.id}" class="article-item text-decoration-none text-dark">
+                            <img src="${article.image || '/images/placeholder.png'}" alt="" class="article-image">
+                            <div class="article-info">
+                                <div class="article-title">${this.escapeHtml(article.nom)}</div>
+                                <div class="article-meta">
+                                    ${this.getCollectionBadge(article.type)}
+                                    ${article.emplacement ? `<i class="bi bi-geo-alt ms-2"></i> ${article.emplacement}` : ''}
+                                </div>
+                            </div>
+                            <span class="article-status ${article.disponible ? 'disponible' : 'emprunte'}">
+                                ${article.disponible ? 'Disponible' : 'Emprunté'}
+                            </span>
+                        </a>
+                    `).join('');
+
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    listContainer.innerHTML = '<div class="text-center text-danger py-4">Erreur de chargement</div>';
+                }
+            },
+
+            getCollectionBadge(type) {
+                const badges = {
+                    jeu: '<span class="badge bg-warning text-dark">Jeu</span>',
+                    livre: '<span class="badge bg-info">Livre</span>',
+                    film: '<span class="badge bg-danger">Film</span>',
+                    disque: '<span class="badge bg-success">Disque</span>'
+                };
+                return badges[type] || '';
+            },
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            },
+
+            // Zoom & Pan
+            setZoom(newZoom) {
+                this.zoom = Math.max(0.25, Math.min(4, newZoom));
+                this.updateTransform();
+            },
+
+            resetView() {
+                this.zoom = 1;
+                this.panX = 0;
+                this.panY = 0;
+                this.updateTransform();
+            },
+
+            updateTransform() {
+                const content = document.getElementById('planContent');
+                content.setAttribute('transform', `translate(${this.panX}, ${this.panY}) scale(${this.zoom})`);
+            },
+
+            onMouseDown(e) {
+                if (e.button === 0) { // Left click
+                    this.isDragging = true;
+                    this.lastMousePos = { x: e.clientX, y: e.clientY };
+                    e.target.style.cursor = 'grabbing';
+                }
+            },
+
+            onMouseMove(e) {
+                if (this.isDragging) {
+                    const dx = e.clientX - this.lastMousePos.x;
+                    const dy = e.clientY - this.lastMousePos.y;
+                    this.panX += dx;
+                    this.panY += dy;
+                    this.lastMousePos = { x: e.clientX, y: e.clientY };
+                    this.updateTransform();
+                }
+            },
+
+            onMouseUp() {
+                this.isDragging = false;
+                document.getElementById('planSvg').style.cursor = 'grab';
+            },
+
+            onWheel(e) {
+                e.preventDefault();
+                const delta = e.deltaY > 0 ? 0.9 : 1.1;
+                this.setZoom(this.zoom * delta);
+            }
+        };
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => PlanViewer.init());
+    </script>
+</body>
+</html>

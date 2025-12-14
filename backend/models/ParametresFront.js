@@ -119,6 +119,12 @@ module.exports = (sequelize) => {
       defaultValue: false,
       comment: 'Recherche intelligente IA activee sur le site usager'
     },
+    module_plan_interactif: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Plan interactif affiche sur le site public'
+    },
 
     // === Pages legales ===
     cgv: {
@@ -624,6 +630,7 @@ module.exports = (sequelize) => {
       module_reservations: this.module_reservations,
       module_paiement_en_ligne: this.module_paiement_en_ligne,
       module_recherche_ia: this.module_recherche_ia,
+      module_plan_interactif: this.module_plan_interactif,
       email_contact: this.email_contact,
       telephone_contact: this.telephone_contact,
       adresse_contact: this.adresse_contact,
