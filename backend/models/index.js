@@ -161,6 +161,10 @@ const ReglementFactureModel = require('./ReglementFacture');
 // Import ApiKey (cles API externes)
 const ApiKeyModel = require('./ApiKey');
 
+// Import Regroupements analytiques (ventilation multi-sections)
+const RegroupementAnalytiqueModel = require('./RegroupementAnalytique');
+const RegroupementAnalytiqueDetailModel = require('./RegroupementAnalytiqueDetail');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -318,6 +322,10 @@ const Facture = FactureModel(sequelize);
 const LigneFacture = LigneFactureModel(sequelize);
 const ReglementFacture = ReglementFactureModel(sequelize);
 const ApiKey = ApiKeyModel(sequelize);
+
+// Initialize Regroupements analytiques
+const RegroupementAnalytique = RegroupementAnalytiqueModel(sequelize);
+const RegroupementAnalytiqueDetail = RegroupementAnalytiqueDetailModel(sequelize);
 
 // Define associations
 
@@ -1514,6 +1522,43 @@ ReglementFacture.belongsTo(Utilisateur, {
   as: 'enregistrePar'
 });
 
+// ========================================
+// ASSOCIATIONS REGROUPEMENTS ANALYTIQUES
+// ========================================
+
+// RegroupementAnalytique <-> RegroupementAnalytiqueDetail (One-to-Many)
+RegroupementAnalytique.hasMany(RegroupementAnalytiqueDetail, {
+  foreignKey: 'regroupement_id',
+  as: 'details'
+});
+
+RegroupementAnalytiqueDetail.belongsTo(RegroupementAnalytique, {
+  foreignKey: 'regroupement_id',
+  as: 'regroupement'
+});
+
+// RegroupementAnalytiqueDetail <-> SectionAnalytique (Many-to-One)
+RegroupementAnalytiqueDetail.belongsTo(SectionAnalytique, {
+  foreignKey: 'section_analytique_id',
+  as: 'section'
+});
+
+SectionAnalytique.hasMany(RegroupementAnalytiqueDetail, {
+  foreignKey: 'section_analytique_id',
+  as: 'regroupementsDetails'
+});
+
+// ParametrageComptableOperation <-> RegroupementAnalytique (Many-to-One, optionnel)
+ParametrageComptableOperation.belongsTo(RegroupementAnalytique, {
+  foreignKey: 'regroupement_analytique_id',
+  as: 'regroupementAnalytique'
+});
+
+RegroupementAnalytique.hasMany(ParametrageComptableOperation, {
+  foreignKey: 'regroupement_analytique_id',
+  as: 'parametragesOperations'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -1649,5 +1694,8 @@ module.exports = {
   LigneFacture,
   ReglementFacture,
   // API Keys (extensions externes)
-  ApiKey
+  ApiKey,
+  // Regroupements analytiques (ventilation multi-sections)
+  RegroupementAnalytique,
+  RegroupementAnalytiqueDetail
 };

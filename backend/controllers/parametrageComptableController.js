@@ -5,7 +5,10 @@ const {
   CompteEncaissementModePaiement,
   TauxTVA,
   SectionAnalytique,
-  ModePaiement
+  ModePaiement,
+  RegroupementAnalytique,
+  RegroupementAnalytiqueDetail,
+  sequelize
 } = require('../models');
 const ComptabiliteService = require('../services/comptabiliteService');
 
@@ -391,6 +394,7 @@ exports.updateParametrage = async (req, res) => {
       compte_tva,
       taux_tva_id,
       section_analytique_id,
+      regroupement_analytique_id,
       prefixe_piece,
       generer_ecritures_auto,
       actif,
@@ -407,6 +411,7 @@ exports.updateParametrage = async (req, res) => {
       compte_tva: compte_tva !== undefined ? compte_tva : parametrage.compte_tva,
       taux_tva_id: taux_tva_id !== undefined ? taux_tva_id : parametrage.taux_tva_id,
       section_analytique_id: section_analytique_id !== undefined ? section_analytique_id : parametrage.section_analytique_id,
+      regroupement_analytique_id: regroupement_analytique_id !== undefined ? regroupement_analytique_id : parametrage.regroupement_analytique_id,
       prefixe_piece: prefixe_piece || parametrage.prefixe_piece,
       generer_ecritures_auto: generer_ecritures_auto !== undefined ? generer_ecritures_auto : parametrage.generer_ecritures_auto,
       actif: actif !== undefined ? actif : parametrage.actif,
@@ -416,7 +421,16 @@ exports.updateParametrage = async (req, res) => {
     const updated = await ParametrageComptableOperation.findByPk(parametrage.id, {
       include: [
         { model: TauxTVA, as: 'tauxTVA' },
-        { model: SectionAnalytique, as: 'sectionAnalytique' }
+        { model: SectionAnalytique, as: 'sectionAnalytique' },
+        {
+          model: RegroupementAnalytique,
+          as: 'regroupementAnalytique',
+          include: [{
+            model: RegroupementAnalytiqueDetail,
+            as: 'details',
+            include: [{ model: SectionAnalytique, as: 'section' }]
+          }]
+        }
       ]
     });
 
@@ -576,6 +590,407 @@ exports.getModesPaiement = async (req, res) => {
     res.json(modes);
   } catch (error) {
     console.error('Erreur getModesPaiement:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// ============================================
+// SECTIONS ANALYTIQUES (CRUD complet)
+// ============================================
+
+/**
+ * Liste toutes les sections analytiques
+ */
+exports.getSections = async (req, res) => {
+  try {
+    const { axe, actif } = req.query;
+    const where = {};
+
+    if (axe) where.axe = axe;
+    if (actif !== undefined) where.actif = actif === 'true';
+
+    const sections = await SectionAnalytique.findAll({
+      where,
+      order: [['axe', 'ASC'], ['ordre_affichage', 'ASC'], ['code', 'ASC']]
+    });
+    res.json(sections);
+  } catch (error) {
+    console.error('Erreur getSections:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Recupere une section par ID
+ */
+exports.getSection = async (req, res) => {
+  try {
+    const section = await SectionAnalytique.findByPk(req.params.id);
+    if (!section) {
+      return res.status(404).json({ message: 'Section non trouvee' });
+    }
+    res.json(section);
+  } catch (error) {
+    console.error('Erreur getSection:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Cree une nouvelle section analytique
+ */
+exports.createSection = async (req, res) => {
+  try {
+    const { code, libelle, axe, compte_analytique, description, couleur, parent_id, actif, ordre_affichage } = req.body;
+
+    // Verifier unicite du code
+    const existing = await SectionAnalytique.findOne({ where: { code: code.toUpperCase() } });
+    if (existing) {
+      return res.status(400).json({ message: 'Une section avec ce code existe deja' });
+    }
+
+    const section = await SectionAnalytique.create({
+      code: code.toUpperCase(),
+      libelle,
+      axe: axe || 'activite',
+      compte_analytique,
+      description,
+      couleur,
+      parent_id,
+      actif: actif !== false,
+      ordre_affichage: ordre_affichage || 0
+    });
+
+    res.status(201).json(section);
+  } catch (error) {
+    console.error('Erreur createSection:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Met a jour une section analytique
+ */
+exports.updateSection = async (req, res) => {
+  try {
+    const section = await SectionAnalytique.findByPk(req.params.id);
+    if (!section) {
+      return res.status(404).json({ message: 'Section non trouvee' });
+    }
+
+    const { code, libelle, axe, compte_analytique, description, couleur, parent_id, actif, ordre_affichage } = req.body;
+
+    // Verifier unicite du code si modifie
+    if (code && code.toUpperCase() !== section.code) {
+      const existing = await SectionAnalytique.findOne({ where: { code: code.toUpperCase() } });
+      if (existing) {
+        return res.status(400).json({ message: 'Une section avec ce code existe deja' });
+      }
+    }
+
+    await section.update({
+      code: code ? code.toUpperCase() : section.code,
+      libelle: libelle || section.libelle,
+      axe: axe || section.axe,
+      compte_analytique: compte_analytique !== undefined ? compte_analytique : section.compte_analytique,
+      description: description !== undefined ? description : section.description,
+      couleur: couleur !== undefined ? couleur : section.couleur,
+      parent_id: parent_id !== undefined ? parent_id : section.parent_id,
+      actif: actif !== undefined ? actif : section.actif,
+      ordre_affichage: ordre_affichage !== undefined ? ordre_affichage : section.ordre_affichage
+    });
+
+    res.json(section);
+  } catch (error) {
+    console.error('Erreur updateSection:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Supprime une section analytique
+ */
+exports.deleteSection = async (req, res) => {
+  try {
+    const section = await SectionAnalytique.findByPk(req.params.id);
+    if (!section) {
+      return res.status(404).json({ message: 'Section non trouvee' });
+    }
+
+    // Verifier qu'il n'y a pas d'enfants
+    const enfants = await SectionAnalytique.findAll({ where: { parent_id: section.id } });
+    if (enfants.length > 0) {
+      return res.status(400).json({ message: 'Impossible de supprimer une section ayant des sous-sections' });
+    }
+
+    await section.destroy();
+    res.json({ message: 'Section supprimee' });
+  } catch (error) {
+    console.error('Erreur deleteSection:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+// ============================================
+// REGROUPEMENTS ANALYTIQUES (CRUD complet)
+// ============================================
+
+/**
+ * Liste tous les regroupements analytiques avec leurs details
+ */
+exports.getRegroupements = async (req, res) => {
+  try {
+    const { actif } = req.query;
+    const where = {};
+
+    if (actif !== undefined) where.actif = actif === 'true';
+
+    const regroupements = await RegroupementAnalytique.findAll({
+      where,
+      include: [{
+        model: RegroupementAnalytiqueDetail,
+        as: 'details',
+        include: [{
+          model: SectionAnalytique,
+          as: 'section'
+        }],
+        order: [['ordre', 'ASC']]
+      }],
+      order: [['ordre_affichage', 'ASC'], ['libelle', 'ASC']]
+    });
+    res.json(regroupements);
+  } catch (error) {
+    console.error('Erreur getRegroupements:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Recupere un regroupement par ID avec ses details
+ */
+exports.getRegroupement = async (req, res) => {
+  try {
+    const regroupement = await RegroupementAnalytique.findByPk(req.params.id, {
+      include: [{
+        model: RegroupementAnalytiqueDetail,
+        as: 'details',
+        include: [{
+          model: SectionAnalytique,
+          as: 'section'
+        }],
+        order: [['ordre', 'ASC']]
+      }]
+    });
+    if (!regroupement) {
+      return res.status(404).json({ message: 'Regroupement non trouve' });
+    }
+    res.json(regroupement);
+  } catch (error) {
+    console.error('Erreur getRegroupement:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Cree un nouveau regroupement analytique avec ses lignes de ventilation
+ */
+exports.createRegroupement = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const { code, libelle, description, actif, ordre_affichage, details } = req.body;
+
+    // Verifier unicite du code
+    const existing = await RegroupementAnalytique.findOne({
+      where: { code: code.toUpperCase() },
+      transaction
+    });
+    if (existing) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Un regroupement avec ce code existe deja' });
+    }
+
+    // Valider les pourcentages si details fournis
+    if (details && details.length > 0) {
+      const totalPourcentage = details.reduce((sum, d) => sum + parseFloat(d.pourcentage || 0), 0);
+      if (Math.abs(totalPourcentage - 100) > 0.01) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: `Le total des pourcentages doit etre exactement 100% (actuellement ${totalPourcentage.toFixed(2)}%)`
+        });
+      }
+    }
+
+    // Creer le regroupement
+    const regroupement = await RegroupementAnalytique.create({
+      code: code.toUpperCase(),
+      libelle,
+      description,
+      actif: actif !== false,
+      ordre_affichage: ordre_affichage || 0
+    }, { transaction });
+
+    // Creer les lignes de detail
+    if (details && details.length > 0) {
+      for (let i = 0; i < details.length; i++) {
+        const d = details[i];
+        await RegroupementAnalytiqueDetail.create({
+          regroupement_id: regroupement.id,
+          section_analytique_id: d.section_analytique_id,
+          pourcentage: d.pourcentage,
+          ordre: d.ordre || i
+        }, { transaction });
+      }
+    }
+
+    await transaction.commit();
+
+    // Recharger avec les details
+    const created = await RegroupementAnalytique.findByPk(regroupement.id, {
+      include: [{
+        model: RegroupementAnalytiqueDetail,
+        as: 'details',
+        include: [{ model: SectionAnalytique, as: 'section' }],
+        order: [['ordre', 'ASC']]
+      }]
+    });
+
+    res.status(201).json(created);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur createRegroupement:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Met a jour un regroupement analytique et ses details
+ */
+exports.updateRegroupement = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const regroupement = await RegroupementAnalytique.findByPk(req.params.id, { transaction });
+    if (!regroupement) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Regroupement non trouve' });
+    }
+
+    const { code, libelle, description, actif, ordre_affichage, details } = req.body;
+
+    // Verifier unicite du code si modifie
+    if (code && code.toUpperCase() !== regroupement.code) {
+      const existing = await RegroupementAnalytique.findOne({
+        where: { code: code.toUpperCase() },
+        transaction
+      });
+      if (existing) {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Un regroupement avec ce code existe deja' });
+      }
+    }
+
+    // Valider les pourcentages si details fournis
+    if (details && details.length > 0) {
+      const totalPourcentage = details.reduce((sum, d) => sum + parseFloat(d.pourcentage || 0), 0);
+      if (Math.abs(totalPourcentage - 100) > 0.01) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: `Le total des pourcentages doit etre exactement 100% (actuellement ${totalPourcentage.toFixed(2)}%)`
+        });
+      }
+    }
+
+    // Mettre a jour le regroupement
+    await regroupement.update({
+      code: code ? code.toUpperCase() : regroupement.code,
+      libelle: libelle || regroupement.libelle,
+      description: description !== undefined ? description : regroupement.description,
+      actif: actif !== undefined ? actif : regroupement.actif,
+      ordre_affichage: ordre_affichage !== undefined ? ordre_affichage : regroupement.ordre_affichage
+    }, { transaction });
+
+    // Si details fournis, les remplacer tous
+    if (details !== undefined) {
+      // Supprimer les anciens details
+      await RegroupementAnalytiqueDetail.destroy({
+        where: { regroupement_id: regroupement.id },
+        transaction
+      });
+
+      // Creer les nouveaux details
+      if (details && details.length > 0) {
+        for (let i = 0; i < details.length; i++) {
+          const d = details[i];
+          await RegroupementAnalytiqueDetail.create({
+            regroupement_id: regroupement.id,
+            section_analytique_id: d.section_analytique_id,
+            pourcentage: d.pourcentage,
+            ordre: d.ordre || i
+          }, { transaction });
+        }
+      }
+    }
+
+    await transaction.commit();
+
+    // Recharger avec les details
+    const updated = await RegroupementAnalytique.findByPk(regroupement.id, {
+      include: [{
+        model: RegroupementAnalytiqueDetail,
+        as: 'details',
+        include: [{ model: SectionAnalytique, as: 'section' }],
+        order: [['ordre', 'ASC']]
+      }]
+    });
+
+    res.json(updated);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur updateRegroupement:', error);
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+/**
+ * Supprime un regroupement analytique
+ */
+exports.deleteRegroupement = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const regroupement = await RegroupementAnalytique.findByPk(req.params.id, { transaction });
+    if (!regroupement) {
+      await transaction.rollback();
+      return res.status(404).json({ message: 'Regroupement non trouve' });
+    }
+
+    // Verifier qu'il n'est pas utilise dans des operations
+    const operations = await ParametrageComptableOperation.findAll({
+      where: { regroupement_analytique_id: regroupement.id },
+      transaction
+    });
+    if (operations.length > 0) {
+      await transaction.rollback();
+      return res.status(400).json({
+        message: 'Impossible de supprimer ce regroupement car il est utilise par des operations comptables'
+      });
+    }
+
+    // Supprimer les details d'abord
+    await RegroupementAnalytiqueDetail.destroy({
+      where: { regroupement_id: regroupement.id },
+      transaction
+    });
+
+    // Supprimer le regroupement
+    await regroupement.destroy({ transaction });
+
+    await transaction.commit();
+    res.json({ message: 'Regroupement supprime' });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur deleteRegroupement:', error);
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };

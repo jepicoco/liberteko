@@ -42,6 +42,24 @@ router.post('/encaissements', authMiddleware, parametrageComptableController.cre
 router.put('/encaissements/:id', authMiddleware, parametrageComptableController.updateCompteEncaissement);
 
 // ============================================
+// SECTIONS ANALYTIQUES
+// ============================================
+router.get('/sections', authMiddleware, parametrageComptableController.getSections);
+router.get('/sections/:id', authMiddleware, parametrageComptableController.getSection);
+router.post('/sections', authMiddleware, parametrageComptableController.createSection);
+router.put('/sections/:id', authMiddleware, parametrageComptableController.updateSection);
+router.delete('/sections/:id', authMiddleware, parametrageComptableController.deleteSection);
+
+// ============================================
+// REGROUPEMENTS ANALYTIQUES (ventilation multi-sections)
+// ============================================
+router.get('/regroupements', authMiddleware, parametrageComptableController.getRegroupements);
+router.get('/regroupements/:id', authMiddleware, parametrageComptableController.getRegroupement);
+router.post('/regroupements', authMiddleware, parametrageComptableController.createRegroupement);
+router.put('/regroupements/:id', authMiddleware, parametrageComptableController.updateRegroupement);
+router.delete('/regroupements/:id', authMiddleware, parametrageComptableController.deleteRegroupement);
+
+// ============================================
 // DONNEES DE REFERENCE (pour selects)
 // ============================================
 router.get('/refs/taux-tva', authMiddleware, parametrageComptableController.getTauxTVA);

@@ -74,7 +74,7 @@ module.exports = (sequelize) => {
       },
       comment: 'Taux de TVA par defaut pour ce type d operation'
     },
-    // Section analytique par defaut
+    // Section analytique par defaut (une seule section)
     section_analytique_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -82,7 +82,17 @@ module.exports = (sequelize) => {
         model: 'sections_analytiques',
         key: 'id'
       },
-      comment: 'Section analytique par defaut'
+      comment: 'Section analytique unique par defaut'
+    },
+    // Regroupement analytique (ventilation multi-sections avec %)
+    regroupement_analytique_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'regroupements_analytiques',
+        key: 'id'
+      },
+      comment: 'Regroupement analytique pour ventilation multi-sections'
     },
     // Prefixe de piece comptable
     prefixe_piece: {
@@ -127,7 +137,16 @@ module.exports = (sequelize) => {
       where: { actif: true },
       include: [
         { model: sequelize.models.TauxTVA, as: 'tauxTVA' },
-        { model: sequelize.models.SectionAnalytique, as: 'sectionAnalytique' }
+        { model: sequelize.models.SectionAnalytique, as: 'sectionAnalytique' },
+        {
+          model: sequelize.models.RegroupementAnalytique,
+          as: 'regroupementAnalytique',
+          include: [{
+            model: sequelize.models.RegroupementAnalytiqueDetail,
+            as: 'details',
+            include: [{ model: sequelize.models.SectionAnalytique, as: 'section' }]
+          }]
+        }
       ],
       order: [['ordre_affichage', 'ASC']]
     });
@@ -138,7 +157,16 @@ module.exports = (sequelize) => {
       where: { type_operation: type, actif: true },
       include: [
         { model: sequelize.models.TauxTVA, as: 'tauxTVA' },
-        { model: sequelize.models.SectionAnalytique, as: 'sectionAnalytique' }
+        { model: sequelize.models.SectionAnalytique, as: 'sectionAnalytique' },
+        {
+          model: sequelize.models.RegroupementAnalytique,
+          as: 'regroupementAnalytique',
+          include: [{
+            model: sequelize.models.RegroupementAnalytiqueDetail,
+            as: 'details',
+            include: [{ model: sequelize.models.SectionAnalytique, as: 'section' }]
+          }]
+        }
       ]
     });
   };
