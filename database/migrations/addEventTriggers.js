@@ -1,128 +1,51 @@
-const { Sequelize } = require('sequelize');
-const sequelize = require('../../backend/config/sequelize');
+/**
+ * Migration pour la table event_triggers
+ * Declencheurs d'evenements pour notifications automatiques
+ */
 
-async function up() {
-  const queryInterface = sequelize.getQueryInterface();
+module.exports = {
+  name: '20241210_add_event_triggers',
 
-  await queryInterface.createTable('event_triggers', {
-    id: {
-      type: Sequelize.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
-    },
-    code: {
-      type: Sequelize.STRING(50),
-      allowNull: false,
-      unique: true
-    },
-    libelle: {
-      type: Sequelize.STRING(100),
-      allowNull: false
-    },
-    description: {
-      type: Sequelize.TEXT,
-      allowNull: true
-    },
-    categorie: {
-      type: Sequelize.ENUM('adherent', 'emprunt', 'cotisation', 'systeme'),
-      allowNull: false
-    },
-    template_email_code: {
-      type: Sequelize.STRING(50),
-      allowNull: true
-    },
-    template_sms_code: {
-      type: Sequelize.STRING(50),
-      allowNull: true
-    },
-    email_actif: {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    },
-    sms_actif: {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    },
-    delai_envoi: {
-      type: Sequelize.INTEGER,
-      allowNull: true,
-      defaultValue: 0
-    },
-    condition_envoi: {
-      type: Sequelize.TEXT,
-      allowNull: true
-    },
-    ordre_affichage: {
-      type: Sequelize.INTEGER,
-      allowNull: false,
-      defaultValue: 0
-    },
-    icone: {
-      type: Sequelize.STRING(50),
-      allowNull: true,
-      defaultValue: 'bi-bell'
-    },
-    couleur: {
-      type: Sequelize.STRING(20),
-      allowNull: true,
-      defaultValue: 'primary'
-    },
-    created_at: {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
-    },
-    updated_at: {
-      type: Sequelize.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP')
+  async up(connection) {
+    // Verifier si la table existe deja
+    const [tables] = await connection.query("SHOW TABLES LIKE 'event_triggers'");
+    if (tables.length > 0) {
+      console.log('    Table event_triggers existe deja, migration ignoree');
+      return;
     }
-  });
 
-  // Ajouter les index
-  await queryInterface.addIndex('event_triggers', ['code'], {
-    unique: true,
-    name: 'event_triggers_code_unique'
-  });
+    // Creer la table event_triggers
+    await connection.query(`
+      CREATE TABLE event_triggers (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        code VARCHAR(50) NOT NULL,
+        libelle VARCHAR(100) NOT NULL,
+        description TEXT NULL,
+        categorie ENUM('adherent', 'emprunt', 'cotisation', 'systeme') NOT NULL,
+        template_email_code VARCHAR(50) NULL,
+        template_sms_code VARCHAR(50) NULL,
+        email_actif TINYINT(1) NOT NULL DEFAULT 0,
+        sms_actif TINYINT(1) NOT NULL DEFAULT 0,
+        delai_envoi INT NULL DEFAULT 0,
+        condition_envoi TEXT NULL,
+        ordre_affichage INT NOT NULL DEFAULT 0,
+        icone VARCHAR(50) NULL DEFAULT 'bi-bell',
+        couleur VARCHAR(20) NULL DEFAULT 'primary',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY event_triggers_code_unique (code),
+        KEY event_triggers_categorie (categorie),
+        KEY event_triggers_email_actif (email_actif),
+        KEY event_triggers_sms_actif (sms_actif),
+        KEY event_triggers_ordre_affichage (ordre_affichage)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
 
-  await queryInterface.addIndex('event_triggers', ['categorie'], {
-    name: 'event_triggers_categorie'
-  });
+    console.log('    Table event_triggers creee avec succes');
+  },
 
-  await queryInterface.addIndex('event_triggers', ['email_actif'], {
-    name: 'event_triggers_email_actif'
-  });
-
-  await queryInterface.addIndex('event_triggers', ['sms_actif'], {
-    name: 'event_triggers_sms_actif'
-  });
-
-  await queryInterface.addIndex('event_triggers', ['ordre_affichage'], {
-    name: 'event_triggers_ordre_affichage'
-  });
-
-  console.log('✅ Table event_triggers créée avec succès');
-}
-
-async function down() {
-  const queryInterface = sequelize.getQueryInterface();
-  await queryInterface.dropTable('event_triggers');
-  console.log('✅ Table event_triggers supprimée');
-}
-
-// Exécution si appelé directement
-if (require.main === module) {
-  up()
-    .then(() => {
-      console.log('Migration terminée avec succès');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Erreur lors de la migration:', error);
-      process.exit(1);
-    });
-}
-
-module.exports = { up, down };
+  async down(connection) {
+    await connection.query('DROP TABLE IF EXISTS event_triggers');
+    console.log('    Table event_triggers supprimee');
+  }
+};

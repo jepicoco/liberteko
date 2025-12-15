@@ -113,6 +113,14 @@
                 </ul>
               </div>
             </div>
+
+            <!-- Indicateur auto-save -->
+            <div id="autoSaveStatus" class="d-flex align-items-center gap-1 text-muted small ms-2" title="Sauvegarde automatique">
+              <span id="autoSaveIcon" class="d-flex align-items-center justify-content-center" style="width: 18px; height: 18px;">
+                <i class="bi bi-check-circle text-secondary"></i>
+              </span>
+              <span id="autoSaveText" class="d-none"></span>
+            </div>
           </div>
 
           <!-- Onglets Etages -->
@@ -470,8 +478,26 @@
   <script src="js/plan-editor.js"></script>
   <script src="js/plan-editor-tools.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       initTemplate('plans');
+
+      // Verifier que le module plans est actif
+      try {
+        await loadActiveModules();
+        if (window.ACTIVE_MODULES && !window.ACTIVE_MODULES.includes('plans')) {
+          document.querySelector('.col-md-10').innerHTML = `
+            <div class="alert alert-warning mt-4">
+              <h4><i class="bi bi-exclamation-triangle"></i> Module desactive</h4>
+              <p>Le module "Plan interactif" est desactive. Contactez votre administrateur pour l'activer.</p>
+              <a href="dashboard.html" class="btn btn-primary">Retour au tableau de bord</a>
+            </div>
+          `;
+          return;
+        }
+      } catch (e) {
+        console.error('Erreur verification module:', e);
+      }
+
       initPlanEditor();
     });
   </script>

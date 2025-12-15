@@ -56,7 +56,14 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING(255),
       allowNull: true,
       validate: {
-        isEmail: true
+        isEmailOrEmpty(value) {
+          if (value && value.length > 0) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(value)) {
+              throw new Error('Format email invalide');
+            }
+          }
+        }
       }
     },
     // Association au compte bancaire

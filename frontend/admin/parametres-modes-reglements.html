@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modes de reglements - Parametres - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .list-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem;
+      border: 1px solid #dee2e6;
+      border-radius: 0.375rem;
+      margin-bottom: 0.5rem;
+      background: white;
+    }
+    .list-item:hover {
+      background-color: #f8f9fa;
+    }
+    .list-item .drag-handle {
+      cursor: move;
+      color: #6c757d;
+      margin-right: 0.75rem;
+    }
+    .list-item .item-content {
+      flex: 1;
+    }
+    .list-item .item-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+    .list-item.inactive {
+      opacity: 0.5;
+    }
+    .badge-mode {
+      font-size: 0.7rem;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1><i class="bi bi-credit-card"></i> Modes de reglements</h1>
+            <p class="text-muted mb-0">Definissez les modes de paiement acceptes pour les cotisations et transactions</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModeModal()">
+            <i class="bi bi-plus"></i> Ajouter un mode
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ol"></i> Liste des modes de reglements</span>
+            <small class="text-muted">Glissez-deposez pour reorganiser</small>
+          </div>
+          <div class="card-body">
+            <div id="modes-paiement-list">
+              <div class="text-center py-4">
+                <div class="spinner-border spinner-border-sm" role="status"></div>
+                <span class="ms-2">Chargement...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Mode de paiement -->
+  <div class="modal fade" id="modalModePaiement" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalModePaiementTitle">Ajouter un mode de reglement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formModePaiement">
+            <input type="hidden" id="mode_id">
+            <div class="mb-3">
+              <label for="mode_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="mode_libelle" required placeholder="Ex: Carte bancaire">
+            </div>
+            <div class="mb-3">
+              <label for="mode_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="mode_code" placeholder="Ex: CB" maxlength="20">
+              <div class="form-text">Code court pour l'export comptable (optionnel)</div>
+            </div>
+            <div class="mb-3">
+              <label for="mode_description" class="form-label">Description</label>
+              <textarea class="form-control" id="mode_description" rows="2" placeholder="Description optionnelle"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="mode_icone" class="form-label">Icone Bootstrap</label>
+              <div class="input-group">
+                <span class="input-group-text" id="mode_icone_preview"><i class="bi bi-credit-card"></i></span>
+                <input type="text" class="form-control" id="mode_icone" placeholder="credit-card" value="credit-card">
+              </div>
+              <div class="form-text">
+                Nom de l'icone Bootstrap Icons (sans le prefixe bi-).
+                <a href="https://icons.getbootstrap.com/" target="_blank">Voir la liste</a>
+              </div>
+            </div>
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="mode_actif" checked>
+              <label class="form-check-label" for="mode_actif">Actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveModePaiement()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let modesPaiement = [];
+    let modalModePaiement;
+
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSubNav('comptabilite', 'modes-reglements');
+
+      modalModePaiement = new bootstrap.Modal(document.getElementById('modalModePaiement'));
+
+      loadModesPaiement();
+
+      // Preview icone
+      document.getElementById('mode_icone').addEventListener('input', (e) => {
+        const icon = e.target.value || 'credit-card';
+        document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      });
+    });
+
+    async function loadModesPaiement() {
+      try {
+        const response = await fetch('/api/parametres/modes-paiement', {
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+        if (!response.ok) throw new Error('Erreur chargement');
+        modesPaiement = await response.json();
+        renderModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('modes-paiement-list').innerHTML = `
+          <div class="alert alert-danger">Erreur lors du chargement des modes de reglement</div>
+        `;
+      }
+    }
+
+    function renderModesPaiement() {
+      const container = document.getElementById('modes-paiement-list');
+
+      if (modesPaiement.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucun mode de reglement configure</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddModeModal()">
+              <i class="bi bi-plus"></i> Ajouter le premier
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = modesPaiement.map(mode => `
+        <div class="list-item ${mode.actif ? '' : 'inactive'}" data-id="${mode.id}">
+          <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
+          <div class="item-content">
+            <i class="bi bi-${mode.icone || 'credit-card'} me-2"></i>
+            <strong>${mode.libelle}</strong>
+            ${mode.code ? `<span class="badge bg-secondary badge-mode">${mode.code}</span>` : ''}
+            ${!mode.actif ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
+            ${mode.description ? `<br><small class="text-muted">${mode.description}</small>` : ''}
+          </div>
+          <div class="item-actions">
+            <button class="btn btn-sm btn-outline-secondary" onclick="editModePaiement(${mode.id})" title="Modifier">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-${mode.actif ? 'warning' : 'success'}" onclick="toggleModePaiement(${mode.id})" title="${mode.actif ? 'Desactiver' : 'Activer'}">
+              <i class="bi bi-${mode.actif ? 'eye-slash' : 'eye'}"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteModePaiement(${mode.id})" title="Supprimer">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+
+      // Activer le drag & drop
+      new Sortable(container, {
+        handle: '.drag-handle',
+        animation: 150,
+        onEnd: async function(evt) {
+          const items = container.querySelectorAll('.list-item');
+          const ordres = Array.from(items).map((item, index) => ({
+            id: parseInt(item.dataset.id),
+            ordre: index
+          }));
+          await reorderModesPaiement(ordres);
+        }
+      });
+    }
+
+    function openAddModeModal() {
+      document.getElementById('modalModePaiementTitle').textContent = 'Ajouter un mode de reglement';
+      document.getElementById('formModePaiement').reset();
+      document.getElementById('mode_id').value = '';
+      document.getElementById('mode_icone').value = 'credit-card';
+      document.getElementById('mode_icone_preview').innerHTML = '<i class="bi bi-credit-card"></i>';
+      document.getElementById('mode_actif').checked = true;
+      modalModePaiement.show();
+    }
+
+    function editModePaiement(id) {
+      const mode = modesPaiement.find(m => m.id === id);
+      if (!mode) return;
+
+      document.getElementById('modalModePaiementTitle').textContent = 'Modifier le mode de reglement';
+      document.getElementById('mode_id').value = mode.id;
+      document.getElementById('mode_libelle').value = mode.libelle;
+      document.getElementById('mode_code').value = mode.code || '';
+      document.getElementById('mode_description').value = mode.description || '';
+      document.getElementById('mode_icone').value = mode.icone || 'credit-card';
+      document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${mode.icone || 'credit-card'}"></i>`;
+      document.getElementById('mode_actif').checked = mode.actif;
+      modalModePaiement.show();
+    }
+
+    async function saveModePaiement() {
+      const id = document.getElementById('mode_id').value;
+      const data = {
+        libelle: document.getElementById('mode_libelle').value,
+        code: document.getElementById('mode_code').value || null,
+        description: document.getElementById('mode_description').value || null,
+        icone: document.getElementById('mode_icone').value || 'credit-card',
+        actif: document.getElementById('mode_actif').checked
+      };
+
+      try {
+        const url = id ? `/api/parametres/modes-paiement/${id}` : '/api/parametres/modes-paiement';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Erreur');
+        }
+
+        modalModePaiement.hide();
+        showToast('Mode de reglement enregistre', 'success');
+        loadModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message, 'error');
+      }
+    }
+
+    async function toggleModePaiement(id) {
+      try {
+        const response = await fetch(`/api/parametres/modes-paiement/${id}/toggle`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        loadModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteModePaiement(id) {
+      if (!confirm('Supprimer ce mode de reglement ?')) return;
+
+      try {
+        const response = await fetch(`/api/parametres/modes-paiement/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
+        });
+
+        if (!response.ok) throw new Error('Erreur');
+
+        showToast('Mode de reglement supprime', 'success');
+        loadModesPaiement();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la suppression', 'error');
+      }
+    }
+
+    async function reorderModesPaiement(ordres) {
+      try {
+        await fetch('/api/parametres/modes-paiement-reorder', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAuthToken()}`
+          },
+          body: JSON.stringify({ ordres })
+        });
+      } catch (error) {
+        console.error('Erreur reorder:', error);
+      }
+    }
+
+    function showToast(message, type = 'info') {
+      const toastContainer = document.getElementById('toast-container') || createToastContainer();
+      const toast = document.createElement('div');
+      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
+      toast.setAttribute('role', 'alert');
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">${message}</div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+      toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+
+    function createToastContainer() {
+      const container = document.createElement('div');
+      container.id = 'toast-container';
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      container.style.zIndex = '1100';
+      document.body.appendChild(container);
+      return container;
+    }
+  </script>
+</body>
+</html>

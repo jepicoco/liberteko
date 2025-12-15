@@ -218,31 +218,31 @@ const schemas = {
   // Jeux
   jeu: {
     create: [
-      common.text('nom', 1, 255),
+      common.text('titre', 1, 255),
       body('nb_joueurs_min')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 })
         .withMessage('Nombre de joueurs minimum invalide'),
       body('nb_joueurs_max')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 })
         .withMessage('Nombre de joueurs maximum invalide'),
       body('age_min')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 0 })
         .withMessage('Age minimum invalide'),
       body('duree_partie')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
         .isInt({ min: 1 })
         .withMessage('Duree de partie invalide'),
       common.textOptional('description', 2000)
     ],
     update: [
       common.idParam,
-      common.textOptional('nom', 255),
+      common.textOptional('titre', 255),
       body('statut')
         .optional()
-        .isIn(['disponible', 'emprunte', 'reserve', 'en_reparation', 'indisponible'])
+        .isIn(['disponible', 'emprunte', 'reserve', 'en_reparation', 'indisponible', 'archive', 'perdu'])
         .withMessage('Statut invalide')
     ],
     getById: [common.idParam],

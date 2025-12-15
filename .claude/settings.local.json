@@ -54,7 +54,13 @@
       "Bash(films)",
       "Bash(disques \")",
       "Bash(find:*)",
-      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBhc3NvdGhlcXVlLmZyIiwic3RhdHV0IjoiYWN0aWYiLCJpYXQiOjE3NjU3NDQyMTQsImV4cCI6MTc2NTgzMDYxNH0.dHcn1Go2mtEnF6DG0oNhqkZ2m9yzBFIS_zRsvtL2_fc\")"
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkBhc3NvdGhlcXVlLmZyIiwic3RhdHV0IjoiYWN0aWYiLCJpYXQiOjE3NjU3NDQyMTQsImV4cCI6MTc2NTgzMDYxNH0.dHcn1Go2mtEnF6DG0oNhqkZ2m9yzBFIS_zRsvtL2_fc\")",
+      "Bash(git stash:*)",
+      "Bash(node database/migrations/addModulePlanInteractif.js:*)",
+      "Bash(grep:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []

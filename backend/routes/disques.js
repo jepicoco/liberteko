@@ -15,21 +15,57 @@ const checkDiscoAccess = checkModuleAccess('discotheque');
 // All routes require authentication
 router.use(verifyToken);
 
-// Référentiels (lecture pour tous les utilisateurs authentifiés)
-router.get('/referentiels/genres', disqueController.getGenres);
-router.get('/referentiels/formats', disqueController.getFormats);
-router.get('/referentiels/labels', disqueController.getLabels);
-router.get('/referentiels/emplacements', disqueController.getEmplacements);
-router.get('/referentiels/artistes', disqueController.getArtistes);
-
-// Create new referentiel items (agent+ avec accès discothèque)
-router.post('/referentiels/artistes', isAgent(), checkDiscoAccess, disqueController.createArtiste);
-router.post('/referentiels/labels', isAgent(), checkDiscoAccess, disqueController.createLabel);
-
 // Stats
 router.get('/stats', disqueController.getStats);
 
-// CRUD Disques (lecture pour tous, modification pour agent+ avec accès discothèque)
+// ============================================
+// Référentiels - Genres Musicaux
+// ============================================
+router.get('/referentiels/genres', disqueController.getGenres);
+router.post('/referentiels/genres', isAgent(), checkDiscoAccess, disqueController.createGenre);
+router.put('/referentiels/genres/:id', isAgent(), checkDiscoAccess, disqueController.updateGenre);
+router.delete('/referentiels/genres/:id', isAgent(), checkDiscoAccess, disqueController.deleteGenre);
+router.patch('/referentiels/genres/:id/toggle', isAgent(), checkDiscoAccess, disqueController.toggleGenre);
+
+// ============================================
+// Référentiels - Formats Disques
+// ============================================
+router.get('/referentiels/formats', disqueController.getFormats);
+router.post('/referentiels/formats', isAgent(), checkDiscoAccess, disqueController.createFormat);
+router.put('/referentiels/formats/:id', isAgent(), checkDiscoAccess, disqueController.updateFormat);
+router.delete('/referentiels/formats/:id', isAgent(), checkDiscoAccess, disqueController.deleteFormat);
+router.patch('/referentiels/formats/:id/toggle', isAgent(), checkDiscoAccess, disqueController.toggleFormat);
+
+// ============================================
+// Référentiels - Emplacements Disques
+// ============================================
+router.get('/referentiels/emplacements', disqueController.getEmplacements);
+router.post('/referentiels/emplacements', isAgent(), checkDiscoAccess, disqueController.createEmplacement);
+router.put('/referentiels/emplacements/:id', isAgent(), checkDiscoAccess, disqueController.updateEmplacement);
+router.delete('/referentiels/emplacements/:id', isAgent(), checkDiscoAccess, disqueController.deleteEmplacement);
+router.patch('/referentiels/emplacements/:id/toggle', isAgent(), checkDiscoAccess, disqueController.toggleEmplacement);
+
+// ============================================
+// Référentiels - Artistes
+// ============================================
+router.get('/referentiels/artistes', disqueController.getArtistes);
+router.post('/referentiels/artistes', isAgent(), checkDiscoAccess, disqueController.createArtiste);
+router.put('/referentiels/artistes/:id', isAgent(), checkDiscoAccess, disqueController.updateArtiste);
+router.delete('/referentiels/artistes/:id', isAgent(), checkDiscoAccess, disqueController.deleteArtiste);
+router.patch('/referentiels/artistes/:id/toggle', isAgent(), checkDiscoAccess, disqueController.toggleArtiste);
+
+// ============================================
+// Référentiels - Labels
+// ============================================
+router.get('/referentiels/labels', disqueController.getLabels);
+router.post('/referentiels/labels', isAgent(), checkDiscoAccess, disqueController.createLabel);
+router.put('/referentiels/labels/:id', isAgent(), checkDiscoAccess, disqueController.updateLabel);
+router.delete('/referentiels/labels/:id', isAgent(), checkDiscoAccess, disqueController.deleteLabel);
+router.patch('/referentiels/labels/:id/toggle', isAgent(), checkDiscoAccess, disqueController.toggleLabel);
+
+// ============================================
+// CRUD Disques
+// ============================================
 router.get('/', disqueController.getAllDisques);
 router.get('/:id', disqueController.getDisqueById);
 router.post('/', isAgent(), checkDiscoAccess, disqueController.createDisque);

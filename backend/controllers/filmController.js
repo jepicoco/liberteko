@@ -774,6 +774,14 @@ exports.getStats = async (req, res) => {
       raw: true
     });
 
+    // Referentiels counts for admin
+    const genresCount = await GenreFilm.count();
+    const supportsCount = await SupportVideo.count();
+    const realisateursCount = await Realisateur.count();
+    const acteursCount = await Acteur.count();
+    const studiosCount = await Studio.count();
+    const emplacementsCount = await EmplacementFilm.count();
+
     res.json({
       totalFilms,
       filmsDisponibles,
@@ -782,10 +790,105 @@ exports.getStats = async (req, res) => {
       filmsParGenre,
       filmsParClassification,
       topRealisateurs,
-      topActeurs
+      topActeurs,
+      // Referentiels counts
+      genres: genresCount,
+      supports: supportsCount,
+      realisateurs: realisateursCount,
+      acteurs: acteursCount,
+      studios: studiosCount,
+      emplacements: emplacementsCount
     });
   } catch (error) {
     console.error('Error fetching film stats:', error);
     res.status(500).json({ error: 'Erreur lors de la récupération des statistiques' });
+  }
+};
+
+// ============================================
+// Toggle Actif pour Référentiels Films
+// ============================================
+
+exports.toggleGenre = async (req, res) => {
+  try {
+    const genre = await GenreFilm.findByPk(req.params.id);
+    if (!genre) {
+      return res.status(404).json({ error: 'Genre non trouvé' });
+    }
+    await genre.update({ actif: !genre.actif });
+    res.json(genre);
+  } catch (error) {
+    console.error('Error toggling genre film:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification du genre' });
+  }
+};
+
+exports.toggleRealisateur = async (req, res) => {
+  try {
+    const realisateur = await Realisateur.findByPk(req.params.id);
+    if (!realisateur) {
+      return res.status(404).json({ error: 'Réalisateur non trouvé' });
+    }
+    await realisateur.update({ actif: !realisateur.actif });
+    res.json(realisateur);
+  } catch (error) {
+    console.error('Error toggling realisateur:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification du réalisateur' });
+  }
+};
+
+exports.toggleActeur = async (req, res) => {
+  try {
+    const acteur = await Acteur.findByPk(req.params.id);
+    if (!acteur) {
+      return res.status(404).json({ error: 'Acteur non trouvé' });
+    }
+    await acteur.update({ actif: !acteur.actif });
+    res.json(acteur);
+  } catch (error) {
+    console.error('Error toggling acteur:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification de l\'acteur' });
+  }
+};
+
+exports.toggleStudio = async (req, res) => {
+  try {
+    const studio = await Studio.findByPk(req.params.id);
+    if (!studio) {
+      return res.status(404).json({ error: 'Studio non trouvé' });
+    }
+    await studio.update({ actif: !studio.actif });
+    res.json(studio);
+  } catch (error) {
+    console.error('Error toggling studio:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification du studio' });
+  }
+};
+
+exports.toggleSupport = async (req, res) => {
+  try {
+    const support = await SupportVideo.findByPk(req.params.id);
+    if (!support) {
+      return res.status(404).json({ error: 'Support non trouvé' });
+    }
+    await support.update({ actif: !support.actif });
+    res.json(support);
+  } catch (error) {
+    console.error('Error toggling support:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification du support' });
+  }
+};
+
+exports.toggleEmplacement = async (req, res) => {
+  try {
+    const emplacement = await EmplacementFilm.findByPk(req.params.id);
+    if (!emplacement) {
+      return res.status(404).json({ error: 'Emplacement non trouvé' });
+    }
+    await emplacement.update({ actif: !emplacement.actif });
+    res.json(emplacement);
+  } catch (error) {
+    console.error('Error toggling emplacement film:', error);
+    res.status(500).json({ error: 'Erreur lors de la modification de l\'emplacement' });
   }
 };

@@ -44,6 +44,8 @@ const OVERRIDABLE_PAGES = [
   'cgu.html',
   'cgv.html',
   'contact.html',
+  'plan.html',
+  'aide.html',
   // Pages usager
   'usager/login.html',
   'usager/dashboard.html',
@@ -172,8 +174,8 @@ function getThemeFilePath(themeCode, filePath, basePath) {
  */
 function createThemeResolverMiddleware(frontendPath) {
   return async (req, res, next) => {
-    // Ne traiter que les pages HTML publiques surchargeables
-    const requestedFile = req.path === '/' ? 'index.html' : req.path.substring(1);
+    // Utiliser req.targetPage si défini (routes paramétrées), sinon extraire du path
+    const requestedFile = req.targetPage || (req.path === '/' ? 'index.html' : req.path.substring(1));
 
     console.log(`[ThemeResolver] Request: ${req.path} -> ${requestedFile}`);
 

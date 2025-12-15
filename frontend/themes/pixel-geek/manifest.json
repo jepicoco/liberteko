@@ -34,6 +34,8 @@
     "catalogue.html",
     "fiche.html",
     "infos.html",
+    "aide.html",
+    "plan.html",
     "usager/login.html",
     "usager/dashboard.html",
     "usager/emprunts.html",

@@ -837,10 +837,13 @@ exports.getArticlesElement = async (req, res) => {
     const articles = [];
 
     // Pour chaque emplacement lie, recuperer les articles
+    // Filtre: exclure les articles archives ou perdus
+    const statutsValides = { [Op.notIn]: ['archive', 'perdu'] };
+
     for (const emp of element.emplacements || []) {
       if (emp.type_collection === 'jeu' && emp.emplacement_jeu_id) {
         const jeux = await Jeu.findAll({
-          where: { emplacement_id: emp.emplacement_jeu_id, actif: true },
+          where: { emplacement_id: emp.emplacement_jeu_id, statut: statutsValides },
           attributes: ['id', 'titre', 'code_barre', 'image_url', 'statut'],
           order: [['titre', 'ASC']]
         });
@@ -857,7 +860,7 @@ exports.getArticlesElement = async (req, res) => {
 
       if (emp.type_collection === 'livre' && emp.emplacement_livre_id) {
         const livres = await Livre.findAll({
-          where: { emplacement_id: emp.emplacement_livre_id, actif: true },
+          where: { emplacement_id: emp.emplacement_livre_id, statut: statutsValides },
           attributes: ['id', 'titre', 'isbn', 'image_url', 'statut'],
           order: [['titre', 'ASC']]
         });
@@ -874,7 +877,7 @@ exports.getArticlesElement = async (req, res) => {
 
       if (emp.type_collection === 'film' && emp.emplacement_film_id) {
         const films = await Film.findAll({
-          where: { emplacement_id: emp.emplacement_film_id, actif: true },
+          where: { emplacement_id: emp.emplacement_film_id, statut: statutsValides },
           attributes: ['id', 'titre', 'code_barre', 'image_url', 'statut'],
           order: [['titre', 'ASC']]
         });
@@ -891,7 +894,7 @@ exports.getArticlesElement = async (req, res) => {
 
       if (emp.type_collection === 'disque' && emp.emplacement_disque_id) {
         const disques = await Disque.findAll({
-          where: { emplacement_id: emp.emplacement_disque_id, actif: true },
+          where: { emplacement_id: emp.emplacement_disque_id, statut: statutsValides },
           attributes: ['id', 'titre', 'code_barre', 'image_url', 'statut'],
           order: [['titre', 'ASC']]
         });
@@ -908,12 +911,21 @@ exports.getArticlesElement = async (req, res) => {
     }
 
     // Trier par nom
-    articles.sort((a, b) => a.nom.localeCompare(b.nom));
+    articles.sort((a, b) => (a.nom || '').localeCompare(b.nom || ''));
 
-    res.json(articles);
+    // Format attendu par le frontend: { articles: [...] }
+    res.json({
+      articles: articles.map(a => ({
+        id: a.id,
+        type: a.type,
+        titre: a.nom,
+        image_url: a.image,
+        statut: a.disponible ? 'disponible' : 'emprunte'
+      }))
+    });
   } catch (error) {
     logger.error('Erreur getArticlesElement:', error);
-    res.status(500).json({ error: 'Erreur lors de la recuperation des articles' });
+    res.status(500).json({ error: 'Erreur lors de la recuperation des articles', details: error.message });
   }
 };
 
@@ -1128,22 +1140,22 @@ const PLAN_TEMPLATES = [
     elements: [
       {
         type_element: 'mur',
-        points: [{ x: 50, y: 50 }, { x: 1150, y: 50 }],
+        points: [{ x: 40, y: 40 }, { x: 1160, y: 40 }],
         style: { couleur: '#333333', epaisseur: 6 }
       },
       {
         type_element: 'mur',
-        points: [{ x: 1150, y: 50 }, { x: 1150, y: 750 }],
+        points: [{ x: 1160, y: 40 }, { x: 1160, y: 760 }],
         style: { couleur: '#333333', epaisseur: 6 }
       },
       {
         type_element: 'mur',
-        points: [{ x: 1150, y: 750 }, { x: 50, y: 750 }],
+        points: [{ x: 1160, y: 760 }, { x: 40, y: 760 }],
         style: { couleur: '#333333', epaisseur: 6 }
       },
       {
         type_element: 'mur',
-        points: [{ x: 50, y: 750 }, { x: 50, y: 50 }],
+        points: [{ x: 40, y: 760 }, { x: 40, y: 40 }],
         style: { couleur: '#333333', epaisseur: 6 }
       }
     ]
@@ -1154,12 +1166,12 @@ const PLAN_TEMPLATES = [
     description: 'Une piece en forme de L',
     preview: null,
     elements: [
-      { type_element: 'mur', points: [{ x: 50, y: 50 }, { x: 700, y: 50 }] },
-      { type_element: 'mur', points: [{ x: 700, y: 50 }, { x: 700, y: 400 }] },
-      { type_element: 'mur', points: [{ x: 700, y: 400 }, { x: 1150, y: 400 }] },
-      { type_element: 'mur', points: [{ x: 1150, y: 400 }, { x: 1150, y: 750 }] },
-      { type_element: 'mur', points: [{ x: 1150, y: 750 }, { x: 50, y: 750 }] },
-      { type_element: 'mur', points: [{ x: 50, y: 750 }, { x: 50, y: 50 }] }
+      { type_element: 'mur', points: [{ x: 40, y: 40 }, { x: 700, y: 40 }] },
+      { type_element: 'mur', points: [{ x: 700, y: 40 }, { x: 700, y: 400 }] },
+      { type_element: 'mur', points: [{ x: 700, y: 400 }, { x: 1160, y: 400 }] },
+      { type_element: 'mur', points: [{ x: 1160, y: 400 }, { x: 1160, y: 760 }] },
+      { type_element: 'mur', points: [{ x: 1160, y: 760 }, { x: 40, y: 760 }] },
+      { type_element: 'mur', points: [{ x: 40, y: 760 }, { x: 40, y: 40 }] }
     ]
   },
   {
@@ -1169,10 +1181,10 @@ const PLAN_TEMPLATES = [
     preview: null,
     elements: [
       // Murs exterieurs
-      { type_element: 'mur', points: [{ x: 50, y: 50 }, { x: 1150, y: 50 }] },
-      { type_element: 'mur', points: [{ x: 1150, y: 50 }, { x: 1150, y: 750 }] },
-      { type_element: 'mur', points: [{ x: 1150, y: 750 }, { x: 50, y: 750 }] },
-      { type_element: 'mur', points: [{ x: 50, y: 750 }, { x: 50, y: 50 }] },
+      { type_element: 'mur', points: [{ x: 40, y: 40 }, { x: 1160, y: 40 }] },
+      { type_element: 'mur', points: [{ x: 1160, y: 40 }, { x: 1160, y: 760 }] },
+      { type_element: 'mur', points: [{ x: 1160, y: 760 }, { x: 40, y: 760 }] },
+      { type_element: 'mur', points: [{ x: 40, y: 760 }, { x: 40, y: 40 }] },
       // Comptoir accueil
       {
         type_element: 'meuble',
@@ -1183,31 +1195,31 @@ const PLAN_TEMPLATES = [
       // Etageres
       {
         type_element: 'etagere',
-        points: [{ x: 100, y: 250 }, { x: 200, y: 700 }],
+        points: [{ x: 100, y: 240 }, { x: 200, y: 700 }],
         libelle: 'Etagere A',
         style: { couleur: '#8B4513' }
       },
       {
         type_element: 'etagere',
-        points: [{ x: 250, y: 250 }, { x: 350, y: 700 }],
+        points: [{ x: 260, y: 240 }, { x: 360, y: 700 }],
         libelle: 'Etagere B',
         style: { couleur: '#8B4513' }
       },
       // Tables de jeu
       {
         type_element: 'table',
-        points: [{ x: 600, y: 300 }, { x: 800, y: 450 }],
+        points: [{ x: 600, y: 300 }, { x: 800, y: 460 }],
         libelle: 'Table 1'
       },
       {
         type_element: 'table',
-        points: [{ x: 850, y: 300 }, { x: 1050, y: 450 }],
+        points: [{ x: 860, y: 300 }, { x: 1060, y: 460 }],
         libelle: 'Table 2'
       },
       // Zone enfants
       {
         type_element: 'zone',
-        points: [{ x: 600, y: 550 }, { x: 1050, y: 700 }],
+        points: [{ x: 600, y: 540 }, { x: 1060, y: 700 }],
         libelle: 'Coin enfants',
         style: { couleur: '#27ae60', remplissage: '#27ae60', opacite: 0.2 }
       }

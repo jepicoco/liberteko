@@ -19,6 +19,10 @@ const PlanEditor = {
   drawingPoints: [],
   hasUnsavedChanges: false,
 
+  // Auto-save
+  autoSaveInterval: null,
+  autoSaveDelay: 30000, // 30 secondes
+
   // Redimensionnement/deplacement
   resizing: null,
   movingPoint: null,
@@ -67,6 +71,9 @@ async function initPlanEditor() {
   // Configurer les events
   setupEventListeners();
   setupKeyboardShortcuts();
+
+  // Demarrer l'auto-save
+  initAutoSave();
 
   // Event changement de site
   document.getElementById('siteSelect').addEventListener('change', onSiteChange);
@@ -1063,6 +1070,9 @@ async function reloadCurrentEtage() {
 async function saveElements() {
   if (!PlanEditor.currentEtage) return;
 
+  // Afficher le loading
+  updateAutoSaveStatus('saving');
+
   try {
     await apiRequest(`/plans/etages/${PlanEditor.currentEtage.id}/elements/batch`, {
       method: 'POST',
@@ -1070,9 +1080,11 @@ async function saveElements() {
     });
 
     PlanEditor.hasUnsavedChanges = false;
+    updateAutoSaveStatus('saved');
     showToast('Sauvegarde effectuee', 'success');
   } catch (error) {
     console.error('Erreur sauvegarde:', error);
+    updateAutoSaveStatus('error');
     showToast('Erreur lors de la sauvegarde', 'danger');
   }
 }
@@ -1158,16 +1170,151 @@ function redo() {
 }
 
 /**
- * Affiche un toast
+ * Initialise l'auto-save
+ */
+function initAutoSave() {
+  // Arreter l'intervalle existant si present
+  if (PlanEditor.autoSaveInterval) {
+    clearInterval(PlanEditor.autoSaveInterval);
+  }
+
+  // Demarrer un nouvel intervalle
+  PlanEditor.autoSaveInterval = setInterval(autoSave, PlanEditor.autoSaveDelay);
+}
+
+/**
+ * Auto-save si modifications non sauvegardees
+ */
+async function autoSave() {
+  // Ne rien faire s'il n'y a pas de modifications ou pas d'etage charge
+  if (!PlanEditor.hasUnsavedChanges || !PlanEditor.currentEtage) {
+    return;
+  }
+
+  // Afficher le loading
+  updateAutoSaveStatus('saving');
+
+  try {
+    await apiRequest(`/plans/etages/${PlanEditor.currentEtage.id}/elements/batch`, {
+      method: 'POST',
+      body: JSON.stringify({ elements: PlanEditor.elements })
+    });
+
+    PlanEditor.hasUnsavedChanges = false;
+    updateAutoSaveStatus('saved');
+  } catch (error) {
+    console.error('Erreur auto-save:', error);
+    updateAutoSaveStatus('error');
+    showToast('Erreur lors de la sauvegarde automatique', 'warning');
+  }
+}
+
+/**
+ * Met a jour l'indicateur de sauvegarde automatique
+ * @param {string} status - 'idle', 'saving', 'saved', 'error'
+ */
+function updateAutoSaveStatus(status) {
+  const iconContainer = document.getElementById('autoSaveIcon');
+  const textContainer = document.getElementById('autoSaveText');
+
+  if (!iconContainer || !textContainer) return;
+
+  switch (status) {
+    case 'idle':
+      iconContainer.innerHTML = '<i class="bi bi-check-circle text-secondary"></i>';
+      textContainer.classList.add('d-none');
+      textContainer.textContent = '';
+      break;
+
+    case 'saving':
+      iconContainer.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 14px; height: 14px;"><span class="visually-hidden">Sauvegarde...</span></div>';
+      textContainer.classList.add('d-none');
+      break;
+
+    case 'saved':
+      iconContainer.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+      textContainer.classList.remove('d-none');
+      textContainer.textContent = 'Sauvegarde a ' + formatTime(new Date());
+      break;
+
+    case 'error':
+      iconContainer.innerHTML = '<i class="bi bi-exclamation-circle text-danger"></i>';
+      textContainer.classList.remove('d-none');
+      textContainer.textContent = 'Erreur de sauvegarde';
+      break;
+  }
+}
+
+/**
+ * Formate une date en heure:minute:seconde
+ */
+function formatTime(date) {
+  return date.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+}
+
+// Container pour les toasts
+let toastContainer = null;
+
+/**
+ * Affiche un toast Bootstrap
  */
 function showToast(message, type = 'info') {
-  // Utiliser la fonction globale si disponible
-  if (typeof showNotification === 'function') {
-    showNotification(message, type);
-  } else {
-    console.log(`[${type}] ${message}`);
-    alert(message);
+  // Creer le container si necessaire
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+    toastContainer.style.zIndex = '9999';
+    document.body.appendChild(toastContainer);
   }
+
+  // Mapper les types vers les classes Bootstrap
+  const bgColors = {
+    success: 'bg-success',
+    error: 'bg-danger',
+    danger: 'bg-danger',
+    warning: 'bg-warning',
+    info: 'bg-info'
+  };
+
+  const icons = {
+    success: 'bi-check-circle',
+    error: 'bi-x-circle',
+    danger: 'bi-x-circle',
+    warning: 'bi-exclamation-triangle',
+    info: 'bi-info-circle'
+  };
+
+  const toastId = 'toast-' + Date.now();
+  const bgClass = bgColors[type] || 'bg-info';
+  const iconClass = icons[type] || 'bi-info-circle';
+  const textClass = type === 'warning' ? 'text-dark' : 'text-white';
+
+  const toastHTML = `
+    <div id="${toastId}" class="toast align-items-center ${textClass} ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi ${iconClass} me-2"></i>
+          ${message}
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  `;
+
+  toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+  const toastElement = document.getElementById(toastId);
+  const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+  toast.show();
+
+  // Nettoyer le DOM apres fermeture
+  toastElement.addEventListener('hidden.bs.toast', () => {
+    toastElement.remove();
+  });
 }
 
 /**

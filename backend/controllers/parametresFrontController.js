@@ -55,6 +55,7 @@ exports.updateParametres = async (req, res) => {
       // Modules
       module_ludotheque, module_bibliotheque, module_filmotheque, module_discotheque,
       module_inscriptions, module_reservations, module_paiement_en_ligne,
+      module_recherche_ia, module_plan_interactif,
       // Legal
       cgv, cgu, politique_confidentialite, mentions_legales,
       // Contact
@@ -100,6 +101,8 @@ exports.updateParametres = async (req, res) => {
         module_inscriptions: module_inscriptions !== false,
         module_reservations: module_reservations || false,
         module_paiement_en_ligne: module_paiement_en_ligne || false,
+        module_recherche_ia: module_recherche_ia || false,
+        module_plan_interactif: module_plan_interactif || false,
         cgv, cgu, politique_confidentialite, mentions_legales,
         email_contact, telephone_contact, adresse_contact,
         facebook_url, instagram_url, twitter_url, youtube_url,
@@ -143,6 +146,8 @@ exports.updateParametres = async (req, res) => {
       if (module_inscriptions !== undefined) updates.module_inscriptions = module_inscriptions;
       if (module_reservations !== undefined) updates.module_reservations = module_reservations;
       if (module_paiement_en_ligne !== undefined) updates.module_paiement_en_ligne = module_paiement_en_ligne;
+      if (module_recherche_ia !== undefined) updates.module_recherche_ia = module_recherche_ia;
+      if (module_plan_interactif !== undefined) updates.module_plan_interactif = module_plan_interactif;
 
       // Legal
       if (cgv !== undefined) updates.cgv = cgv;
@@ -234,7 +239,7 @@ exports.updateSection = async (req, res) => {
     const champsParSection = {
       identite: ['nom_site', 'logo_url', 'favicon_url'],
       seo: ['meta_description', 'meta_keywords', 'meta_author', 'og_image_url', 'google_analytics_id', 'google_site_verification', 'robots_txt'],
-      modules: ['mode_fonctionnement', 'module_ludotheque', 'module_bibliotheque', 'module_filmotheque', 'module_discotheque', 'module_inscriptions', 'module_reservations', 'module_paiement_en_ligne'],
+      modules: ['mode_fonctionnement', 'module_ludotheque', 'module_bibliotheque', 'module_filmotheque', 'module_discotheque', 'module_inscriptions', 'module_reservations', 'module_paiement_en_ligne', 'module_recherche_ia', 'module_plan_interactif'],
       legal: ['cgv', 'cgu', 'politique_confidentialite', 'mentions_legales'],
       contact: ['email_contact', 'telephone_contact', 'adresse_contact'],
       reseaux: ['facebook_url', 'instagram_url', 'twitter_url', 'youtube_url'],

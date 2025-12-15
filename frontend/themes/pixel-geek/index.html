@@ -498,10 +498,10 @@
       </a>
       <nav>
         <ul class="nav-menu">
-          <li><a href="/catalogue.html">CATALOGUE</a></li>
+          <li><a href="/catalogue">CATALOGUE</a></li>
           <li><a href="/infos.html">INFOS</a></li>
           <li><a href="/aide.html">AIDE</a></li>
-          <li id="nav-plan" style="display:none"><a href="/plan.html">PLAN</a></li>
+          <li id="nav-plan" style="display:none"><a href="/plan">PLAN</a></li>
           <li><a href="/contact.html">CONTACT</a></li>
         </ul>
       </nav>
@@ -517,7 +517,7 @@
 
       <div class="search-container">
         <!-- Barre de recherche (masquée pendant le jeu) -->
-        <form class="pixel-search" action="/catalogue.html" method="get">
+        <form class="pixel-search" action="/catalogue" method="get">
           <input type="text" name="q" placeholder="RECHERCHER...">
           <button type="submit">GO!</button>
         </form>
@@ -617,7 +617,7 @@
 
     <div class="collections-grid">
       <!-- Jeux -->
-      <a href="/catalogue.html?collection=jeux" class="collection-card jeux">
+      <a href="/catalogue/jeux" class="collection-card jeux">
         <div class="card-icon">
           <i class="bi bi-dice-6"></i>
         </div>
@@ -631,7 +631,7 @@
       </a>
 
       <!-- Livres -->
-      <a href="/catalogue.html?collection=livres" class="collection-card livres">
+      <a href="/catalogue/livres" class="collection-card livres">
         <div class="card-icon">
           <i class="bi bi-book"></i>
         </div>
@@ -645,7 +645,7 @@
       </a>
 
       <!-- Films -->
-      <a href="/catalogue.html?collection=films" class="collection-card films">
+      <a href="/catalogue/films" class="collection-card films">
         <div class="card-icon">
           <i class="bi bi-film"></i>
         </div>
@@ -659,7 +659,7 @@
       </a>
 
       <!-- Disques -->
-      <a href="/catalogue.html?collection=disques" class="collection-card disques">
+      <a href="/catalogue/disques" class="collection-card disques">
         <div class="card-icon">
           <i class="bi bi-vinyl"></i>
         </div>
@@ -695,27 +695,29 @@
     </div>
   </div>
 
-  <!-- Footer - Credits -->
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-section">
-        <h4>CONTACT</h4>
-        <p id="footer-address"></p>
-        <p id="footer-phone"></p>
-        <p id="footer-email"></p>
+        <h4>NAVIGATION</h4>
+        <ul>
+          <li><a href="/">ACCUEIL</a></li>
+          <li><a href="/catalogue">CATALOGUE</a></li>
+          <li><a href="/infos.html">INFOS</a></li>
+        </ul>
       </div>
       <div class="footer-section">
-        <h4>HORAIRES</h4>
-        <div id="footer-horaires">
-          <p>CHECK PAGE INFOS</p>
-        </div>
-      </div>
-      <div class="footer-section">
-        <h4>LINKS</h4>
+        <h4>LEGAL</h4>
         <ul>
           <li><a href="/mentions-legales.html">MENTIONS LEGALES</a></li>
           <li><a href="/cgu.html">CGU</a></li>
-          <li><a href="/contact.html">CONTACT</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>CONTACT</h4>
+        <ul>
+          <li><a href="/contact.html">NOUS CONTACTER</a></li>
+          <li><a href="/admin/login.html">ESPACE ADMIN</a></li>
         </ul>
       </div>
     </div>

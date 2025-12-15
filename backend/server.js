@@ -140,6 +140,30 @@ app.get('/mentions-legales.html', checkMaintenance, themeResolverMiddleware);
 app.get('/cgu.html', checkMaintenance, themeResolverMiddleware);
 app.get('/cgv.html', checkMaintenance, themeResolverMiddleware);
 app.get('/contact.html', checkMaintenance, themeResolverMiddleware);
+app.get('/plan.html', checkMaintenance, themeResolverMiddleware);
+app.get('/aide.html', checkMaintenance, themeResolverMiddleware);
+
+// ============================================
+// CLEAN URLs - Routes avec paramètres
+// ============================================
+
+// /catalogue ou /catalogue/:collection
+app.get('/catalogue/:collection?', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'catalogue.html';
+  next();
+}, themeResolverMiddleware);
+
+// /fiche/:collection/:slug (ex: /fiche/jeux/123-catan)
+app.get('/fiche/:collection/:slug', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'fiche.html';
+  next();
+}, themeResolverMiddleware);
+
+// /plan ou /plan/:emplacement ou /plan/:emplacement/:type
+app.get('/plan/:emplacement?/:type?', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'plan.html';
+  next();
+}, themeResolverMiddleware);
 
 // Pages usager avec résolution de thème
 app.get('/usager/login.html', themeResolverMiddleware);

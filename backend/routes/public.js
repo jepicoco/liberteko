@@ -106,8 +106,20 @@ async function getPublicConfig() {
       filmotheque: parametres.module_filmotheque || false,
       discotheque: parametres.module_discotheque || false,
       inscriptions: parametres.module_inscriptions,
-      reservations: parametres.module_reservations
+      reservations: parametres.module_reservations,
+      recherche_ia: parametres.module_recherche_ia || false,
+      plan_interactif: parametres.module_plan_interactif || false
     },
+
+    // Modules (format direct pour compatibilite themes)
+    module_ludotheque: parametres.module_ludotheque,
+    module_bibliotheque: parametres.module_bibliotheque,
+    module_filmotheque: parametres.module_filmotheque || false,
+    module_discotheque: parametres.module_discotheque || false,
+    module_inscriptions: parametres.module_inscriptions,
+    module_reservations: parametres.module_reservations,
+    module_recherche_ia: parametres.module_recherche_ia || false,
+    module_plan_interactif: parametres.module_plan_interactif || false,
 
     // Style
     couleur_primaire: parametres.couleur_primaire,

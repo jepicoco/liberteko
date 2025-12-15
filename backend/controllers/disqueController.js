@@ -346,11 +346,24 @@ const getStats = async (req, res) => {
     const disquesEmpruntes = await Disque.count({ where: { statut: 'emprunte' } });
     const totalArtistes = await Artiste.count({ where: { actif: true } });
 
+    // Referentiels counts for admin
+    const genresCount = await GenreMusical.count();
+    const formatsCount = await FormatDisque.count();
+    const artistesCount = await Artiste.count();
+    const labelsCount = await LabelDisque.count();
+    const emplacementsCount = await EmplacementDisque.count();
+
     res.json({
       totalDisques,
       disquesDisponibles,
       disquesEmpruntes,
-      totalArtistes
+      totalArtistes,
+      // Referentiels counts
+      genres: genresCount,
+      formats: formatsCount,
+      artistes: artistesCount,
+      labels: labelsCount,
+      emplacements: emplacementsCount
     });
   } catch (error) {
     console.error('Get stats error:', error);
@@ -489,6 +502,305 @@ const createLabel = async (req, res) => {
   }
 };
 
+// ============ CRUD COMPLET RÉFÉRENTIELS ============
+
+// === GENRES ===
+const createGenre = async (req, res) => {
+  try {
+    const genre = await GenreMusical.create(req.body);
+    res.status(201).json(genre);
+  } catch (error) {
+    console.error('Create genre error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un genre avec ce nom existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const updateGenre = async (req, res) => {
+  try {
+    const genre = await GenreMusical.findByPk(req.params.id);
+    if (!genre) {
+      return res.status(404).json({ error: 'Genre non trouve' });
+    }
+    await genre.update(req.body);
+    res.json(genre);
+  } catch (error) {
+    console.error('Update genre error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un genre avec ce nom existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const deleteGenre = async (req, res) => {
+  try {
+    const genre = await GenreMusical.findByPk(req.params.id);
+    if (!genre) {
+      return res.status(404).json({ error: 'Genre non trouve' });
+    }
+    // Verifier si utilise
+    const count = await DisqueGenre.count({ where: { genre_id: req.params.id } });
+    if (count > 0) {
+      return res.status(400).json({
+        error: `Ce genre est utilise par ${count} disque(s). Desactivez-le plutot.`
+      });
+    }
+    await genre.destroy();
+    res.json({ message: 'Genre supprime' });
+  } catch (error) {
+    console.error('Delete genre error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const toggleGenre = async (req, res) => {
+  try {
+    const genre = await GenreMusical.findByPk(req.params.id);
+    if (!genre) {
+      return res.status(404).json({ error: 'Genre non trouve' });
+    }
+    await genre.update({ actif: !genre.actif });
+    res.json(genre);
+  } catch (error) {
+    console.error('Toggle genre error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+// === FORMATS ===
+const createFormat = async (req, res) => {
+  try {
+    const format = await FormatDisque.create(req.body);
+    res.status(201).json(format);
+  } catch (error) {
+    console.error('Create format error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un format avec ce nom existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const updateFormat = async (req, res) => {
+  try {
+    const format = await FormatDisque.findByPk(req.params.id);
+    if (!format) {
+      return res.status(404).json({ error: 'Format non trouve' });
+    }
+    await format.update(req.body);
+    res.json(format);
+  } catch (error) {
+    console.error('Update format error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un format avec ce nom existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const deleteFormat = async (req, res) => {
+  try {
+    const format = await FormatDisque.findByPk(req.params.id);
+    if (!format) {
+      return res.status(404).json({ error: 'Format non trouve' });
+    }
+    const count = await Disque.count({ where: { format_id: req.params.id } });
+    if (count > 0) {
+      return res.status(400).json({
+        error: `Ce format est utilise par ${count} disque(s). Desactivez-le plutot.`
+      });
+    }
+    await format.destroy();
+    res.json({ message: 'Format supprime' });
+  } catch (error) {
+    console.error('Delete format error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const toggleFormat = async (req, res) => {
+  try {
+    const format = await FormatDisque.findByPk(req.params.id);
+    if (!format) {
+      return res.status(404).json({ error: 'Format non trouve' });
+    }
+    await format.update({ actif: !format.actif });
+    res.json(format);
+  } catch (error) {
+    console.error('Toggle format error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+// === EMPLACEMENTS ===
+const createEmplacement = async (req, res) => {
+  try {
+    const emplacement = await EmplacementDisque.create(req.body);
+    res.status(201).json(emplacement);
+  } catch (error) {
+    console.error('Create emplacement error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un emplacement avec ce libelle existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const updateEmplacement = async (req, res) => {
+  try {
+    const emplacement = await EmplacementDisque.findByPk(req.params.id);
+    if (!emplacement) {
+      return res.status(404).json({ error: 'Emplacement non trouve' });
+    }
+    await emplacement.update(req.body);
+    res.json(emplacement);
+  } catch (error) {
+    console.error('Update emplacement error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un emplacement avec ce libelle existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const deleteEmplacement = async (req, res) => {
+  try {
+    const emplacement = await EmplacementDisque.findByPk(req.params.id);
+    if (!emplacement) {
+      return res.status(404).json({ error: 'Emplacement non trouve' });
+    }
+    const count = await Disque.count({ where: { emplacement_id: req.params.id } });
+    if (count > 0) {
+      return res.status(400).json({
+        error: `Cet emplacement est utilise par ${count} disque(s). Desactivez-le plutot.`
+      });
+    }
+    await emplacement.destroy();
+    res.json({ message: 'Emplacement supprime' });
+  } catch (error) {
+    console.error('Delete emplacement error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const toggleEmplacement = async (req, res) => {
+  try {
+    const emplacement = await EmplacementDisque.findByPk(req.params.id);
+    if (!emplacement) {
+      return res.status(404).json({ error: 'Emplacement non trouve' });
+    }
+    await emplacement.update({ actif: !emplacement.actif });
+    res.json(emplacement);
+  } catch (error) {
+    console.error('Toggle emplacement error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+// === ARTISTES ===
+const updateArtiste = async (req, res) => {
+  try {
+    const artiste = await Artiste.findByPk(req.params.id);
+    if (!artiste) {
+      return res.status(404).json({ error: 'Artiste non trouve' });
+    }
+    await artiste.update(req.body);
+    res.json(artiste);
+  } catch (error) {
+    console.error('Update artiste error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const deleteArtiste = async (req, res) => {
+  try {
+    const artiste = await Artiste.findByPk(req.params.id);
+    if (!artiste) {
+      return res.status(404).json({ error: 'Artiste non trouve' });
+    }
+    const count = await DisqueArtiste.count({ where: { artiste_id: req.params.id } });
+    if (count > 0) {
+      return res.status(400).json({
+        error: `Cet artiste est utilise par ${count} disque(s). Desactivez-le plutot.`
+      });
+    }
+    await artiste.destroy();
+    res.json({ message: 'Artiste supprime' });
+  } catch (error) {
+    console.error('Delete artiste error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const toggleArtiste = async (req, res) => {
+  try {
+    const artiste = await Artiste.findByPk(req.params.id);
+    if (!artiste) {
+      return res.status(404).json({ error: 'Artiste non trouve' });
+    }
+    await artiste.update({ actif: !artiste.actif });
+    res.json(artiste);
+  } catch (error) {
+    console.error('Toggle artiste error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+// === LABELS ===
+const updateLabel = async (req, res) => {
+  try {
+    const label = await LabelDisque.findByPk(req.params.id);
+    if (!label) {
+      return res.status(404).json({ error: 'Label non trouve' });
+    }
+    await label.update(req.body);
+    res.json(label);
+  } catch (error) {
+    console.error('Update label error:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ error: 'Un label avec ce nom existe deja' });
+    }
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const deleteLabel = async (req, res) => {
+  try {
+    const label = await LabelDisque.findByPk(req.params.id);
+    if (!label) {
+      return res.status(404).json({ error: 'Label non trouve' });
+    }
+    const count = await Disque.count({ where: { label_id: req.params.id } });
+    if (count > 0) {
+      return res.status(400).json({
+        error: `Ce label est utilise par ${count} disque(s). Desactivez-le plutot.`
+      });
+    }
+    await label.destroy();
+    res.json({ message: 'Label supprime' });
+  } catch (error) {
+    console.error('Delete label error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
+const toggleLabel = async (req, res) => {
+  try {
+    const label = await LabelDisque.findByPk(req.params.id);
+    if (!label) {
+      return res.status(404).json({ error: 'Label non trouve' });
+    }
+    await label.update({ actif: !label.actif });
+    res.json(label);
+  } catch (error) {
+    console.error('Toggle label error:', error);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
+};
+
 module.exports = {
   getAllDisques,
   getDisqueById,
@@ -496,11 +808,34 @@ module.exports = {
   updateDisque,
   deleteDisque,
   getStats,
+  // Genres
   getGenres,
+  createGenre,
+  updateGenre,
+  deleteGenre,
+  toggleGenre,
+  // Formats
   getFormats,
-  getLabels,
+  createFormat,
+  updateFormat,
+  deleteFormat,
+  toggleFormat,
+  // Emplacements
   getEmplacements,
+  createEmplacement,
+  updateEmplacement,
+  deleteEmplacement,
+  toggleEmplacement,
+  // Artistes
   getArtistes,
   createArtiste,
-  createLabel
+  updateArtiste,
+  deleteArtiste,
+  toggleArtiste,
+  // Labels
+  getLabels,
+  createLabel,
+  updateLabel,
+  deleteLabel,
+  toggleLabel
 };

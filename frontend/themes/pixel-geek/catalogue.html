@@ -480,26 +480,56 @@
   <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-section">
-        <h4>CONTACT</h4>
-        <p id="footer-address"></p>
-        <p id="footer-email"></p>
+        <h4>NAVIGATION</h4>
+        <ul>
+          <li><a href="/">ACCUEIL</a></li>
+          <li><a href="/catalogue">CATALOGUE</a></li>
+          <li><a href="/infos.html">INFOS</a></li>
+        </ul>
       </div>
       <div class="footer-section">
-        <h4>LINKS</h4>
+        <h4>LEGAL</h4>
         <ul>
-          <li><a href="/mentions-legales.html">LEGAL</a></li>
+          <li><a href="/mentions-legales.html">MENTIONS LEGALES</a></li>
           <li><a href="/cgu.html">CGU</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>CONTACT</h4>
+        <ul>
+          <li><a href="/contact.html">NOUS CONTACTER</a></li>
+          <li><a href="/admin/login.html">ESPACE ADMIN</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <p>[ <span id="year"></span> ] <span id="footer-name">ASSOTHEQUE</span></p>
+      <p>[ <span id="year"></span> ] <span id="footer-name">ASSOTHEQUE</span> - POWERED BY PIXEL MAGIC</p>
     </div>
   </footer>
 
   <script>
+    // ========================================
+    // URL PARSING - Clean URLs
+    // ========================================
+    // Format: /catalogue/:collection (ex: /catalogue/jeux)
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const urlCollection = pathParts[1] || null;  // jeux, livres, films, disques
+
+    // Fonction slugify pour générer les URLs
+    function slugify(text) {
+      if (!text) return '';
+      return text.toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 100);
+    }
+
     // State
-    let collection = 'all';
+    let collection = urlCollection || 'all';
     let search = '';
     let view = 'grid';
     let items = [];
@@ -541,11 +571,12 @@
 
       for (const c of cols) {
         const params = new URLSearchParams();
+        params.append('type', c);
         if (search) params.append('search', search);
-        const resp = await fetch(`/api/public/${c}?${params}`);
+        const resp = await fetch(`/api/public/catalogue?${params}`);
         if (resp.ok) {
           const data = await resp.json();
-          all = all.concat((data.items || data).map(i => ({ ...i, collection: c })));
+          all = all.concat((data.items || []).map(i => ({ ...i, collection: c })));
         }
       }
 
@@ -566,8 +597,10 @@
       emptyEl.style.display = 'none';
 
       // Grid
-      gridView.innerHTML = items.map(item => `
-        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="item-card">
+      gridView.innerHTML = items.map(item => {
+        const itemSlug = `${item.id}-${slugify(item.nom || item.titre)}`;
+        return `
+        <a href="/fiche/${item.collection}/${itemSlug}" class="item-card">
           <div class="item-image">
             ${item.image_url
               ? `<img src="${item.image_url}" alt="${item.nom || item.titre}">`
@@ -583,11 +616,13 @@
             <p class="item-meta">${getMeta(item)}</p>
           </div>
         </a>
-      `).join('');
+      `}).join('');
 
       // List
-      listView.innerHTML = items.map(item => `
-        <a href="/fiche.html?collection=${item.collection}&id=${item.id}" class="list-item ${item.collection}">
+      listView.innerHTML = items.map(item => {
+        const itemSlug = `${item.id}-${slugify(item.nom || item.titre)}`;
+        return `
+        <a href="/fiche/${item.collection}/${itemSlug}" class="list-item ${item.collection}">
           <span class="item-icon"><i class="bi bi-${getIcon(item.collection)}"></i></span>
           <div class="item-info">
             <h3 class="item-title">${item.nom || item.titre}</h3>
@@ -597,7 +632,7 @@
             ${item.statut === 'disponible' ? '[OK]' : '[OUT]'}
           </span>
         </a>
-      `).join('');
+      `}).join('');
 
       toggleView();
     }
@@ -645,17 +680,11 @@
       }
     }
 
-    // Init
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('collection')) {
-      collection = params.get('collection');
+    // Init - collection is already set from URL pathname
+    if (urlCollection) {
       document.querySelectorAll('.filter-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.collection === collection);
       });
-    }
-    if (params.get('q')) {
-      search = params.get('q');
-      searchInput.value = search;
     }
 
     document.getElementById('year').textContent = new Date().getFullYear();

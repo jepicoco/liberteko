@@ -594,12 +594,23 @@ const getStats = async (req, res) => {
     const disponibles = await Livre.count({ where: { statut: 'disponible' } });
     const empruntes = await Livre.count({ where: { statut: 'emprunte' } });
 
+    // Stats des referentiels
+    const genres = await GenreLitteraire.count();
+    const formats = await FormatLivre.count();
+    const collections = await CollectionLivre.count();
+    const emplacements = await EmplacementLivre.count();
+
     res.json({
       stats: {
         total,
         disponibles,
         empruntes
-      }
+      },
+      // Referentiels counts
+      genres,
+      formats,
+      collections,
+      emplacements
     });
   } catch (error) {
     console.error('Get stats error:', error);

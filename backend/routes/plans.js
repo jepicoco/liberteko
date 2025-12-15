@@ -7,9 +7,13 @@ const router = express.Router();
 const planController = require('../controllers/planController');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/checkRole');
+const { checkModuleActif } = require('../middleware/checkModuleActif');
 
 // Middleware pour routes admin (gestionnaire ou admin)
-const authAdmin = [verifyToken, checkRole(['gestionnaire', 'administrateur'])];
+const modulePlansActif = checkModuleActif('plans');
+
+// Middleware pour routes admin (gestionnaire ou admin + module actif)
+const authAdmin = [verifyToken, checkRole(['gestionnaire', 'administrateur']), modulePlansActif];
 
 // Middleware pour routes publiques (optionnel token)
 const authOptional = (req, res, next) => {
@@ -112,12 +116,12 @@ router.post('/:planId/etages', authAdmin, planController.createEtage);
 // ============================================
 
 // Recupere un plan pour la vue publique
-router.get('/public/site/:siteId', authOptional, planController.getPlanPublic);
+router.get('/public/site/:siteId', modulePlansActif, authOptional, planController.getPlanPublic);
 
 // Recupere les articles d'un element (pour popup vue publique)
-router.get('/public/elements/:elementId/articles', authOptional, planController.getArticlesElement);
+router.get('/public/elements/:elementId/articles', modulePlansActif, authOptional, planController.getArticlesElement);
 
 // Recupere les articles d'un emplacement
-router.get('/public/articles/:type/:emplacementId', authOptional, planController.getArticlesEmplacement);
+router.get('/public/articles/:type/:emplacementId', modulePlansActif, authOptional, planController.getArticlesEmplacement);
 
 module.exports = router;

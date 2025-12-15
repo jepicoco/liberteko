@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Listes & Referentiels - Parametres - Ludotheque Admin</title>
+  <title>Referentiels - Parametres - Ludotheque Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -56,11 +56,11 @@
     }
     .ref-stats {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 1rem;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 0.75rem;
     }
     .ref-stat-card {
-      padding: 1rem;
+      padding: 0.75rem;
       background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
       border-radius: 0.5rem;
       text-align: center;
@@ -78,11 +78,12 @@
     }
     .ref-stat-card h3 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       color: var(--bs-primary);
     }
     .ref-stat-card small {
       color: #6c757d;
+      font-size: 0.75rem;
     }
     .search-box {
       position: relative;
@@ -96,6 +97,51 @@
     }
     .search-box input {
       padding-left: 36px;
+    }
+    .nav-tabs .nav-link {
+      color: #495057;
+    }
+    .nav-tabs .nav-link.active {
+      font-weight: 600;
+    }
+    .tab-jeux .nav-link.active {
+      border-color: #ffc107 #ffc107 #fff;
+      color: #856404;
+    }
+    .tab-livres .nav-link.active {
+      border-color: #0d6efd #0d6efd #fff;
+      color: #0a58ca;
+    }
+    .tab-films .nav-link.active {
+      border-color: #dc3545 #dc3545 #fff;
+      color: #b02a37;
+    }
+    .tab-musiques .nav-link.active {
+      border-color: #198754 #198754 #fff;
+      color: #146c43;
+    }
+    /* Palette de couleurs predefinies */
+    .color-palette {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .color-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .color-swatch:hover {
+      transform: scale(1.15);
+      border-color: #333;
+    }
+    .color-swatch.active {
+      border-color: #000;
+      box-shadow: 0 0 0 2px #fff, 0 0 0 4px #000;
     }
   </style>
 </head>
@@ -114,35 +160,30 @@
         <div id="sub-nav-container"></div>
 
         <div class="mb-4">
-          <h1><i class="bi bi-list-ul"></i> Listes & Referentiels</h1>
-          <p class="text-muted mb-0">Gestion des modes de paiement, categories, themes, editeurs et autres referentiels</p>
-        </div>
-
-        <!-- Stats des referentiels -->
-        <div class="card section-card">
-          <div class="card-header">
-            <i class="bi bi-bar-chart"></i> Vue d'ensemble des referentiels
-          </div>
-          <div class="card-body">
-            <div id="ref-stats" class="ref-stats">
-              <div class="text-center py-4 w-100">
-                <div class="spinner-border spinner-border-sm" role="status"></div>
-                <span class="ms-2">Chargement...</span>
-              </div>
-            </div>
-          </div>
+          <h1><i class="bi bi-tags"></i> Referentiels</h1>
+          <p class="text-muted mb-0">Gestion des categories, genres, auteurs, editeurs et autres referentiels par collection</p>
         </div>
 
         <!-- Tabs -->
         <ul class="nav nav-tabs mb-4" id="listesTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="paiements-tab" data-bs-toggle="tab" data-bs-target="#paiements" type="button">
-              <i class="bi bi-credit-card"></i> Paiements
+          <li class="nav-item tab-jeux" role="presentation">
+            <button class="nav-link active" id="jeux-tab" data-bs-toggle="tab" data-bs-target="#jeux" type="button">
+              <i class="bi bi-dice-6 text-warning"></i> Referentiels Jeux
             </button>
           </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="referentiels-tab" data-bs-toggle="tab" data-bs-target="#referentiels" type="button">
-              <i class="bi bi-tags"></i> Referentiels Jeux
+          <li class="nav-item tab-livres" role="presentation">
+            <button class="nav-link" id="livres-tab" data-bs-toggle="tab" data-bs-target="#livres" type="button">
+              <i class="bi bi-book text-primary"></i> Referentiels Livres
+            </button>
+          </li>
+          <li class="nav-item tab-films" role="presentation">
+            <button class="nav-link" id="films-tab" data-bs-toggle="tab" data-bs-target="#films" type="button">
+              <i class="bi bi-film text-danger"></i> Referentiels Films
+            </button>
+          </li>
+          <li class="nav-item tab-musiques" role="presentation">
+            <button class="nav-link" id="musiques-tab" data-bs-toggle="tab" data-bs-target="#musiques" type="button">
+              <i class="bi bi-vinyl text-success"></i> Referentiels Musiques
             </button>
           </li>
         </ul>
@@ -150,42 +191,29 @@
         <!-- Tab Content -->
         <div class="tab-content" id="listesTabContent">
           <!-- ======================== -->
-          <!-- Modes de paiement Tab   -->
+          <!-- Referentiels Jeux Tab    -->
           <!-- ======================== -->
-          <div class="tab-pane fade show active" id="paiements" role="tabpanel">
-            <div class="card section-card">
-              <div class="card-header d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-credit-card"></i> Modes de paiement acceptes</span>
-                <button class="btn btn-primary btn-sm" onclick="openAddModeModal()">
-                  <i class="bi bi-plus"></i> Ajouter
-                </button>
+          <div class="tab-pane fade show active" id="jeux" role="tabpanel">
+            <!-- Stats des referentiels Jeux -->
+            <div class="card section-card mb-3">
+              <div class="card-header py-2">
+                <i class="bi bi-bar-chart"></i> Vue d'ensemble
               </div>
-              <div class="card-body">
-                <p class="text-muted small">
-                  Definissez les modes de paiement acceptes pour les cotisations et autres transactions.
-                  Vous pouvez reorganiser les elements par glisser-deposer.
-                </p>
-
-                <div id="modes-paiement-list">
-                  <!-- Charge dynamiquement -->
-                  <div class="text-center py-4">
+              <div class="card-body py-2">
+                <div id="ref-stats-jeux" class="ref-stats">
+                  <div class="text-center py-2 w-100">
                     <div class="spinner-border spinner-border-sm" role="status"></div>
                     <span class="ms-2">Chargement...</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- ======================== -->
-          <!-- Referentiels Jeux Tab   -->
-          <!-- ======================== -->
-          <div class="tab-pane fade" id="referentiels" role="tabpanel">
             <!-- Selecteur de type de referentiel -->
             <div class="row mb-3">
               <div class="col-md-4">
                 <label class="form-label fw-semibold">Type de referentiel</label>
-                <select class="form-select" id="refType" onchange="onRefTypeChange()">
+                <select class="form-select" id="refTypeJeux" onchange="onRefTypeChangeJeux()">
                   <option value="categories">Categories</option>
                   <option value="themes">Themes</option>
                   <option value="mecanismes">Mecanismes</option>
@@ -201,15 +229,15 @@
                 <label class="form-label fw-semibold">Rechercher</label>
                 <div class="search-box">
                   <i class="bi bi-search"></i>
-                  <input type="text" class="form-control" id="refSearch" placeholder="Filtrer..." oninput="onRefSearch()">
+                  <input type="text" class="form-control" id="refSearchJeux" placeholder="Filtrer..." oninput="onRefSearchJeux()">
                 </div>
               </div>
               <div class="col-md-4 d-flex align-items-end">
                 <div class="form-check me-3">
-                  <input class="form-check-input" type="checkbox" id="showInactifs" onchange="loadCurrentRef()">
-                  <label class="form-check-label" for="showInactifs">Afficher inactifs</label>
+                  <input class="form-check-input" type="checkbox" id="showInactifsJeux" onchange="loadCurrentRefJeux()">
+                  <label class="form-check-label" for="showInactifsJeux">Afficher inactifs</label>
                 </div>
-                <button class="btn btn-primary" onclick="openAddRefModal()">
+                <button class="btn btn-primary" onclick="openAddRefModalJeux()">
                   <i class="bi bi-plus"></i> Ajouter
                 </button>
               </div>
@@ -218,12 +246,209 @@
             <!-- Liste des elements -->
             <div class="card section-card">
               <div class="card-header d-flex justify-content-between align-items-center">
-                <span id="refListTitle"><i class="bi bi-tags"></i> Categories</span>
-                <span class="badge bg-secondary" id="refCount">0</span>
+                <span id="refListTitleJeux"><i class="bi bi-tags"></i> Categories</span>
+                <span class="badge bg-secondary" id="refCountJeux">0</span>
               </div>
               <div class="card-body">
-                <div id="ref-list">
-                  <!-- Charge dynamiquement -->
+                <div id="ref-list-jeux">
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Referentiels Livres Tab  -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="livres" role="tabpanel">
+            <!-- Stats des referentiels Livres -->
+            <div class="card section-card mb-3">
+              <div class="card-header py-2">
+                <i class="bi bi-bar-chart"></i> Vue d'ensemble
+              </div>
+              <div class="card-body py-2">
+                <div id="ref-stats-livres" class="ref-stats">
+                  <div class="text-center py-2 w-100">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selecteur de type de referentiel Livres -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Type de referentiel</label>
+                <select class="form-select" id="refTypeLivres" onchange="onRefTypeChangeLivres()">
+                  <option value="genres">Genres</option>
+                  <option value="formats">Formats</option>
+                  <option value="collections">Collections</option>
+                  <option value="emplacements">Emplacements</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Rechercher</label>
+                <div class="search-box">
+                  <i class="bi bi-search"></i>
+                  <input type="text" class="form-control" id="refSearchLivres" placeholder="Filtrer..." oninput="onRefSearchLivres()">
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check me-3">
+                  <input class="form-check-input" type="checkbox" id="showInactifsLivres" onchange="loadCurrentRefLivres()">
+                  <label class="form-check-label" for="showInactifsLivres">Afficher inactifs</label>
+                </div>
+                <button class="btn btn-primary" onclick="openAddRefModalLivres()">
+                  <i class="bi bi-plus"></i> Ajouter
+                </button>
+              </div>
+            </div>
+
+            <!-- Liste des elements Livres -->
+            <div class="card section-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="refListTitleLivres"><i class="bi bi-bookmark"></i> Genres</span>
+                <span class="badge bg-secondary" id="refCountLivres">0</span>
+              </div>
+              <div class="card-body">
+                <div id="ref-list-livres">
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Referentiels Films Tab   -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="films" role="tabpanel">
+            <!-- Stats des referentiels Films -->
+            <div class="card section-card mb-3">
+              <div class="card-header py-2">
+                <i class="bi bi-bar-chart"></i> Vue d'ensemble
+              </div>
+              <div class="card-body py-2">
+                <div id="ref-stats-films" class="ref-stats">
+                  <div class="text-center py-2 w-100">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selecteur de type de referentiel Films -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Type de referentiel</label>
+                <select class="form-select" id="refTypeFilms" onchange="onRefTypeChangeFilms()">
+                  <option value="genres">Genres</option>
+                  <option value="supports">Supports</option>
+                  <option value="realisateurs">Realisateurs</option>
+                  <option value="acteurs">Acteurs</option>
+                  <option value="studios">Studios</option>
+                  <option value="emplacements">Emplacements</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Rechercher</label>
+                <div class="search-box">
+                  <i class="bi bi-search"></i>
+                  <input type="text" class="form-control" id="refSearchFilms" placeholder="Filtrer..." oninput="onRefSearchFilms()">
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check me-3">
+                  <input class="form-check-input" type="checkbox" id="showInactifsFilms" onchange="loadCurrentRefFilms()">
+                  <label class="form-check-label" for="showInactifsFilms">Afficher inactifs</label>
+                </div>
+                <button class="btn btn-primary" onclick="openAddRefModalFilms()">
+                  <i class="bi bi-plus"></i> Ajouter
+                </button>
+              </div>
+            </div>
+
+            <!-- Liste des elements Films -->
+            <div class="card section-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="refListTitleFilms"><i class="bi bi-tags"></i> Genres</span>
+                <span class="badge bg-secondary" id="refCountFilms">0</span>
+              </div>
+              <div class="card-body">
+                <div id="ref-list-films">
+                  <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ======================== -->
+          <!-- Referentiels Musiques Tab -->
+          <!-- ======================== -->
+          <div class="tab-pane fade" id="musiques" role="tabpanel">
+            <!-- Stats des referentiels Musiques -->
+            <div class="card section-card mb-3">
+              <div class="card-header py-2">
+                <i class="bi bi-bar-chart"></i> Vue d'ensemble
+              </div>
+              <div class="card-body py-2">
+                <div id="ref-stats-musiques" class="ref-stats">
+                  <div class="text-center py-2 w-100">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Selecteur de type de referentiel Musiques -->
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Type de referentiel</label>
+                <select class="form-select" id="refTypeMusiques" onchange="onRefTypeChangeMusiques()">
+                  <option value="genres">Genres</option>
+                  <option value="formats">Formats</option>
+                  <option value="artistes">Artistes</option>
+                  <option value="labels">Labels</option>
+                  <option value="emplacements">Emplacements</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Rechercher</label>
+                <div class="search-box">
+                  <i class="bi bi-search"></i>
+                  <input type="text" class="form-control" id="refSearchMusiques" placeholder="Filtrer..." oninput="onRefSearchMusiques()">
+                </div>
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check me-3">
+                  <input class="form-check-input" type="checkbox" id="showInactifsMusiques" onchange="loadCurrentRefMusiques()">
+                  <label class="form-check-label" for="showInactifsMusiques">Afficher inactifs</label>
+                </div>
+                <button class="btn btn-primary" onclick="openAddRefModalMusiques()">
+                  <i class="bi bi-plus"></i> Ajouter
+                </button>
+              </div>
+            </div>
+
+            <!-- Liste des elements Musiques -->
+            <div class="card section-card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="refListTitleMusiques"><i class="bi bi-music-note"></i> Genres</span>
+                <span class="badge bg-secondary" id="refCountMusiques">0</span>
+              </div>
+              <div class="card-body">
+                <div id="ref-list-musiques">
                   <div class="text-center py-4">
                     <div class="spinner-border spinner-border-sm" role="status"></div>
                     <span class="ms-2">Chargement...</span>
@@ -237,158 +462,393 @@
     </div>
   </div>
 
-  <!-- Modal Ajouter/Modifier Mode de paiement -->
-  <div class="modal fade" id="modalModePaiement" tabindex="-1">
+  <!-- Modal Ajouter/Modifier Referentiel Jeux -->
+  <div class="modal fade" id="modalRefJeux" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="modalModePaiementTitle">Ajouter un mode de paiement</h5>
+          <h5 class="modal-title" id="modalRefJeuxTitle">Ajouter</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <form id="formModePaiement">
-            <input type="hidden" id="mode_id">
-            <div class="mb-3">
-              <label for="mode_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="mode_libelle" required placeholder="Ex: Carte bancaire">
-            </div>
-            <div class="mb-3">
-              <label for="mode_code" class="form-label">Code</label>
-              <input type="text" class="form-control" id="mode_code" placeholder="Ex: CB" maxlength="20">
-              <div class="form-text">Code court pour l'export (optionnel)</div>
-            </div>
-            <div class="mb-3">
-              <label for="mode_description" class="form-label">Description</label>
-              <textarea class="form-control" id="mode_description" rows="2" placeholder="Description optionnelle"></textarea>
-            </div>
-            <div class="mb-3">
-              <label for="mode_icone" class="form-label">Icone Bootstrap</label>
-              <div class="input-group">
-                <span class="input-group-text" id="mode_icone_preview"><i class="bi bi-credit-card"></i></span>
-                <input type="text" class="form-control" id="mode_icone" placeholder="credit-card" value="credit-card">
-              </div>
-              <div class="form-text">
-                Nom de l'icone Bootstrap Icons (sans le prefixe bi-).
-                <a href="https://icons.getbootstrap.com/" target="_blank">Voir la liste</a>
-              </div>
-            </div>
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="mode_actif" checked>
-              <label class="form-check-label" for="mode_actif">Actif</label>
-            </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="button" class="btn btn-primary" onclick="saveModePaiement()">Enregistrer</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Ajouter/Modifier Referentiel Generique -->
-  <div class="modal fade" id="modalRef" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modalRefTitle">Ajouter</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <form id="formRef">
-            <input type="hidden" id="ref_id">
+          <form id="formRefJeux">
+            <input type="hidden" id="ref_jeux_id">
 
             <!-- Champ nom (commun a tous) -->
-            <div class="mb-3" id="fieldNom">
-              <label for="ref_nom" class="form-label">Nom <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="ref_nom" required>
+            <div class="mb-3" id="fieldNomJeux">
+              <label for="ref_jeux_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_jeux_nom" required>
             </div>
 
             <!-- Champ libelle (pour emplacements) -->
-            <div class="mb-3 d-none" id="fieldLibelle">
-              <label for="ref_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="ref_libelle">
+            <div class="mb-3 d-none" id="fieldLibelleJeux">
+              <label for="ref_jeux_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_jeux_libelle">
             </div>
 
             <!-- Champ code (langues, emplacements) -->
-            <div class="mb-3 d-none" id="fieldCode">
-              <label for="ref_code" class="form-label">Code</label>
-              <input type="text" class="form-control" id="ref_code" maxlength="20">
+            <div class="mb-3 d-none" id="fieldCodeJeux">
+              <label for="ref_jeux_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="ref_jeux_code" maxlength="20">
               <div class="form-text">Code court (ISO pour langues)</div>
             </div>
 
             <!-- Champs prenom/nationalite (auteurs, illustrateurs) -->
-            <div class="mb-3 d-none" id="fieldPrenom">
-              <label for="ref_prenom" class="form-label">Prenom</label>
-              <input type="text" class="form-control" id="ref_prenom">
+            <div class="mb-3 d-none" id="fieldPrenomJeux">
+              <label for="ref_jeux_prenom" class="form-label">Prenom</label>
+              <input type="text" class="form-control" id="ref_jeux_prenom">
             </div>
 
-            <div class="mb-3 d-none" id="fieldNationalite">
-              <label for="ref_nationalite" class="form-label">Nationalite</label>
-              <input type="text" class="form-control" id="ref_nationalite">
+            <div class="mb-3 d-none" id="fieldNationaliteJeux">
+              <label for="ref_jeux_nationalite" class="form-label">Nationalite</label>
+              <input type="text" class="form-control" id="ref_jeux_nationalite">
             </div>
 
             <!-- Champ pays (editeurs) -->
-            <div class="mb-3 d-none" id="fieldPays">
-              <label for="ref_pays" class="form-label">Pays</label>
-              <input type="text" class="form-control" id="ref_pays">
+            <div class="mb-3 d-none" id="fieldPaysJeux">
+              <label for="ref_jeux_pays" class="form-label">Pays</label>
+              <input type="text" class="form-control" id="ref_jeux_pays">
             </div>
 
             <!-- Champ site_web (editeurs, illustrateurs) -->
-            <div class="mb-3 d-none" id="fieldSiteWeb">
-              <label for="ref_site_web" class="form-label">Site web</label>
-              <input type="url" class="form-control" id="ref_site_web" placeholder="https://...">
+            <div class="mb-3 d-none" id="fieldSiteWebJeux">
+              <label for="ref_jeux_site_web" class="form-label">Site web</label>
+              <input type="url" class="form-control" id="ref_jeux_site_web" placeholder="https://...">
             </div>
 
             <!-- Champ description -->
-            <div class="mb-3 d-none" id="fieldDescription">
-              <label for="ref_description" class="form-label">Description</label>
-              <textarea class="form-control" id="ref_description" rows="2"></textarea>
+            <div class="mb-3 d-none" id="fieldDescriptionJeux">
+              <label for="ref_jeux_description" class="form-label">Description</label>
+              <textarea class="form-control" id="ref_jeux_description" rows="2"></textarea>
             </div>
 
             <!-- Champs couleur/icone (categories, themes) -->
-            <div class="mb-3 d-none" id="fieldCouleur">
-              <label for="ref_couleur" class="form-label">Couleur</label>
+            <div class="mb-3 d-none" id="fieldCouleurJeux">
+              <label for="ref_jeux_couleur" class="form-label">Couleur</label>
               <div class="d-flex gap-2">
-                <input type="color" class="form-control form-control-color" id="ref_couleur" value="#0d6efd">
-                <input type="text" class="form-control" id="ref_couleur_text" value="#0d6efd" style="max-width: 100px;">
+                <input type="color" class="form-control form-control-color" id="ref_jeux_couleur" value="#0d6efd">
+                <input type="text" class="form-control" id="ref_jeux_couleur_text" value="#0d6efd" style="max-width: 100px;">
+              </div>
+              <div id="usedColorsContainerJeux" class="mt-2 d-none">
+                <small class="text-muted">Mes couleurs</small>
+                <div class="color-palette" id="usedColorsPaletteJeux"></div>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted">Palette</small>
+                <div class="color-palette" id="colorPaletteJeux"></div>
               </div>
             </div>
 
-            <div class="mb-3 d-none" id="fieldIcone">
-              <label for="ref_icone" class="form-label">Icone Bootstrap</label>
+            <div class="mb-3 d-none" id="fieldIconeJeux">
+              <label for="ref_jeux_icone" class="form-label">Icone Bootstrap</label>
               <div class="input-group">
-                <span class="input-group-text" id="ref_icone_preview"><i class="bi bi-tag"></i></span>
-                <input type="text" class="form-control" id="ref_icone" placeholder="tag" value="tag">
+                <span class="input-group-text" id="ref_jeux_icone_preview"><i class="bi bi-tag"></i></span>
+                <input type="text" class="form-control" id="ref_jeux_icone" placeholder="tag" value="tag">
               </div>
             </div>
 
             <!-- Champ editeur_id (gammes) -->
-            <div class="mb-3 d-none" id="fieldEditeur">
-              <label for="ref_editeur_id" class="form-label">Editeur</label>
-              <select class="form-select" id="ref_editeur_id">
+            <div class="mb-3 d-none" id="fieldEditeurJeux">
+              <label for="ref_jeux_editeur_id" class="form-label">Editeur</label>
+              <select class="form-select" id="ref_jeux_editeur_id">
                 <option value="">-- Aucun --</option>
               </select>
             </div>
 
             <!-- Champ site_id (emplacements) -->
-            <div class="mb-3 d-none" id="fieldSite">
-              <label for="ref_site_id" class="form-label">Site</label>
-              <select class="form-select" id="ref_site_id">
+            <div class="mb-3 d-none" id="fieldSiteJeux">
+              <label for="ref_jeux_site_id" class="form-label">Site</label>
+              <select class="form-select" id="ref_jeux_site_id">
                 <option value="">-- Aucun --</option>
               </select>
             </div>
 
             <!-- Actif -->
             <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="ref_actif" checked>
-              <label class="form-check-label" for="ref_actif">Actif</label>
+              <input class="form-check-input" type="checkbox" id="ref_jeux_actif" checked>
+              <label class="form-check-label" for="ref_jeux_actif">Actif</label>
             </div>
           </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-          <button type="button" class="btn btn-primary" onclick="saveRef()">Enregistrer</button>
+          <button type="button" class="btn btn-primary" onclick="saveRefJeux()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Referentiel Livres -->
+  <div class="modal fade" id="modalRefLivres" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalRefLivresTitle">Ajouter</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formRefLivres">
+            <input type="hidden" id="ref_livres_id">
+
+            <!-- Champ nom -->
+            <div class="mb-3" id="fieldNomLivres">
+              <label for="ref_livres_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_livres_nom" required>
+            </div>
+
+            <!-- Champ libelle (pour emplacements) -->
+            <div class="mb-3 d-none" id="fieldLibelleLivres">
+              <label for="ref_livres_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_livres_libelle">
+            </div>
+
+            <!-- Champ code -->
+            <div class="mb-3 d-none" id="fieldCodeLivres">
+              <label for="ref_livres_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="ref_livres_code" maxlength="20">
+            </div>
+
+            <!-- Champ description -->
+            <div class="mb-3 d-none" id="fieldDescriptionLivres">
+              <label for="ref_livres_description" class="form-label">Description</label>
+              <textarea class="form-control" id="ref_livres_description" rows="2"></textarea>
+            </div>
+
+            <!-- Champs couleur/icone -->
+            <div class="mb-3 d-none" id="fieldCouleurLivres">
+              <label for="ref_livres_couleur" class="form-label">Couleur</label>
+              <div class="d-flex gap-2">
+                <input type="color" class="form-control form-control-color" id="ref_livres_couleur" value="#0d6efd">
+                <input type="text" class="form-control" id="ref_livres_couleur_text" value="#0d6efd" style="max-width: 100px;">
+              </div>
+              <div id="usedColorsContainerLivres" class="mt-2 d-none">
+                <small class="text-muted">Mes couleurs</small>
+                <div class="color-palette" id="usedColorsPaletteLivres"></div>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted">Palette</small>
+                <div class="color-palette" id="colorPaletteLivres"></div>
+              </div>
+            </div>
+
+            <div class="mb-3 d-none" id="fieldIconeLivres">
+              <label for="ref_livres_icone" class="form-label">Icone Bootstrap</label>
+              <div class="input-group">
+                <span class="input-group-text" id="ref_livres_icone_preview"><i class="bi bi-tag"></i></span>
+                <input type="text" class="form-control" id="ref_livres_icone" placeholder="tag" value="tag">
+              </div>
+            </div>
+
+            <!-- Champ site_id (emplacements) -->
+            <div class="mb-3 d-none" id="fieldSiteLivres">
+              <label for="ref_livres_site_id" class="form-label">Site</label>
+              <select class="form-select" id="ref_livres_site_id">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+
+            <!-- Actif -->
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="ref_livres_actif" checked>
+              <label class="form-check-label" for="ref_livres_actif">Actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveRefLivres()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Referentiel Films -->
+  <div class="modal fade" id="modalRefFilms" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalRefFilmsTitle">Ajouter</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formRefFilms">
+            <input type="hidden" id="ref_films_id">
+
+            <!-- Champ nom -->
+            <div class="mb-3" id="fieldNomFilms">
+              <label for="ref_films_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_films_nom" required>
+            </div>
+
+            <!-- Champ libelle (pour emplacements) -->
+            <div class="mb-3 d-none" id="fieldLibelleFilms">
+              <label for="ref_films_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_films_libelle">
+            </div>
+
+            <!-- Champ code -->
+            <div class="mb-3 d-none" id="fieldCodeFilms">
+              <label for="ref_films_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="ref_films_code" maxlength="20">
+            </div>
+
+            <!-- Champ prenom (realisateurs, acteurs) -->
+            <div class="mb-3 d-none" id="fieldPrenomFilms">
+              <label for="ref_films_prenom" class="form-label">Prenom</label>
+              <input type="text" class="form-control" id="ref_films_prenom">
+            </div>
+
+            <!-- Champ nationalite -->
+            <div class="mb-3 d-none" id="fieldNationaliteFilms">
+              <label for="ref_films_nationalite" class="form-label">Nationalite</label>
+              <input type="text" class="form-control" id="ref_films_nationalite">
+            </div>
+
+            <!-- Champ pays (studios) -->
+            <div class="mb-3 d-none" id="fieldPaysFilms">
+              <label for="ref_films_pays" class="form-label">Pays</label>
+              <input type="text" class="form-control" id="ref_films_pays">
+            </div>
+
+            <!-- Champ description -->
+            <div class="mb-3 d-none" id="fieldDescriptionFilms">
+              <label for="ref_films_description" class="form-label">Description</label>
+              <textarea class="form-control" id="ref_films_description" rows="2"></textarea>
+            </div>
+
+            <!-- Champs couleur/icone -->
+            <div class="mb-3 d-none" id="fieldCouleurFilms">
+              <label for="ref_films_couleur" class="form-label">Couleur</label>
+              <div class="d-flex gap-2">
+                <input type="color" class="form-control form-control-color" id="ref_films_couleur" value="#dc3545">
+                <input type="text" class="form-control" id="ref_films_couleur_text" value="#dc3545" style="max-width: 100px;">
+              </div>
+              <div id="usedColorsContainerFilms" class="mt-2 d-none">
+                <small class="text-muted">Mes couleurs</small>
+                <div class="color-palette" id="usedColorsPaletteFilms"></div>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted">Palette</small>
+                <div class="color-palette" id="colorPaletteFilms"></div>
+              </div>
+            </div>
+
+            <div class="mb-3 d-none" id="fieldIconeFilms">
+              <label for="ref_films_icone" class="form-label">Icone Bootstrap</label>
+              <div class="input-group">
+                <span class="input-group-text" id="ref_films_icone_preview"><i class="bi bi-tag"></i></span>
+                <input type="text" class="form-control" id="ref_films_icone" placeholder="tag" value="tag">
+              </div>
+            </div>
+
+            <!-- Champ site_id (emplacements) -->
+            <div class="mb-3 d-none" id="fieldSiteFilms">
+              <label for="ref_films_site_id" class="form-label">Site</label>
+              <select class="form-select" id="ref_films_site_id">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+
+            <!-- Actif -->
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="ref_films_actif" checked>
+              <label class="form-check-label" for="ref_films_actif">Actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveRefFilms()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajouter/Modifier Referentiel Musiques -->
+  <div class="modal fade" id="modalRefMusiques" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalRefMusiquesTitle">Ajouter</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formRefMusiques">
+            <input type="hidden" id="ref_musiques_id">
+
+            <!-- Champ nom -->
+            <div class="mb-3" id="fieldNomMusiques">
+              <label for="ref_musiques_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_musiques_nom" required>
+            </div>
+
+            <!-- Champ libelle (pour emplacements) -->
+            <div class="mb-3 d-none" id="fieldLibelleMusiques">
+              <label for="ref_musiques_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="ref_musiques_libelle">
+            </div>
+
+            <!-- Champ code -->
+            <div class="mb-3 d-none" id="fieldCodeMusiques">
+              <label for="ref_musiques_code" class="form-label">Code</label>
+              <input type="text" class="form-control" id="ref_musiques_code" maxlength="20">
+            </div>
+
+            <!-- Champ pays (labels) -->
+            <div class="mb-3 d-none" id="fieldPaysMusiques">
+              <label for="ref_musiques_pays" class="form-label">Pays</label>
+              <input type="text" class="form-control" id="ref_musiques_pays">
+            </div>
+
+            <!-- Champ description -->
+            <div class="mb-3 d-none" id="fieldDescriptionMusiques">
+              <label for="ref_musiques_description" class="form-label">Description</label>
+              <textarea class="form-control" id="ref_musiques_description" rows="2"></textarea>
+            </div>
+
+            <!-- Champs couleur/icone -->
+            <div class="mb-3 d-none" id="fieldCouleurMusiques">
+              <label for="ref_musiques_couleur" class="form-label">Couleur</label>
+              <div class="d-flex gap-2">
+                <input type="color" class="form-control form-control-color" id="ref_musiques_couleur" value="#198754">
+                <input type="text" class="form-control" id="ref_musiques_couleur_text" value="#198754" style="max-width: 100px;">
+              </div>
+              <div id="usedColorsContainerMusiques" class="mt-2 d-none">
+                <small class="text-muted">Mes couleurs</small>
+                <div class="color-palette" id="usedColorsPaletteMusiques"></div>
+              </div>
+              <div class="mt-2">
+                <small class="text-muted">Palette</small>
+                <div class="color-palette" id="colorPaletteMusiques"></div>
+              </div>
+            </div>
+
+            <div class="mb-3 d-none" id="fieldIconeMusiques">
+              <label for="ref_musiques_icone" class="form-label">Icone Bootstrap</label>
+              <div class="input-group">
+                <span class="input-group-text" id="ref_musiques_icone_preview"><i class="bi bi-tag"></i></span>
+                <input type="text" class="form-control" id="ref_musiques_icone" placeholder="tag" value="tag">
+              </div>
+            </div>
+
+            <!-- Champ site_id (emplacements) -->
+            <div class="mb-3 d-none" id="fieldSiteMusiques">
+              <label for="ref_musiques_site_id" class="form-label">Site</label>
+              <select class="form-select" id="ref_musiques_site_id">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+
+            <!-- Actif -->
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="ref_musiques_actif" checked>
+              <label class="form-check-label" for="ref_musiques_actif">Actif</label>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveRefMusiques()">Enregistrer</button>
         </div>
       </div>
     </div>
@@ -402,16 +862,49 @@
   <script src="js/admin-template.js"></script>
   <script src="js/parametres-nav.js"></script>
   <script>
-    let modesPaiement = [];
-    let currentRefItems = [];
-    let currentRefType = 'categories';
-    let searchTimeout = null;
-    let modalModePaiement, modalRef;
-    let editeurs = []; // Cache pour le select des gammes
-    let sites = [];    // Cache pour le select des emplacements
+    // ========================
+    // Variables globales
+    // ========================
+    let currentRefItemsJeux = [];
+    let currentRefTypejeux = 'categories';
+    let currentRefItemsLivres = [];
+    let currentRefTypeLivres = 'genres';
+    let currentRefItemsFilms = [];
+    let currentRefTypeFilms = 'genres';
+    let currentRefItemsMusiques = [];
+    let currentRefTypeMusiques = 'genres';
+    let searchTimeoutJeux = null;
+    let searchTimeoutLivres = null;
+    let searchTimeoutFilms = null;
+    let searchTimeoutMusiques = null;
+    let modalRefJeux, modalRefLivres, modalRefFilms, modalRefMusiques;
+    let editeurs = [];
+    let sites = [];
 
-    // Configuration des referentiels
-    const REF_CONFIG = {
+    // Palette de couleurs predefinies
+    const PREDEFINED_COLORS = [
+      '#dc3545', // Rouge
+      '#fd7e14', // Orange
+      '#ffc107', // Jaune
+      '#28a745', // Vert
+      '#20c997', // Turquoise
+      '#17a2b8', // Cyan
+      '#0d6efd', // Bleu
+      '#6f42c1', // Violet
+      '#e83e8c', // Rose
+      '#6c757d', // Gris
+      '#343a40', // Gris fonce
+      '#795548', // Marron
+      '#ff5722', // Orange fonce
+      '#8bc34a', // Vert clair
+      '#00bcd4', // Bleu clair
+      '#9c27b0'  // Violet fonce
+    ];
+
+    // ========================
+    // Configuration referentiels Jeux
+    // ========================
+    const REF_CONFIG_JEUX = {
       categories: {
         label: 'Categories',
         labelSingular: 'categorie',
@@ -514,65 +1007,281 @@
       }
     };
 
+    // ========================
+    // Configuration referentiels Livres
+    // ========================
+    const REF_CONFIG_LIVRES = {
+      genres: {
+        label: 'Genres',
+        labelSingular: 'genre',
+        icon: 'bookmark',
+        fields: ['nom', 'description', 'couleur', 'icone'],
+        apiGet: () => livresAPI.getGenres(),
+        apiCreate: (data) => apiRequest('/livres/referentiels/genres', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/livres/referentiels/genres/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/livres/referentiels/genres/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/livres/referentiels/genres/${id}/toggle`, { method: 'PATCH' })
+      },
+      formats: {
+        label: 'Formats',
+        labelSingular: 'format',
+        icon: 'book',
+        fields: ['nom', 'description'],
+        apiGet: () => livresAPI.getFormats(),
+        apiCreate: (data) => apiRequest('/livres/referentiels/formats', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/livres/referentiels/formats/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/livres/referentiels/formats/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/livres/referentiels/formats/${id}/toggle`, { method: 'PATCH' })
+      },
+      collections: {
+        label: 'Collections',
+        labelSingular: 'collection',
+        icon: 'collection',
+        fields: ['nom', 'description'],
+        apiGet: () => livresAPI.getCollections(),
+        apiCreate: (data) => apiRequest('/livres/referentiels/collections', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/livres/referentiels/collections/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/livres/referentiels/collections/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/livres/referentiels/collections/${id}/toggle`, { method: 'PATCH' })
+      },
+      emplacements: {
+        label: 'Emplacements',
+        labelSingular: 'emplacement',
+        icon: 'geo-alt',
+        fields: ['libelle', 'code', 'description', 'couleur', 'icone', 'site'],
+        useLibelle: true,
+        apiGet: () => livresAPI.getEmplacements(),
+        apiCreate: (data) => apiRequest('/livres/referentiels/emplacements', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/livres/referentiels/emplacements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/livres/referentiels/emplacements/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/livres/referentiels/emplacements/${id}/toggle`, { method: 'PATCH' })
+      }
+    };
+
+    // ========================
     // Initialisation
+    // ========================
     initTemplate('parametres');
 
     document.addEventListener('DOMContentLoaded', () => {
       renderSubNav('general', 'listes');
 
-      modalModePaiement = new bootstrap.Modal(document.getElementById('modalModePaiement'));
-      modalRef = new bootstrap.Modal(document.getElementById('modalRef'));
+      modalRefJeux = new bootstrap.Modal(document.getElementById('modalRefJeux'));
+      modalRefLivres = new bootstrap.Modal(document.getElementById('modalRefLivres'));
+      modalRefFilms = new bootstrap.Modal(document.getElementById('modalRefFilms'));
+      modalRefMusiques = new bootstrap.Modal(document.getElementById('modalRefMusiques'));
 
-      // Charger les donnees
-      loadModesPaiement();
-      loadRefStats();
+      // Charger les stats et la premiere liste
+      loadRefStatsJeux();
+      loadCurrentRefJeux();
 
-      // Charger les referentiels quand on clique sur l'onglet
-      document.getElementById('referentiels-tab').addEventListener('shown.bs.tab', () => {
-        if (currentRefItems.length === 0) {
-          loadCurrentRef();
+      // Charger les referentiels Livres quand on clique sur l'onglet
+      document.getElementById('livres-tab').addEventListener('shown.bs.tab', () => {
+        if (currentRefItemsLivres.length === 0) {
+          loadRefStatsLivres();
+          loadCurrentRefLivres();
         }
       });
 
-      // Preview icone mode paiement
-      document.getElementById('mode_icone').addEventListener('input', (e) => {
-        const icon = e.target.value || 'credit-card';
-        document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      // Charger les referentiels Films quand on clique sur l'onglet
+      document.getElementById('films-tab').addEventListener('shown.bs.tab', () => {
+        if (currentRefItemsFilms.length === 0) {
+          loadRefStatsFilms();
+          loadCurrentRefFilms();
+        }
       });
 
-      // Preview icone referentiel
-      document.getElementById('ref_icone').addEventListener('input', (e) => {
+      // Charger les referentiels Musiques quand on clique sur l'onglet
+      document.getElementById('musiques-tab').addEventListener('shown.bs.tab', () => {
+        if (currentRefItemsMusiques.length === 0) {
+          loadRefStatsMusiques();
+          loadCurrentRefMusiques();
+        }
+      });
+
+      // Preview icone Jeux
+      document.getElementById('ref_jeux_icone').addEventListener('input', (e) => {
         const icon = e.target.value || 'tag';
-        document.getElementById('ref_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+        document.getElementById('ref_jeux_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
       });
 
-      // Sync couleur
-      document.getElementById('ref_couleur').addEventListener('input', (e) => {
-        document.getElementById('ref_couleur_text').value = e.target.value;
+      // Sync couleur Jeux
+      document.getElementById('ref_jeux_couleur').addEventListener('input', (e) => {
+        document.getElementById('ref_jeux_couleur_text').value = e.target.value;
+        updateColorPaletteSelection('Jeux', e.target.value);
       });
-      document.getElementById('ref_couleur_text').addEventListener('input', (e) => {
+      document.getElementById('ref_jeux_couleur_text').addEventListener('input', (e) => {
         if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
-          document.getElementById('ref_couleur').value = e.target.value;
+          document.getElementById('ref_jeux_couleur').value = e.target.value;
+          updateColorPaletteSelection('Jeux', e.target.value);
         }
       });
+
+      // Preview icone Livres
+      document.getElementById('ref_livres_icone').addEventListener('input', (e) => {
+        const icon = e.target.value || 'tag';
+        document.getElementById('ref_livres_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      });
+
+      // Sync couleur Livres
+      document.getElementById('ref_livres_couleur').addEventListener('input', (e) => {
+        document.getElementById('ref_livres_couleur_text').value = e.target.value;
+        updateColorPaletteSelection('Livres', e.target.value);
+      });
+      document.getElementById('ref_livres_couleur_text').addEventListener('input', (e) => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+          document.getElementById('ref_livres_couleur').value = e.target.value;
+          updateColorPaletteSelection('Livres', e.target.value);
+        }
+      });
+
+      // Preview icone Films
+      document.getElementById('ref_films_icone').addEventListener('input', (e) => {
+        const icon = e.target.value || 'tag';
+        document.getElementById('ref_films_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      });
+
+      // Sync couleur Films
+      document.getElementById('ref_films_couleur').addEventListener('input', (e) => {
+        document.getElementById('ref_films_couleur_text').value = e.target.value;
+        updateColorPaletteSelection('Films', e.target.value);
+      });
+      document.getElementById('ref_films_couleur_text').addEventListener('input', (e) => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+          document.getElementById('ref_films_couleur').value = e.target.value;
+          updateColorPaletteSelection('Films', e.target.value);
+        }
+      });
+
+      // Preview icone Musiques
+      document.getElementById('ref_musiques_icone').addEventListener('input', (e) => {
+        const icon = e.target.value || 'tag';
+        document.getElementById('ref_musiques_icone_preview').innerHTML = `<i class="bi bi-${icon}"></i>`;
+      });
+
+      // Sync couleur Musiques
+      document.getElementById('ref_musiques_couleur').addEventListener('input', (e) => {
+        document.getElementById('ref_musiques_couleur_text').value = e.target.value;
+        updateColorPaletteSelection('Musiques', e.target.value);
+      });
+      document.getElementById('ref_musiques_couleur_text').addEventListener('input', (e) => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+          document.getElementById('ref_musiques_couleur').value = e.target.value;
+          updateColorPaletteSelection('Musiques', e.target.value);
+        }
+      });
+
+      // Initialiser les palettes de couleurs
+      initColorPalettes();
     });
 
     // ========================
-    // Stats des referentiels
+    // Palettes de couleurs
     // ========================
+    function initColorPalettes() {
+      const modules = ['Jeux', 'Livres', 'Films', 'Musiques'];
+      modules.forEach(module => {
+        const paletteContainer = document.getElementById(`colorPalette${module}`);
+        if (paletteContainer) {
+          paletteContainer.innerHTML = PREDEFINED_COLORS.map(color => `
+            <div class="color-swatch"
+                 style="background-color: ${color}"
+                 data-color="${color}"
+                 onclick="selectPaletteColor('${module}', '${color}')"
+                 title="${color}">
+            </div>
+          `).join('');
+        }
+      });
+    }
 
-    async function loadRefStats() {
-      try {
-        const stats = await referentielsAPI.getStats();
-        renderRefStats(stats);
-      } catch (error) {
-        console.error('Erreur stats:', error);
-        document.getElementById('ref-stats').innerHTML = '<div class="text-muted">Stats non disponibles</div>';
+    function selectPaletteColor(module, color) {
+      document.getElementById(`ref_${module.toLowerCase()}_couleur`).value = color;
+      document.getElementById(`ref_${module.toLowerCase()}_couleur_text`).value = color;
+      updateColorPaletteSelection(module, color);
+    }
+
+    function updateColorPaletteSelection(module, color) {
+      // Update main palette
+      const paletteContainer = document.getElementById(`colorPalette${module}`);
+      if (paletteContainer) {
+        paletteContainer.querySelectorAll('.color-swatch').forEach(swatch => {
+          if (swatch.dataset.color.toLowerCase() === color.toLowerCase()) {
+            swatch.classList.add('active');
+          } else {
+            swatch.classList.remove('active');
+          }
+        });
+      }
+
+      // Update used colors palette
+      const usedPaletteContainer = document.getElementById(`usedColorsPalette${module}`);
+      if (usedPaletteContainer) {
+        usedPaletteContainer.querySelectorAll('.color-swatch').forEach(swatch => {
+          if (swatch.dataset.color.toLowerCase() === color.toLowerCase()) {
+            swatch.classList.add('active');
+          } else {
+            swatch.classList.remove('active');
+          }
+        });
       }
     }
 
-    function renderRefStats(stats) {
-      const container = document.getElementById('ref-stats');
+    function getUsedColors(module) {
+      let items = [];
+      switch(module) {
+        case 'Jeux': items = currentRefItemsJeux; break;
+        case 'Livres': items = currentRefItemsLivres; break;
+        case 'Films': items = currentRefItemsFilms; break;
+        case 'Musiques': items = currentRefItemsMusiques; break;
+      }
+
+      const colors = items
+        .filter(item => item.couleur)
+        .map(item => item.couleur.toLowerCase());
+
+      // Return unique colors
+      return [...new Set(colors)];
+    }
+
+    function renderUsedColorsPalette(module, currentColor) {
+      const container = document.getElementById(`usedColorsContainer${module}`);
+      const palette = document.getElementById(`usedColorsPalette${module}`);
+      if (!container || !palette) return;
+
+      const usedColors = getUsedColors(module);
+
+      if (usedColors.length === 0) {
+        container.classList.add('d-none');
+        return;
+      }
+
+      container.classList.remove('d-none');
+      palette.innerHTML = usedColors.map(color => `
+        <div class="color-swatch ${currentColor && currentColor.toLowerCase() === color ? 'active' : ''}"
+             style="background-color: ${color}"
+             data-color="${color}"
+             onclick="selectPaletteColor('${module}', '${color}')"
+             title="${color}">
+        </div>
+      `).join('');
+    }
+
+    // ========================
+    // Stats referentiels Jeux
+    // ========================
+    async function loadRefStatsJeux() {
+      try {
+        const stats = await referentielsAPI.getStats();
+        renderRefStatsJeux(stats);
+      } catch (error) {
+        console.error('Erreur stats:', error);
+        document.getElementById('ref-stats-jeux').innerHTML = '<div class="text-muted">Stats non disponibles</div>';
+      }
+    }
+
+    function renderRefStatsJeux(stats) {
+      const container = document.getElementById('ref-stats-jeux');
       const items = [
         { key: 'categories', label: 'Categories', icon: 'tags' },
         { key: 'themes', label: 'Themes', icon: 'bookmark' },
@@ -586,272 +1295,109 @@
       ];
 
       container.innerHTML = items.map(item => `
-        <div class="ref-stat-card ${currentRefType === item.key ? 'active' : ''}" onclick="selectRefType('${item.key}')">
-          <i class="bi bi-${item.icon} fs-4 text-primary"></i>
+        <div class="ref-stat-card ${currentRefTypejeux === item.key ? 'active' : ''}" onclick="selectRefTypeJeux('${item.key}')">
+          <i class="bi bi-${item.icon} text-warning"></i>
           <h3>${stats[item.key] || 0}</h3>
           <small>${item.label}</small>
         </div>
       `).join('');
     }
 
-    function selectRefType(type) {
-      currentRefType = type;
-      document.getElementById('refType').value = type;
-
-      // Activer l'onglet referentiels si pas deja actif
-      const tab = document.getElementById('referentiels-tab');
-      if (!tab.classList.contains('active')) {
-        bootstrap.Tab.getOrCreateInstance(tab).show();
-      }
-
-      loadCurrentRef();
-      loadRefStats().then(() => {
-        // Mettre a jour la classe active
-        document.querySelectorAll('.ref-stat-card').forEach(card => {
-          card.classList.toggle('active', card.getAttribute('onclick').includes(type));
-        });
-      });
+    function selectRefTypeJeux(type) {
+      currentRefTypejeux = type;
+      document.getElementById('refTypeJeux').value = type;
+      loadCurrentRefJeux();
+      loadRefStatsJeux();
     }
 
     // ========================
-    // Modes de paiement
+    // Stats referentiels Livres
     // ========================
-
-    async function loadModesPaiement() {
+    async function loadRefStatsLivres() {
       try {
-        const response = await fetch('/api/parametres/modes-paiement', {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-        if (!response.ok) throw new Error('Erreur chargement');
-        modesPaiement = await response.json();
-        renderModesPaiement();
+        const stats = await livresAPI.getStats();
+        renderRefStatsLivres(stats);
       } catch (error) {
-        console.error('Erreur:', error);
-        document.getElementById('modes-paiement-list').innerHTML = `
-          <div class="alert alert-danger">Erreur lors du chargement des modes de paiement</div>
-        `;
+        console.error('Erreur stats livres:', error);
+        document.getElementById('ref-stats-livres').innerHTML = '<div class="text-muted">Stats non disponibles</div>';
       }
     }
 
-    function renderModesPaiement() {
-      const container = document.getElementById('modes-paiement-list');
+    function renderRefStatsLivres(stats) {
+      const container = document.getElementById('ref-stats-livres');
+      const items = [
+        { key: 'genres', label: 'Genres', icon: 'bookmark', count: stats.genres || 0 },
+        { key: 'formats', label: 'Formats', icon: 'book', count: stats.formats || 0 },
+        { key: 'collections', label: 'Collections', icon: 'collection', count: stats.collections || 0 },
+        { key: 'emplacements', label: 'Emplacements', icon: 'geo-alt', count: stats.emplacements || 0 }
+      ];
 
-      if (modesPaiement.length === 0) {
-        container.innerHTML = `
-          <div class="text-center py-4 text-muted">
-            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-            <p class="mt-2">Aucun mode de paiement configure</p>
-            <button class="btn btn-primary btn-sm" onclick="openAddModeModal()">
-              <i class="bi bi-plus"></i> Ajouter le premier
-            </button>
-          </div>
-        `;
-        return;
-      }
-
-      container.innerHTML = modesPaiement.map(mode => `
-        <div class="list-item ${mode.actif ? '' : 'inactive'}" data-id="${mode.id}">
-          <span class="drag-handle"><i class="bi bi-grip-vertical"></i></span>
-          <div class="item-content">
-            <i class="bi bi-${mode.icone || 'credit-card'} me-2"></i>
-            <strong>${mode.libelle}</strong>
-            ${mode.code ? `<span class="badge bg-secondary badge-mode">${mode.code}</span>` : ''}
-            ${!mode.actif ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
-            ${mode.description ? `<br><small class="text-muted">${mode.description}</small>` : ''}
-          </div>
-          <div class="item-actions">
-            <button class="btn btn-sm btn-outline-secondary" onclick="editModePaiement(${mode.id})" title="Modifier">
-              <i class="bi bi-pencil"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-${mode.actif ? 'warning' : 'success'}" onclick="toggleModePaiement(${mode.id})" title="${mode.actif ? 'Desactiver' : 'Activer'}">
-              <i class="bi bi-${mode.actif ? 'eye-slash' : 'eye'}"></i>
-            </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteModePaiement(${mode.id})" title="Supprimer">
-              <i class="bi bi-trash"></i>
-            </button>
-          </div>
+      container.innerHTML = items.map(item => `
+        <div class="ref-stat-card ${currentRefTypeLivres === item.key ? 'active' : ''}" onclick="selectRefTypeLivres('${item.key}')">
+          <i class="bi bi-${item.icon} text-primary"></i>
+          <h3>${item.count}</h3>
+          <small>${item.label}</small>
         </div>
       `).join('');
-
-      // Activer le drag & drop
-      new Sortable(container, {
-        handle: '.drag-handle',
-        animation: 150,
-        onEnd: async function(evt) {
-          const items = container.querySelectorAll('.list-item');
-          const ordres = Array.from(items).map((item, index) => ({
-            id: parseInt(item.dataset.id),
-            ordre: index
-          }));
-          await reorderModesPaiement(ordres);
-        }
-      });
     }
 
-    function openAddModeModal() {
-      document.getElementById('modalModePaiementTitle').textContent = 'Ajouter un mode de paiement';
-      document.getElementById('formModePaiement').reset();
-      document.getElementById('mode_id').value = '';
-      document.getElementById('mode_icone').value = 'credit-card';
-      document.getElementById('mode_icone_preview').innerHTML = '<i class="bi bi-credit-card"></i>';
-      document.getElementById('mode_actif').checked = true;
-      modalModePaiement.show();
-    }
-
-    function editModePaiement(id) {
-      const mode = modesPaiement.find(m => m.id === id);
-      if (!mode) return;
-
-      document.getElementById('modalModePaiementTitle').textContent = 'Modifier le mode de paiement';
-      document.getElementById('mode_id').value = mode.id;
-      document.getElementById('mode_libelle').value = mode.libelle;
-      document.getElementById('mode_code').value = mode.code || '';
-      document.getElementById('mode_description').value = mode.description || '';
-      document.getElementById('mode_icone').value = mode.icone || 'credit-card';
-      document.getElementById('mode_icone_preview').innerHTML = `<i class="bi bi-${mode.icone || 'credit-card'}"></i>`;
-      document.getElementById('mode_actif').checked = mode.actif;
-      modalModePaiement.show();
-    }
-
-    async function saveModePaiement() {
-      const id = document.getElementById('mode_id').value;
-      const data = {
-        libelle: document.getElementById('mode_libelle').value,
-        code: document.getElementById('mode_code').value || null,
-        description: document.getElementById('mode_description').value || null,
-        icone: document.getElementById('mode_icone').value || 'credit-card',
-        actif: document.getElementById('mode_actif').checked
-      };
-
-      try {
-        const url = id ? `/api/parametres/modes-paiement/${id}` : '/api/parametres/modes-paiement';
-        const method = id ? 'PUT' : 'POST';
-
-        const response = await fetch(url, {
-          method,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify(data)
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Erreur');
-        }
-
-        modalModePaiement.hide();
-        showToast('Mode de paiement enregistre', 'success');
-        loadModesPaiement();
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast(error.message, 'error');
-      }
-    }
-
-    async function toggleModePaiement(id) {
-      try {
-        const response = await fetch(`/api/parametres/modes-paiement/${id}/toggle`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Erreur');
-
-        loadModesPaiement();
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast('Erreur lors de la modification', 'error');
-      }
-    }
-
-    async function deleteModePaiement(id) {
-      if (!confirm('Supprimer ce mode de paiement ?')) return;
-
-      try {
-        const response = await fetch(`/api/parametres/modes-paiement/${id}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Erreur');
-
-        showToast('Mode de paiement supprime', 'success');
-        loadModesPaiement();
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast('Erreur lors de la suppression', 'error');
-      }
-    }
-
-    async function reorderModesPaiement(ordres) {
-      try {
-        await fetch('/api/parametres/modes-paiement-reorder', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify({ ordres })
-        });
-      } catch (error) {
-        console.error('Erreur reorder:', error);
-      }
+    function selectRefTypeLivres(type) {
+      currentRefTypeLivres = type;
+      document.getElementById('refTypeLivres').value = type;
+      loadCurrentRefLivres();
+      loadRefStatsLivres();
     }
 
     // ========================
-    // Referentiels generiques
+    // Referentiels Jeux - CRUD
     // ========================
-
-    function onRefTypeChange() {
-      currentRefType = document.getElementById('refType').value;
-      document.getElementById('refSearch').value = '';
-      loadCurrentRef();
+    function onRefTypeChangeJeux() {
+      currentRefTypejeux = document.getElementById('refTypeJeux').value;
+      document.getElementById('refSearchJeux').value = '';
+      loadCurrentRefJeux();
     }
 
-    function onRefSearch() {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => loadCurrentRef(), 300);
+    function onRefSearchJeux() {
+      clearTimeout(searchTimeoutJeux);
+      searchTimeoutJeux = setTimeout(() => loadCurrentRefJeux(), 300);
     }
 
-    async function loadCurrentRef() {
-      const config = REF_CONFIG[currentRefType];
+    async function loadCurrentRefJeux() {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
       if (!config) return;
 
-      const container = document.getElementById('ref-list');
+      const container = document.getElementById('ref-list-jeux');
       container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Chargement...</div>';
 
-      // Mettre a jour le titre
-      document.getElementById('refListTitle').innerHTML = `<i class="bi bi-${config.icon}"></i> ${config.label}`;
+      document.getElementById('refListTitleJeux').innerHTML = `<i class="bi bi-${config.icon}"></i> ${config.label}`;
 
       try {
         const params = {};
-        const search = document.getElementById('refSearch').value;
+        const search = document.getElementById('refSearchJeux').value;
         if (search) params.search = search;
-        if (!document.getElementById('showInactifs').checked) params.actif = 'true';
+        if (!document.getElementById('showInactifsJeux').checked) params.actif = 'true';
 
         const result = await config.api.call(referentielsAPI, params);
-        currentRefItems = result.items || result;
+        currentRefItemsJeux = result.items || result;
 
-        document.getElementById('refCount').textContent = currentRefItems.length;
-        renderRefList();
+        document.getElementById('refCountJeux').textContent = currentRefItemsJeux.length;
+        renderRefListJeux();
       } catch (error) {
         console.error('Erreur:', error);
         container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
       }
     }
 
-    function renderRefList() {
-      const config = REF_CONFIG[currentRefType];
-      const container = document.getElementById('ref-list');
+    function renderRefListJeux() {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
+      const container = document.getElementById('ref-list-jeux');
 
-      if (currentRefItems.length === 0) {
+      if (currentRefItemsJeux.length === 0) {
         container.innerHTML = `
           <div class="text-center py-4 text-muted">
             <i class="bi bi-inbox" style="font-size: 2rem;"></i>
             <p class="mt-2">Aucun element trouve</p>
-            <button class="btn btn-primary btn-sm" onclick="openAddRefModal()">
+            <button class="btn btn-primary btn-sm" onclick="openAddRefModalJeux()">
               <i class="bi bi-plus"></i> Ajouter
             </button>
           </div>
@@ -859,7 +1405,7 @@
         return;
       }
 
-      container.innerHTML = currentRefItems.map(item => {
+      container.innerHTML = currentRefItemsJeux.map(item => {
         const label = config.useLibelle ? item.libelle : item.nom;
         const extraInfo = getRefExtraInfo(item, config);
 
@@ -873,13 +1419,13 @@
               ${extraInfo ? `<br><small class="text-muted">${extraInfo}</small>` : ''}
             </div>
             <div class="item-actions">
-              <button class="btn btn-sm btn-outline-secondary" onclick="editRef(${item.id})" title="Modifier">
+              <button class="btn btn-sm btn-outline-secondary" onclick="editRefJeux(${item.id})" title="Modifier">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn btn-sm btn-outline-${item.actif ? 'warning' : 'success'}" onclick="toggleRef(${item.id})" title="${item.actif ? 'Desactiver' : 'Activer'}">
+              <button class="btn btn-sm btn-outline-${item.actif ? 'warning' : 'success'}" onclick="toggleRefJeux(${item.id})" title="${item.actif ? 'Desactiver' : 'Activer'}">
                 <i class="bi bi-${item.actif ? 'eye-slash' : 'eye'}"></i>
               </button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteRef(${item.id})" title="Supprimer">
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteRefJeux(${item.id})" title="Supprimer">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
@@ -899,100 +1445,96 @@
       return parts.join(' - ');
     }
 
-    async function openAddRefModal() {
-      const config = REF_CONFIG[currentRefType];
+    async function openAddRefModalJeux() {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
 
-      document.getElementById('modalRefTitle').textContent = `Ajouter un(e) ${config.labelSingular}`;
-      document.getElementById('formRef').reset();
-      document.getElementById('ref_id').value = '';
-      document.getElementById('ref_actif').checked = true;
+      document.getElementById('modalRefJeuxTitle').textContent = `Ajouter un(e) ${config.labelSingular}`;
+      document.getElementById('formRefJeux').reset();
+      document.getElementById('ref_jeux_id').value = '';
+      document.getElementById('ref_jeux_actif').checked = true;
 
-      // Reset couleur et icone
-      document.getElementById('ref_couleur').value = '#0d6efd';
-      document.getElementById('ref_couleur_text').value = '#0d6efd';
-      document.getElementById('ref_icone').value = 'tag';
-      document.getElementById('ref_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+      document.getElementById('ref_jeux_couleur').value = '#0d6efd';
+      document.getElementById('ref_jeux_couleur_text').value = '#0d6efd';
+      document.getElementById('ref_jeux_icone').value = 'tag';
+      document.getElementById('ref_jeux_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+      renderUsedColorsPalette('Jeux', '#0d6efd');
+      updateColorPaletteSelection('Jeux', '#0d6efd');
 
-      // Afficher/masquer les champs selon le type
-      setupRefFormFields(config);
+      setupRefFormFieldsJeux(config);
 
-      // Charger les listes si necessaire
       if (config.fields.includes('editeur')) await loadEditeursSelect();
-      if (config.fields.includes('site')) await loadSitesSelect();
+      if (config.fields.includes('site')) await loadSitesSelect('ref_jeux_site_id');
 
-      modalRef.show();
+      modalRefJeux.show();
     }
 
-    async function editRef(id) {
-      const config = REF_CONFIG[currentRefType];
-      const item = currentRefItems.find(i => i.id === id);
+    async function editRefJeux(id) {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
+      const item = currentRefItemsJeux.find(i => i.id === id);
       if (!item) return;
 
-      document.getElementById('modalRefTitle').textContent = `Modifier ${config.labelSingular}`;
-      document.getElementById('ref_id').value = item.id;
+      document.getElementById('modalRefJeuxTitle').textContent = `Modifier ${config.labelSingular}`;
+      document.getElementById('ref_jeux_id').value = item.id;
 
-      // Remplir les champs
-      document.getElementById('ref_nom').value = item.nom || '';
-      document.getElementById('ref_libelle').value = item.libelle || '';
-      document.getElementById('ref_code').value = item.code || '';
-      document.getElementById('ref_prenom').value = item.prenom || '';
-      document.getElementById('ref_nationalite').value = item.nationalite || '';
-      document.getElementById('ref_pays').value = item.pays || '';
-      document.getElementById('ref_site_web').value = item.site_web || '';
-      document.getElementById('ref_description').value = item.description || '';
-      document.getElementById('ref_couleur').value = item.couleur || '#0d6efd';
-      document.getElementById('ref_couleur_text').value = item.couleur || '#0d6efd';
-      document.getElementById('ref_icone').value = item.icone || 'tag';
-      document.getElementById('ref_icone_preview').innerHTML = `<i class="bi bi-${item.icone || 'tag'}"></i>`;
-      document.getElementById('ref_actif').checked = item.actif;
+      document.getElementById('ref_jeux_nom').value = item.nom || '';
+      document.getElementById('ref_jeux_libelle').value = item.libelle || '';
+      document.getElementById('ref_jeux_code').value = item.code || '';
+      document.getElementById('ref_jeux_prenom').value = item.prenom || '';
+      document.getElementById('ref_jeux_nationalite').value = item.nationalite || '';
+      document.getElementById('ref_jeux_pays').value = item.pays || '';
+      document.getElementById('ref_jeux_site_web').value = item.site_web || '';
+      document.getElementById('ref_jeux_description').value = item.description || '';
+      document.getElementById('ref_jeux_couleur').value = item.couleur || '#0d6efd';
+      document.getElementById('ref_jeux_couleur_text').value = item.couleur || '#0d6efd';
+      document.getElementById('ref_jeux_icone').value = item.icone || 'tag';
+      document.getElementById('ref_jeux_icone_preview').innerHTML = `<i class="bi bi-${item.icone || 'tag'}"></i>`;
+      document.getElementById('ref_jeux_actif').checked = item.actif;
+      renderUsedColorsPalette('Jeux', item.couleur || '#0d6efd');
+      updateColorPaletteSelection('Jeux', item.couleur || '#0d6efd');
 
-      // Afficher/masquer les champs
-      setupRefFormFields(config);
+      setupRefFormFieldsJeux(config);
 
-      // Charger les listes si necessaire
       if (config.fields.includes('editeur')) {
         await loadEditeursSelect();
-        document.getElementById('ref_editeur_id').value = item.editeur_id || '';
+        document.getElementById('ref_jeux_editeur_id').value = item.editeur_id || '';
       }
       if (config.fields.includes('site')) {
-        await loadSitesSelect();
-        document.getElementById('ref_site_id').value = item.site_id || '';
+        await loadSitesSelect('ref_jeux_site_id');
+        document.getElementById('ref_jeux_site_id').value = item.site_id || '';
       }
 
-      modalRef.show();
+      modalRefJeux.show();
     }
 
-    function setupRefFormFields(config) {
-      // Masquer tous les champs optionnels
-      ['fieldNom', 'fieldLibelle', 'fieldCode', 'fieldPrenom', 'fieldNationalite',
-       'fieldPays', 'fieldSiteWeb', 'fieldDescription', 'fieldCouleur', 'fieldIcone',
-       'fieldEditeur', 'fieldSite'].forEach(id => {
+    function setupRefFormFieldsJeux(config) {
+      ['fieldNomJeux', 'fieldLibelleJeux', 'fieldCodeJeux', 'fieldPrenomJeux', 'fieldNationaliteJeux',
+       'fieldPaysJeux', 'fieldSiteWebJeux', 'fieldDescriptionJeux', 'fieldCouleurJeux', 'fieldIconeJeux',
+       'fieldEditeurJeux', 'fieldSiteJeux'].forEach(id => {
         document.getElementById(id).classList.add('d-none');
       });
 
-      // Afficher selon config
       if (config.useLibelle) {
-        document.getElementById('fieldLibelle').classList.remove('d-none');
-        document.getElementById('ref_libelle').required = true;
-        document.getElementById('ref_nom').required = false;
+        document.getElementById('fieldLibelleJeux').classList.remove('d-none');
+        document.getElementById('ref_jeux_libelle').required = true;
+        document.getElementById('ref_jeux_nom').required = false;
       } else {
-        document.getElementById('fieldNom').classList.remove('d-none');
-        document.getElementById('ref_nom').required = true;
-        document.getElementById('ref_libelle').required = false;
+        document.getElementById('fieldNomJeux').classList.remove('d-none');
+        document.getElementById('ref_jeux_nom').required = true;
+        document.getElementById('ref_jeux_libelle').required = false;
       }
 
       config.fields.forEach(field => {
         switch(field) {
-          case 'code': document.getElementById('fieldCode').classList.remove('d-none'); break;
-          case 'prenom': document.getElementById('fieldPrenom').classList.remove('d-none'); break;
-          case 'nationalite': document.getElementById('fieldNationalite').classList.remove('d-none'); break;
-          case 'pays': document.getElementById('fieldPays').classList.remove('d-none'); break;
-          case 'site_web': document.getElementById('fieldSiteWeb').classList.remove('d-none'); break;
-          case 'description': document.getElementById('fieldDescription').classList.remove('d-none'); break;
-          case 'couleur': document.getElementById('fieldCouleur').classList.remove('d-none'); break;
-          case 'icone': document.getElementById('fieldIcone').classList.remove('d-none'); break;
-          case 'editeur': document.getElementById('fieldEditeur').classList.remove('d-none'); break;
-          case 'site': document.getElementById('fieldSite').classList.remove('d-none'); break;
+          case 'code': document.getElementById('fieldCodeJeux').classList.remove('d-none'); break;
+          case 'prenom': document.getElementById('fieldPrenomJeux').classList.remove('d-none'); break;
+          case 'nationalite': document.getElementById('fieldNationaliteJeux').classList.remove('d-none'); break;
+          case 'pays': document.getElementById('fieldPaysJeux').classList.remove('d-none'); break;
+          case 'site_web': document.getElementById('fieldSiteWebJeux').classList.remove('d-none'); break;
+          case 'description': document.getElementById('fieldDescriptionJeux').classList.remove('d-none'); break;
+          case 'couleur': document.getElementById('fieldCouleurJeux').classList.remove('d-none'); break;
+          case 'icone': document.getElementById('fieldIconeJeux').classList.remove('d-none'); break;
+          case 'editeur': document.getElementById('fieldEditeurJeux').classList.remove('d-none'); break;
+          case 'site': document.getElementById('fieldSiteJeux').classList.remove('d-none'); break;
         }
       });
     }
@@ -1001,7 +1543,7 @@
       try {
         const result = await referentielsAPI.getEditeurs({ actif: 'true' });
         editeurs = result.items || result;
-        const select = document.getElementById('ref_editeur_id');
+        const select = document.getElementById('ref_jeux_editeur_id');
         select.innerHTML = '<option value="">-- Aucun --</option>' +
           editeurs.map(e => `<option value="${e.id}">${e.nom}</option>`).join('');
       } catch (error) {
@@ -1009,14 +1551,14 @@
       }
     }
 
-    async function loadSitesSelect() {
+    async function loadSitesSelect(selectId) {
       try {
         const response = await fetch('/api/sites', {
           headers: { 'Authorization': `Bearer ${getAuthToken()}` }
         });
         if (response.ok) {
           sites = await response.json();
-          const select = document.getElementById('ref_site_id');
+          const select = document.getElementById(selectId);
           select.innerHTML = '<option value="">-- Aucun --</option>' +
             sites.map(s => `<option value="${s.id}">${s.nom}</option>`).join('');
         }
@@ -1025,31 +1567,30 @@
       }
     }
 
-    async function saveRef() {
-      const config = REF_CONFIG[currentRefType];
-      const id = document.getElementById('ref_id').value;
+    async function saveRefJeux() {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
+      const id = document.getElementById('ref_jeux_id').value;
 
-      // Construire les donnees selon les champs visibles
       const data = {
-        actif: document.getElementById('ref_actif').checked
+        actif: document.getElementById('ref_jeux_actif').checked
       };
 
       if (config.useLibelle) {
-        data.libelle = document.getElementById('ref_libelle').value;
+        data.libelle = document.getElementById('ref_jeux_libelle').value;
       } else {
-        data.nom = document.getElementById('ref_nom').value;
+        data.nom = document.getElementById('ref_jeux_nom').value;
       }
 
-      if (config.fields.includes('code')) data.code = document.getElementById('ref_code').value || null;
-      if (config.fields.includes('prenom')) data.prenom = document.getElementById('ref_prenom').value || null;
-      if (config.fields.includes('nationalite')) data.nationalite = document.getElementById('ref_nationalite').value || null;
-      if (config.fields.includes('pays')) data.pays = document.getElementById('ref_pays').value || null;
-      if (config.fields.includes('site_web')) data.site_web = document.getElementById('ref_site_web').value || null;
-      if (config.fields.includes('description')) data.description = document.getElementById('ref_description').value || null;
-      if (config.fields.includes('couleur')) data.couleur = document.getElementById('ref_couleur').value;
-      if (config.fields.includes('icone')) data.icone = document.getElementById('ref_icone').value || null;
-      if (config.fields.includes('editeur')) data.editeur_id = document.getElementById('ref_editeur_id').value || null;
-      if (config.fields.includes('site')) data.site_id = document.getElementById('ref_site_id').value || null;
+      if (config.fields.includes('code')) data.code = document.getElementById('ref_jeux_code').value || null;
+      if (config.fields.includes('prenom')) data.prenom = document.getElementById('ref_jeux_prenom').value || null;
+      if (config.fields.includes('nationalite')) data.nationalite = document.getElementById('ref_jeux_nationalite').value || null;
+      if (config.fields.includes('pays')) data.pays = document.getElementById('ref_jeux_pays').value || null;
+      if (config.fields.includes('site_web')) data.site_web = document.getElementById('ref_jeux_site_web').value || null;
+      if (config.fields.includes('description')) data.description = document.getElementById('ref_jeux_description').value || null;
+      if (config.fields.includes('couleur')) data.couleur = document.getElementById('ref_jeux_couleur').value;
+      if (config.fields.includes('icone')) data.icone = document.getElementById('ref_jeux_icone').value || null;
+      if (config.fields.includes('editeur')) data.editeur_id = document.getElementById('ref_jeux_editeur_id').value || null;
+      if (config.fields.includes('site')) data.site_id = document.getElementById('ref_jeux_site_id').value || null;
 
       try {
         if (id) {
@@ -1058,36 +1599,973 @@
           await config.apiCreate.call(referentielsAPI, data);
         }
 
-        modalRef.hide();
+        modalRefJeux.hide();
         showToast(`${config.labelSingular} enregistre(e)`, 'success');
-        loadCurrentRef();
-        loadRefStats();
+        loadCurrentRefJeux();
+        loadRefStatsJeux();
       } catch (error) {
         console.error('Erreur:', error);
         showToast(error.message || 'Erreur lors de l\'enregistrement', 'error');
       }
     }
 
-    async function toggleRef(id) {
-      const config = REF_CONFIG[currentRefType];
+    async function toggleRefJeux(id) {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
       try {
         await config.apiToggle.call(referentielsAPI, id);
-        loadCurrentRef();
+        loadCurrentRefJeux();
       } catch (error) {
         console.error('Erreur:', error);
         showToast('Erreur lors de la modification', 'error');
       }
     }
 
-    async function deleteRef(id) {
-      const config = REF_CONFIG[currentRefType];
+    async function deleteRefJeux(id) {
+      const config = REF_CONFIG_JEUX[currentRefTypejeux];
       if (!confirm(`Supprimer ce ${config.labelSingular} ?`)) return;
 
       try {
         await config.apiDelete.call(referentielsAPI, id);
         showToast(`${config.labelSingular} supprime(e)`, 'success');
-        loadCurrentRef();
-        loadRefStats();
+        loadCurrentRefJeux();
+        loadRefStatsJeux();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Impossible de supprimer (element utilise)', 'error');
+      }
+    }
+
+    // ========================
+    // Referentiels Livres - CRUD
+    // ========================
+    function onRefTypeChangeLivres() {
+      currentRefTypeLivres = document.getElementById('refTypeLivres').value;
+      document.getElementById('refSearchLivres').value = '';
+      loadCurrentRefLivres();
+    }
+
+    function onRefSearchLivres() {
+      clearTimeout(searchTimeoutLivres);
+      searchTimeoutLivres = setTimeout(() => loadCurrentRefLivres(), 300);
+    }
+
+    async function loadCurrentRefLivres() {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+      if (!config) return;
+
+      const container = document.getElementById('ref-list-livres');
+      container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Chargement...</div>';
+
+      document.getElementById('refListTitleLivres').innerHTML = `<i class="bi bi-${config.icon}"></i> ${config.label}`;
+
+      try {
+        let result = await config.apiGet();
+        // L'API retourne { genres: [...] }, { formats: [...] }, etc.
+        let items = result[currentRefTypeLivres] || result.items || result || [];
+        if (!Array.isArray(items)) items = [];
+
+        // Filtrer par recherche
+        const search = document.getElementById('refSearchLivres').value.toLowerCase();
+        if (search) {
+          items = items.filter(item => {
+            const label = config.useLibelle ? item.libelle : item.nom;
+            return label && label.toLowerCase().includes(search);
+          });
+        }
+
+        // Filtrer inactifs
+        if (!document.getElementById('showInactifsLivres').checked) {
+          items = items.filter(item => item.actif !== false);
+        }
+
+        currentRefItemsLivres = items;
+
+        document.getElementById('refCountLivres').textContent = currentRefItemsLivres.length;
+        renderRefListLivres();
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
+      }
+    }
+
+    function renderRefListLivres() {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+      const container = document.getElementById('ref-list-livres');
+
+      if (currentRefItemsLivres.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucun element trouve</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddRefModalLivres()">
+              <i class="bi bi-plus"></i> Ajouter
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentRefItemsLivres.map(item => {
+        const label = config.useLibelle ? item.libelle : item.nom;
+        const extraInfo = getRefExtraInfo(item, config);
+
+        return `
+          <div class="list-item ${item.actif === false ? 'inactive' : ''}" data-id="${item.id}">
+            <div class="item-content">
+              ${item.couleur ? `<span class="color-dot" style="background-color:${item.couleur}"></span>` : ''}
+              ${item.icone ? `<i class="bi bi-${item.icone} me-2"></i>` : `<i class="bi bi-${config.icon} me-2 text-muted"></i>`}
+              <strong>${label}</strong>
+              ${item.actif === false ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
+              ${extraInfo ? `<br><small class="text-muted">${extraInfo}</small>` : ''}
+            </div>
+            <div class="item-actions">
+              <button class="btn btn-sm btn-outline-secondary" onclick="editRefLivres(${item.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-${item.actif === false ? 'success' : 'warning'}" onclick="toggleRefLivres(${item.id})" title="${item.actif === false ? 'Activer' : 'Desactiver'}">
+                <i class="bi bi-${item.actif === false ? 'eye' : 'eye-slash'}"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteRefLivres(${item.id})" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openAddRefModalLivres() {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+
+      document.getElementById('modalRefLivresTitle').textContent = `Ajouter un(e) ${config.labelSingular}`;
+      document.getElementById('formRefLivres').reset();
+      document.getElementById('ref_livres_id').value = '';
+      document.getElementById('ref_livres_actif').checked = true;
+
+      document.getElementById('ref_livres_couleur').value = '#0d6efd';
+      document.getElementById('ref_livres_couleur_text').value = '#0d6efd';
+      document.getElementById('ref_livres_icone').value = 'tag';
+      document.getElementById('ref_livres_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+      renderUsedColorsPalette('Livres', '#0d6efd');
+      updateColorPaletteSelection('Livres', '#0d6efd');
+
+      setupRefFormFieldsLivres(config);
+
+      if (config.fields.includes('site')) await loadSitesSelect('ref_livres_site_id');
+
+      modalRefLivres.show();
+    }
+
+    async function editRefLivres(id) {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+      const item = currentRefItemsLivres.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('modalRefLivresTitle').textContent = `Modifier ${config.labelSingular}`;
+      document.getElementById('ref_livres_id').value = item.id;
+
+      document.getElementById('ref_livres_nom').value = item.nom || '';
+      document.getElementById('ref_livres_libelle').value = item.libelle || '';
+      document.getElementById('ref_livres_code').value = item.code || '';
+      document.getElementById('ref_livres_description').value = item.description || '';
+      document.getElementById('ref_livres_couleur').value = item.couleur || '#0d6efd';
+      document.getElementById('ref_livres_couleur_text').value = item.couleur || '#0d6efd';
+      document.getElementById('ref_livres_icone').value = item.icone || 'tag';
+      document.getElementById('ref_livres_icone_preview').innerHTML = `<i class="bi bi-${item.icone || 'tag'}"></i>`;
+      document.getElementById('ref_livres_actif').checked = item.actif !== false;
+      renderUsedColorsPalette('Livres', item.couleur || '#0d6efd');
+      updateColorPaletteSelection('Livres', item.couleur || '#0d6efd');
+
+      setupRefFormFieldsLivres(config);
+
+      if (config.fields.includes('site')) {
+        await loadSitesSelect('ref_livres_site_id');
+        document.getElementById('ref_livres_site_id').value = item.site_id || '';
+      }
+
+      modalRefLivres.show();
+    }
+
+    function setupRefFormFieldsLivres(config) {
+      ['fieldNomLivres', 'fieldLibelleLivres', 'fieldCodeLivres', 'fieldDescriptionLivres',
+       'fieldCouleurLivres', 'fieldIconeLivres', 'fieldSiteLivres'].forEach(id => {
+        document.getElementById(id).classList.add('d-none');
+      });
+
+      if (config.useLibelle) {
+        document.getElementById('fieldLibelleLivres').classList.remove('d-none');
+        document.getElementById('ref_livres_libelle').required = true;
+        document.getElementById('ref_livres_nom').required = false;
+      } else {
+        document.getElementById('fieldNomLivres').classList.remove('d-none');
+        document.getElementById('ref_livres_nom').required = true;
+        document.getElementById('ref_livres_libelle').required = false;
+      }
+
+      config.fields.forEach(field => {
+        switch(field) {
+          case 'code': document.getElementById('fieldCodeLivres').classList.remove('d-none'); break;
+          case 'description': document.getElementById('fieldDescriptionLivres').classList.remove('d-none'); break;
+          case 'couleur': document.getElementById('fieldCouleurLivres').classList.remove('d-none'); break;
+          case 'icone': document.getElementById('fieldIconeLivres').classList.remove('d-none'); break;
+          case 'site': document.getElementById('fieldSiteLivres').classList.remove('d-none'); break;
+        }
+      });
+    }
+
+    async function saveRefLivres() {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+      const id = document.getElementById('ref_livres_id').value;
+
+      const data = {
+        actif: document.getElementById('ref_livres_actif').checked
+      };
+
+      if (config.useLibelle) {
+        data.libelle = document.getElementById('ref_livres_libelle').value;
+      } else {
+        data.nom = document.getElementById('ref_livres_nom').value;
+      }
+
+      if (config.fields.includes('code')) data.code = document.getElementById('ref_livres_code').value || null;
+      if (config.fields.includes('description')) data.description = document.getElementById('ref_livres_description').value || null;
+      if (config.fields.includes('couleur')) data.couleur = document.getElementById('ref_livres_couleur').value;
+      if (config.fields.includes('icone')) data.icone = document.getElementById('ref_livres_icone').value || null;
+      if (config.fields.includes('site')) data.site_id = document.getElementById('ref_livres_site_id').value || null;
+
+      try {
+        if (id) {
+          await config.apiUpdate(id, data);
+        } else {
+          await config.apiCreate(data);
+        }
+
+        modalRefLivres.hide();
+        showToast(`${config.labelSingular} enregistre(e)`, 'success');
+        loadCurrentRefLivres();
+        loadRefStatsLivres();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement', 'error');
+      }
+    }
+
+    async function toggleRefLivres(id) {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+      try {
+        await config.apiToggle(id);
+        loadCurrentRefLivres();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteRefLivres(id) {
+      const config = REF_CONFIG_LIVRES[currentRefTypeLivres];
+      if (!confirm(`Supprimer ce ${config.labelSingular} ?`)) return;
+
+      try {
+        await config.apiDelete(id);
+        showToast(`${config.labelSingular} supprime(e)`, 'success');
+        loadCurrentRefLivres();
+        loadRefStatsLivres();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Impossible de supprimer (element utilise)', 'error');
+      }
+    }
+
+    // ========================
+    // Configuration referentiels Films
+    // ========================
+    const REF_CONFIG_FILMS = {
+      genres: {
+        label: 'Genres',
+        labelSingular: 'genre',
+        icon: 'film',
+        fields: ['nom', 'description', 'couleur', 'icone'],
+        apiGet: () => filmsAPI.getGenres(),
+        apiCreate: (data) => apiRequest('/films/referentiels/genres', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/films/referentiels/genres/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/films/referentiels/genres/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/films/referentiels/genres/${id}/toggle`, { method: 'PATCH' })
+      },
+      supports: {
+        label: 'Supports',
+        labelSingular: 'support',
+        icon: 'disc',
+        fields: ['nom', 'description'],
+        apiGet: () => filmsAPI.getSupports(),
+        apiCreate: (data) => apiRequest('/films/referentiels/supports', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/films/referentiels/supports/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/films/referentiels/supports/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/films/referentiels/supports/${id}/toggle`, { method: 'PATCH' })
+      },
+      realisateurs: {
+        label: 'Realisateurs',
+        labelSingular: 'realisateur',
+        icon: 'camera-reels',
+        fields: ['nom', 'prenom', 'nationalite'],
+        apiGet: () => filmsAPI.getRealisateurs(),
+        apiCreate: (data) => apiRequest('/films/referentiels/realisateurs', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/films/referentiels/realisateurs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/films/referentiels/realisateurs/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/films/referentiels/realisateurs/${id}/toggle`, { method: 'PATCH' })
+      },
+      acteurs: {
+        label: 'Acteurs',
+        labelSingular: 'acteur',
+        icon: 'person-badge',
+        fields: ['nom', 'prenom', 'nationalite'],
+        apiGet: () => filmsAPI.getActeurs(),
+        apiCreate: (data) => apiRequest('/films/referentiels/acteurs', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/films/referentiels/acteurs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/films/referentiels/acteurs/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/films/referentiels/acteurs/${id}/toggle`, { method: 'PATCH' })
+      },
+      studios: {
+        label: 'Studios',
+        labelSingular: 'studio',
+        icon: 'building',
+        fields: ['nom', 'pays', 'description'],
+        apiGet: () => filmsAPI.getStudios(),
+        apiCreate: (data) => apiRequest('/films/referentiels/studios', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/films/referentiels/studios/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/films/referentiels/studios/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/films/referentiels/studios/${id}/toggle`, { method: 'PATCH' })
+      },
+      emplacements: {
+        label: 'Emplacements',
+        labelSingular: 'emplacement',
+        icon: 'geo-alt',
+        fields: ['libelle', 'code', 'description', 'couleur', 'icone', 'site'],
+        useLibelle: true,
+        apiGet: () => filmsAPI.getEmplacements(),
+        apiCreate: (data) => apiRequest('/films/referentiels/emplacements', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/films/referentiels/emplacements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/films/referentiels/emplacements/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/films/referentiels/emplacements/${id}/toggle`, { method: 'PATCH' })
+      }
+    };
+
+    // ========================
+    // Configuration referentiels Musiques
+    // ========================
+    const REF_CONFIG_MUSIQUES = {
+      genres: {
+        label: 'Genres',
+        labelSingular: 'genre',
+        icon: 'music-note',
+        fields: ['nom', 'description', 'couleur', 'icone'],
+        apiGet: () => disquesAPI.getGenres(),
+        apiCreate: (data) => apiRequest('/disques/referentiels/genres', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/disques/referentiels/genres/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/disques/referentiels/genres/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/disques/referentiels/genres/${id}/toggle`, { method: 'PATCH' })
+      },
+      formats: {
+        label: 'Formats',
+        labelSingular: 'format',
+        icon: 'vinyl',
+        fields: ['nom', 'description'],
+        apiGet: () => disquesAPI.getFormats(),
+        apiCreate: (data) => apiRequest('/disques/referentiels/formats', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/disques/referentiels/formats/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/disques/referentiels/formats/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/disques/referentiels/formats/${id}/toggle`, { method: 'PATCH' })
+      },
+      artistes: {
+        label: 'Artistes',
+        labelSingular: 'artiste',
+        icon: 'person-badge',
+        fields: ['nom', 'description'],
+        apiGet: () => disquesAPI.getArtistes(),
+        apiCreate: (data) => apiRequest('/disques/referentiels/artistes', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/disques/referentiels/artistes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/disques/referentiels/artistes/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/disques/referentiels/artistes/${id}/toggle`, { method: 'PATCH' })
+      },
+      labels: {
+        label: 'Labels',
+        labelSingular: 'label',
+        icon: 'building',
+        fields: ['nom', 'pays', 'description'],
+        apiGet: () => disquesAPI.getLabels(),
+        apiCreate: (data) => apiRequest('/disques/referentiels/labels', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/disques/referentiels/labels/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/disques/referentiels/labels/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/disques/referentiels/labels/${id}/toggle`, { method: 'PATCH' })
+      },
+      emplacements: {
+        label: 'Emplacements',
+        labelSingular: 'emplacement',
+        icon: 'geo-alt',
+        fields: ['libelle', 'code', 'description', 'couleur', 'icone', 'site'],
+        useLibelle: true,
+        apiGet: () => disquesAPI.getEmplacements(),
+        apiCreate: (data) => apiRequest('/disques/referentiels/emplacements', { method: 'POST', body: JSON.stringify(data) }),
+        apiUpdate: (id, data) => apiRequest(`/disques/referentiels/emplacements/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        apiDelete: (id) => apiRequest(`/disques/referentiels/emplacements/${id}`, { method: 'DELETE' }),
+        apiToggle: (id) => apiRequest(`/disques/referentiels/emplacements/${id}/toggle`, { method: 'PATCH' })
+      }
+    };
+
+    // ========================
+    // Stats referentiels Films
+    // ========================
+    async function loadRefStatsFilms() {
+      try {
+        const stats = await filmsAPI.getStats();
+        renderRefStatsFilms(stats);
+      } catch (error) {
+        console.error('Erreur stats films:', error);
+        document.getElementById('ref-stats-films').innerHTML = '<div class="text-muted">Stats non disponibles</div>';
+      }
+    }
+
+    function renderRefStatsFilms(stats) {
+      const container = document.getElementById('ref-stats-films');
+      const items = [
+        { key: 'genres', label: 'Genres', icon: 'film', count: stats.genres || 0 },
+        { key: 'supports', label: 'Supports', icon: 'disc', count: stats.supports || 0 },
+        { key: 'realisateurs', label: 'Realisateurs', icon: 'camera-reels', count: stats.realisateurs || 0 },
+        { key: 'acteurs', label: 'Acteurs', icon: 'person-badge', count: stats.acteurs || 0 },
+        { key: 'studios', label: 'Studios', icon: 'building', count: stats.studios || 0 },
+        { key: 'emplacements', label: 'Emplacements', icon: 'geo-alt', count: stats.emplacements || 0 }
+      ];
+
+      container.innerHTML = items.map(item => `
+        <div class="ref-stat-card ${currentRefTypeFilms === item.key ? 'active' : ''}" onclick="selectRefTypeFilms('${item.key}')">
+          <i class="bi bi-${item.icon} text-danger"></i>
+          <h3>${item.count}</h3>
+          <small>${item.label}</small>
+        </div>
+      `).join('');
+    }
+
+    function selectRefTypeFilms(type) {
+      currentRefTypeFilms = type;
+      document.getElementById('refTypeFilms').value = type;
+      loadCurrentRefFilms();
+      loadRefStatsFilms();
+    }
+
+    // ========================
+    // Stats referentiels Musiques
+    // ========================
+    async function loadRefStatsMusiques() {
+      try {
+        const stats = await disquesAPI.getStats();
+        renderRefStatsMusiques(stats);
+      } catch (error) {
+        console.error('Erreur stats musiques:', error);
+        document.getElementById('ref-stats-musiques').innerHTML = '<div class="text-muted">Stats non disponibles</div>';
+      }
+    }
+
+    function renderRefStatsMusiques(stats) {
+      const container = document.getElementById('ref-stats-musiques');
+      const items = [
+        { key: 'genres', label: 'Genres', icon: 'music-note', count: stats.genres || 0 },
+        { key: 'formats', label: 'Formats', icon: 'vinyl', count: stats.formats || 0 },
+        { key: 'artistes', label: 'Artistes', icon: 'person-badge', count: stats.artistes || 0 },
+        { key: 'labels', label: 'Labels', icon: 'building', count: stats.labels || 0 },
+        { key: 'emplacements', label: 'Emplacements', icon: 'geo-alt', count: stats.emplacements || 0 }
+      ];
+
+      container.innerHTML = items.map(item => `
+        <div class="ref-stat-card ${currentRefTypeMusiques === item.key ? 'active' : ''}" onclick="selectRefTypeMusiques('${item.key}')">
+          <i class="bi bi-${item.icon} text-success"></i>
+          <h3>${item.count}</h3>
+          <small>${item.label}</small>
+        </div>
+      `).join('');
+    }
+
+    function selectRefTypeMusiques(type) {
+      currentRefTypeMusiques = type;
+      document.getElementById('refTypeMusiques').value = type;
+      loadCurrentRefMusiques();
+      loadRefStatsMusiques();
+    }
+
+    // ========================
+    // Referentiels Films - CRUD
+    // ========================
+    function onRefTypeChangeFilms() {
+      currentRefTypeFilms = document.getElementById('refTypeFilms').value;
+      document.getElementById('refSearchFilms').value = '';
+      loadCurrentRefFilms();
+    }
+
+    function onRefSearchFilms() {
+      clearTimeout(searchTimeoutFilms);
+      searchTimeoutFilms = setTimeout(() => loadCurrentRefFilms(), 300);
+    }
+
+    async function loadCurrentRefFilms() {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+      if (!config) return;
+
+      const container = document.getElementById('ref-list-films');
+      container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Chargement...</div>';
+
+      document.getElementById('refListTitleFilms').innerHTML = `<i class="bi bi-${config.icon}"></i> ${config.label}`;
+
+      try {
+        let result = await config.apiGet();
+        let items = result[currentRefTypeFilms] || result.items || result || [];
+        if (!Array.isArray(items)) items = [];
+
+        const search = document.getElementById('refSearchFilms').value.toLowerCase();
+        if (search) {
+          items = items.filter(item => {
+            const label = config.useLibelle ? item.libelle : item.nom;
+            return label && label.toLowerCase().includes(search);
+          });
+        }
+
+        if (!document.getElementById('showInactifsFilms').checked) {
+          items = items.filter(item => item.actif !== false);
+        }
+
+        currentRefItemsFilms = items;
+        document.getElementById('refCountFilms').textContent = currentRefItemsFilms.length;
+        renderRefListFilms();
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
+      }
+    }
+
+    function renderRefListFilms() {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+      const container = document.getElementById('ref-list-films');
+
+      if (currentRefItemsFilms.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucun element trouve</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddRefModalFilms()">
+              <i class="bi bi-plus"></i> Ajouter
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentRefItemsFilms.map(item => {
+        const label = config.useLibelle ? item.libelle : item.nom;
+        const extraInfo = getRefExtraInfo(item, config);
+
+        return `
+          <div class="list-item ${item.actif === false ? 'inactive' : ''}" data-id="${item.id}">
+            <div class="item-content">
+              ${item.couleur ? `<span class="color-dot" style="background-color:${item.couleur}"></span>` : ''}
+              ${item.icone ? `<i class="bi bi-${item.icone} me-2"></i>` : `<i class="bi bi-${config.icon} me-2 text-muted"></i>`}
+              <strong>${label}</strong>
+              ${item.actif === false ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
+              ${extraInfo ? `<br><small class="text-muted">${extraInfo}</small>` : ''}
+            </div>
+            <div class="item-actions">
+              <button class="btn btn-sm btn-outline-secondary" onclick="editRefFilms(${item.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-${item.actif === false ? 'success' : 'warning'}" onclick="toggleRefFilms(${item.id})" title="${item.actif === false ? 'Activer' : 'Desactiver'}">
+                <i class="bi bi-${item.actif === false ? 'eye' : 'eye-slash'}"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteRefFilms(${item.id})" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openAddRefModalFilms() {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+
+      document.getElementById('modalRefFilmsTitle').textContent = `Ajouter un(e) ${config.labelSingular}`;
+      document.getElementById('formRefFilms').reset();
+      document.getElementById('ref_films_id').value = '';
+      document.getElementById('ref_films_actif').checked = true;
+
+      document.getElementById('ref_films_couleur').value = '#dc3545';
+      document.getElementById('ref_films_couleur_text').value = '#dc3545';
+      document.getElementById('ref_films_icone').value = 'tag';
+      document.getElementById('ref_films_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+      renderUsedColorsPalette('Films', '#dc3545');
+      updateColorPaletteSelection('Films', '#dc3545');
+
+      setupRefFormFieldsFilms(config);
+
+      if (config.fields.includes('site')) await loadSitesSelect('ref_films_site_id');
+
+      modalRefFilms.show();
+    }
+
+    async function editRefFilms(id) {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+      const item = currentRefItemsFilms.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('modalRefFilmsTitle').textContent = `Modifier ${config.labelSingular}`;
+      document.getElementById('ref_films_id').value = item.id;
+
+      document.getElementById('ref_films_nom').value = item.nom || '';
+      document.getElementById('ref_films_libelle').value = item.libelle || '';
+      document.getElementById('ref_films_code').value = item.code || '';
+      document.getElementById('ref_films_prenom').value = item.prenom || '';
+      document.getElementById('ref_films_nationalite').value = item.nationalite || '';
+      document.getElementById('ref_films_pays').value = item.pays || '';
+      document.getElementById('ref_films_description').value = item.description || '';
+      document.getElementById('ref_films_couleur').value = item.couleur || '#dc3545';
+      document.getElementById('ref_films_couleur_text').value = item.couleur || '#dc3545';
+      document.getElementById('ref_films_icone').value = item.icone || 'tag';
+      document.getElementById('ref_films_icone_preview').innerHTML = `<i class="bi bi-${item.icone || 'tag'}"></i>`;
+      document.getElementById('ref_films_actif').checked = item.actif !== false;
+      renderUsedColorsPalette('Films', item.couleur || '#dc3545');
+      updateColorPaletteSelection('Films', item.couleur || '#dc3545');
+
+      setupRefFormFieldsFilms(config);
+
+      if (config.fields.includes('site')) {
+        await loadSitesSelect('ref_films_site_id');
+        document.getElementById('ref_films_site_id').value = item.site_id || '';
+      }
+
+      modalRefFilms.show();
+    }
+
+    function setupRefFormFieldsFilms(config) {
+      ['fieldNomFilms', 'fieldLibelleFilms', 'fieldCodeFilms', 'fieldPrenomFilms', 'fieldNationaliteFilms',
+       'fieldPaysFilms', 'fieldDescriptionFilms', 'fieldCouleurFilms', 'fieldIconeFilms', 'fieldSiteFilms'].forEach(id => {
+        document.getElementById(id).classList.add('d-none');
+      });
+
+      if (config.useLibelle) {
+        document.getElementById('fieldLibelleFilms').classList.remove('d-none');
+        document.getElementById('ref_films_libelle').required = true;
+        document.getElementById('ref_films_nom').required = false;
+      } else {
+        document.getElementById('fieldNomFilms').classList.remove('d-none');
+        document.getElementById('ref_films_nom').required = true;
+        document.getElementById('ref_films_libelle').required = false;
+      }
+
+      config.fields.forEach(field => {
+        switch(field) {
+          case 'code': document.getElementById('fieldCodeFilms').classList.remove('d-none'); break;
+          case 'prenom': document.getElementById('fieldPrenomFilms').classList.remove('d-none'); break;
+          case 'nationalite': document.getElementById('fieldNationaliteFilms').classList.remove('d-none'); break;
+          case 'pays': document.getElementById('fieldPaysFilms').classList.remove('d-none'); break;
+          case 'description': document.getElementById('fieldDescriptionFilms').classList.remove('d-none'); break;
+          case 'couleur': document.getElementById('fieldCouleurFilms').classList.remove('d-none'); break;
+          case 'icone': document.getElementById('fieldIconeFilms').classList.remove('d-none'); break;
+          case 'site': document.getElementById('fieldSiteFilms').classList.remove('d-none'); break;
+        }
+      });
+    }
+
+    async function saveRefFilms() {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+      const id = document.getElementById('ref_films_id').value;
+
+      const data = { actif: document.getElementById('ref_films_actif').checked };
+
+      if (config.useLibelle) {
+        data.libelle = document.getElementById('ref_films_libelle').value;
+      } else {
+        data.nom = document.getElementById('ref_films_nom').value;
+      }
+
+      if (config.fields.includes('code')) data.code = document.getElementById('ref_films_code').value || null;
+      if (config.fields.includes('prenom')) data.prenom = document.getElementById('ref_films_prenom').value || null;
+      if (config.fields.includes('nationalite')) data.nationalite = document.getElementById('ref_films_nationalite').value || null;
+      if (config.fields.includes('pays')) data.pays = document.getElementById('ref_films_pays').value || null;
+      if (config.fields.includes('description')) data.description = document.getElementById('ref_films_description').value || null;
+      if (config.fields.includes('couleur')) data.couleur = document.getElementById('ref_films_couleur').value;
+      if (config.fields.includes('icone')) data.icone = document.getElementById('ref_films_icone').value || null;
+      if (config.fields.includes('site')) data.site_id = document.getElementById('ref_films_site_id').value || null;
+
+      try {
+        if (id) {
+          await config.apiUpdate(id, data);
+        } else {
+          await config.apiCreate(data);
+        }
+
+        modalRefFilms.hide();
+        showToast(`${config.labelSingular} enregistre(e)`, 'success');
+        loadCurrentRefFilms();
+        loadRefStatsFilms();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement', 'error');
+      }
+    }
+
+    async function toggleRefFilms(id) {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+      try {
+        await config.apiToggle(id);
+        loadCurrentRefFilms();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteRefFilms(id) {
+      const config = REF_CONFIG_FILMS[currentRefTypeFilms];
+      if (!confirm(`Supprimer ce ${config.labelSingular} ?`)) return;
+
+      try {
+        await config.apiDelete(id);
+        showToast(`${config.labelSingular} supprime(e)`, 'success');
+        loadCurrentRefFilms();
+        loadRefStatsFilms();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Impossible de supprimer (element utilise)', 'error');
+      }
+    }
+
+    // ========================
+    // Referentiels Musiques - CRUD
+    // ========================
+    function onRefTypeChangeMusiques() {
+      currentRefTypeMusiques = document.getElementById('refTypeMusiques').value;
+      document.getElementById('refSearchMusiques').value = '';
+      loadCurrentRefMusiques();
+    }
+
+    function onRefSearchMusiques() {
+      clearTimeout(searchTimeoutMusiques);
+      searchTimeoutMusiques = setTimeout(() => loadCurrentRefMusiques(), 300);
+    }
+
+    async function loadCurrentRefMusiques() {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+      if (!config) return;
+
+      const container = document.getElementById('ref-list-musiques');
+      container.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm"></div> Chargement...</div>';
+
+      document.getElementById('refListTitleMusiques').innerHTML = `<i class="bi bi-${config.icon}"></i> ${config.label}`;
+
+      try {
+        let result = await config.apiGet();
+        let items = result[currentRefTypeMusiques] || result.items || result || [];
+        if (!Array.isArray(items)) items = [];
+
+        const search = document.getElementById('refSearchMusiques').value.toLowerCase();
+        if (search) {
+          items = items.filter(item => {
+            const label = config.useLibelle ? item.libelle : item.nom;
+            return label && label.toLowerCase().includes(search);
+          });
+        }
+
+        if (!document.getElementById('showInactifsMusiques').checked) {
+          items = items.filter(item => item.actif !== false);
+        }
+
+        currentRefItemsMusiques = items;
+        document.getElementById('refCountMusiques').textContent = currentRefItemsMusiques.length;
+        renderRefListMusiques();
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
+      }
+    }
+
+    function renderRefListMusiques() {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+      const container = document.getElementById('ref-list-musiques');
+
+      if (currentRefItemsMusiques.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+            <p class="mt-2">Aucun element trouve</p>
+            <button class="btn btn-primary btn-sm" onclick="openAddRefModalMusiques()">
+              <i class="bi bi-plus"></i> Ajouter
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = currentRefItemsMusiques.map(item => {
+        const label = config.useLibelle ? item.libelle : item.nom;
+        const extraInfo = getRefExtraInfo(item, config);
+
+        return `
+          <div class="list-item ${item.actif === false ? 'inactive' : ''}" data-id="${item.id}">
+            <div class="item-content">
+              ${item.couleur ? `<span class="color-dot" style="background-color:${item.couleur}"></span>` : ''}
+              ${item.icone ? `<i class="bi bi-${item.icone} me-2"></i>` : `<i class="bi bi-${config.icon} me-2 text-muted"></i>`}
+              <strong>${label}</strong>
+              ${item.actif === false ? '<span class="badge bg-warning badge-mode">Inactif</span>' : ''}
+              ${extraInfo ? `<br><small class="text-muted">${extraInfo}</small>` : ''}
+            </div>
+            <div class="item-actions">
+              <button class="btn btn-sm btn-outline-secondary" onclick="editRefMusiques(${item.id})" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-${item.actif === false ? 'success' : 'warning'}" onclick="toggleRefMusiques(${item.id})" title="${item.actif === false ? 'Activer' : 'Desactiver'}">
+                <i class="bi bi-${item.actif === false ? 'eye' : 'eye-slash'}"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteRefMusiques(${item.id})" title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function openAddRefModalMusiques() {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+
+      document.getElementById('modalRefMusiquesTitle').textContent = `Ajouter un(e) ${config.labelSingular}`;
+      document.getElementById('formRefMusiques').reset();
+      document.getElementById('ref_musiques_id').value = '';
+      document.getElementById('ref_musiques_actif').checked = true;
+
+      document.getElementById('ref_musiques_couleur').value = '#198754';
+      document.getElementById('ref_musiques_couleur_text').value = '#198754';
+      document.getElementById('ref_musiques_icone').value = 'tag';
+      document.getElementById('ref_musiques_icone_preview').innerHTML = '<i class="bi bi-tag"></i>';
+      renderUsedColorsPalette('Musiques', '#198754');
+      updateColorPaletteSelection('Musiques', '#198754');
+
+      setupRefFormFieldsMusiques(config);
+
+      if (config.fields.includes('site')) await loadSitesSelect('ref_musiques_site_id');
+
+      modalRefMusiques.show();
+    }
+
+    async function editRefMusiques(id) {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+      const item = currentRefItemsMusiques.find(i => i.id === id);
+      if (!item) return;
+
+      document.getElementById('modalRefMusiquesTitle').textContent = `Modifier ${config.labelSingular}`;
+      document.getElementById('ref_musiques_id').value = item.id;
+
+      document.getElementById('ref_musiques_nom').value = item.nom || '';
+      document.getElementById('ref_musiques_libelle').value = item.libelle || '';
+      document.getElementById('ref_musiques_code').value = item.code || '';
+      document.getElementById('ref_musiques_pays').value = item.pays || '';
+      document.getElementById('ref_musiques_description').value = item.description || '';
+      document.getElementById('ref_musiques_couleur').value = item.couleur || '#198754';
+      document.getElementById('ref_musiques_couleur_text').value = item.couleur || '#198754';
+      document.getElementById('ref_musiques_icone').value = item.icone || 'tag';
+      document.getElementById('ref_musiques_icone_preview').innerHTML = `<i class="bi bi-${item.icone || 'tag'}"></i>`;
+      document.getElementById('ref_musiques_actif').checked = item.actif !== false;
+      renderUsedColorsPalette('Musiques', item.couleur || '#198754');
+      updateColorPaletteSelection('Musiques', item.couleur || '#198754');
+
+      setupRefFormFieldsMusiques(config);
+
+      if (config.fields.includes('site')) {
+        await loadSitesSelect('ref_musiques_site_id');
+        document.getElementById('ref_musiques_site_id').value = item.site_id || '';
+      }
+
+      modalRefMusiques.show();
+    }
+
+    function setupRefFormFieldsMusiques(config) {
+      ['fieldNomMusiques', 'fieldLibelleMusiques', 'fieldCodeMusiques', 'fieldPaysMusiques',
+       'fieldDescriptionMusiques', 'fieldCouleurMusiques', 'fieldIconeMusiques', 'fieldSiteMusiques'].forEach(id => {
+        document.getElementById(id).classList.add('d-none');
+      });
+
+      if (config.useLibelle) {
+        document.getElementById('fieldLibelleMusiques').classList.remove('d-none');
+        document.getElementById('ref_musiques_libelle').required = true;
+        document.getElementById('ref_musiques_nom').required = false;
+      } else {
+        document.getElementById('fieldNomMusiques').classList.remove('d-none');
+        document.getElementById('ref_musiques_nom').required = true;
+        document.getElementById('ref_musiques_libelle').required = false;
+      }
+
+      config.fields.forEach(field => {
+        switch(field) {
+          case 'code': document.getElementById('fieldCodeMusiques').classList.remove('d-none'); break;
+          case 'pays': document.getElementById('fieldPaysMusiques').classList.remove('d-none'); break;
+          case 'description': document.getElementById('fieldDescriptionMusiques').classList.remove('d-none'); break;
+          case 'couleur': document.getElementById('fieldCouleurMusiques').classList.remove('d-none'); break;
+          case 'icone': document.getElementById('fieldIconeMusiques').classList.remove('d-none'); break;
+          case 'site': document.getElementById('fieldSiteMusiques').classList.remove('d-none'); break;
+        }
+      });
+    }
+
+    async function saveRefMusiques() {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+      const id = document.getElementById('ref_musiques_id').value;
+
+      const data = { actif: document.getElementById('ref_musiques_actif').checked };
+
+      if (config.useLibelle) {
+        data.libelle = document.getElementById('ref_musiques_libelle').value;
+      } else {
+        data.nom = document.getElementById('ref_musiques_nom').value;
+      }
+
+      if (config.fields.includes('code')) data.code = document.getElementById('ref_musiques_code').value || null;
+      if (config.fields.includes('pays')) data.pays = document.getElementById('ref_musiques_pays').value || null;
+      if (config.fields.includes('description')) data.description = document.getElementById('ref_musiques_description').value || null;
+      if (config.fields.includes('couleur')) data.couleur = document.getElementById('ref_musiques_couleur').value;
+      if (config.fields.includes('icone')) data.icone = document.getElementById('ref_musiques_icone').value || null;
+      if (config.fields.includes('site')) data.site_id = document.getElementById('ref_musiques_site_id').value || null;
+
+      try {
+        if (id) {
+          await config.apiUpdate(id, data);
+        } else {
+          await config.apiCreate(data);
+        }
+
+        modalRefMusiques.hide();
+        showToast(`${config.labelSingular} enregistre(e)`, 'success');
+        loadCurrentRefMusiques();
+        loadRefStatsMusiques();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast(error.message || 'Erreur lors de l\'enregistrement', 'error');
+      }
+    }
+
+    async function toggleRefMusiques(id) {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+      try {
+        await config.apiToggle(id);
+        loadCurrentRefMusiques();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showToast('Erreur lors de la modification', 'error');
+      }
+    }
+
+    async function deleteRefMusiques(id) {
+      const config = REF_CONFIG_MUSIQUES[currentRefTypeMusiques];
+      if (!confirm(`Supprimer ce ${config.labelSingular} ?`)) return;
+
+      try {
+        await config.apiDelete(id);
+        showToast(`${config.labelSingular} supprime(e)`, 'success');
+        loadCurrentRefMusiques();
+        loadRefStatsMusiques();
       } catch (error) {
         console.error('Erreur:', error);
         showToast(error.message || 'Impossible de supprimer (element utilise)', 'error');
@@ -1097,7 +2575,6 @@
     // ========================
     // Utils
     // ========================
-
     function showToast(message, type = 'info') {
       const toastContainer = document.getElementById('toast-container') || createToastContainer();
       const toast = document.createElement('div');

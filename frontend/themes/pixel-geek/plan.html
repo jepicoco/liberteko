@@ -10,124 +10,121 @@
   <script src="/js/theme-loader.js"></script>
   <style>
     /* ========================================
-       PLAN CONTAINER - Pixel Art Map Style
+       LAYOUT - Two Column Split
        ======================================== */
-    .plan-container {
-      max-width: 1400px;
-      margin: 2rem auto;
-      padding: 0 2rem;
+    .plan-page {
+      min-height: calc(100vh - 200px);
+      padding: 2rem;
+      max-width: 1600px;
+      margin: 0 auto;
     }
 
     .plan-header {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
 
     .plan-header h1 {
       font-family: 'Press Start 2P', cursive;
-      font-size: 1.2rem;
+      font-size: 1rem;
       color: var(--pixel-cyan);
       text-shadow: 4px 4px 0 var(--pixel-purple);
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
     }
 
     .plan-header p {
       font-family: 'VT323', monospace;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       color: var(--text-secondary);
-      margin-bottom: 1.5rem;
     }
 
-    /* Site Selector - Game Menu Style */
-    .site-selector {
+    /* Controls Row */
+    .plan-controls {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .site-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
     .site-selector label {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.6rem;
+      font-size: 0.5rem;
       color: var(--pixel-yellow);
-      text-shadow: 2px 2px 0 #000;
     }
 
     .site-selector select {
       font-family: 'VT323', monospace;
-      font-size: 1.1rem;
-      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
       background: var(--bg-card);
       color: var(--text-primary);
-      border: 4px solid var(--pixel-cyan);
+      border: 3px solid var(--pixel-cyan);
       cursor: pointer;
-      transition: all 0.1s;
-      min-width: 200px;
+      min-width: 180px;
     }
 
     .site-selector select:hover {
-      background: var(--bg-card-hover);
       border-color: var(--pixel-pink);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 0 var(--pixel-purple);
     }
 
-    .site-selector select:focus {
-      outline: none;
-      border-color: var(--pixel-mint);
-      box-shadow: 0 0 20px var(--pixel-cyan);
-    }
-
-    /* Floor Tabs - Level Select */
+    /* Floor Tabs */
     .floor-tabs {
       display: flex;
-      justify-content: center;
       gap: 0.5rem;
-      margin-bottom: 2rem;
       flex-wrap: wrap;
     }
 
     .floor-tab {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.5rem;
-      padding: 0.75rem 1.5rem;
+      font-size: 0.45rem;
+      padding: 0.5rem 1rem;
       background: var(--bg-card);
       color: var(--text-secondary);
       border: 3px solid var(--pixel-purple);
       cursor: pointer;
       transition: all 0.1s;
-      text-transform: uppercase;
     }
 
     .floor-tab:hover {
       background: var(--bg-card-hover);
       color: var(--text-primary);
-      transform: translateY(-2px);
     }
 
     .floor-tab.active {
       background: var(--pixel-pink);
       color: white;
       border-color: var(--pixel-yellow);
-      box-shadow: 0 0 20px var(--pixel-pink);
     }
 
-    /* Map Display - Pixel Art Canvas */
-    .map-display {
-      position: relative;
+    /* Main Layout - Two Columns */
+    .plan-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1.5rem;
+      min-height: 600px;
+    }
+
+    /* Left Column - Map */
+    .map-column {
       background: var(--bg-card);
-      border: 6px solid var(--pixel-cyan);
-      box-shadow:
-        inset 0 0 30px rgba(0, 212, 255, 0.2),
-        0 8px 0 var(--pixel-purple);
-      padding: 2rem;
-      min-height: 500px;
+      border: 5px solid var(--pixel-cyan);
+      box-shadow: 0 6px 0 var(--pixel-purple);
+      position: relative;
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Pixel grid effect */
-    .map-display::before {
+    /* Pixel grid overlay */
+    .map-column::before {
       content: '';
       position: absolute;
       top: 0;
@@ -143,12 +140,13 @@
     }
 
     .map-canvas-wrapper {
-      position: relative;
-      width: 100%;
-      height: 600px;
+      flex: 1;
       display: flex;
       justify-content: center;
       align-items: center;
+      padding: 1rem;
+      position: relative;
+      z-index: 2;
     }
 
     #planCanvas {
@@ -160,167 +158,130 @@
       image-rendering: pixelated;
     }
 
-    /* Loading State - Retro Loading */
-    .loading-state {
-      text-align: center;
-      padding: 4rem 2rem;
-    }
-
-    .loading-state .pixel-spinner {
-      width: 40px;
-      height: 40px;
-      margin: 0 auto 1rem;
-      border: 4px solid var(--pixel-purple);
-      border-top-color: var(--pixel-cyan);
-      animation: spin 0.8s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .loading-state p {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 0.6rem;
-      color: var(--pixel-cyan);
-      animation: blink 1s ease-in-out infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.3; }
-    }
-
-    /* Error State - Game Over Style */
-    .error-state {
-      text-align: center;
-      padding: 4rem 2rem;
-    }
-
-    .error-state .error-icon {
-      font-size: 4rem;
-      color: var(--pixel-red);
-      margin-bottom: 1rem;
-      animation: shake 0.5s ease-in-out;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      75% { transform: translateX(10px); }
-    }
-
-    .error-state h3 {
-      font-family: 'Press Start 2P', cursive;
-      font-size: 0.8rem;
-      color: var(--pixel-red);
-      margin-bottom: 1rem;
-    }
-
-    .error-state p {
-      font-family: 'VT323', monospace;
-      font-size: 1.1rem;
-      color: var(--text-secondary);
-    }
-
-    /* Side Panel - Sliding Inventory Panel */
-    .side-panel {
-      position: fixed;
-      top: 0;
-      right: -450px;
-      width: 450px;
-      height: 100vh;
-      background: var(--bg-dark);
-      border-left: 6px solid var(--pixel-pink);
-      box-shadow: -8px 0 30px rgba(0, 0, 0, 0.8);
-      z-index: 2000;
-      transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow-y: auto;
+    /* Right Column - Content Panel */
+    .content-column {
+      background: var(--bg-card);
+      border: 5px solid var(--pixel-pink);
+      box-shadow: 0 6px 0 var(--pixel-purple);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    .side-panel.open {
-      right: 0;
-    }
-
-    /* Panel Header */
-    .panel-header {
-      background: var(--bg-card);
+    .content-header {
+      background: var(--bg-dark);
       border-bottom: 4px solid var(--pixel-cyan);
-      padding: 1.5rem;
+      padding: 1rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 10;
     }
 
-    .panel-header h3 {
+    .content-header h3 {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.7rem;
+      font-size: 0.6rem;
       color: var(--pixel-cyan);
-      text-shadow: 2px 2px 0 var(--pixel-purple);
       margin: 0;
     }
 
-    .panel-close {
-      background: var(--pixel-red);
-      color: white;
-      border: 3px solid var(--pixel-orange);
-      width: 40px;
-      height: 40px;
-      display: flex;
+    .content-locked {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      color: var(--pixel-yellow);
+      display: none;
       align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.1s;
-      font-size: 1.5rem;
+      gap: 0.5rem;
     }
 
-    .panel-close:hover {
+    .content-locked.show {
+      display: flex;
+    }
+
+    .btn-unlock {
+      background: var(--pixel-red);
+      color: white;
+      border: 2px solid var(--pixel-orange);
+      padding: 0.25rem 0.5rem;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      cursor: pointer;
+      margin-left: 0.5rem;
+    }
+
+    .btn-unlock:hover {
       background: var(--pixel-orange);
-      transform: rotate(90deg) scale(1.1);
     }
 
     /* Element Info */
     .element-info {
-      padding: 1.5rem;
-      background: var(--bg-card);
+      padding: 1rem;
+      background: rgba(200, 80, 192, 0.1);
       border-bottom: 3px solid var(--pixel-purple);
+      min-height: 80px;
     }
 
-    .element-info .element-type {
+    .element-type {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.5rem;
+      font-size: 0.4rem;
       color: var(--pixel-yellow);
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.25rem;
     }
 
-    .element-info .element-name {
+    .element-name {
       font-family: 'VT323', monospace;
       font-size: 1.3rem;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
     }
 
-    .element-info .element-description {
+    .element-description {
       font-family: 'VT323', monospace;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--text-secondary);
     }
 
-    /* Articles List */
-    .articles-list {
-      padding: 1rem;
+    /* Empty state */
+    .content-empty {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .content-empty i {
+      font-size: 3rem;
+      color: var(--pixel-purple);
+      opacity: 0.5;
+      margin-bottom: 1rem;
+    }
+
+    .content-empty p {
+      font-family: 'VT323', monospace;
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+    }
+
+    .content-empty .hint {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.4rem;
+      color: var(--pixel-cyan);
+      margin-top: 1rem;
+      opacity: 0.7;
+    }
+
+    /* Articles List */
+    .articles-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
     }
 
     .articles-header {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.6rem;
+      font-size: 0.5rem;
       color: var(--pixel-mint);
       margin-bottom: 1rem;
       padding: 0.5rem;
@@ -329,30 +290,31 @@
     }
 
     .article-item {
-      background: var(--bg-card);
+      display: block;
+      background: var(--bg-dark);
       border: 3px solid var(--pixel-blue);
-      padding: 1rem;
-      margin-bottom: 1rem;
-      transition: all 0.2s;
+      padding: 0.75rem;
+      margin-bottom: 0.75rem;
+      transition: all 0.15s;
       cursor: pointer;
-      position: relative;
+      text-decoration: none;
+      color: inherit;
     }
 
     .article-item:hover {
       border-color: var(--pixel-cyan);
-      transform: translateX(-4px);
-      box-shadow: 4px 4px 0 var(--pixel-purple);
+      transform: translateX(-3px);
+      box-shadow: 3px 3px 0 var(--pixel-purple);
     }
 
     .article-item-header {
       display: flex;
-      gap: 1rem;
-      margin-bottom: 0.75rem;
+      gap: 0.75rem;
     }
 
     .article-image {
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       border: 2px solid var(--pixel-purple);
       object-fit: cover;
       flex-shrink: 0;
@@ -361,30 +323,30 @@
 
     .article-info {
       flex: 1;
+      min-width: 0;
     }
 
     .article-title {
       font-family: 'VT323', monospace;
-      font-size: 1.1rem;
+      font-size: 1rem;
       color: var(--text-primary);
       margin-bottom: 0.25rem;
-      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .article-meta {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.4rem;
       flex-wrap: wrap;
-      margin-top: 0.5rem;
     }
 
     .article-badge {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.4rem;
-      padding: 0.25rem 0.5rem;
+      font-size: 0.35rem;
+      padding: 0.2rem 0.4rem;
       border: 2px solid;
-      text-transform: uppercase;
-      display: inline-block;
     }
 
     .badge-type {
@@ -393,24 +355,19 @@
       color: var(--pixel-purple);
     }
 
-    .badge-status {
-      border-color: var(--pixel-mint);
-      color: var(--pixel-mint);
-    }
-
-    .badge-status.emprunte {
-      background: rgba(255, 71, 87, 0.3);
-      border-color: var(--pixel-red);
-      color: var(--pixel-red);
-    }
-
-    .badge-status.disponible {
+    .badge-disponible {
       background: rgba(123, 255, 160, 0.3);
       border-color: var(--pixel-mint);
       color: var(--pixel-mint);
     }
 
-    .badge-status.reserve {
+    .badge-emprunte {
+      background: rgba(255, 71, 87, 0.3);
+      border-color: var(--pixel-red);
+      color: var(--pixel-red);
+    }
+
+    .badge-reserve {
       background: rgba(255, 235, 59, 0.3);
       border-color: var(--pixel-yellow);
       color: var(--pixel-yellow);
@@ -418,115 +375,126 @@
 
     .no-articles {
       text-align: center;
-      padding: 3rem 1rem;
+      padding: 2rem 1rem;
+      color: var(--text-secondary);
     }
 
     .no-articles i {
-      font-size: 3rem;
-      color: var(--text-secondary);
-      margin-bottom: 1rem;
+      font-size: 2rem;
       opacity: 0.3;
+      margin-bottom: 0.5rem;
     }
 
-    .no-articles p {
+    /* Loading State */
+    .loading-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .pixel-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid var(--pixel-purple);
+      border-top-color: var(--pixel-cyan);
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-state p {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.5rem;
+      color: var(--pixel-cyan);
+      animation: blink 1s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0.3; }
+    }
+
+    /* Error State */
+    .error-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .error-state i {
+      font-size: 3rem;
+      color: var(--pixel-red);
+      margin-bottom: 1rem;
+    }
+
+    .error-state h3 {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.6rem;
+      color: var(--pixel-red);
+      margin-bottom: 0.5rem;
+    }
+
+    .error-state p {
       font-family: 'VT323', monospace;
-      font-size: 1.1rem;
       color: var(--text-secondary);
     }
 
-    /* Legend - Pixel HUD Style */
+    /* Legend */
     .map-legend {
-      margin-top: 2rem;
-      padding: 1.5rem;
+      margin-top: 1.5rem;
+      padding: 1rem;
       background: var(--bg-card);
       border: 4px solid var(--pixel-purple);
-      box-shadow: 4px 4px 0 rgba(200, 80, 192, 0.5);
     }
 
     .map-legend h3 {
       font-family: 'Press Start 2P', cursive;
-      font-size: 0.6rem;
+      font-size: 0.5rem;
       color: var(--pixel-yellow);
-      margin-bottom: 1rem;
+      margin-bottom: 0.75rem;
       text-align: center;
     }
 
     .legend-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 1rem;
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
     .legend-color {
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
     }
 
     .legend-label {
       font-family: 'VT323', monospace;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--text-secondary);
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .plan-container {
-        padding: 0 1rem;
-      }
-
-      .plan-header h1 {
-        font-size: 0.8rem;
-      }
-
-      .site-selector {
-        flex-direction: column;
-      }
-
-      .floor-tabs {
-        gap: 0.25rem;
-      }
-
-      .floor-tab {
-        font-size: 0.4rem;
-        padding: 0.5rem 1rem;
-      }
-
-      .map-display {
-        padding: 1rem;
-      }
-
-      .map-canvas-wrapper {
-        height: 400px;
-      }
-
-      .side-panel {
-        width: 100%;
-        right: -100%;
-      }
-
-      .panel-header h3 {
-        font-size: 0.5rem;
-      }
-
-      .legend-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Tooltip for hovering elements */
+    /* Tooltip */
     .element-tooltip {
-      position: absolute;
+      position: fixed;
       background: var(--bg-dark);
       border: 3px solid var(--pixel-cyan);
-      padding: 0.5rem 1rem;
+      padding: 0.4rem 0.8rem;
       font-family: 'VT323', monospace;
       font-size: 1rem;
       color: var(--text-primary);
@@ -534,11 +502,42 @@
       z-index: 1000;
       white-space: nowrap;
       display: none;
-      box-shadow: 4px 4px 0 var(--pixel-purple);
+      box-shadow: 3px 3px 0 var(--pixel-purple);
     }
 
     .element-tooltip.show {
       display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .plan-layout {
+        grid-template-columns: 1fr;
+        grid-template-rows: 500px auto;
+      }
+
+      .content-column {
+        max-height: 400px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .plan-page {
+        padding: 1rem;
+      }
+
+      .plan-header h1 {
+        font-size: 0.7rem;
+      }
+
+      .plan-controls {
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .plan-layout {
+        grid-template-rows: 350px auto;
+      }
     }
   </style>
 </head>
@@ -555,7 +554,7 @@
           <li><a href="/catalogue.html">CATALOGUE</a></li>
           <li><a href="/infos.html">INFOS</a></li>
           <li><a href="/aide.html">AIDE</a></li>
-          <li><a href="/plan.html" class="active">PLAN</a></li>
+          <li id="nav-plan"><a href="/plan.html" class="active">PLAN</a></li>
           <li><a href="/contact.html">CONTACT</a></li>
         </ul>
       </nav>
@@ -563,41 +562,79 @@
     </div>
   </header>
 
-  <!-- Plan Container -->
-  <div class="plan-container" id="planContainer">
+  <!-- Main Content -->
+  <main class="plan-page">
     <div class="plan-header">
       <h1>[ PLAN INTERACTIF ]</h1>
-      <p>Explorez notre espace et localisez vos articles favoris</p>
+      <p>Survolez les zones pour voir leur contenu - Cliquez pour fixer l'affichage</p>
     </div>
 
-    <!-- Site Selector -->
-    <div class="site-selector" id="siteSelector" style="display: none;">
-      <label for="siteSelect">SELECT SITE:</label>
-      <select id="siteSelect">
-        <option value="">Chargement...</option>
-      </select>
-    </div>
-
-    <!-- Floor Tabs -->
-    <div class="floor-tabs" id="floorTabs" style="display: none;"></div>
-
-    <!-- Map Display -->
-    <div class="map-display">
-      <div class="loading-state" id="loadingState">
-        <div class="pixel-spinner"></div>
-        <p>LOADING MAP DATA...</p>
+    <!-- Controls -->
+    <div class="plan-controls">
+      <div class="site-selector" id="siteSelector" style="display: none;">
+        <label>SITE:</label>
+        <select id="siteSelect"></select>
       </div>
+      <div class="floor-tabs" id="floorTabs"></div>
+    </div>
 
-      <div class="error-state" id="errorState" style="display: none;">
-        <div class="error-icon">
-          <i class="bi bi-x-octagon"></i>
+    <!-- Two Column Layout -->
+    <div class="plan-layout">
+      <!-- Left: Map -->
+      <div class="map-column" id="mapColumn">
+        <div class="loading-state" id="loadingState">
+          <div class="pixel-spinner"></div>
+          <p>LOADING MAP...</p>
         </div>
-        <h3>ERROR: MAP NOT FOUND</h3>
-        <p id="errorMessage">Le module de plan interactif n'est pas activé.</p>
+
+        <div class="error-state" id="errorState" style="display: none;">
+          <i class="bi bi-x-octagon"></i>
+          <h3>MAP NOT FOUND</h3>
+          <p id="errorMessage">Le plan n'est pas disponible.</p>
+        </div>
+
+        <div class="map-canvas-wrapper" id="mapCanvasWrapper" style="display: none;">
+          <canvas id="planCanvas"></canvas>
+        </div>
       </div>
 
-      <div class="map-canvas-wrapper" id="mapCanvasWrapper" style="display: none;">
-        <canvas id="planCanvas"></canvas>
+      <!-- Right: Content Panel -->
+      <div class="content-column">
+        <div class="content-header">
+          <h3 id="contentTitle">CONTENU</h3>
+          <div class="content-locked" id="contentLocked">
+            <i class="bi bi-lock-fill"></i> VERROUILLE
+            <button class="btn-unlock" id="btnUnlock">X</button>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="content-empty" id="contentEmpty">
+          <i class="bi bi-hand-index"></i>
+          <p>Survolez une zone du plan pour voir son contenu</p>
+          <span class="hint">CLIQUEZ POUR VERROUILLER</span>
+        </div>
+
+        <!-- Element Info -->
+        <div class="element-info" id="elementInfo" style="display: none;">
+          <div class="element-type" id="elementType"></div>
+          <div class="element-name" id="elementName"></div>
+          <div class="element-description" id="elementDescription"></div>
+        </div>
+
+        <!-- Articles -->
+        <div class="articles-container" id="articlesContainer" style="display: none;">
+          <div class="articles-header">
+            ARTICLES (<span id="articlesCount">0</span>)
+          </div>
+          <div id="articlesList"></div>
+        </div>
+
+        <!-- Loading Articles -->
+        <div class="loading-state" id="articlesLoading" style="display: none;">
+          <div class="pixel-spinner"></div>
+          <p>LOADING...</p>
+        </div>
       </div>
     </div>
 
@@ -606,30 +643,7 @@
       <h3>LEGENDE</h3>
       <div class="legend-grid" id="legendGrid"></div>
     </div>
-  </div>
-
-  <!-- Side Panel -->
-  <div class="side-panel" id="sidePanel">
-    <div class="panel-header">
-      <h3 id="panelTitle">ELEMENT</h3>
-      <div class="panel-close" id="panelClose">
-        <i class="bi bi-x"></i>
-      </div>
-    </div>
-
-    <div class="element-info" id="elementInfo">
-      <div class="element-type" id="elementType">TYPE</div>
-      <div class="element-name" id="elementName">Nom de l'élément</div>
-      <div class="element-description" id="elementDescription"></div>
-    </div>
-
-    <div class="articles-list">
-      <div class="articles-header">
-        ARTICLES LIES (<span id="articlesCount">0</span>)
-      </div>
-      <div id="articlesList"></div>
-    </div>
-  </div>
+  </main>
 
   <!-- Tooltip -->
   <div class="element-tooltip" id="elementTooltip"></div>
@@ -638,23 +652,25 @@
   <footer class="site-footer">
     <div class="footer-container">
       <div class="footer-section">
-        <h4>CONTACT</h4>
-        <p id="footer-address"></p>
-        <p id="footer-phone"></p>
-        <p id="footer-email"></p>
+        <h4>NAVIGATION</h4>
+        <ul>
+          <li><a href="/">ACCUEIL</a></li>
+          <li><a href="/catalogue">CATALOGUE</a></li>
+          <li><a href="/infos.html">INFOS</a></li>
+        </ul>
       </div>
       <div class="footer-section">
-        <h4>HORAIRES</h4>
-        <div id="footer-horaires">
-          <p>CHECK PAGE INFOS</p>
-        </div>
-      </div>
-      <div class="footer-section">
-        <h4>LINKS</h4>
+        <h4>LEGAL</h4>
         <ul>
           <li><a href="/mentions-legales.html">MENTIONS LEGALES</a></li>
           <li><a href="/cgu.html">CGU</a></li>
-          <li><a href="/contact.html">CONTACT</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>CONTACT</h4>
+        <ul>
+          <li><a href="/contact.html">NOUS CONTACTER</a></li>
+          <li><a href="/admin/login.html">ESPACE ADMIN</a></li>
         </ul>
       </div>
     </div>
@@ -669,7 +685,7 @@
     // =============================================
 
     const PlanInteractif = (function() {
-      // Elements
+      // DOM Elements
       const loadingState = document.getElementById('loadingState');
       const errorState = document.getElementById('errorState');
       const errorMessage = document.getElementById('errorMessage');
@@ -680,12 +696,39 @@
       const planCanvas = document.getElementById('planCanvas');
       const mapLegend = document.getElementById('mapLegend');
       const legendGrid = document.getElementById('legendGrid');
-      const sidePanel = document.getElementById('sidePanel');
-      const panelClose = document.getElementById('panelClose');
       const elementTooltip = document.getElementById('elementTooltip');
 
-      // Canvas context
+      // Content panel elements
+      const contentEmpty = document.getElementById('contentEmpty');
+      const contentLocked = document.getElementById('contentLocked');
+      const btnUnlock = document.getElementById('btnUnlock');
+      const elementInfo = document.getElementById('elementInfo');
+      const articlesContainer = document.getElementById('articlesContainer');
+      const articlesLoading = document.getElementById('articlesLoading');
+
+      // Canvas
       const ctx = planCanvas.getContext('2d');
+
+      // ========================================
+      // URL PARSING - Clean URLs
+      // ========================================
+      // Format: /plan/:emplacement?/:type? (ex: /plan/45/jeu)
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const highlightEmplacement = pathParts[1] || null;  // ID emplacement
+      const highlightType = pathParts[2] || null;         // jeu, livre, film, disque
+
+      // Fonction slugify pour générer les URLs
+      function slugify(text) {
+        if (!text) return '';
+        return text.toString()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .trim()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .substring(0, 100);
+      }
 
       // State
       let currentSiteId = null;
@@ -693,8 +736,10 @@
       let sites = [];
       let planData = null;
       let hoveredElement = null;
+      let lockedElement = null;
+      let articlesCache = {};
 
-      // Colors for different element types (pixel art palette)
+      // Colors
       const ELEMENT_COLORS = {
         mur: '#4a4a6a',
         etagere: '#ff6b9d',
@@ -703,27 +748,33 @@
         zone: '#00d4ff'
       };
 
+      // Type singulier → collection plurielle
+      const typeToCollection = {
+        jeu: 'jeux',
+        livre: 'livres',
+        film: 'films',
+        disque: 'disques'
+      };
+
       // ========================================
       // INITIALIZATION
       // ========================================
 
       async function init() {
-        // Check if module is enabled
         const moduleEnabled = await checkModuleEnabled();
         if (!moduleEnabled) {
-          showError('Le module de plan interactif n\'est pas activé.');
+          showError('Le module de plan interactif n\'est pas active.');
           return;
         }
 
-        // Load sites
         await loadSites();
 
         // Event listeners
-        panelClose.addEventListener('click', closeSidePanel);
         siteSelect.addEventListener('change', handleSiteChange);
         planCanvas.addEventListener('click', handleCanvasClick);
         planCanvas.addEventListener('mousemove', handleCanvasMouseMove);
-        planCanvas.addEventListener('mouseleave', hideTooltip);
+        planCanvas.addEventListener('mouseleave', handleCanvasMouseLeave);
+        btnUnlock.addEventListener('click', unlockContent);
         window.addEventListener('resize', handleResize);
       }
 
@@ -737,38 +788,34 @@
           const data = await resp.json();
           return data.module_plan_interactif === true;
         } catch (error) {
-          console.error('Error checking module:', error);
           return false;
         }
       }
 
       async function loadSites() {
         try {
-          const resp = await fetch('/api/sites');
+          const resp = await fetch('/api/public/sites');
           const data = await resp.json();
 
-          if (data && data.length > 0) {
-            sites = data;
+          // L'API publique retourne { sites: [...], fermetures_a_venir: [...] }
+          const sitesList = data.sites || data;
 
-            // Populate select
+          if (sitesList && sitesList.length > 0) {
+            sites = sitesList;
             siteSelect.innerHTML = sites.map(site =>
               `<option value="${site.id}">${site.nom.toUpperCase()}</option>`
             ).join('');
 
-            // Show selector if multiple sites
             if (sites.length > 1) {
               siteSelector.style.display = 'flex';
             }
 
-            // Load first site
             currentSiteId = sites[0].id;
-            siteSelect.value = currentSiteId;
             await loadPlanForSite(currentSiteId);
           } else {
             showError('Aucun site disponible.');
           }
         } catch (error) {
-          console.error('Error loading sites:', error);
           showError('Erreur lors du chargement des sites.');
         }
       }
@@ -778,40 +825,113 @@
           showLoading();
           const resp = await fetch(`/api/plans/public/site/${siteId}`);
 
-          if (!resp.ok) {
-            throw new Error('Plan non trouvé pour ce site');
-          }
+          if (!resp.ok) throw new Error('Plan non trouve');
 
           const data = await resp.json();
-          planData = data;
 
-          // Create floor tabs if multiple floors
+          // Aplatir la structure etages[].elements[] en elements[]
+          // Chaque element recoit le numero d'etage de son parent
+          const flatElements = [];
+          if (data.etages && Array.isArray(data.etages)) {
+            for (const etage of data.etages) {
+              const etageNumero = etage.numero || 0;
+              if (etage.elements && Array.isArray(etage.elements)) {
+                for (const element of etage.elements) {
+                  flatElements.push({
+                    ...element,
+                    etage: etageNumero,
+                    etage_id: etage.id,
+                    etage_nom: etage.nom
+                  });
+                }
+              }
+            }
+          }
+
+          // Trier par calque puis par ordre_affichage
+          flatElements.sort((a, b) => {
+            const calqueA = a.calque || 0;
+            const calqueB = b.calque || 0;
+            if (calqueA !== calqueB) return calqueA - calqueB;
+            return (a.ordre_affichage || 0) - (b.ordre_affichage || 0);
+          });
+
+          planData = {
+            ...data,
+            elements: flatElements
+          };
+          articlesCache = {};
+
           createFloorTabs();
-
-          // Render plan
           renderPlan();
-
-          // Create legend
           createLegend();
 
-          // Show map
           hideLoading();
           mapCanvasWrapper.style.display = 'flex';
           mapLegend.style.display = 'block';
 
+          // Si un emplacement est specifie dans l'URL, le surligner
+          if (highlightEmplacement) {
+            highlightElementByEmplacement(highlightEmplacement, highlightType);
+          }
+
         } catch (error) {
-          console.error('Error loading plan:', error);
+          console.error('Erreur chargement plan:', error);
           showError('Aucun plan disponible pour ce site.');
         }
       }
 
+      // Trouve et surligne l'element contenant un emplacement specifique
+      function highlightElementByEmplacement(emplacementId, type) {
+        if (!planData || !planData.elements) return;
+
+        // Mapper le type vers le champ d'emplacement
+        const typeFieldMap = {
+          jeu: 'emplacement_jeu_id',
+          livre: 'emplacement_livre_id',
+          film: 'emplacement_film_id',
+          disque: 'emplacement_disque_id'
+        };
+        const emplacementField = typeFieldMap[type];
+
+        // Chercher l'element qui contient cet emplacement
+        for (const element of planData.elements) {
+          if (element.emplacements) {
+            for (const emp of element.emplacements) {
+              if (emp[emplacementField] == emplacementId || emp.emplacement_jeu_id == emplacementId) {
+                // Changer d'etage si necessaire
+                if (element.etage !== currentFloor) {
+                  currentFloor = element.etage || 0;
+                  const tabs = document.querySelectorAll('.floor-tab');
+                  tabs.forEach(t => {
+                    t.classList.toggle('active', parseInt(t.dataset.floor) === currentFloor);
+                  });
+                  renderPlan();
+                }
+
+                // Verrouiller sur cet element
+                lockedElement = element;
+                contentLocked.classList.add('show');
+                showElementContent(element);
+                renderPlan();
+                return;
+              }
+            }
+          }
+        }
+      }
+
       async function loadArticlesForElement(elementId) {
+        if (articlesCache[elementId]) {
+          return articlesCache[elementId];
+        }
+
         try {
           const resp = await fetch(`/api/plans/public/elements/${elementId}/articles`);
           const data = await resp.json();
-          return data.articles || [];
+          articlesCache[elementId] = data.articles || [];
+          return articlesCache[elementId];
         } catch (error) {
-          console.error('Error loading articles:', error);
           return [];
         }
       }
@@ -823,7 +943,6 @@
       function createFloorTabs() {
         if (!planData || !planData.elements) return;
 
-        // Get unique floors
         const floors = [...new Set(planData.elements.map(el => el.etage || 0))].sort();
 
         if (floors.length > 1) {
@@ -834,7 +953,6 @@
             </div>`
           ).join('');
 
-          // Add click handlers
           floorTabs.querySelectorAll('.floor-tab').forEach(tab => {
             tab.addEventListener('click', () => {
               currentFloor = parseInt(tab.dataset.floor);
@@ -851,32 +969,27 @@
       function renderPlan() {
         if (!planData || !planData.elements) return;
 
-        // Filter elements by current floor
         const elements = planData.elements.filter(el => (el.etage || 0) === currentFloor);
 
         if (elements.length === 0) {
           ctx.clearRect(0, 0, planCanvas.width, planCanvas.height);
           ctx.fillStyle = '#666';
-          ctx.font = '20px VT323';
+          ctx.font = '16px VT323';
           ctx.textAlign = 'center';
-          ctx.fillText('AUCUN ELEMENT SUR CE NIVEAU', planCanvas.width / 2, planCanvas.height / 2);
+          ctx.fillText('AUCUN ELEMENT', planCanvas.width / 2, planCanvas.height / 2);
           return;
         }
 
-        // Calculate canvas size based on elements
         const bounds = calculateBounds(elements);
         const padding = 40;
         const canvasWidth = bounds.maxX - bounds.minX + padding * 2;
         const canvasHeight = bounds.maxY - bounds.minY + padding * 2;
 
-        // Set canvas size
         planCanvas.width = canvasWidth;
         planCanvas.height = canvasHeight;
 
-        // Clear canvas
         ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-        // Draw elements
         elements.forEach(element => {
           drawElement(element, bounds.minX - padding, bounds.minY - padding);
         });
@@ -886,7 +999,7 @@
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
         elements.forEach(el => {
-          const coords = parseCoordinates(el.coordonnees);
+          const coords = parseCoordinates(el.points);
           coords.forEach(point => {
             minX = Math.min(minX, point.x);
             minY = Math.min(minY, point.y);
@@ -898,61 +1011,68 @@
         return { minX, minY, maxX, maxY };
       }
 
-      function parseCoordinates(coordStr) {
+      function parseCoordinates(coords) {
         try {
-          const coords = JSON.parse(coordStr);
-          return coords.map(c => ({ x: c.x, y: c.y }));
+          // Gere les deux cas: tableau JSON deja parse ou string JSON
+          const arr = typeof coords === 'string' ? JSON.parse(coords) : coords;
+          if (!Array.isArray(arr)) return [];
+          return arr.map(c => ({ x: c.x, y: c.y }));
         } catch (e) {
           return [];
         }
       }
 
       function drawElement(element, offsetX, offsetY) {
-        const coords = parseCoordinates(element.coordonnees);
+        let coords = parseCoordinates(element.points);
         if (coords.length === 0) return;
 
-        const color = ELEMENT_COLORS[element.type] || '#7bffa0';
+        // Les rectangles (etagere, meuble, table) sont stockes avec 2 coins
+        // Il faut les convertir en 4 coins pour dessiner un rectangle
+        const rectTypes = ['etagere', 'meuble', 'table'];
+        if (rectTypes.includes(element.type_element) && coords.length === 2) {
+          const [p1, p2] = coords;
+          coords = [
+            { x: p1.x, y: p1.y },  // top-left
+            { x: p2.x, y: p1.y },  // top-right
+            { x: p2.x, y: p2.y },  // bottom-right
+            { x: p1.x, y: p2.y }   // bottom-left
+          ];
+        }
+
+        const color = ELEMENT_COLORS[element.type_element] || '#7bffa0';
         const isHovered = hoveredElement && hoveredElement.id === element.id;
+        const isLocked = lockedElement && lockedElement.id === element.id;
 
         ctx.save();
 
-        // Draw shape
         ctx.beginPath();
         coords.forEach((point, index) => {
           const x = point.x - offsetX;
           const y = point.y - offsetY;
-          if (index === 0) {
-            ctx.moveTo(x, y);
-          } else {
-            ctx.lineTo(x, y);
-          }
+          if (index === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
         });
         ctx.closePath();
 
-        // Fill with color (semi-transparent)
-        ctx.fillStyle = isHovered ? color : color + '80';
+        ctx.fillStyle = (isHovered || isLocked) ? color : color + '80';
         ctx.fill();
 
-        // Stroke (pixel art style)
-        ctx.strokeStyle = isHovered ? '#ffffff' : color;
-        ctx.lineWidth = isHovered ? 3 : 2;
+        ctx.strokeStyle = isLocked ? '#ffeb3b' : (isHovered ? '#ffffff' : color);
+        ctx.lineWidth = (isHovered || isLocked) ? 3 : 2;
         ctx.stroke();
 
-        // Draw label
         const center = calculateCenter(coords, offsetX, offsetY);
         ctx.fillStyle = '#ffffff';
-        ctx.font = isHovered ? 'bold 14px VT323' : '12px VT323';
+        ctx.font = (isHovered || isLocked) ? 'bold 14px VT323' : '12px VT323';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-
-        // Add shadow for readability
         ctx.shadowColor = '#000000';
         ctx.shadowBlur = 4;
-        ctx.fillText(element.nom.toUpperCase(), center.x, center.y);
+        ctx.fillText((element.libelle || '').toUpperCase(), center.x, center.y);
 
         ctx.restore();
 
-        // Store element data for hit detection
+        // Stocker les coords transformees pour la detection de clic
         element._coords = coords.map(p => ({ x: p.x - offsetX, y: p.y - offsetY }));
       }
 
@@ -962,14 +1082,11 @@
           sumX += point.x - offsetX;
           sumY += point.y - offsetY;
         });
-        return {
-          x: sumX / coords.length,
-          y: sumY / coords.length
-        };
+        return { x: sumX / coords.length, y: sumY / coords.length };
       }
 
       function createLegend() {
-        const types = [...new Set(planData.elements.map(el => el.type))];
+        const types = [...new Set(planData.elements.map(el => el.type_element))].filter(Boolean);
         legendGrid.innerHTML = types.map(type => `
           <div class="legend-item">
             <div class="legend-color" style="background: ${ELEMENT_COLORS[type] || '#7bffa0'}"></div>
@@ -985,6 +1102,9 @@
       function handleSiteChange(e) {
         currentSiteId = e.target.value;
         currentFloor = 0;
+        lockedElement = null;
+        hoveredElement = null;
+        resetContentPanel();
         loadPlanForSite(currentSiteId);
       }
 
@@ -994,8 +1114,18 @@
         const y = e.clientY - rect.top;
 
         const clickedElement = findElementAtPoint(x, y);
+
         if (clickedElement) {
-          showSidePanel(clickedElement);
+          if (lockedElement && lockedElement.id === clickedElement.id) {
+            // Clicking same element unlocks it
+            unlockContent();
+          } else {
+            // Lock to this element
+            lockedElement = clickedElement;
+            contentLocked.classList.add('show');
+            showElementContent(clickedElement);
+            renderPlan();
+          }
         }
       }
 
@@ -1013,12 +1143,32 @@
           if (element) {
             showTooltip(element, e.clientX, e.clientY);
             planCanvas.style.cursor = 'pointer';
+
+            // Show content on hover (if not locked)
+            if (!lockedElement) {
+              showElementContent(element);
+            }
           } else {
             hideTooltip();
             planCanvas.style.cursor = 'crosshair';
+
+            // Reset content on mouse leave (if not locked)
+            if (!lockedElement) {
+              resetContentPanel();
+            }
           }
         } else if (element) {
           updateTooltipPosition(e.clientX, e.clientY);
+        }
+      }
+
+      function handleCanvasMouseLeave() {
+        hoveredElement = null;
+        hideTooltip();
+        renderPlan();
+
+        if (!lockedElement) {
+          resetContentPanel();
         }
       }
 
@@ -1029,12 +1179,10 @@
 
         for (const element of elements) {
           if (!element._coords) continue;
-
           if (isPointInPolygon(x, y, element._coords)) {
             return element;
           }
         }
-
         return null;
       }
 
@@ -1043,9 +1191,7 @@
         for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
           const xi = polygon[i].x, yi = polygon[i].y;
           const xj = polygon[j].x, yj = polygon[j].y;
-
-          const intersect = ((yi > y) !== (yj > y))
-            && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+          const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
           if (intersect) inside = !inside;
         }
         return inside;
@@ -1058,11 +1204,78 @@
       }
 
       // ========================================
+      // CONTENT PANEL
+      // ========================================
+
+      async function showElementContent(element) {
+        contentEmpty.style.display = 'none';
+        elementInfo.style.display = 'block';
+        articlesContainer.style.display = 'none';
+        articlesLoading.style.display = 'block';
+
+        document.getElementById('elementType').textContent = (element.type_element || '').toUpperCase();
+        document.getElementById('elementName').textContent = element.libelle || element.type_element || '';
+        document.getElementById('elementDescription').textContent = element.description || '';
+
+        const articles = await loadArticlesForElement(element.id);
+
+        articlesLoading.style.display = 'none';
+        articlesContainer.style.display = 'block';
+
+        document.getElementById('articlesCount').textContent = articles.length;
+        const articlesList = document.getElementById('articlesList');
+
+        if (articles.length === 0) {
+          articlesList.innerHTML = `
+            <div class="no-articles">
+              <i class="bi bi-inbox"></i>
+              <p>Aucun article</p>
+            </div>
+          `;
+        } else {
+          articlesList.innerHTML = articles.map(article => {
+            const collection = typeToCollection[article.type] || article.type;
+            const articleSlug = `${article.id}-${slugify(article.titre)}`;
+            return `
+            <a href="/fiche/${collection}/${articleSlug}" class="article-item">
+              <div class="article-item-header">
+                <img src="${article.image_url || '/images/placeholder.png'}" alt="" class="article-image" onerror="this.src='/images/placeholder.png'">
+                <div class="article-info">
+                  <div class="article-title">${article.titre}</div>
+                  <div class="article-meta">
+                    <span class="article-badge badge-type">${article.type}</span>
+                    <span class="article-badge badge-${article.statut || 'disponible'}">${article.statut || 'disponible'}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          `}).join('');
+        }
+      }
+
+      function resetContentPanel() {
+        contentEmpty.style.display = 'flex';
+        elementInfo.style.display = 'none';
+        articlesContainer.style.display = 'none';
+        articlesLoading.style.display = 'none';
+      }
+
+      function unlockContent() {
+        lockedElement = null;
+        contentLocked.classList.remove('show');
+        renderPlan();
+
+        if (!hoveredElement) {
+          resetContentPanel();
+        }
+      }
+
+      // ========================================
       // UI FUNCTIONS
       // ========================================
 
       function showLoading() {
-        loadingState.style.display = 'block';
+        loadingState.style.display = 'flex';
         errorState.style.display = 'none';
         mapCanvasWrapper.style.display = 'none';
         mapLegend.style.display = 'none';
@@ -1074,85 +1287,34 @@
 
       function showError(message) {
         errorMessage.textContent = message;
-        errorState.style.display = 'block';
+        errorState.style.display = 'flex';
         loadingState.style.display = 'none';
         mapCanvasWrapper.style.display = 'none';
         mapLegend.style.display = 'none';
       }
 
       function showTooltip(element, x, y) {
-        elementTooltip.textContent = element.nom.toUpperCase();
+        elementTooltip.textContent = (element.libelle || element.type_element || '').toUpperCase();
         elementTooltip.classList.add('show');
         updateTooltipPosition(x, y);
       }
 
       function updateTooltipPosition(x, y) {
-        elementTooltip.style.left = (x + 10) + 'px';
-        elementTooltip.style.top = (y + 10) + 'px';
+        elementTooltip.style.left = (x + 15) + 'px';
+        elementTooltip.style.top = (y + 15) + 'px';
       }
 
       function hideTooltip() {
         elementTooltip.classList.remove('show');
       }
 
-      async function showSidePanel(element) {
-        // Update panel header
-        document.getElementById('panelTitle').textContent = element.nom.toUpperCase();
-        document.getElementById('elementType').textContent = element.type.toUpperCase();
-        document.getElementById('elementName').textContent = element.nom;
-        document.getElementById('elementDescription').textContent = element.description || '';
-
-        // Load articles
-        const articles = await loadArticlesForElement(element.id);
-        document.getElementById('articlesCount').textContent = articles.length;
-
-        const articlesList = document.getElementById('articlesList');
-        if (articles.length === 0) {
-          articlesList.innerHTML = `
-            <div class="no-articles">
-              <i class="bi bi-inbox"></i>
-              <p>Aucun article lié à cet élément</p>
-            </div>
-          `;
-        } else {
-          articlesList.innerHTML = articles.map(article => `
-            <div class="article-item" onclick="window.location.href='/fiche.html?type=${article.type}&id=${article.id}'">
-              <div class="article-item-header">
-                <img src="${article.image_url || '/images/placeholder.png'}" alt="${article.titre}" class="article-image">
-                <div class="article-info">
-                  <div class="article-title">${article.titre}</div>
-                  <div class="article-meta">
-                    <span class="article-badge badge-type">${article.type}</span>
-                    <span class="article-badge badge-status ${article.statut}">${article.statut}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `).join('');
-        }
-
-        // Show panel
-        sidePanel.classList.add('open');
-      }
-
-      function closeSidePanel() {
-        sidePanel.classList.remove('open');
-      }
-
-      // ========================================
-      // PUBLIC API
-      // ========================================
-
-      return {
-        init
-      };
+      return { init };
     })();
 
     // =============================================
     // SITE INITIALIZATION
     // =============================================
 
-    // Load config
     async function loadConfig() {
       try {
         const resp = await fetch('/api/public/config');
@@ -1160,28 +1322,21 @@
         const data = await resp.json();
 
         const nom = (data.nom_site || 'ASSOTHEQUE').toUpperCase();
-        document.getElementById('site-title').textContent = `Plan interactif - ${nom}`;
+        document.getElementById('site-title').textContent = `Plan - ${nom}`;
         document.getElementById('header-title').textContent = nom;
         document.getElementById('footer-name').textContent = nom;
 
-        if (data.contact && data.contact.adresse) {
-          document.getElementById('footer-address').textContent = data.contact.adresse.toUpperCase();
-        }
-        if (data.contact && data.contact.telephone) {
-          document.getElementById('footer-phone').textContent = data.contact.telephone;
-        }
-        if (data.contact && data.contact.email) {
-          document.getElementById('footer-email').textContent = data.contact.email.toUpperCase();
+        if (data.contact) {
+          if (data.contact.adresse) document.getElementById('footer-address').textContent = data.contact.adresse.toUpperCase();
+          if (data.contact.telephone) document.getElementById('footer-phone').textContent = data.contact.telephone;
+          if (data.contact.email) document.getElementById('footer-email').textContent = data.contact.email.toUpperCase();
         }
       } catch (e) {
         console.error('Config error:', e);
       }
     }
 
-    // Year
     document.getElementById('year').textContent = new Date().getFullYear();
-
-    // Init
     loadConfig();
     PlanInteractif.init();
   </script>

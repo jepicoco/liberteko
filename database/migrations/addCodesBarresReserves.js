@@ -221,13 +221,13 @@ async function up() {
     const [rows] = await sequelize.query('SELECT COUNT(*) as count FROM parametres_codes_barres');
     if (rows[0].count === 0) {
       await sequelize.query(`
-        INSERT INTO parametres_codes_barres (module, prefix, format_pattern)
+        INSERT INTO parametres_codes_barres (module, prefix, format_pattern, created_at, updated_at)
         VALUES
-          ('utilisateur', 'USA', '{PREFIX}{NUMERO_SEQUENCE_8}'),
-          ('jeu', 'JEU', '{PREFIX}{NUMERO_SEQUENCE_8}'),
-          ('livre', 'LIV', '{PREFIX}{NUMERO_SEQUENCE_8}'),
-          ('film', 'FLM', '{PREFIX}{NUMERO_SEQUENCE_8}'),
-          ('disque', 'DSQ', '{PREFIX}{NUMERO_SEQUENCE_8}')
+          ('utilisateur', 'USA', '{PREFIX}{NUMERO_SEQUENCE_8}', NOW(), NOW()),
+          ('jeu', 'JEU', '{PREFIX}{NUMERO_SEQUENCE_8}', NOW(), NOW()),
+          ('livre', 'LIV', '{PREFIX}{NUMERO_SEQUENCE_8}', NOW(), NOW()),
+          ('film', 'FLM', '{PREFIX}{NUMERO_SEQUENCE_8}', NOW(), NOW()),
+          ('disque', 'DSQ', '{PREFIX}{NUMERO_SEQUENCE_8}', NOW(), NOW())
       `);
       console.log('   Parametres par defaut inseres.');
     }

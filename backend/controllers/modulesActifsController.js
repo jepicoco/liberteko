@@ -2,7 +2,31 @@
  * Controller pour la gestion des modules actifs
  */
 
-const { ModuleActif } = require('../models');
+const { ModuleActif, ParametresFront } = require('../models');
+const { invalidateModulesCache } = require('../middleware/checkModuleActif');
+
+/**
+ * Cascade la desactivation de certains modules vers parametres_front
+ * @param {string} code - Code du module
+ * @param {boolean} actif - Nouvel etat
+ */
+async function cascadeModuleChange(code, actif) {
+  // Si on desactive le module plans, desactiver aussi l'affichage public
+  if (code === 'plans' && !actif) {
+    try {
+      await ParametresFront.update(
+        { module_plan_interactif: false },
+        { where: { id: 1 } }
+      );
+      console.log('Cascade: module_plan_interactif desactive dans parametres_front');
+    } catch (error) {
+      console.error('Erreur cascade module plans:', error.message);
+    }
+  }
+
+  // Invalider le cache des modules
+  invalidateModulesCache();
+}
 
 /**
  * Recuperer la liste des codes de modules actifs (pour le frontend)
@@ -45,6 +69,9 @@ exports.toggle = async (req, res) => {
 
     const module = await ModuleActif.toggleModule(code);
 
+    // Cascade des effets de la desactivation
+    await cascadeModuleChange(code, module.actif);
+
     res.json({
       success: true,
       message: `Module ${module.libelle} ${module.actif ? 'active' : 'desactive'}`,
@@ -86,6 +113,10 @@ exports.updateAll = async (req, res) => {
       if (module) {
         module.actif = actif;
         await module.save();
+
+        // Cascade des effets de la desactivation
+        await cascadeModuleChange(code, actif);
+
         results.push({ code, actif: module.actif, success: true });
       } else {
         results.push({ code, success: false, error: 'Module introuvable' });
