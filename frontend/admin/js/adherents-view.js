@@ -75,7 +75,7 @@ function setupCommunicationsTab(adherentId) {
  */
 function fillViewModal(adherent, stats) {
   // Photo
-  const photoUrl = adherent.photo || 'https://via.placeholder.com/150?text=Pas+de+photo';
+  const photoUrl = adherent.photo || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect fill='%23dee2e6' width='150' height='150'/%3E%3Ccircle cx='75' cy='55' r='30' fill='%236c757d'/%3E%3Cellipse cx='75' cy='130' rx='45' ry='35' fill='%236c757d'/%3E%3C/svg%3E";
   document.getElementById('view_photo').src = photoUrl;
 
   // Nom et informations principales
