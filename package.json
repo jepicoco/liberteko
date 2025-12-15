@@ -1,7 +1,7 @@
 {
-  "name": "ludotheque-app",
+  "name": "liberteko",
   "version": "1.0.0",
-  "description": "Application de gestion de ludothèque",
+  "description": "Liberteko - Application de gestion multi-collections pour associations",
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
@@ -68,7 +68,7 @@
     "setup-nouveautes": "node database/migrations/addNouveauteParams.js up && node database/migrations/addStatutNouveaute.js up"
   },
   "keywords": [
-    "ludotheque",
+    "liberteko",
     "jeux",
     "management"
   ],

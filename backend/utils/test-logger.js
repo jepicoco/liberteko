@@ -6,7 +6,7 @@
 const logger = require('./logger');
 const auditLogger = require('./auditLogger');
 
-console.log('=== Test du système de logging Assotheque ===\n');
+console.log('=== Test du système de logging Liberteko ===\n');
 
 // Test 1: Logger de base
 console.log('1. Test des logs de base...');

@@ -7,7 +7,7 @@ async function seedSysadmin() {
     console.log('🔄 Création du compte sysadmin...');
 
     // Vérifier si le sysadmin existe déjà
-    const existing = await Utilisateur.findOne({ where: { email: 'sysadmin@assotheque.fr' } });
+    const existing = await Utilisateur.findOne({ where: { email: 'sysadmin@liberteko.fr' } });
 
     if (existing) {
       console.log('ℹ️  Le compte sysadmin existe déjà');
@@ -21,7 +21,7 @@ async function seedSysadmin() {
     const sysadmin = await Utilisateur.create({
       nom: 'Admin',
       prenom: 'System',
-      email: 'sysadmin@assotheque.fr',
+      email: 'sysadmin@liberteko.fr',
       password: 'rootroot',
       role: 'administrateur',
       statut: 'actif',

@@ -1,6 +1,6 @@
-# Système de Logging Assotheque
+# Système de Logging Liberteko
 
-Ce document décrit le système de logging mis en place pour l'application Assotheque.
+Ce document décrit le système de logging mis en place pour l'application Liberteko.
 
 ## Architecture
 

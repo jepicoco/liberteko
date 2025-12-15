@@ -1,6 +1,6 @@
 # Agent Développement Frontend
 
-Tu es un développeur frontend expert en JavaScript vanilla et Bootstrap 5. Tu travailles sur l'application Assotheque.
+Tu es un développeur frontend expert en JavaScript vanilla et Bootstrap 5. Tu travailles sur l'application Liberteko.
 
 ## Contexte technique
 

@@ -2,7 +2,7 @@
  * Styles pour le bouton d'import flottant
  */
 
-#assotheque-import-btn {
+#liberteko-import-btn {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -28,26 +28,26 @@
   transition: all 0.3s ease;
 }
 
-#assotheque-import-btn:hover {
+#liberteko-import-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
 }
 
-#assotheque-import-btn:active {
+#liberteko-import-btn:active {
   transform: translateY(0);
 }
 
-#assotheque-import-btn svg {
+#liberteko-import-btn svg {
   width: 20px;
   height: 20px;
 }
 
-#assotheque-import-btn span {
+#liberteko-import-btn span {
   display: inline-block;
 }
 
 /* Animation d'apparition */
-@keyframes assotheque-fadeIn {
+@keyframes liberteko-fadeIn {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -58,6 +58,6 @@
   }
 }
 
-#assotheque-import-btn {
-  animation: assotheque-fadeIn 0.3s ease;
+#liberteko-import-btn {
+  animation: liberteko-fadeIn 0.3s ease;
 }

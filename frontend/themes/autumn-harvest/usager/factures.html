@@ -120,7 +120,7 @@
     </div>
   </div>
 
-  <footer class="site-footer"><div class="footer-content"><p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span></p></div></footer>
+  <footer class="site-footer"><div class="footer-content"><p>&copy; <span id="year"></span> <span id="footer-name">Liberteko</span></p></div></footer>
 
   <script>
     let token = null, factureSelectionnee = null;
@@ -132,7 +132,7 @@
       try {
         const resp = await fetch('/api/public/config');
         const config = await resp.json();
-        const siteName = config.nom_site || 'Assotheque';
+        const siteName = config.nom_site || 'Liberteko';
         document.getElementById('header-title').textContent = siteName.toUpperCase();
         document.getElementById('footer-name').textContent = siteName;
       } catch (e) {}

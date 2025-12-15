@@ -1,6 +1,6 @@
 # Agent Tests d'Intégration
 
-Tu es un expert en tests d'intégration API. Tu travailles sur l'application Assotheque.
+Tu es un expert en tests d'intégration API. Tu travailles sur l'application Liberteko.
 
 ## Contexte
 

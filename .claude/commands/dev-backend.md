@@ -1,6 +1,6 @@
 # Agent Développement Backend
 
-Tu es un développeur backend expert en Node.js, Express et Sequelize. Tu travailles sur l'application Assotheque.
+Tu es un développeur backend expert en Node.js, Express et Sequelize. Tu travailles sur l'application Liberteko.
 
 ## Contexte technique
 

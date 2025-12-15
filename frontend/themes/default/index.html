@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="site-title">Assotheque</title>
+  <title id="site-title">Liberteko</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/theme/css/theme.css">
 </head>
@@ -13,7 +13,7 @@
     <div class="header-container">
       <a href="/" class="logo">
         <i class="bi bi-collection"></i>
-        <span id="header-title">Assotheque</span>
+        <span id="header-title">Liberteko</span>
       </a>
       <nav>
         <ul class="nav-menu">
@@ -33,7 +33,7 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="hero-content">
-      <h1 id="welcome-title">Bienvenue à l'Assotheque</h1>
+      <h1 id="welcome-title">Bienvenue à l'Liberteko</h1>
       <p id="welcome-subtitle">Explorez notre catalogue de jeux, livres, films et disques disponibles au prêt</p>
       <form class="search-bar" action="/catalogue.html" method="get">
         <input type="text" name="q" placeholder="Rechercher un jeu, un livre, un film...">
@@ -126,7 +126,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulsé par Assotheque.</p>
+      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulsé par Liberteko.</p>
     </div>
   </footer>
 
@@ -139,12 +139,12 @@
         const data = await resp.json();
 
         // Mise à jour des titres
-        document.getElementById('site-title').textContent = data.nom || 'Assotheque';
-        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
+        document.getElementById('site-title').textContent = data.nom || 'Liberteko';
+        document.getElementById('header-title').textContent = data.nom || 'Liberteko';
         document.getElementById('welcome-title').textContent = `Bienvenue ${data.nom ? 'à ' + data.nom : ''}`;
 
         // Footer
-        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+        document.getElementById('footer-name').textContent = data.nom || 'Liberteko';
         document.getElementById('footer-address').textContent = data.adresse || '';
         document.getElementById('footer-phone').textContent = data.telephone || '';
         document.getElementById('footer-email').textContent = data.email || '';

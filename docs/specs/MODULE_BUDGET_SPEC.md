@@ -31,7 +31,7 @@
 
 ### 1.1 Objectif
 
-Permettre aux associations utilisant Assotheque de gerer leur budget de maniere complete :
+Permettre aux associations utilisant Liberteko de gerer leur budget de maniere complete :
 - Budget previsionnel multi-perimetres
 - Suivi des depenses/recettes avec workflow de validation
 - Gestion des subventions avec generation CERFA

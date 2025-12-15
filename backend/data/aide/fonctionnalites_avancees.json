@@ -141,7 +141,7 @@
         },
         {
           "question": "Comment fonctionne l'extension MyLudo ?",
-          "reponse": "L'extension se connecte à votre compte MyLudo, extrait votre collection de jeux (titres, éditeurs, durée, etc.) et l'envoie directement à votre Assotheque via l'API d'import."
+          "reponse": "L'extension se connecte à votre compte MyLudo, extrait votre collection de jeux (titres, éditeurs, durée, etc.) et l'envoie directement à votre Liberteko via l'API d'import."
         }
       ],
       "mots_cles": ["import", "csv", "excel", "migration", "donnees", "masse", "myludo", "bulk", "batch"]

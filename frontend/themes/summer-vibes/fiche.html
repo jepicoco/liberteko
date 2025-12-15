@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title id="site-title">Fiche - Assotheque</title>
+  <title id="site-title">Fiche - Liberteko</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/theme/css/theme.css">
   <script src="/js/theme-loader.js"></script>
@@ -365,7 +365,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; <span id="year"></span> <span id="footer-name">Assotheque</span> - Tous droits reserves</p>
+      <p>&copy; <span id="year"></span> <span id="footer-name">Liberteko</span> - Tous droits reserves</p>
     </div>
   </footer>
 
@@ -380,7 +380,7 @@
       try {
         const configResp = await fetch('/api/public/config');
         const config = await configResp.json();
-        const siteName = config.nom_site || 'Assotheque';
+        const siteName = config.nom_site || 'Liberteko';
         document.getElementById('header-title').textContent = siteName.toUpperCase();
         document.getElementById('footer-name').textContent = siteName;
 
@@ -427,8 +427,8 @@
 
         // Title and meta
         const title = item.nom || item.titre;
-        document.title = `${title} - Assotheque`;
-        document.getElementById('site-title').textContent = `${title} - Assotheque`;
+        document.title = `${title} - Liberteko`;
+        document.getElementById('site-title').textContent = `${title} - Liberteko`;
         document.getElementById('breadcrumb-title').textContent = title;
         document.getElementById('fiche-title').textContent = title;
         document.getElementById('fiche-meta').textContent = item.auteur || item.editeur || labels[collection];

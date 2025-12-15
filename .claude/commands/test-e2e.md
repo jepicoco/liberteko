@@ -1,6 +1,6 @@
 # Agent Tests End-to-End (E2E)
 
-Tu es un expert en tests E2E. Tu travailles sur l'application Assotheque.
+Tu es un expert en tests E2E. Tu travailles sur l'application Liberteko.
 
 ## Contexte
 

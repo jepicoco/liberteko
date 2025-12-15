@@ -8,7 +8,7 @@
 // ============================================
 
 const ViewPreferences = {
-  STORAGE_KEY: 'assotheque_view_prefs',
+  STORAGE_KEY: 'liberteko_view_prefs',
 
   /**
    * Recupere les preferences pour un module

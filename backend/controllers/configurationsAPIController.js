@@ -653,7 +653,7 @@ async function testBGG(config) {
 
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Assotheque/1.0 (Library Management System)',
+        'User-Agent': 'Liberteko/1.0 (Library Management System)',
         'Accept': 'application/xml, text/xml, */*'
       },
       timeout: 10000
@@ -736,7 +736,7 @@ async function testMusicBrainz(config) {
   try {
     const url = `${config.api_url}/release/b10bbbfc-cf9e-42e0-be17-e2c3e1d2600d?fmt=json`;
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0 (contact@example.com)' }
+      headers: { 'User-Agent': 'Liberteko/1.0 (contact@example.com)' }
     });
 
     return {
@@ -756,7 +756,7 @@ async function testBNF(config) {
     const url = `https://catalogue.bnf.fr/api/SRU?version=1.2&operation=searchRetrieve&query=bib.isbn%20all%20%22${testIsbn}%22&recordSchema=dublincore&maximumRecords=1`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0' }
+      headers: { 'User-Agent': 'Liberteko/1.0' }
     });
 
     if (!response.ok) {
@@ -819,7 +819,7 @@ async function testDiscogs(config) {
     const url = `https://api.discogs.com/database/search?q=test&type=release&per_page=1`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Assotheque/1.0',
+        'User-Agent': 'Liberteko/1.0',
         'Authorization': `Discogs token=${apiKey}`
       }
     });

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Assotheque is a multi-collection library management system for associations, supporting board games (Jeux), books (Livres), films, and records (Disques). Built with Node.js/Express backend and vanilla JavaScript frontend.
+Liberteko is a multi-collection library management system for associations, supporting board games (Jeux), books (Livres), films, and records (Disques). Built with Node.js/Express backend and vanilla JavaScript frontend.
 
 ## Commands
 

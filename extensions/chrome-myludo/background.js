@@ -1,5 +1,5 @@
 /**
- * Service worker pour l'extension Assotheque MyLudo
+ * Service worker pour l'extension Liberteko MyLudo
  */
 
 // Ecouter les messages des content scripts

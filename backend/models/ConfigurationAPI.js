@@ -97,7 +97,7 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: null,
-      comment: 'Mapping API vers champs Assotheque'
+      comment: 'Mapping API vers champs Liberteko'
     },
 
     // Configuration du cache

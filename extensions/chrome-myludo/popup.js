@@ -1,5 +1,5 @@
 /**
- * Popup script pour l'extension Assotheque MyLudo
+ * Popup script pour l'extension Liberteko MyLudo
  */
 
 let gameData = null;
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chrome.tabs.sendMessage(tab.id, { action: 'getGameData' }, async (response) => {
       if (chrome.runtime.lastError) {
         // Le content script n'est peut-etre pas charge, reessayer
-        console.log('[Assotheque] Retry - content script not ready:', chrome.runtime.lastError);
+        console.log('[Liberteko] Retry - content script not ready:', chrome.runtime.lastError);
         setTimeout(() => {
           chrome.tabs.sendMessage(tab.id, { action: 'getGameData' }, handleGameData);
         }, 1000);

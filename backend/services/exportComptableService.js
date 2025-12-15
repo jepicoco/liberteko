@@ -323,7 +323,7 @@ class JSONExporter extends BaseExporter {
 
     const contenu = JSON.stringify({
       export_date: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-      format: 'assotheque_comptable',
+      format: 'liberteko_comptable',
       version: '1.0',
       ecritures: data
     }, null, 2);

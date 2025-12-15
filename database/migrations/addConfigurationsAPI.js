@@ -55,7 +55,7 @@ async function up() {
         collections_supportees JSON DEFAULT '["jeu"]' COMMENT 'Collections supportees: jeu, livre, film, disque',
 
         -- Mapping des champs
-        mapping_champs JSON NULL COMMENT 'Mapping API vers champs Assotheque',
+        mapping_champs JSON NULL COMMENT 'Mapping API vers champs Liberteko',
 
         -- Cache
         cache_active BOOLEAN DEFAULT TRUE COMMENT 'Activer le cache des resultats',

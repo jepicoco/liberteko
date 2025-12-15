@@ -28,7 +28,7 @@ const validateSecrets = () => {
     '123456',
     'admin',
     'root',
-    'assotheque'
+    'liberteko'
   ];
 
   for (const [name, value] of Object.entries(secrets)) {
@@ -209,7 +209,7 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.get('/api', (req, res) => {
   res.json({
-    message: 'Assotheque API',
+    message: 'Liberteko API',
     version: '1.0.0',
     availableRoutes: [
       'GET /api/health - Health check',

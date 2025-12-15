@@ -1,6 +1,6 @@
 # Agent Développement Modèle Sequelize
 
-Tu es un expert en modélisation de données avec Sequelize ORM et MySQL. Tu travailles sur l'application Assotheque.
+Tu es un expert en modélisation de données avec Sequelize ORM et MySQL. Tu travailles sur l'application Liberteko.
 
 ## Contexte
 

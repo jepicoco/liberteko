@@ -107,7 +107,7 @@ class BGGProvider extends BaseProvider {
     const searchResponse = await fetch(searchUrl, {
       timeout: 15000,
       headers: {
-        'User-Agent': 'Assotheque/1.0 (Library Management System)',
+        'User-Agent': 'Liberteko/1.0 (Library Management System)',
         'Accept': 'application/xml, text/xml, */*'
       }
     });
@@ -149,7 +149,7 @@ class BGGProvider extends BaseProvider {
         const response = await fetch(detailUrl, {
           timeout: 15000,
           headers: {
-            'User-Agent': 'Assotheque/1.0 (Library Management System)',
+            'User-Agent': 'Liberteko/1.0 (Library Management System)',
             'Accept': 'application/xml, text/xml, */*'
           }
         });
@@ -193,7 +193,7 @@ class BGGProvider extends BaseProvider {
     const response = await fetch(detailUrl, {
       timeout: 15000,
       headers: {
-        'User-Agent': 'Assotheque/1.0 (Library Management System)',
+        'User-Agent': 'Liberteko/1.0 (Library Management System)',
         'Accept': 'application/xml, text/xml, */*'
       }
     });
@@ -816,7 +816,7 @@ class MusicBrainzProvider extends BaseProvider {
     const url = `https://musicbrainz.org/ws/2/release/?query=barcode:${code}&fmt=json`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0 (contact@assotheque.fr)' },
+      headers: { 'User-Agent': 'Liberteko/1.0 (contact@liberteko.fr)' },
       timeout: 10000
     });
 
@@ -840,7 +840,7 @@ class MusicBrainzProvider extends BaseProvider {
     const url = `https://musicbrainz.org/ws/2/release/${releaseId}?inc=artist-credits+labels+recordings&fmt=json`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0 (contact@assotheque.fr)' },
+      headers: { 'User-Agent': 'Liberteko/1.0 (contact@liberteko.fr)' },
       timeout: 10000
     });
 
@@ -857,7 +857,7 @@ class MusicBrainzProvider extends BaseProvider {
     const url = `https://musicbrainz.org/ws/2/release/?query=${encodedName}&fmt=json&limit=5`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0 (contact@assotheque.fr)' },
+      headers: { 'User-Agent': 'Liberteko/1.0 (contact@liberteko.fr)' },
       timeout: 10000
     });
 
@@ -918,7 +918,7 @@ class DiscogsProvider extends BaseProvider {
     const url = `https://api.discogs.com/database/search?barcode=${code}&token=${token}`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0' },
+      headers: { 'User-Agent': 'Liberteko/1.0' },
       timeout: 10000
     });
 
@@ -945,7 +945,7 @@ class DiscogsProvider extends BaseProvider {
     const url = `https://api.discogs.com/releases/${releaseId}?token=${token}`;
 
     const response = await fetch(url, {
-      headers: { 'User-Agent': 'Assotheque/1.0' },
+      headers: { 'User-Agent': 'Liberteko/1.0' },
       timeout: 10000
     });
 

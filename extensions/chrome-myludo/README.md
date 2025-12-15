@@ -1,6 +1,6 @@
-# Extension Chrome Assotheque - Import MyLudo
+# Extension Chrome Liberteko - Import MyLudo
 
-Cette extension Chrome permet d'importer des jeux depuis MyLudo directement vers votre base de donnees Assotheque.
+Cette extension Chrome permet d'importer des jeux depuis MyLudo directement vers votre base de donnees Liberteko.
 
 ## Installation
 
@@ -16,13 +16,13 @@ Cette extension Chrome permet d'importer des jeux depuis MyLudo directement vers
 
 1. Cliquez sur l'icone de l'extension
 2. Allez dans les parametres (ou clic droit > Options)
-3. Entrez l'URL de votre serveur Assotheque
+3. Entrez l'URL de votre serveur Liberteko
 4. Entrez votre cle API (voir ci-dessous)
 5. Testez la connexion
 
 ### Obtenir une cle API
 
-1. Connectez-vous a l'administration Assotheque
+1. Connectez-vous a l'administration Liberteko
 2. Allez dans **Parametres > Services externes > Cles API**
 3. Cliquez sur **Nouvelle Cle**
 4. Configurez:
@@ -34,7 +34,7 @@ Cette extension Chrome permet d'importer des jeux depuis MyLudo directement vers
 ## Utilisation
 
 1. Naviguez sur une page de jeu MyLudo (ex: `myludo.fr/#!/game/xxx`)
-2. Un bouton "Assotheque" apparait en bas a droite
+2. Un bouton "Liberteko" apparait en bas a droite
 3. Cliquez sur l'icone de l'extension dans la barre d'outils
 4. Verifiez les informations du jeu
 5. Cliquez sur "Importer ce jeu"

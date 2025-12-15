@@ -22,7 +22,7 @@
       if (newGameId !== currentGameId) {
         currentGameId = newGameId;
         isGamePage = true;
-        console.log('[Assotheque] Page de jeu detectee:', currentGameId);
+        console.log('[Liberteko] Page de jeu detectee:', currentGameId);
         waitForGameContent();
       }
     } else {
@@ -241,10 +241,10 @@
         if (langs.length > 0) data.langue = langs.join(', ');
       }
 
-      console.log('[Assotheque] Donnees extraites:', data);
+      console.log('[Liberteko] Donnees extraites:', data);
 
     } catch (error) {
-      console.error('[Assotheque] Erreur extraction:', error);
+      console.error('[Liberteko] Erreur extraction:', error);
     }
 
     return data;
@@ -255,32 +255,32 @@
    */
   function addImportButton() {
     // Verifier si le bouton existe deja
-    if (document.getElementById('assotheque-import-btn')) return;
+    if (document.getElementById('liberteko-import-btn')) return;
 
     const btn = document.createElement('div');
-    btn.id = 'assotheque-import-btn';
+    btn.id = 'liberteko-import-btn';
     btn.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="7 10 12 15 17 10"/>
         <line x1="12" y1="15" x2="12" y2="3"/>
       </svg>
-      <span>Assotheque</span>
+      <span>Liberteko</span>
     `;
-    btn.title = 'Importer vers Assotheque';
+    btn.title = 'Importer vers Liberteko';
     btn.onclick = () => {
       chrome.runtime.sendMessage({ action: 'openPopup' });
     };
 
     document.body.appendChild(btn);
-    console.log('[Assotheque] Bouton ajoute');
+    console.log('[Liberteko] Bouton ajoute');
   }
 
   /**
    * Retire le bouton d'import
    */
   function removeImportButton() {
-    const btn = document.getElementById('assotheque-import-btn');
+    const btn = document.getElementById('liberteko-import-btn');
     if (btn) {
       btn.remove();
     }
@@ -304,7 +304,7 @@
         if (hasContent) {
           addImportButton();
         } else {
-          console.log('[Assotheque] Timeout: contenu non trouve');
+          console.log('[Liberteko] Timeout: contenu non trouve');
         }
       }
     }, 500);
@@ -314,7 +314,7 @@
    * Ecoute les messages du popup
    */
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    console.log('[Assotheque] Message recu:', request);
+    console.log('[Liberteko] Message recu:', request);
 
     if (request.action === 'getGameData') {
       // Verifier d'abord si on est sur une page de jeu
@@ -337,12 +337,12 @@
    * Ecoute les changements de hash (navigation SPA)
    */
   window.addEventListener('hashchange', () => {
-    console.log('[Assotheque] Hash change detecte');
+    console.log('[Liberteko] Hash change detecte');
     checkIfGamePage();
   });
 
   // Initialisation
-  console.log('[Assotheque] Content script charge sur:', window.location.href);
+  console.log('[Liberteko] Content script charge sur:', window.location.href);
   checkIfGamePage();
 
 })();

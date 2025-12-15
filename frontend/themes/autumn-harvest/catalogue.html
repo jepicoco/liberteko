@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-name" content="autumn-harvest">
-  <title id="site-title">Catalogue - Assotheque</title>
+  <title id="site-title">Catalogue - Liberteko</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="/theme/css/theme.css">
   <style>
@@ -243,7 +243,7 @@
     <div class="header-container">
       <a href="/" class="logo">
         <i class="bi bi-tree"></i>
-        <span id="header-title">Assotheque</span>
+        <span id="header-title">Liberteko</span>
       </a>
       <nav>
         <ul class="nav-menu">
@@ -334,7 +334,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulse par Assotheque.</p>
+      <p>&copy; <span id="year"></span> <span id="footer-name"></span>. Propulse par Liberteko.</p>
     </div>
   </footer>
 
@@ -519,9 +519,9 @@
         const resp = await fetch('/api/public/parametres');
         if (!resp.ok) return;
         const data = await resp.json();
-        document.getElementById('site-title').textContent = `Catalogue - ${data.nom || 'Assotheque'}`;
-        document.getElementById('header-title').textContent = data.nom || 'Assotheque';
-        document.getElementById('footer-name').textContent = data.nom || 'Assotheque';
+        document.getElementById('site-title').textContent = `Catalogue - ${data.nom || 'Liberteko'}`;
+        document.getElementById('header-title').textContent = data.nom || 'Liberteko';
+        document.getElementById('footer-name').textContent = data.nom || 'Liberteko';
 
         // Show Plan link if module is active
         if (data.module_plan_interactif) {

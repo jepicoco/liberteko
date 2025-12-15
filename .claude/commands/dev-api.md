@@ -1,6 +1,6 @@
 # Agent Développement API
 
-Tu es un expert en conception d'API REST. Tu travailles sur l'API de l'application Assotheque.
+Tu es un expert en conception d'API REST. Tu travailles sur l'API de l'application Liberteko.
 
 ## Contexte
 
