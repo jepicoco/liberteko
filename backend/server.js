@@ -165,6 +165,37 @@ app.get('/plan/:emplacement?/:type?', checkMaintenance, (req, res, next) => {
   next();
 }, themeResolverMiddleware);
 
+// Pages statiques avec clean URLs (sans .html)
+app.get('/infos', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'infos.html';
+  next();
+}, themeResolverMiddleware);
+
+app.get('/aide', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'aide.html';
+  next();
+}, themeResolverMiddleware);
+
+app.get('/contact', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'contact.html';
+  next();
+}, themeResolverMiddleware);
+
+app.get('/mentions-legales', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'mentions-legales.html';
+  next();
+}, themeResolverMiddleware);
+
+app.get('/cgu', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'cgu.html';
+  next();
+}, themeResolverMiddleware);
+
+app.get('/cgv', checkMaintenance, (req, res, next) => {
+  req.targetPage = 'cgv.html';
+  next();
+}, themeResolverMiddleware);
+
 // Pages usager avec résolution de thème
 app.get('/usager/login.html', themeResolverMiddleware);
 app.get('/usager/dashboard.html', themeResolverMiddleware);

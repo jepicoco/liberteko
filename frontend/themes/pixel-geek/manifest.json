@@ -36,11 +36,13 @@
     "infos.html",
     "aide.html",
     "plan.html",
+    "contact.html",
     "usager/login.html",
     "usager/dashboard.html",
     "usager/emprunts.html",
     "usager/profil.html",
     "usager/forgot-password.html",
-    "usager/reset-password.html"
+    "usager/reset-password.html",
+    "usager/factures.html"
   ]
 }
