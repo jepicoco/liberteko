@@ -442,6 +442,17 @@ async function initTemplate(pageId) {
     // Charger les modules autorisés à l'utilisateur
     loadUserAllowedModules();
 
+    // Charger les couleurs des modules depuis l'API si le cache est expiré
+    if (typeof loadModuleColorsFromAPI === 'function') {
+        const cachedTimestamp = localStorage.getItem('moduleColorsTimestamp');
+        const cachedColors = localStorage.getItem('moduleColors');
+        const age = cachedTimestamp ? Date.now() - parseInt(cachedTimestamp) : Infinity;
+        // Rafraîchir si cache > 10 minutes ou inexistant
+        if (age > 10 * 60 * 1000 || !cachedColors) {
+            await loadModuleColorsFromAPI(); // Attendre pour avoir les bonnes couleurs au premier rendu
+        }
+    }
+
     // Déterminer la page active
     const activePage = pageId || getActivePageId();
 
