@@ -13,22 +13,8 @@
  * Rollback: node database/migrations/addModuleFrequentation.js down
  */
 
-const mysql = require('mysql2/promise');
-require('dotenv').config();
-
-const config = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'ludotheque',
-  port: process.env.DB_PORT || 3306
-};
-
-async function up() {
-  const connection = await mysql.createConnection(config);
-
-  try {
-    console.log('=== Migration: Add Frequentation Module ===\n');
+async function up(connection) {
+  console.log('=== Migration: Add Frequentation Module ===\n');
 
     // 1. Ajouter le module dans modules_actifs
     const [existing] = await connection.query(
@@ -216,60 +202,34 @@ async function up() {
     }
 
     console.log('\n=== Migration completed successfully ===');
-
-  } catch (error) {
-    console.error('Migration failed:', error.message);
-    throw error;
-  } finally {
-    await connection.end();
-  }
 }
 
-async function down() {
-  const connection = await mysql.createConnection(config);
+async function down(connection) {
+  console.log('=== Rollback: Remove Frequentation Module ===\n');
 
-  try {
-    console.log('=== Rollback: Remove Frequentation Module ===\n');
+  // Supprimer les tables dans l'ordre inverse (foreign keys)
+  await connection.query('DROP TABLE IF EXISTS api_key_questionnaires');
+  console.log('  - Table api_key_questionnaires dropped');
 
-    // Supprimer les tables dans l'ordre inverse (foreign keys)
-    await connection.query('DROP TABLE IF EXISTS api_key_questionnaires');
-    console.log('  - Table api_key_questionnaires dropped');
+  await connection.query('DROP TABLE IF EXISTS enregistrements_frequentation');
+  console.log('  - Table enregistrements_frequentation dropped');
 
-    await connection.query('DROP TABLE IF EXISTS enregistrements_frequentation');
-    console.log('  - Table enregistrements_frequentation dropped');
+  await connection.query('DROP TABLE IF EXISTS questionnaire_communes_favorites');
+  console.log('  - Table questionnaire_communes_favorites dropped');
 
-    await connection.query('DROP TABLE IF EXISTS questionnaire_communes_favorites');
-    console.log('  - Table questionnaire_communes_favorites dropped');
+  await connection.query('DROP TABLE IF EXISTS questionnaire_sites');
+  console.log('  - Table questionnaire_sites dropped');
 
-    await connection.query('DROP TABLE IF EXISTS questionnaire_sites');
-    console.log('  - Table questionnaire_sites dropped');
+  await connection.query('DROP TABLE IF EXISTS questionnaires_frequentation');
+  console.log('  - Table questionnaires_frequentation dropped');
 
-    await connection.query('DROP TABLE IF EXISTS questionnaires_frequentation');
-    console.log('  - Table questionnaires_frequentation dropped');
+  await connection.query('DROP TABLE IF EXISTS communes');
+  console.log('  - Table communes dropped');
 
-    await connection.query('DROP TABLE IF EXISTS communes');
-    console.log('  - Table communes dropped');
+  await connection.query(`DELETE FROM modules_actifs WHERE code = 'frequentation'`);
+  console.log('  - Module frequentation removed from modules_actifs');
 
-    await connection.query(`DELETE FROM modules_actifs WHERE code = 'frequentation'`);
-    console.log('  - Module frequentation removed from modules_actifs');
-
-    console.log('\n=== Rollback completed successfully ===');
-
-  } catch (error) {
-    console.error('Rollback failed:', error.message);
-    throw error;
-  } finally {
-    await connection.end();
-  }
-}
-
-// Execute based on command line argument
-const command = process.argv[2];
-
-if (command === 'down') {
-  down().then(() => process.exit(0)).catch(() => process.exit(1));
-} else {
-  up().then(() => process.exit(0)).catch(() => process.exit(1));
+  console.log('\n=== Rollback completed successfully ===');
 }
 
 module.exports = { up, down };
