@@ -92,7 +92,7 @@ async function searchCommunes(query) {
  * Recupere toutes les communes (pour cache offline)
  */
 async function getAllCommunes() {
-    return apiRequest('/api/external/frequentation/communes');
+    return apiRequest('/api/external/frequentation/communes/all');
 }
 
 /**

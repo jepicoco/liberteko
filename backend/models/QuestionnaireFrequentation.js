@@ -51,6 +51,28 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: 'ID utilisateur createur'
+    },
+    theme: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: 'default',
+      comment: 'Theme CSS pour la tablette (default, theme-dark, etc.)'
+    },
+    code_pin: {
+      type: DataTypes.STRING(4),
+      allowNull: false,
+      defaultValue: '0000',
+      comment: 'Code PIN pour acces admin sur tablette (4 chiffres)'
+    },
+    message_actif: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Message affiche au-dessus du formulaire quand actif'
+    },
+    message_inactif: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Message affiche quand le formulaire est inactif (remplace le formulaire)'
     }
   }, {
     tableName: 'questionnaires_frequentation',

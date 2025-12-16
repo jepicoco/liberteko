@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statistiques Frequentation - Administration</title>
+    <title>Statistiques Fréquentation - Administration</title>
+    <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="css/admin-common.css">
     <style>
         .stat-card {
             border-radius: 12px;
@@ -98,13 +98,16 @@
     </style>
 </head>
 <body>
-    <div id="admin-navbar"></div>
+    <!-- Navigation (généré par JS) -->
+    <nav id="admin-navbar"></nav>
 
-    <div class="container-fluid">
+    <div class="container-fluid mt-4">
         <div class="row">
-            <div id="admin-sidebar"></div>
+            <!-- Sidebar (généré par JS) -->
+            <div id="admin-sidebar" class="col-md-2 bg-light"></div>
 
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+            <!-- Main Content -->
+            <div class="col-md-10">
                 <!-- Header -->
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                     <h1 class="h2">
@@ -266,7 +269,7 @@
                     </div>
                 </div>
 
-            </main>
+            </div>
         </div>
     </div>
 
@@ -274,8 +277,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
-    <script src="js/admin-template.js"></script>
     <script src="js/api-admin.js"></script>
+    <script src="js/auth-admin.js"></script>
+    <script src="js/admin-navigation.js"></script>
+    <script src="js/admin-template.js"></script>
     <script>
         // Variables globales
         let chartEvolution = null;
@@ -286,17 +291,8 @@
 
         // Initialisation
         document.addEventListener('DOMContentLoaded', async () => {
-            // Verifier l'authentification
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                window.location.href = 'login.html';
-                return;
-            }
-
-            // Initialiser la navigation
-            if (typeof initAdminTemplate === 'function') {
-                await initAdminTemplate('frequentation');
-            }
+            // Initialiser le template (navbar + sidebar)
+            await initTemplate('frequentation');
 
             // Initialiser le datepicker
             initDatePicker();
@@ -329,7 +325,7 @@
         async function loadFiltres() {
             try {
                 // Charger les questionnaires
-                const questionnaires = await apiRequest('/api/frequentation/questionnaires');
+                const questionnaires = await apiRequest('/frequentation/questionnaires');
                 const selectQuestionnaire = document.getElementById('filterQuestionnaire');
                 questionnaires.forEach(q => {
                     const option = document.createElement('option');
@@ -339,7 +335,7 @@
                 });
 
                 // Charger les sites
-                const sites = await apiRequest('/api/sites');
+                const sites = await apiRequest('/sites');
                 const selectSite = document.getElementById('filterSite');
                 sites.forEach(s => {
                     const option = document.createElement('option');
@@ -383,7 +379,7 @@
                 params.append('groupement', groupement);
 
                 // Charger les stats
-                const stats = await apiRequest(`/api/frequentation/statistiques?${params.toString()}`);
+                const stats = await apiRequest(`/frequentation/statistiques?${params.toString()}`);
                 currentStats = stats;
 
                 // Mettre a jour les KPI

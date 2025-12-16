@@ -3,12 +3,13 @@
  * Gere le cache et le fonctionnement offline
  */
 
-const CACHE_NAME = 'frequentation-v1';
+const CACHE_NAME = 'frequentation-v6';
 const STATIC_ASSETS = [
     '/tablet/',
     '/tablet/index.html',
     '/tablet/setup.html',
-    '/tablet/css/tablet.css',
+    '/tablet/css/default.css',
+    '/tablet/css/theme-dark.css',
     '/tablet/js/app.js',
     '/tablet/js/api.js',
     '/tablet/js/storage.js',
@@ -51,6 +52,11 @@ self.addEventListener('activate', (event) => {
 // Fetch - strategie cache-first pour les assets, network-first pour l'API
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
+
+    // Ignorer les requetes non-http (chrome-extension, etc.)
+    if (!url.protocol.startsWith('http')) {
+        return;
+    }
 
     // Requetes API - network only (gerees par IndexedDB pour l'offline)
     if (url.pathname.startsWith('/api/')) {
@@ -128,8 +134,8 @@ self.addEventListener('push', (event) => {
         const data = event.data.json();
         const options = {
             body: data.body || 'Nouvelle notification',
-            icon: '/tablet/icons/icon-192.png',
-            badge: '/tablet/icons/icon-72.png'
+            icon: '/tablet/icons/icon.svg',
+            badge: '/tablet/icons/icon.svg'
         };
         event.waitUntil(
             self.registration.showNotification(data.title || 'Frequentation', options)

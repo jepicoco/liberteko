@@ -305,7 +305,8 @@ exports.generateQRCode = async (req, res) => {
  */
 exports.getStatistiques = async (req, res) => {
   try {
-    const { questionnaire_id, site_id, date_debut, date_fin, group_by } = req.query;
+    // Accepter groupement (frontend) ou group_by (legacy)
+    const { questionnaire_id, site_id, date_debut, date_fin, groupement, group_by } = req.query;
     const filters = {};
 
     if (questionnaire_id) filters.questionnaire_id = parseInt(questionnaire_id, 10);
@@ -313,28 +314,62 @@ exports.getStatistiques = async (req, res) => {
     if (date_debut) filters.date_debut = date_debut;
     if (date_fin) filters.date_fin = date_fin;
 
+    // Statistiques globales
     const global = await frequentationService.getStatistiques(filters);
 
-    let details;
-    switch (group_by) {
+    // Statistiques par periode (selon groupement)
+    const periodGrouping = groupement || group_by || 'jour';
+    let rawPeriode;
+    switch (periodGrouping) {
       case 'semaine':
-        details = await frequentationService.getStatistiquesParSemaine(filters);
+        rawPeriode = await frequentationService.getStatistiquesParSemaine(filters);
         break;
       case 'mois':
-        details = await frequentationService.getStatistiquesParMois(filters);
-        break;
-      case 'commune':
-        details = await frequentationService.getStatistiquesParCommune(filters);
+        rawPeriode = await frequentationService.getStatistiquesParMois(filters);
         break;
       case 'jour':
       default:
-        details = await frequentationService.getStatistiquesParJour(filters);
+        rawPeriode = await frequentationService.getStatistiquesParJour(filters);
         break;
     }
 
+    // Mapper pour le format attendu par le frontend
+    const parPeriode = rawPeriode.map(s => {
+      let periode;
+      if (s.date) {
+        periode = s.date;
+      } else if (s.semaine !== undefined) {
+        periode = `${s.annee}-S${String(s.semaine).padStart(2, '0')}`;
+      } else if (s.mois !== undefined) {
+        periode = `${s.annee}-${String(s.mois).padStart(2, '0')}`;
+      }
+      return {
+        periode,
+        adultes: parseInt(s.total_adultes) || 0,
+        enfants: parseInt(s.total_enfants) || 0,
+        total: parseInt(s.total_visiteurs) || 0,
+        nb_enregistrements: parseInt(s.nb_enregistrements) || 0
+      };
+    });
+
+    // Statistiques par commune (toujours incluses pour le top 10)
+    const communeStats = await frequentationService.getStatistiquesParCommune(filters);
+
+    // Mapper pour le format attendu par le frontend
+    const parCommune = communeStats.map(s => ({
+      commune_id: s.commune_id,
+      commune_nom: s.commune?.nom || 'Non renseigné',
+      code_postal: s.commune?.code_postal || '',
+      total: parseInt(s.total_visiteurs) || 0,
+      adultes: parseInt(s.total_adultes) || 0,
+      enfants: parseInt(s.total_enfants) || 0,
+      nb_enregistrements: parseInt(s.nb_enregistrements) || 0
+    }));
+
     res.json({
       global,
-      details,
+      parPeriode,
+      parCommune,
       filters
     });
   } catch (error) {

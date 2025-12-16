@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#6f42c1">
     <title>Configuration - Frequentation</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="css/tablet.css">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <link rel="stylesheet" href="css/default.css" id="theme-stylesheet">
 </head>
 <body>
     <div class="setup-container" id="setupMain">
@@ -98,6 +99,16 @@
             if (configured) {
                 // Deja configure, rediriger
                 window.location.href = 'index.html';
+                return;
+            }
+
+            // Pre-remplir le questionnaire ID depuis l'URL si present
+            const urlParams = new URLSearchParams(window.location.search);
+            const qId = urlParams.get('q');
+            if (qId) {
+                document.getElementById('questionnaireIdInput').value = qId;
+                // Afficher directement la config manuelle
+                showManualSetup();
             }
         });
 

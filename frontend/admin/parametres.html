@@ -530,6 +530,21 @@
                   </div>
                 </a>
               </div>
+
+              <!-- Referentiel communes - visible uniquement si module frequentation actif -->
+              <div class="col-md-6 col-lg-4" id="card-communes">
+                <a href="parametres-communes.html" class="text-decoration-none">
+                  <div class="card param-card border-info">
+                    <div class="card-body">
+                      <div class="icon-container bg-info bg-opacity-10">
+                        <i class="bi bi-geo-alt text-info"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Referentiel communes</h5>
+                      <p class="text-muted mb-0">Import et gestion des communes francaises</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -799,6 +814,12 @@
 
         const cardThematiques = document.getElementById('card-thematiques');
         if (cardThematiques) cardThematiques.style.display = 'none';
+      }
+
+      // Masquer la carte communes si le module frequentation n'est pas actif
+      if (!isModuleActive('frequentation')) {
+        const cardCommunes = document.getElementById('card-communes');
+        if (cardCommunes) cardCommunes.style.display = 'none';
       }
 
       // Masquer la carte Cles API si l'utilisateur n'est pas admin

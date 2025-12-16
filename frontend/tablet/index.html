@@ -3,27 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#6f42c1">
     <title>Frequentation</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="stylesheet" href="css/tablet.css">
+    <link rel="apple-touch-icon" href="icons/icon.svg">
+    <link rel="stylesheet" href="css/default.css" id="theme-stylesheet">
 </head>
 <body>
     <!-- Header -->
     <header class="app-header">
-        <h1 id="siteLabel">Frequentation</h1>
-        <div class="status-indicator">
+        <h1 id="siteLabel" class="admin-trigger">Frequentation</h1>
+        <div class="admin-zone">
+            <span class="admin-timer" onclick="exitAdminMode()"></span>
             <span class="status-dot"></span>
             <span class="status-text">En ligne</span>
             <button class="settings-btn" onclick="openSettings()" title="Parametres">&#9881;</button>
         </div>
     </header>
 
-    <!-- Contenu principal -->
-    <div class="app-container">
+    <!-- Message d'accueil (visible si actif et message defini) -->
+    <div class="welcome-message" id="welcomeMessage"></div>
+
+    <!-- Message d'indisponibilite (visible si inactif) -->
+    <div class="inactive-container" id="inactiveContainer">
+        <div class="inactive-icon">&#128683;</div>
+        <div class="inactive-message" id="inactiveMessage">
+            Le comptage des visiteurs est actuellement indisponible.
+        </div>
+    </div>
+
+    <!-- Contenu principal (cache si inactif) -->
+    <div class="app-container" id="appContainer">
         <!-- Compteurs -->
         <div class="card">
             <div class="card-header">Nombre de visiteurs</div>
@@ -77,12 +90,15 @@
             &#10003; VALIDER
         </button>
 
-        <!-- Dernier enregistrement -->
-        <div id="lastRecord"></div>
+        <!-- Dernier enregistrement (admin only) -->
+        <div id="lastRecord" class="admin-only"></div>
     </div>
 
-    <!-- Badge enregistrements en attente -->
-    <div class="pending-badge">0 en attente</div>
+    <!-- Badge erreur (visible si erreur) -->
+    <div class="error-badge" id="errorBadge">!</div>
+
+    <!-- Badge enregistrements en attente (admin only) -->
+    <div class="pending-badge admin-only">0 en attente</div>
 
     <!-- Modal recherche commune -->
     <div class="modal-overlay" id="communeModal">
@@ -99,6 +115,28 @@
             </div>
             <div class="modal-body" id="communeResults">
                 <!-- Resultats de recherche -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal PIN -->
+    <div class="modal-overlay" id="pinModal">
+        <div class="pin-modal">
+            <h3>Code PIN</h3>
+            <div class="pin-display" id="pinDisplay">____</div>
+            <div class="pin-keypad">
+                <button class="pin-key number" onclick="pinKeyPress('1')">1</button>
+                <button class="pin-key number" onclick="pinKeyPress('2')">2</button>
+                <button class="pin-key number" onclick="pinKeyPress('3')">3</button>
+                <button class="pin-key number" onclick="pinKeyPress('4')">4</button>
+                <button class="pin-key number" onclick="pinKeyPress('5')">5</button>
+                <button class="pin-key number" onclick="pinKeyPress('6')">6</button>
+                <button class="pin-key number" onclick="pinKeyPress('7')">7</button>
+                <button class="pin-key number" onclick="pinKeyPress('8')">8</button>
+                <button class="pin-key number" onclick="pinKeyPress('9')">9</button>
+                <button class="pin-key action clear" onclick="pinClear()">C</button>
+                <button class="pin-key number" onclick="pinKeyPress('0')">0</button>
+                <button class="pin-key action validate" id="pinValidateBtn" onclick="pinValidate()" disabled>OK</button>
             </div>
         </div>
     </div>

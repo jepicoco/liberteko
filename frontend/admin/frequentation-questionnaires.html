@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frequentation - Questionnaires</title>
+    <title>Fréquentation - Questionnaires</title>
+    <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="css/admin.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
         .questionnaire-card {
             border-left: 4px solid #17a2b8;
@@ -48,19 +48,19 @@
     </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <div id="admin-navbar"></div>
+    <!-- Navigation (généré par JS) -->
+    <nav id="admin-navbar"></nav>
 
-    <div class="container-fluid">
+    <div class="container-fluid mt-4">
         <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 sidebar" id="admin-sidebar"></div>
+            <!-- Sidebar (généré par JS) -->
+            <div id="admin-sidebar" class="col-md-2 bg-light"></div>
 
-            <!-- Contenu principal -->
-            <main class="col-md-9 col-lg-10 ms-sm-auto px-4 py-3">
+            <!-- Main Content -->
+            <div class="col-md-10">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h1 class="h3 mb-0"><i class="bi bi-people-fill me-2"></i>Frequentation</h1>
+                        <h1 class="h3 mb-0"><i class="bi bi-people-fill me-2"></i>Fréquentation</h1>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb mb-0">
                                 <li class="breadcrumb-item"><a href="dashboard.html">Dashboard</a></li>
@@ -69,6 +69,9 @@
                         </nav>
                     </div>
                     <div class="btn-group">
+                        <a href="parametres-communes.html" class="btn btn-outline-info" title="Gérer le référentiel des communes">
+                            <i class="bi bi-geo-alt me-1"></i>Communes
+                        </a>
                         <a href="frequentation-statistiques.html" class="btn btn-outline-secondary">
                             <i class="bi bi-graph-up me-1"></i>Statistiques
                         </a>
@@ -76,15 +79,6 @@
                             <i class="bi bi-plus-lg me-1"></i>Nouveau questionnaire
                         </button>
                     </div>
-                </div>
-
-                <!-- Alerte import communes -->
-                <div id="alert-communes" class="alert alert-info d-none">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <strong>Referentiel communes vide.</strong>
-                    <button class="btn btn-sm btn-info ms-2" onclick="importCommunes()">
-                        Importer les communes
-                    </button>
                 </div>
 
                 <!-- Liste des questionnaires -->
@@ -95,7 +89,7 @@
                         </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     </div>
 
@@ -146,6 +140,40 @@
                             <select class="form-select" id="site_id">
                                 <option value="">Chargement...</option>
                             </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="theme" class="form-label">Theme tablette</label>
+                            <select class="form-select" id="theme">
+                                <option value="default">Clair (defaut)</option>
+                                <option value="theme-dark">Sombre</option>
+                            </select>
+                            <small class="text-muted">Apparence de l'interface sur les tablettes</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="code_pin" class="form-label">Code PIN tablette</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="code_pin"
+                                       pattern="[0-9]{4}" maxlength="4"
+                                       placeholder="0000" value="0000">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePinVisibility()">
+                                    <i class="bi bi-eye" id="pin-toggle-icon"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted">Code a 4 chiffres pour acceder au mode admin (appui long sur le titre)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message_actif" class="form-label">Message d'accueil (formulaire actif)</label>
+                            <textarea class="form-control" id="message_actif" rows="2" placeholder="Message affiche au-dessus du formulaire..."></textarea>
+                            <small class="text-muted">Ce message s'affiche en haut de l'ecran quand le formulaire est actif</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message_inactif" class="form-label">Message d'indisponibilite (formulaire inactif)</label>
+                            <textarea class="form-control" id="message_inactif" rows="2" placeholder="Le comptage des visiteurs est actuellement ferme..."></textarea>
+                            <small class="text-muted">Ce message remplace le formulaire quand il est inactif ou hors periode</small>
                         </div>
 
                         <div class="mb-3">
@@ -274,9 +302,56 @@
         </div>
     </div>
 
+    <!-- Modal Configuration Manuelle -->
+    <div class="modal fade" id="manualConfigModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-gear me-2"></i>Configuration manuelle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-3">
+                        Utilisez ces parametres pour configurer manuellement la tablette depuis l'ecran de configuration.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">URL du serveur</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="config-server-url" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('config-server-url')" title="Copier">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ID du questionnaire</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control font-monospace" id="config-questionnaire-id" readonly>
+                            <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('config-questionnaire-id')" title="Copier">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 small mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        La cle API (stockee lors de sa creation) est egalement necessaire pour la configuration.
+                        <strong>Astuce :</strong> Utilisez le QR Code pour une configuration automatique.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/api-admin.js"></script>
+    <script src="js/auth-admin.js"></script>
     <script src="js/admin-navigation.js"></script>
     <script src="js/admin-template.js"></script>
     <script>
@@ -291,20 +366,14 @@
 
         async function loadData() {
             try {
-                // Charger questionnaires, sites, et verifier communes
-                const [questsRes, sitesRes, communesStats] = await Promise.all([
+                // Charger questionnaires et sites
+                const [questsRes, sitesRes] = await Promise.all([
                     apiAdmin.get('/frequentation/questionnaires'),
-                    apiAdmin.get('/sites'),
-                    apiAdmin.get('/communes/stats').catch(() => ({ total: 0 }))
+                    apiAdmin.get('/sites')
                 ]);
 
                 questionnaires = questsRes;
                 sites = sitesRes;
-
-                // Alerter si pas de communes
-                if (communesStats.total === 0) {
-                    document.getElementById('alert-communes').classList.remove('d-none');
-                }
 
                 renderQuestionnaires();
                 populateSiteSelect();
@@ -354,7 +423,10 @@
                                     </div>
                                 ` : ''}
                                 <div class="d-flex flex-wrap gap-1 mt-3">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="editQuestionnaire(${q.id})">
+                                    <a href="/tablet/?q=${q.id}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Ouvrir le formulaire">
+                                        <i class="bi bi-box-arrow-up-right"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editQuestionnaire(${q.id})" title="Modifier">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-info" onclick="openCommunesModal(${q.id})" title="Communes">
@@ -363,7 +435,7 @@
                                     <button class="btn btn-sm btn-outline-success" onclick="openTablettesModal(${q.id})" title="Tablettes">
                                         <i class="bi bi-tablet"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteQuestionnaire(${q.id})">
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteQuestionnaire(${q.id})" title="Supprimer">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -419,6 +491,10 @@
             document.getElementById('date_fin').value = q.date_fin || '';
             document.getElementById('multi_site').checked = q.multi_site;
             document.getElementById('site_id').value = q.site_id || '';
+            document.getElementById('theme').value = q.theme || 'default';
+            document.getElementById('code_pin').value = q.code_pin || '0000';
+            document.getElementById('message_actif').value = q.message_actif || '';
+            document.getElementById('message_inactif').value = q.message_inactif || '';
             document.getElementById('actif').checked = q.actif;
             document.getElementById('site-select-container').style.display = q.multi_site ? 'none' : 'block';
 
@@ -434,6 +510,10 @@
                 date_fin: document.getElementById('date_fin').value || null,
                 multi_site: document.getElementById('multi_site').checked,
                 site_id: document.getElementById('multi_site').checked ? null : document.getElementById('site_id').value,
+                theme: document.getElementById('theme').value,
+                code_pin: document.getElementById('code_pin').value || '0000',
+                message_actif: document.getElementById('message_actif').value || null,
+                message_inactif: document.getElementById('message_inactif').value || null,
                 actif: document.getElementById('actif').checked
             };
 
@@ -558,14 +638,32 @@
 
         async function loadApiKeys() {
             try {
-                apiKeys = await apiAdmin.get('/api-keys');
-                document.getElementById('new-tablet-apikey').innerHTML =
-                    '<option value="">Selectionner une cle API...</option>' +
-                    apiKeys.filter(k => k.actif).map(k =>
-                        `<option value="${k.id}">${escapeHtml(k.nom)} (${k.key_prefix})</option>`
-                    ).join('');
+                const response = await apiAdmin.get('/api-keys');
+                // L'API renvoie { success: true, data: [...] }
+                apiKeys = response.data || response || [];
+
+                // Filtrer les clés actives ET ayant au moins une permission frequentation
+                const frequentationKeys = apiKeys.filter(k => {
+                    if (!k.actif) return false;
+                    const perms = k.permissions || [];
+                    return perms.includes('frequentation:read') || perms.includes('frequentation:create');
+                });
+
+                const select = document.getElementById('new-tablet-apikey');
+                if (frequentationKeys.length === 0) {
+                    select.innerHTML =
+                        '<option value="">Aucune cle API avec droits frequentation</option>';
+                } else {
+                    select.innerHTML =
+                        '<option value="">Selectionner une cle API...</option>' +
+                        frequentationKeys.map(k =>
+                            `<option value="${k.id}">${escapeHtml(k.nom)} (${k.key_prefix})</option>`
+                        ).join('');
+                }
             } catch (error) {
                 console.error('Erreur chargement API keys:', error);
+                document.getElementById('new-tablet-apikey').innerHTML =
+                    '<option value="">Erreur de chargement</option>';
             }
         }
 
@@ -591,6 +689,9 @@
                                 <div class="btn-group">
                                     <button class="btn btn-sm btn-outline-primary" onclick="showQRCode(${questionnaireId}, ${t.api_key_id})" title="QR Code">
                                         <i class="bi bi-qr-code"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="showManualConfig(${questionnaireId})" title="Configuration manuelle">
+                                        <i class="bi bi-gear"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-danger" onclick="unlinkTablet(${questionnaireId}, ${t.api_key_id})">
                                         <i class="bi bi-trash"></i>
@@ -649,42 +750,32 @@
             }
         }
 
-        // Import communes
-        async function importCommunes() {
-            const result = await Swal.fire({
-                title: 'Importer les communes',
-                html: `
-                    <p>Importer les communes depuis data.gouv.fr</p>
-                    <div class="mb-3">
-                        <label class="form-label">Departements (laisser vide pour tous)</label>
-                        <input type="text" id="swal-departements" class="form-control" placeholder="74, 73, 01...">
-                    </div>
-                `,
-                showCancelButton: true,
-                confirmButtonText: 'Importer',
-                cancelButtonText: 'Annuler',
-                showLoaderOnConfirm: true,
-                preConfirm: async () => {
-                    const depInput = document.getElementById('swal-departements').value;
-                    const departements = depInput ? depInput.split(',').map(d => d.trim()) : null;
+        function showManualConfig(questionnaireId) {
+            // URL du serveur = origine actuelle
+            document.getElementById('config-server-url').value = window.location.origin;
+            document.getElementById('config-questionnaire-id').value = questionnaireId;
 
-                    try {
-                        const result = await apiAdmin.post('/communes/import/datagouv', { departements });
-                        return result;
-                    } catch (error) {
-                        Swal.showValidationMessage('Erreur: ' + error.message);
-                    }
-                }
+            new bootstrap.Modal(document.getElementById('manualConfigModal')).show();
+        }
+
+        function copyToClipboard(inputId) {
+            const input = document.getElementById(inputId);
+            input.select();
+            input.setSelectionRange(0, 99999); // Pour mobile
+            navigator.clipboard.writeText(input.value).then(() => {
+                // Feedback visuel temporaire
+                const btn = input.nextElementSibling;
+                const icon = btn.querySelector('i');
+                icon.classList.remove('bi-clipboard');
+                icon.classList.add('bi-check');
+                setTimeout(() => {
+                    icon.classList.remove('bi-check');
+                    icon.classList.add('bi-clipboard');
+                }, 1500);
+            }).catch(() => {
+                // Fallback pour anciens navigateurs
+                document.execCommand('copy');
             });
-
-            if (result.isConfirmed) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Import termine',
-                    html: `${result.value.results.created} communes creees<br>${result.value.results.updated} mises a jour`
-                });
-                document.getElementById('alert-communes').classList.add('d-none');
-            }
         }
 
         // Utilitaires
@@ -707,6 +798,21 @@
         document.getElementById('multi_site').addEventListener('change', function() {
             document.getElementById('site-select-container').style.display = this.checked ? 'none' : 'block';
         });
+
+        // Toggle PIN visibility
+        function togglePinVisibility() {
+            const pinInput = document.getElementById('code_pin');
+            const icon = document.getElementById('pin-toggle-icon');
+            if (pinInput.type === 'password') {
+                pinInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                pinInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        }
     </script>
 </body>
 </html>

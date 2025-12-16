@@ -11,6 +11,18 @@ const state = {
     config: null
 };
 
+// Etat du mode admin
+const adminState = {
+    isAdmin: false,
+    timeout: null,
+    timeRemaining: 60,
+    timerInterval: null,
+    longPressTimer: null,
+    longPressDuration: 3000, // 3 secondes
+    pinCode: '',
+    hasError: false
+};
+
 /**
  * Initialise l'application
  */
@@ -24,8 +36,9 @@ async function initApp() {
     const configured = await API.initAPI();
 
     if (!configured) {
-        // Rediriger vers setup
-        window.location.href = 'setup.html';
+        // Rediriger vers setup en conservant les parametres URL (ex: ?q=123)
+        const params = window.location.search;
+        window.location.href = 'setup.html' + params;
         return;
     }
 
@@ -34,8 +47,21 @@ async function initApp() {
         state.config = await API.getTabletConfig();
         console.log('[App] Config chargee:', state.config);
 
+        // Appliquer le theme
+        applyTheme(state.config.questionnaire?.theme);
+
         // Mettre a jour le header
         updateHeader();
+
+        // Mettre a jour l'etat du formulaire (actif/inactif)
+        updateFormState();
+
+        // Si inactif, ne pas charger le reste
+        if (state.config.questionnaire?.is_active === false) {
+            console.log('[App] Questionnaire inactif - interface limitee');
+            initAdminMode(); // Garder le mode admin disponible
+            return;
+        }
 
         // Charger les communes favorites
         await loadFavorites();
@@ -52,8 +78,28 @@ async function initApp() {
         // Mettre a jour le badge pending
         await Sync.updatePendingBadge();
 
+        // Ajouter click sur badge pour forcer sync
+        const badge = document.querySelector('.pending-badge');
+        if (badge) {
+            badge.style.cursor = 'pointer';
+            badge.addEventListener('click', async () => {
+                console.log('[App] Sync manuelle declenchee');
+                showMessage('Synchronisation en cours...', 'info');
+                await Sync.forceSyncNow();
+                const remaining = await Storage.getPendingCount();
+                if (remaining === 0) {
+                    showMessage('Synchronisation reussie!', 'success');
+                } else {
+                    showMessage(`${remaining} en attente`, 'warning');
+                }
+            });
+        }
+
         // Mettre a jour le statut
         Sync.updateConnectionStatus(navigator.onLine);
+
+        // Initialiser le mode admin (long press sur titre)
+        initAdminMode();
 
     } catch (error) {
         console.error('[App] Erreur initialisation:', error);
@@ -61,6 +107,20 @@ async function initApp() {
 
         // Essayer d'utiliser le cache local
         await loadFromCache();
+    }
+}
+
+/**
+ * Applique le theme CSS
+ * @param {string} theme - Nom du theme (default, theme-dark, etc.)
+ */
+function applyTheme(theme) {
+    const themeName = theme || 'default';
+    const stylesheet = document.getElementById('theme-stylesheet');
+    if (stylesheet) {
+        const cssFile = themeName === 'default' ? 'default.css' : `${themeName}.css`;
+        stylesheet.href = `css/${cssFile}`;
+        console.log('[App] Theme applique:', themeName);
     }
 }
 
@@ -79,6 +139,7 @@ async function loadFromCache() {
     const cachedConfig = await Storage.getConfig('tabletConfig');
     if (cachedConfig) {
         state.config = cachedConfig;
+        applyTheme(cachedConfig.questionnaire?.theme);
         updateHeader();
     }
 }
@@ -91,6 +152,71 @@ function updateHeader() {
     if (siteLabel && state.config) {
         siteLabel.textContent = state.config.site?.nom || 'Site non defini';
     }
+}
+
+/**
+ * Met a jour l'affichage selon l'etat actif/inactif du questionnaire
+ */
+function updateFormState() {
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const inactiveContainer = document.getElementById('inactiveContainer');
+    const inactiveMessage = document.getElementById('inactiveMessage');
+    const appContainer = document.getElementById('appContainer');
+
+    if (!state.config || !state.config.questionnaire) {
+        return;
+    }
+
+    const questionnaire = state.config.questionnaire;
+    const isActive = questionnaire.is_active !== false; // Par defaut actif si non specifie
+
+    if (isActive) {
+        // Formulaire actif
+        document.body.classList.remove('form-inactive');
+
+        // Afficher le message d'accueil si defini
+        if (questionnaire.message_actif && welcomeMessage) {
+            welcomeMessage.textContent = questionnaire.message_actif;
+            welcomeMessage.classList.add('visible');
+        } else if (welcomeMessage) {
+            welcomeMessage.classList.remove('visible');
+        }
+
+        // Cacher le conteneur inactif
+        if (inactiveContainer) {
+            inactiveContainer.classList.remove('visible');
+        }
+
+        // Afficher le formulaire
+        if (appContainer) {
+            appContainer.style.display = '';
+        }
+
+    } else {
+        // Formulaire inactif
+        document.body.classList.add('form-inactive');
+
+        // Cacher le message d'accueil
+        if (welcomeMessage) {
+            welcomeMessage.classList.remove('visible');
+        }
+
+        // Afficher le message d'indisponibilite
+        if (inactiveContainer) {
+            inactiveContainer.classList.add('visible');
+        }
+
+        if (inactiveMessage && questionnaire.message_inactif) {
+            inactiveMessage.textContent = questionnaire.message_inactif;
+        }
+
+        // Cacher le formulaire
+        if (appContainer) {
+            appContainer.style.display = 'none';
+        }
+    }
+
+    console.log('[App] Etat formulaire:', isActive ? 'actif' : 'inactif');
 }
 
 /**
@@ -479,6 +605,230 @@ function openSettings() {
     }
 }
 
+// =====================================
+// MODE ADMIN & PIN PROTECTION
+// =====================================
+
+/**
+ * Initialise le mode admin (detection appui long sur titre)
+ */
+function initAdminMode() {
+    const trigger = document.getElementById('siteLabel');
+    if (!trigger) return;
+
+    // Touch events pour mobile
+    trigger.addEventListener('touchstart', startLongPress, { passive: true });
+    trigger.addEventListener('touchend', cancelLongPress);
+    trigger.addEventListener('touchcancel', cancelLongPress);
+    trigger.addEventListener('touchmove', cancelLongPress);
+
+    // Mouse events pour desktop
+    trigger.addEventListener('mousedown', startLongPress);
+    trigger.addEventListener('mouseup', cancelLongPress);
+    trigger.addEventListener('mouseleave', cancelLongPress);
+
+    console.log('[Admin] Mode admin initialise');
+}
+
+/**
+ * Demarre le timer d'appui long
+ */
+function startLongPress(e) {
+    if (adminState.isAdmin) return; // Deja en mode admin
+
+    const trigger = document.getElementById('siteLabel');
+    trigger.classList.add('pressing');
+
+    adminState.longPressTimer = setTimeout(() => {
+        trigger.classList.remove('pressing');
+        showPinModal();
+    }, adminState.longPressDuration);
+}
+
+/**
+ * Annule le timer d'appui long
+ */
+function cancelLongPress() {
+    const trigger = document.getElementById('siteLabel');
+    if (trigger) trigger.classList.remove('pressing');
+
+    if (adminState.longPressTimer) {
+        clearTimeout(adminState.longPressTimer);
+        adminState.longPressTimer = null;
+    }
+}
+
+/**
+ * Affiche la modal PIN
+ */
+function showPinModal() {
+    adminState.pinCode = '';
+    updatePinDisplay();
+
+    const modal = document.getElementById('pinModal');
+    if (modal) {
+        modal.classList.add('show');
+    }
+}
+
+/**
+ * Ferme la modal PIN
+ */
+function hidePinModal() {
+    const modal = document.getElementById('pinModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    adminState.pinCode = '';
+    updatePinDisplay();
+}
+
+/**
+ * Gere l'appui sur une touche du clavier PIN
+ */
+function pinKeyPress(digit) {
+    if (adminState.pinCode.length >= 4) return;
+
+    adminState.pinCode += digit;
+    updatePinDisplay();
+
+    // Auto-validation si 4 chiffres
+    if (adminState.pinCode.length === 4) {
+        setTimeout(() => pinValidate(), 100);
+    }
+}
+
+/**
+ * Efface le code PIN
+ */
+function pinClear() {
+    adminState.pinCode = '';
+    updatePinDisplay();
+
+    // Retirer l'effet d'erreur
+    const display = document.getElementById('pinDisplay');
+    if (display) display.classList.remove('error');
+}
+
+/**
+ * Met a jour l'affichage du PIN
+ */
+function updatePinDisplay() {
+    const display = document.getElementById('pinDisplay');
+    const validateBtn = document.getElementById('pinValidateBtn');
+
+    if (display) {
+        const masked = adminState.pinCode.replace(/./g, '*').padEnd(4, '_');
+        display.textContent = masked;
+    }
+
+    if (validateBtn) {
+        validateBtn.disabled = adminState.pinCode.length !== 4;
+    }
+}
+
+/**
+ * Valide le code PIN
+ */
+function pinValidate() {
+    const correctPin = state.config?.questionnaire?.code_pin || '0000';
+
+    if (adminState.pinCode === correctPin) {
+        hidePinModal();
+        enterAdminMode();
+    } else {
+        // Afficher erreur
+        const display = document.getElementById('pinDisplay');
+        if (display) {
+            display.classList.add('error');
+        }
+
+        // Vibrer si supporte
+        if (navigator.vibrate) {
+            navigator.vibrate(200);
+        }
+
+        // Reset apres animation
+        setTimeout(() => {
+            pinClear();
+        }, 500);
+    }
+}
+
+/**
+ * Entre en mode admin
+ */
+function enterAdminMode() {
+    adminState.isAdmin = true;
+    adminState.timeRemaining = 60;
+
+    document.body.classList.add('admin-mode');
+
+    // Demarrer le timer
+    updateAdminTimer();
+    adminState.timerInterval = setInterval(() => {
+        adminState.timeRemaining--;
+        updateAdminTimer();
+
+        if (adminState.timeRemaining <= 0) {
+            exitAdminMode();
+        }
+    }, 1000);
+
+    console.log('[Admin] Mode admin active');
+}
+
+/**
+ * Sort du mode admin
+ */
+function exitAdminMode() {
+    adminState.isAdmin = false;
+
+    if (adminState.timerInterval) {
+        clearInterval(adminState.timerInterval);
+        adminState.timerInterval = null;
+    }
+
+    document.body.classList.remove('admin-mode');
+
+    console.log('[Admin] Mode admin desactive');
+}
+
+/**
+ * Met a jour l'affichage du timer admin
+ */
+function updateAdminTimer() {
+    const timer = document.querySelector('.admin-timer');
+    if (timer) {
+        timer.textContent = `Admin: ${adminState.timeRemaining}s`;
+    }
+}
+
+/**
+ * Met a jour le badge d'erreur
+ */
+function updateErrorBadge(hasError) {
+    adminState.hasError = hasError;
+    const badge = document.getElementById('errorBadge');
+    if (badge) {
+        badge.classList.toggle('visible', hasError);
+    }
+}
+
+/**
+ * Affiche une erreur (appelable depuis sync.js)
+ */
+function showSyncError() {
+    updateErrorBadge(true);
+}
+
+/**
+ * Masque l'erreur (appelable depuis sync.js)
+ */
+function hideSyncError() {
+    updateErrorBadge(false);
+}
+
 // Exposer les fonctions globalement
 window.incrementCounter = incrementCounter;
 window.decrementCounter = decrementCounter;
@@ -489,6 +839,14 @@ window.closeCommuneModal = closeCommuneModal;
 window.searchCommunes = searchCommunes;
 window.selectCommuneFromSearch = selectCommuneFromSearch;
 window.openSettings = openSettings;
+
+// Fonctions admin/PIN
+window.pinKeyPress = pinKeyPress;
+window.pinClear = pinClear;
+window.pinValidate = pinValidate;
+window.exitAdminMode = exitAdminMode;
+window.showSyncError = showSyncError;
+window.hideSyncError = hideSyncError;
 
 // Initialiser au chargement
 document.addEventListener('DOMContentLoaded', initApp);

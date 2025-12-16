@@ -1,19 +1,21 @@
 /**
- * Styles PWA Tablette Frequentation
- * Interface optimisee pour ecrans tactiles
+ * Theme Dark - PWA Tablette Frequentation
+ * Interface sombre optimisee pour ecrans tactiles
  */
 
 :root {
-    --primary-color: #6f42c1;
-    --primary-dark: #5a32a3;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --info-color: #17a2b8;
-    --light-bg: #f8f9fa;
-    --border-color: #dee2e6;
-    --text-muted: #6c757d;
-    --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --primary-color: #7c4dff;
+    --primary-dark: #651fff;
+    --success-color: #00e676;
+    --warning-color: #ffea00;
+    --danger-color: #ff5252;
+    --info-color: #40c4ff;
+    --light-bg: #1a1a2e;
+    --card-bg: #16213e;
+    --border-color: #0f3460;
+    --text-muted: #94a3b8;
+    --text-color: #e2e8f0;
+    --shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     --radius: 16px;
     --radius-sm: 8px;
 }
@@ -30,7 +32,7 @@ html, body {
     font-size: 16px;
     line-height: 1.5;
     background: var(--light-bg);
-    color: #333;
+    color: var(--text-color);
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -95,15 +97,16 @@ html, body {
 
 /* Cartes */
 .card {
-    background: white;
+    background: var(--card-bg);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     margin-bottom: 1.5rem;
     overflow: hidden;
+    border: 1px solid var(--border-color);
 }
 
 .card-header {
-    background: var(--light-bg);
+    background: rgba(0, 0, 0, 0.2);
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border-color);
     font-weight: 600;
@@ -134,7 +137,7 @@ html, body {
 .counter-label {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #333;
+    color: var(--text-color);
     min-width: 100px;
 }
 
@@ -163,8 +166,9 @@ html, body {
 }
 
 .counter-btn.minus {
-    background: #f8d7da;
+    background: rgba(255, 82, 82, 0.2);
     color: var(--danger-color);
+    border: 2px solid var(--danger-color);
 }
 
 .counter-btn.minus:active {
@@ -173,8 +177,9 @@ html, body {
 }
 
 .counter-btn.plus {
-    background: #d4edda;
+    background: rgba(0, 230, 118, 0.2);
     color: var(--success-color);
+    border: 2px solid var(--success-color);
 }
 
 .counter-btn.plus:active {
@@ -194,9 +199,10 @@ html, body {
 .total-display {
     text-align: center;
     padding: 1rem;
-    background: var(--light-bg);
+    background: rgba(124, 77, 255, 0.15);
     border-radius: var(--radius-sm);
     margin-top: 0.5rem;
+    border: 1px solid var(--primary-color);
 }
 
 .total-value {
@@ -221,7 +227,8 @@ html, body {
     padding: 1rem 0.5rem;
     border: 2px solid var(--border-color);
     border-radius: var(--radius-sm);
-    background: white;
+    background: var(--card-bg);
+    color: var(--text-color);
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
@@ -242,8 +249,9 @@ html, body {
 }
 
 .commune-btn.autre {
-    background: var(--light-bg);
+    background: rgba(255, 255, 255, 0.05);
     border-style: dashed;
+    border-color: var(--text-muted);
 }
 
 /* Selection commune */
@@ -252,9 +260,10 @@ html, body {
     align-items: center;
     gap: 0.75rem;
     padding: 1rem;
-    background: var(--light-bg);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-sm);
     margin-top: 1rem;
+    border: 1px solid var(--border-color);
 }
 
 .commune-selection-icon {
@@ -265,7 +274,7 @@ html, body {
     justify-content: center;
     border-radius: 50%;
     background: var(--success-color);
-    color: white;
+    color: #1a1a2e;
     font-size: 1rem;
 }
 
@@ -313,6 +322,7 @@ html, body {
     background: var(--text-muted);
     cursor: not-allowed;
     transform: none;
+    opacity: 0.5;
 }
 
 /* Dernier enregistrement */
@@ -321,7 +331,8 @@ html, body {
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
-    background: #d4edda;
+    background: rgba(0, 230, 118, 0.15);
+    border: 1px solid var(--success-color);
     border-radius: var(--radius-sm);
     margin-top: 1rem;
     font-size: 0.9rem;
@@ -343,7 +354,7 @@ html, body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -359,7 +370,7 @@ html, body {
 }
 
 .modal-content {
-    background: white;
+    background: var(--card-bg);
     width: 100%;
     max-width: 600px;
     max-height: 80vh;
@@ -368,6 +379,8 @@ html, body {
     transition: transform 0.3s ease;
     display: flex;
     flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
 }
 
 .modal-overlay.show .modal-content {
@@ -402,10 +415,16 @@ html, body {
     border-radius: var(--radius-sm);
     font-size: 1rem;
     outline: none;
+    background: var(--light-bg);
+    color: var(--text-color);
 }
 
 .modal-search input:focus {
     border-color: var(--primary-color);
+}
+
+.modal-search input::placeholder {
+    color: var(--text-muted);
 }
 
 .modal-body {
@@ -422,7 +441,7 @@ html, body {
 }
 
 .commune-list-item:active {
-    background: var(--light-bg);
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .commune-list-item-name {
@@ -456,6 +475,7 @@ html, body {
     justify-content: center;
     color: white;
     font-size: 3rem;
+    box-shadow: var(--shadow);
 }
 
 .setup-title {
@@ -512,11 +532,17 @@ html, body {
     font-size: 1rem;
     margin-bottom: 1rem;
     text-align: center;
+    background: var(--card-bg);
+    color: var(--text-color);
 }
 
 .manual-setup input:focus {
     border-color: var(--primary-color);
     outline: none;
+}
+
+.manual-setup input::placeholder {
+    color: var(--text-muted);
 }
 
 /* Messages */
@@ -528,18 +554,27 @@ html, body {
 }
 
 .message.success {
-    background: #d4edda;
-    color: #155724;
+    background: rgba(0, 230, 118, 0.15);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
 }
 
 .message.error {
-    background: #f8d7da;
-    color: #721c24;
+    background: rgba(255, 82, 82, 0.15);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
 }
 
 .message.warning {
-    background: #fff3cd;
-    color: #856404;
+    background: rgba(255, 234, 0, 0.15);
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+}
+
+.message.info {
+    background: rgba(64, 196, 255, 0.15);
+    color: var(--info-color);
+    border: 1px solid var(--info-color);
 }
 
 /* Pending count badge */
@@ -548,7 +583,7 @@ html, body {
     bottom: 1.5rem;
     right: 1.5rem;
     background: var(--warning-color);
-    color: #000;
+    color: #1a1a2e;
     padding: 0.5rem 1rem;
     border-radius: 20px;
     font-weight: 600;
@@ -613,4 +648,224 @@ html, body {
         padding: 1.5rem;
         font-size: 1.75rem;
     }
+}
+
+/* ================================
+   MODE ADMIN & PIN PROTECTION
+   ================================ */
+
+/* Zone admin dans le header (cachee par defaut) */
+.admin-zone {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-zone.visible {
+    display: flex;
+}
+
+/* Timer mode admin */
+.admin-timer {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+
+/* Elements visibles uniquement en mode admin */
+.admin-only {
+    display: none !important;
+}
+
+body.admin-mode .admin-only {
+    display: block !important;
+}
+
+body.admin-mode .admin-zone {
+    display: flex !important;
+}
+
+/* Badge erreur (toujours visible si erreur) */
+.error-badge {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1.5rem;
+    width: 40px;
+    height: 40px;
+    background: var(--warning-color);
+    color: #1a1a2e;
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    box-shadow: var(--shadow);
+    z-index: 50;
+}
+
+.error-badge.visible {
+    display: flex;
+}
+
+/* Modal PIN */
+.pin-modal {
+    background: var(--card-bg);
+    width: 90%;
+    max-width: 320px;
+    border-radius: var(--radius);
+    padding: 2rem;
+    text-align: center;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-color);
+}
+
+.pin-modal h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.25rem;
+    color: var(--text-color);
+}
+
+.pin-display {
+    font-family: monospace;
+    font-size: 2.5rem;
+    letter-spacing: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background: var(--light-bg);
+    border-radius: var(--radius-sm);
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+}
+
+.pin-display.error {
+    animation: shake 0.3s ease;
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+.pin-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.pin-key {
+    width: 100%;
+    aspect-ratio: 1;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 1.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pin-key:active {
+    transform: scale(0.95);
+}
+
+.pin-key.number {
+    background: var(--light-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.pin-key.number:active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.pin-key.action {
+    background: var(--border-color);
+    color: var(--text-muted);
+}
+
+.pin-key.action.clear {
+    color: var(--danger-color);
+}
+
+.pin-key.action.validate {
+    background: var(--primary-color);
+    color: white;
+}
+
+.pin-key.action.validate:disabled {
+    background: var(--border-color);
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+/* Titre cliquable pour admin */
+.admin-trigger {
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.admin-trigger.pressing {
+    opacity: 0.7;
+}
+
+/* ================================
+   MESSAGE D'ACCUEIL & INACTIVITE
+   ================================ */
+
+/* Message d'accueil (visible si actif) */
+.welcome-message {
+    display: none;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    text-align: center;
+    font-size: 1.1rem;
+    line-height: 1.4;
+}
+
+.welcome-message.visible {
+    display: block;
+}
+
+/* Conteneur inactif (remplace le formulaire) */
+.inactive-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 80px);
+    padding: 2rem;
+    text-align: center;
+}
+
+.inactive-container.visible {
+    display: flex;
+}
+
+.inactive-icon {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.6;
+}
+
+.inactive-message {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+/* Cacher le conteneur principal si inactif */
+body.form-inactive .app-container {
+    display: none;
 }

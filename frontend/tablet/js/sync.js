@@ -101,20 +101,33 @@ async function doSync() {
         // Envoyer en batch
         const result = await API.syncRecords(pendingRecords);
 
-        if (result.success) {
-            // Supprimer les enregistrements synchronises
-            const syncedIds = result.synced || pendingRecords.map(r => r.local_id);
-            await Storage.removePendingRecords(syncedIds);
+        // L'API retourne { results: [...], synced: number, errors: number }
+        console.log('[Sync] Resultat:', result);
 
-            // Ajouter a l'historique
-            for (const record of pendingRecords) {
-                if (syncedIds.includes(record.local_id)) {
-                    record.sync_status = 'synced';
-                    await Storage.addToHistory(record);
+        if (result && result.results) {
+            // Extraire les IDs des enregistrements synchronises avec succes
+            const syncedIds = result.results
+                .filter(r => r.success)
+                .map(r => r.local_id);
+
+            if (syncedIds.length > 0) {
+                // Supprimer les enregistrements synchronises
+                await Storage.removePendingRecords(syncedIds);
+
+                // Ajouter a l'historique
+                for (const record of pendingRecords) {
+                    if (syncedIds.includes(record.local_id)) {
+                        record.sync_status = 'synced';
+                        await Storage.addToHistory(record);
+                    }
                 }
+
+                console.log(`[Sync] ${syncedIds.length} enregistrements synchronises`);
             }
 
-            console.log(`[Sync] ${syncedIds.length} enregistrements synchronises`);
+            if (result.errors > 0) {
+                console.warn(`[Sync] ${result.errors} erreurs`);
+            }
 
             // Mettre a jour l'UI
             updatePendingBadge();

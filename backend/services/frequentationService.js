@@ -95,7 +95,11 @@ class FrequentationService {
       date_fin: data.date_fin || null,
       multi_site: data.multi_site || false,
       site_id: data.multi_site ? null : data.site_id,
-      cree_par: userId
+      cree_par: userId,
+      theme: data.theme || 'default',
+      code_pin: data.code_pin || '0000',
+      message_actif: data.message_actif || null,
+      message_inactif: data.message_inactif || null
     });
 
     // Ajouter les communes favorites initiales
@@ -133,7 +137,11 @@ class FrequentationService {
       date_debut: data.date_debut !== undefined ? data.date_debut : questionnaire.date_debut,
       date_fin: data.date_fin !== undefined ? data.date_fin : questionnaire.date_fin,
       multi_site: data.multi_site !== undefined ? data.multi_site : questionnaire.multi_site,
-      site_id: data.multi_site ? null : (data.site_id !== undefined ? data.site_id : questionnaire.site_id)
+      site_id: data.multi_site ? null : (data.site_id !== undefined ? data.site_id : questionnaire.site_id),
+      theme: data.theme !== undefined ? data.theme : questionnaire.theme,
+      code_pin: data.code_pin !== undefined ? data.code_pin : questionnaire.code_pin,
+      message_actif: data.message_actif !== undefined ? data.message_actif : questionnaire.message_actif,
+      message_inactif: data.message_inactif !== undefined ? data.message_inactif : questionnaire.message_inactif
     });
 
     logger.info(`Questionnaire frequentation mis a jour: ${questionnaire.nom} (id: ${id})`);
@@ -418,7 +426,7 @@ class FrequentationService {
     const where = this._buildWhereClause(filters);
     where.commune_id = { [Op.not]: null };
 
-    return EnregistrementFrequentation.findAll({
+    const results = await EnregistrementFrequentation.findAll({
       where,
       attributes: [
         'commune_id',
@@ -434,6 +442,9 @@ class FrequentationService {
       order: [[sequelize.literal('total_visiteurs'), 'DESC']],
       limit
     });
+
+    // Convertir en objets simples pour éviter les problèmes avec dataValues
+    return results.map(r => r.get({ plain: true }));
   }
 
   /**

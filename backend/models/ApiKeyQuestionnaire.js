@@ -53,8 +53,8 @@ module.exports = (sequelize) => {
       include: [
         {
           model: models.QuestionnaireFrequentation,
-          as: 'questionnaire',
-          where: { actif: true }
+          as: 'questionnaire'
+          // Note: on ne filtre plus par actif pour pouvoir afficher message_inactif
         },
         {
           model: models.Site,
@@ -63,27 +63,33 @@ module.exports = (sequelize) => {
       ]
     });
 
-    if (!liaison) {
+    if (!liaison || !liaison.questionnaire) {
       return null;
     }
 
-    // Verifier que le questionnaire est actuellement actif
-    if (!liaison.questionnaire.isCurrentlyActive()) {
-      return null;
-    }
+    // Determiner si le questionnaire est actuellement actif
+    const isActive = liaison.questionnaire.isCurrentlyActive();
 
-    // Charger les communes favorites
-    const favorites = await models.QuestionnaireCommuneFavorite.getFavorites(
-      liaison.questionnaire_id,
-      8,
-      models
-    );
+    // Charger les communes favorites (seulement si actif)
+    let favorites = [];
+    if (isActive) {
+      favorites = await models.QuestionnaireCommuneFavorite.getFavorites(
+        liaison.questionnaire_id,
+        8,
+        models
+      );
+    }
 
     return {
       questionnaire: {
         id: liaison.questionnaire.id,
         nom: liaison.questionnaire.nom,
-        description: liaison.questionnaire.description
+        description: liaison.questionnaire.description,
+        theme: liaison.questionnaire.theme || 'default',
+        code_pin: liaison.questionnaire.code_pin || '0000',
+        is_active: isActive,
+        message_actif: liaison.questionnaire.message_actif || null,
+        message_inactif: liaison.questionnaire.message_inactif || null
       },
       site: {
         id: liaison.site.id,
