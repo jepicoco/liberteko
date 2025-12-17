@@ -78,6 +78,13 @@ const PARAMETRES_CATEGORIES = {
       { id: 'archives', label: 'Archives RGPD', href: 'parametres-archives.html', icon: 'bi-archive' },
       { id: 'thematiques', label: 'Thematiques IA', href: 'parametres-thematiques.html', icon: 'bi-tags', module: 'recherche_ia' }
     ]
+  },
+  systeme: {
+    label: 'Systeme',
+    icon: 'bi-gear-wide-connected',
+    pages: [
+      { id: 'migrations', label: 'Migrations', href: 'parametres-migrations.html', icon: 'bi-database-gear', adminOnly: true }
+    ]
   }
 };
 
@@ -156,7 +163,8 @@ function getParametresLink(category) {
     emprunts: 'emprunts',
     catalogue: 'catalogue',
     'site-web': 'site-web',
-    outils: 'outils'
+    outils: 'outils',
+    systeme: 'systeme'
   };
   return `parametres.html#${tabMap[category] || 'general'}`;
 }

@@ -35,4 +35,13 @@ async function down() {
   }
 }
 
+// Auto-execution
+if (require.main === module) {
+  const command = process.argv[2];
+  const run = command === 'down' ? down : up;
+  run()
+    .then(() => process.exit(0))
+    .catch(err => { console.error(err); process.exit(1); });
+}
+
 module.exports = { up, down };

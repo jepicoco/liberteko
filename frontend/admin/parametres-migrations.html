@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Migrations - Systeme - Ludotheque Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <style>
+    .migration-header {
+      background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+      color: white;
+      padding: 2rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+    }
+    .migration-header h1 {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .migration-header .subtitle {
+      opacity: 0.8;
+      margin-top: 0.5rem;
+    }
+    .version-badge {
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .status-card {
+      border-radius: 12px;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .status-card.has-pending {
+      border: 2px solid #ffc107;
+    }
+    .status-card.all-done {
+      border: 2px solid #28a745;
+    }
+
+    .run-btn {
+      padding: 1rem 2rem;
+      font-size: 1.1rem;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    .run-btn:not(:disabled):hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    .run-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    @keyframes pulse-warning {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+      50% { box-shadow: 0 0 0 15px rgba(255, 193, 7, 0); }
+    }
+    .pulse-warning {
+      animation: pulse-warning 2s infinite;
+    }
+
+    .migration-list {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .migration-item {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #eee;
+      transition: background 0.2s;
+    }
+    .migration-item:hover {
+      background: #f8f9fa;
+    }
+    .migration-item:last-child {
+      border-bottom: none;
+    }
+    .migration-item .status-icon {
+      width: 32px;
+      font-size: 1.2rem;
+    }
+    .migration-item .name {
+      flex: 1;
+      font-family: monospace;
+      font-size: 0.9rem;
+    }
+    .migration-item .batch {
+      color: #6c757d;
+      font-size: 0.8rem;
+    }
+    .migration-item .date {
+      color: #6c757d;
+      font-size: 0.8rem;
+      width: 150px;
+      text-align: right;
+    }
+    .migration-item.pending {
+      background: #fff8e1;
+    }
+
+    .alert-results {
+      margin-top: 1rem;
+    }
+    .results-list {
+      max-height: 200px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Sub-navigation -->
+        <div id="sub-nav-container"></div>
+
+        <!-- Header -->
+        <div class="migration-header">
+          <h1>
+            <i class="bi bi-database-gear"></i>
+            Gestion des Migrations
+            <span class="version-badge" id="version-display">v--</span>
+          </h1>
+          <p class="subtitle mb-0">
+            Gerez les migrations de base de donnees de l'application
+          </p>
+        </div>
+
+        <!-- Status Card -->
+        <div class="row mb-4">
+          <div class="col-md-8">
+            <div class="card status-card" id="status-card">
+              <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div>
+                    <h5 class="mb-1" id="status-title">
+                      <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                      Verification en cours...
+                    </h5>
+                    <p class="text-muted mb-0" id="status-subtitle">
+                      Chargement du statut des migrations
+                    </p>
+                  </div>
+                  <div class="text-end">
+                    <button class="btn btn-primary run-btn" id="run-btn" disabled onclick="runMigrations()">
+                      <i class="bi bi-play-fill me-2"></i>
+                      Executer les migrations
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="row text-center">
+                  <div class="col-6">
+                    <div class="h3 mb-0 text-success" id="count-executed">--</div>
+                    <small class="text-muted">Executees</small>
+                  </div>
+                  <div class="col-6">
+                    <div class="h3 mb-0 text-warning" id="count-pending">--</div>
+                    <small class="text-muted">En attente</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results area (hidden by default) -->
+        <div class="alert alert-results" id="results-area" style="display: none;">
+        </div>
+
+        <!-- Migrations List -->
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-ul me-2"></i>Historique des migrations</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="loadMigrations()">
+              <i class="bi bi-arrow-clockwise"></i> Actualiser
+            </button>
+          </div>
+          <div class="card-body p-0">
+            <div class="migration-list" id="migration-list">
+              <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 text-muted">Chargement...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="alert alert-info mt-4">
+          <i class="bi bi-info-circle me-2"></i>
+          <strong>Information :</strong> Les migrations sont des scripts qui modifient la structure de la base de donnees.
+          Elles sont executees automatiquement lors des mises a jour, mais peuvent aussi etre lancees manuellement depuis cette page.
+        </div>
+
+        <!-- Spacer -->
+        <div style="height: 3rem;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let migrationData = null;
+
+    // Initialisation
+    initTemplate('parametres');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSubNav('systeme', 'migrations');
+
+      // Verifier que l'utilisateur est admin
+      const userRole = localStorage.getItem('userRole');
+      if (userRole !== 'administrateur') {
+        document.querySelector('.col-md-10').innerHTML = `
+          <div class="alert alert-danger mt-4">
+            <i class="bi bi-shield-exclamation"></i>
+            <strong>Acces refuse</strong> - Cette page est reservee aux administrateurs.
+          </div>
+        `;
+        return;
+      }
+
+      await loadVersion();
+      await loadMigrations();
+    });
+
+    async function loadVersion() {
+      try {
+        const response = await fetch('/api/system/version');
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('version-display').textContent = `v${data.version}`;
+        }
+      } catch (error) {
+        console.error('Erreur chargement version:', error);
+      }
+    }
+
+    async function loadMigrations() {
+      try {
+        const token = getAuthToken();
+        if (!token) {
+          throw new Error('Session expiree');
+        }
+
+        const response = await fetch('/api/system/migrations', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur chargement');
+        }
+
+        migrationData = await response.json();
+        renderStatus();
+        renderMigrationList();
+
+      } catch (error) {
+        console.error('Erreur:', error);
+        document.getElementById('migration-list').innerHTML = `
+          <div class="text-center py-4 text-danger">
+            <i class="bi bi-exclamation-triangle"></i>
+            Erreur de chargement: ${error.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderStatus() {
+      const statusCard = document.getElementById('status-card');
+      const statusTitle = document.getElementById('status-title');
+      const statusSubtitle = document.getElementById('status-subtitle');
+      const runBtn = document.getElementById('run-btn');
+      const countExecuted = document.getElementById('count-executed');
+      const countPending = document.getElementById('count-pending');
+
+      countExecuted.textContent = migrationData.executedCount;
+      countPending.textContent = migrationData.pendingCount;
+
+      if (migrationData.hasPending) {
+        statusCard.classList.remove('all-done');
+        statusCard.classList.add('has-pending');
+
+        statusTitle.innerHTML = `
+          <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+          ${migrationData.pendingCount} migration(s) en attente
+        `;
+        statusSubtitle.textContent = 'Cliquez sur le bouton pour executer les migrations';
+
+        runBtn.disabled = false;
+        runBtn.classList.remove('btn-secondary');
+        runBtn.classList.add('btn-warning', 'pulse-warning');
+      } else {
+        statusCard.classList.remove('has-pending');
+        statusCard.classList.add('all-done');
+
+        statusTitle.innerHTML = `
+          <i class="bi bi-check-circle text-success me-2"></i>
+          Toutes les migrations sont a jour
+        `;
+        statusSubtitle.textContent = `${migrationData.executedCount} migration(s) executee(s)`;
+
+        runBtn.disabled = true;
+        runBtn.classList.remove('btn-warning', 'pulse-warning');
+        runBtn.classList.add('btn-secondary');
+        runBtn.innerHTML = '<i class="bi bi-check me-2"></i>A jour';
+      }
+    }
+
+    function renderMigrationList() {
+      const container = document.getElementById('migration-list');
+
+      // Combiner et trier: en attente en haut, puis executees par date decroissante
+      const all = [
+        ...migrationData.pending,
+        ...migrationData.executed.reverse()
+      ];
+
+      if (all.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            Aucune migration trouvee
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = all.map(m => {
+        const isPending = m.status === 'pending';
+        const icon = isPending ? 'hourglass-split text-warning' : 'check-circle text-success';
+        const dateStr = m.executedAt
+          ? new Date(m.executedAt).toLocaleString('fr-FR')
+          : 'En attente';
+
+        return `
+          <div class="migration-item ${isPending ? 'pending' : ''}">
+            <div class="status-icon">
+              <i class="bi bi-${icon}"></i>
+            </div>
+            <div class="name">${m.name}</div>
+            ${m.batch ? `<span class="batch badge bg-light text-dark">Batch ${m.batch}</span>` : ''}
+            <div class="date">${dateStr}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function runMigrations() {
+      const runBtn = document.getElementById('run-btn');
+      const resultsArea = document.getElementById('results-area');
+
+      // Confirmation
+      if (!confirm(`Voulez-vous executer ${migrationData.pendingCount} migration(s) ?\n\nCette action va modifier la structure de la base de donnees.`)) {
+        return;
+      }
+
+      // Desactiver le bouton
+      runBtn.disabled = true;
+      runBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Execution...';
+      runBtn.classList.remove('pulse-warning');
+
+      try {
+        const token = getAuthToken();
+        const response = await fetch('/api/system/migrations/run', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          resultsArea.className = 'alert alert-results alert-success';
+          resultsArea.innerHTML = `
+            <i class="bi bi-check-circle me-2"></i>
+            <strong>Succes !</strong> ${result.executed.length} migration(s) executee(s) (batch ${result.batch})
+            ${result.executed.length > 0 ? `
+              <div class="results-list mt-2">
+                ${result.executed.map(e => `<div>+ ${e.name} - ${e.status}</div>`).join('')}
+              </div>
+            ` : ''}
+          `;
+        } else {
+          resultsArea.className = 'alert alert-results alert-danger';
+          resultsArea.innerHTML = `
+            <i class="bi bi-x-circle me-2"></i>
+            <strong>Erreur !</strong> ${result.error || 'Une erreur est survenue'}
+            ${result.errors && result.errors.length > 0 ? `
+              <div class="results-list mt-2">
+                ${result.errors.map(e => `<div class="text-danger">x ${e.name}: ${e.message}</div>`).join('')}
+              </div>
+            ` : ''}
+          `;
+        }
+
+        resultsArea.style.display = 'block';
+
+        // Recharger les migrations
+        await loadMigrations();
+
+      } catch (error) {
+        console.error('Erreur:', error);
+        resultsArea.className = 'alert alert-results alert-danger';
+        resultsArea.innerHTML = `
+          <i class="bi bi-x-circle me-2"></i>
+          <strong>Erreur !</strong> ${error.message}
+        `;
+        resultsArea.style.display = 'block';
+
+        // Reactiver le bouton
+        runBtn.disabled = false;
+        runBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i>Executer les migrations';
+        runBtn.classList.add('pulse-warning');
+      }
+    }
+  </script>
+</body>
+</html>

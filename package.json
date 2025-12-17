@@ -68,7 +68,9 @@
     "setup-nouveautes": "node database/migrations/addNouveauteParams.js up && node database/migrations/addStatutNouveaute.js up",
     "setup-reservations-communications": "node database/seeds/seedReservationCommunications.js",
     "job-reservation-expirations": "node backend/jobs/reservationExpirations.js",
-    "job-reservation-rappels": "node backend/jobs/reservationRappels.js"
+    "job-reservation-rappels": "node backend/jobs/reservationRappels.js",
+    "install:first": "node scripts/install.js",
+    "install:check": "node scripts/install.js --check"
   },
   "keywords": [
     "liberteko",

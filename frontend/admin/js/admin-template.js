@@ -227,6 +227,39 @@ function purgeModulesCache() {
 }
 
 /**
+ * Variable globale pour stocker la version de l'application
+ */
+window.APP_VERSION = null;
+
+/**
+ * Charge la version de l'application depuis l'API
+ */
+async function loadAppVersion() {
+    try {
+        const response = await fetch('/api/system/version');
+        if (response.ok) {
+            const data = await response.json();
+            window.APP_VERSION = data.version;
+            updateVersionDisplay();
+            return data;
+        }
+    } catch (error) {
+        console.error('Erreur chargement version:', error);
+    }
+    return null;
+}
+
+/**
+ * Met a jour l'affichage de la version dans le footer
+ */
+function updateVersionDisplay() {
+    const versionEl = document.getElementById('app-version-footer');
+    if (versionEl && window.APP_VERSION) {
+        versionEl.textContent = `v${window.APP_VERSION}`;
+    }
+}
+
+/**
  * Génère le HTML de la navbar
  */
 function renderNavbar(activePage) {
@@ -235,6 +268,7 @@ function renderNavbar(activePage) {
             <div class="container-fluid">
                 <a class="navbar-brand" href="dashboard.html">
                     <i class="bi bi-dice-5"></i> Ludothèque
+                    <small class="opacity-75 ms-2" id="app-version-footer" style="font-size: 0.7rem;"></small>
                 </a>
                 <div class="navbar-nav ms-auto">
                     <a class="nav-link" href="dashboard.html"><i class="bi bi-house"></i> Accueil</a>
@@ -441,6 +475,9 @@ async function initTemplate(pageId) {
 
     // Charger les modules autorisés à l'utilisateur
     loadUserAllowedModules();
+
+    // Charger la version de l'application (en arriere-plan)
+    loadAppVersion();
 
     // Charger les couleurs des modules depuis l'API si le cache est expiré
     if (typeof loadModuleColorsFromAPI === 'function') {
