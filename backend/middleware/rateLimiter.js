@@ -10,11 +10,11 @@ const isRateLimitDisabled = process.env.NODE_ENV !== 'production' || process.env
 
 /**
  * Limiter global pour toutes les routes API
- * 100 requêtes par 15 minutes par IP
+ * 500 requêtes par 15 minutes par IP
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requêtes max
+  max: 500, // 500 requêtes max
   message: {
     error: 'Trop de requêtes',
     message: 'Vous avez dépassé le nombre maximum de requêtes. Veuillez réessayer dans 15 minutes.',
