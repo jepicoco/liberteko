@@ -188,7 +188,7 @@ const updateAdherent = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      nom, prenom, email, telephone, adresse, ville,
+      nom, prenom, email, password, telephone, adresse, ville,
       code_postal, date_naissance, date_adhesion, date_fin_adhesion,
       statut, role, photo, adhesion_association, notes
     } = req.body;
@@ -209,6 +209,7 @@ const updateAdherent = async (req, res) => {
     if (nom) adherent.nom = nom;
     if (prenom) adherent.prenom = prenom;
     if (email) adherent.email = email;
+    if (password) adherent.password = password; // Le hook beforeSave hashera le mot de passe
     if (telephone !== undefined) adherent.telephone = telephone;
     if (adresse !== undefined) adherent.adresse = adresse;
     if (ville !== undefined) adherent.ville = ville;
