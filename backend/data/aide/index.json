@@ -1,12 +1,18 @@
 {
   "titre": "Aide Liberteko",
-  "description": "Centre d'aide pour l'administration de la ludothèque",
+  "description": "Centre d'aide pour l'administration de votre mediatheque associative",
   "modules": [
     {
       "code": "emprunts",
       "titre": "Emprunts et Retours",
       "icone": "bi-arrow-left-right",
       "fichier": "emprunts.json"
+    },
+    {
+      "code": "reservations",
+      "titre": "Reservations",
+      "icone": "bi-bookmark-check",
+      "fichier": "reservations.json"
     },
     {
       "code": "adherents",
@@ -25,6 +31,12 @@
       "titre": "Cotisations",
       "icone": "bi-receipt",
       "fichier": "cotisations.json"
+    },
+    {
+      "code": "frequentation",
+      "titre": "Frequentation (Comptage visiteurs)",
+      "icone": "bi-people-fill",
+      "fichier": "frequentation.json"
     },
     {
       "code": "comptabilite",

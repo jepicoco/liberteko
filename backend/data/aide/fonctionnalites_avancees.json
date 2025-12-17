@@ -330,6 +330,149 @@
         }
       ],
       "mots_cles": ["calendrier", "horaires", "ouverture", "fermeture", "jours feries", "vacances scolaires", "disponibilite"]
+    },
+    {
+      "id": "avance_cles_api",
+      "titre": "Clés API",
+      "description": "Gérez les clés d'accès API pour les intégrations externes, les tablettes de comptage et les applications tierces. Chaque clé peut avoir des permissions granulaires et un historique d'utilisation.",
+      "role_min": "administrateur",
+      "procedure": [
+        "Accédez à 'Paramètres > Clés API' dans l'administration",
+        "Cliquez sur 'Nouvelle clé API' pour créer une clé",
+        "Saisissez un nom descriptif (ex: 'Tablette accueil', 'App mobile')",
+        "Sélectionnez les permissions accordées :",
+        "- frequentation:read/create pour le comptage visiteurs",
+        "- articles:read pour l'accès au catalogue",
+        "- emprunts:read/create pour la gestion des emprunts",
+        "Définissez une date d'expiration optionnelle",
+        "Cliquez sur 'Générer la clé'",
+        "IMPORTANT : Copiez immédiatement la clé affichée",
+        "La clé n'est visible qu'une seule fois à la création (hashée ensuite)",
+        "Pour révoquer une clé : cliquez sur 'Révoquer' dans la liste",
+        "Consultez l'historique d'utilisation de chaque clé"
+      ],
+      "faq": [
+        {
+          "question": "Pourquoi la clé n'est visible qu'une fois ?",
+          "reponse": "Par sécurité, les clés sont hashées (SHA-256) avant stockage. Seul le hash est conservé pour vérification. Si vous perdez la clé, vous devez en créer une nouvelle."
+        },
+        {
+          "question": "Comment utiliser une clé API ?",
+          "reponse": "Ajoutez l'en-tête HTTP 'X-API-Key: votre_cle' à vos requêtes. Pour les tablettes, la clé est configurée automatiquement via le QR Code."
+        },
+        {
+          "question": "Puis-je avoir plusieurs clés actives ?",
+          "reponse": "Oui, créez une clé par application ou appareil pour pouvoir les révoquer individuellement si nécessaire."
+        }
+      ],
+      "mots_cles": ["api", "cle", "token", "authentification", "integration", "tablette", "permissions", "securite"]
+    },
+    {
+      "id": "avance_couleurs_modules",
+      "titre": "Couleurs des modules",
+      "description": "Personnalisez les couleurs d'affichage de chaque module de collection (Jeux, Livres, Films, Disques) pour une meilleure identification visuelle dans l'interface d'administration.",
+      "role_min": "administrateur",
+      "procedure": [
+        "Accédez à 'Paramètres > Holodeck' dans l'administration",
+        "Localisez la section 'Couleurs des modules'",
+        "Pour chaque module actif, vous pouvez personnaliser :",
+        "- Couleur de fond (arrière-plan des onglets, badges)",
+        "- Couleur du texte (pour assurer la lisibilité)",
+        "Cliquez sur le sélecteur de couleur pour choisir",
+        "L'aperçu s'affiche en temps réel",
+        "Enregistrez les modifications",
+        "Les couleurs s'appliquent immédiatement à :",
+        "- Sidebar de navigation admin",
+        "- Onglets de la page Emprunts",
+        "- Badges de module sur la page Réservations",
+        "- Filtres de collection dans le catalogue"
+      ],
+      "faq": [
+        {
+          "question": "Les couleurs sont-elles visibles sur le site public ?",
+          "reponse": "Par défaut non, elles concernent l'administration. Le site public utilise les couleurs du thème actif."
+        },
+        {
+          "question": "Puis-je revenir aux couleurs par défaut ?",
+          "reponse": "Oui, cliquez sur 'Réinitialiser' pour restaurer les couleurs par défaut de chaque module."
+        },
+        {
+          "question": "Comment choisir des couleurs accessibles ?",
+          "reponse": "Assurez un contraste suffisant entre fond et texte (ratio minimum 4.5:1). Utilisez des outils comme WebAIM Contrast Checker pour vérifier."
+        }
+      ],
+      "mots_cles": ["couleurs", "modules", "personnalisation", "holodeck", "interface", "visuel", "themes", "admin"]
+    },
+    {
+      "id": "avance_migrations",
+      "titre": "Gestionnaire de migrations",
+      "description": "Visualisez et gérez les migrations de base de données depuis l'interface d'administration. Utile pour vérifier l'état du schéma, appliquer des mises à jour ou diagnostiquer des problèmes.",
+      "role_min": "administrateur",
+      "procedure": [
+        "Accédez à 'Paramètres > Migrations' dans l'administration",
+        "Consultez la liste des migrations avec leur statut :",
+        "- Appliquée (vert) : migration déjà exécutée",
+        "- En attente (orange) : migration à appliquer",
+        "- Erreur (rouge) : migration en échec",
+        "Pour appliquer les migrations en attente :",
+        "- Cliquez sur 'Appliquer les migrations'",
+        "- Confirmez l'action",
+        "- Suivez la progression en temps réel",
+        "Pour voir les détails d'une migration :",
+        "- Cliquez sur le nom de la migration",
+        "- Consultez les colonnes/tables modifiées",
+        "En cas d'erreur, consultez les logs détaillés",
+        "Utilisez 'Vérifier le schéma' pour diagnostiquer l'état"
+      ],
+      "faq": [
+        {
+          "question": "Quand dois-je appliquer les migrations ?",
+          "reponse": "Après chaque mise à jour du logiciel. Les migrations en attente s'affichent automatiquement dans les notifications."
+        },
+        {
+          "question": "Puis-je annuler une migration ?",
+          "reponse": "Oui via la ligne de commande (npm run db:migrate:down). Cette option n'est pas disponible dans l'interface pour éviter les erreurs."
+        },
+        {
+          "question": "Que faire si une migration échoue ?",
+          "reponse": "Consultez le message d'erreur détaillé. Souvent lié à des données existantes incompatibles. Contactez le support avec les logs si nécessaire."
+        }
+      ],
+      "mots_cles": ["migrations", "base de donnees", "schema", "mise a jour", "deploiement", "diagnostic"]
+    },
+    {
+      "id": "avance_scanner_multi",
+      "titre": "Scanner multi-articles",
+      "description": "Scannez plusieurs articles consécutivement avant de sélectionner l'usager pour créer les emprunts. Les articles sont mis en file d'attente et traités automatiquement une fois l'usager identifié.",
+      "role_min": "benevole",
+      "procedure": [
+        "Accédez à la page 'Emprunts' ou 'Scanner'",
+        "Commencez à scanner les articles sans avoir sélectionné d'usager",
+        "Chaque article scanné s'ajoute à la file d'attente (badge compteur)",
+        "La file affiche les articles en attente avec leurs informations",
+        "Vous pouvez retirer un article de la file si erreur (bouton X)",
+        "Scannez ou saisissez la carte de l'usager",
+        "Sélectionnez l'usager dans la liste ou via recherche",
+        "La file d'attente se vide automatiquement :",
+        "- Chaque article est enregistré comme emprunt pour l'usager",
+        "- Un récapitulatif s'affiche avec les succès/erreurs",
+        "En cas d'erreur sur un article, les autres sont traités normalement"
+      ],
+      "faq": [
+        {
+          "question": "Combien d'articles puis-je mettre en file d'attente ?",
+          "reponse": "Pas de limite technique. La file est stockée localement dans le navigateur et persiste même si vous changez de page."
+        },
+        {
+          "question": "Que se passe-t-il si un article n'est pas disponible ?",
+          "reponse": "L'article reste dans la file mais affiche un avertissement. Lors du traitement, il sera ignoré avec un message d'erreur."
+        },
+        {
+          "question": "La file d'attente est-elle partagée entre bénévoles ?",
+          "reponse": "Non, chaque navigateur/poste a sa propre file d'attente locale."
+        }
+      ],
+      "mots_cles": ["scanner", "multi", "file attente", "queue", "emprunt", "code-barres", "batch"]
     }
   ]
 }

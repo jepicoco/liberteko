@@ -1,0 +1,206 @@
+{
+  "module": "reservations",
+  "titre": "Reservations",
+  "icone": "bi-bookmark-check",
+  "features": [
+    {
+      "id": "reservations_creer",
+      "titre": "Creer une reservation",
+      "description": "Reserver un article actuellement indisponible pour un usager",
+      "role_min": "benevole",
+      "procedure": [
+        "Acceder a la page Reservations",
+        "Cliquer sur 'Nouvelle reservation'",
+        "Selectionner l'usager dans la liste deroulante",
+        "Rechercher l'article a reserver (jeu, livre, film ou disque)",
+        "Seuls les articles indisponibles peuvent etre reserves",
+        "Confirmer la reservation",
+        "L'usager est ajoute a la file d'attente"
+      ],
+      "faq": [
+        {
+          "question": "Peut-on reserver un article disponible ?",
+          "reponse": "Non, seuls les articles actuellement empruntes ou indisponibles peuvent etre reserves. Pour un article disponible, creez directement un emprunt."
+        },
+        {
+          "question": "Y a-t-il une limite de reservations par usager ?",
+          "reponse": "Oui, les limites sont configurables dans Parametres > Emprunts et Reservations. Par defaut, 3 reservations actives maximum."
+        }
+      ],
+      "mots_cles": ["reservation", "reserver", "file attente", "indisponible"]
+    },
+    {
+      "id": "reservations_file_attente",
+      "titre": "Gestion de la file d'attente",
+      "description": "Gerer l'ordre des reservations pour un article",
+      "role_min": "benevole",
+      "procedure": [
+        "Acceder a la fiche de l'article reserve",
+        "Voir la liste des reservations en attente",
+        "L'ordre est determine par la date de reservation (premier arrive, premier servi)",
+        "Les gestionnaires peuvent modifier l'ordre si necessaire",
+        "Quand l'article est retourne, le premier de la file est notifie"
+      ],
+      "faq": [
+        {
+          "question": "Comment modifier l'ordre de la file ?",
+          "reponse": "En tant que gestionnaire, utilisez les fleches haut/bas pour deplacer une reservation dans la file."
+        },
+        {
+          "question": "Que se passe-t-il si le premier de la file ne vient pas ?",
+          "reponse": "Apres le delai configure (ex: 7 jours), la reservation expire automatiquement et le suivant dans la file est notifie."
+        }
+      ],
+      "mots_cles": ["file", "attente", "ordre", "position", "queue"]
+    },
+    {
+      "id": "reservations_statuts",
+      "titre": "Statuts des reservations",
+      "description": "Comprendre les differents statuts d'une reservation",
+      "role_min": "benevole",
+      "procedure": [
+        "Les statuts possibles sont :",
+        "- En attente : l'usager attend que l'article soit disponible",
+        "- Prete : l'article est disponible et attend d'etre recupere",
+        "- Empruntee : la reservation a ete convertie en emprunt",
+        "- Expiree : l'usager n'a pas recupere l'article dans le delai",
+        "- Annulee : la reservation a ete annulee manuellement"
+      ],
+      "faq": [
+        {
+          "question": "Combien de temps l'usager a-t-il pour recuperer un article pret ?",
+          "reponse": "Le delai par defaut est de 7 jours. Il est configurable dans les parametres."
+        },
+        {
+          "question": "Une reservation expiree peut-elle etre reactivee ?",
+          "reponse": "Non, mais une nouvelle reservation peut etre creee si l'article est toujours indisponible."
+        }
+      ],
+      "mots_cles": ["statut", "etat", "attente", "pret", "expire"]
+    },
+    {
+      "id": "reservations_notifications",
+      "titre": "Notifications automatiques",
+      "description": "Configurer les notifications pour les reservations",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Acceder a Parametres > Declencheurs d'evenements",
+        "Activer les declencheurs lies aux reservations :",
+        "- Article disponible : notifie quand l'article est pret",
+        "- Rappel avant expiration : rappelle de venir chercher l'article",
+        "Selectionner les templates email/SMS a utiliser",
+        "Les notifications sont envoyees automatiquement"
+      ],
+      "faq": [
+        {
+          "question": "L'usager recoit-il une confirmation de reservation ?",
+          "reponse": "Si le declencheur est configure, un email de confirmation est envoye lors de la creation de la reservation."
+        },
+        {
+          "question": "Comment personnaliser les messages ?",
+          "reponse": "Modifiez les templates dans Parametres > Templates de messages."
+        }
+      ],
+      "mots_cles": ["notification", "email", "SMS", "alerte", "automatique"]
+    },
+    {
+      "id": "reservations_conversion_emprunt",
+      "titre": "Convertir en emprunt",
+      "description": "Transformer une reservation prete en emprunt",
+      "role_min": "benevole",
+      "procedure": [
+        "Acceder a la page Reservations ou a la fiche de l'article",
+        "Localiser la reservation au statut 'Pret'",
+        "Cliquer sur 'Convertir en emprunt'",
+        "L'emprunt est cree automatiquement",
+        "La reservation passe au statut 'Empruntee'",
+        "L'article passe au statut 'Emprunte'"
+      ],
+      "faq": [
+        {
+          "question": "La conversion est-elle automatique ?",
+          "reponse": "Non, un benevole doit valider la conversion lorsque l'usager vient chercher l'article."
+        },
+        {
+          "question": "Puis-je modifier la duree de l'emprunt lors de la conversion ?",
+          "reponse": "La duree par defaut est appliquee. Pour une duree personnalisee, annulez la reservation et creez un emprunt manuellement."
+        }
+      ],
+      "mots_cles": ["convertir", "emprunt", "recuperer", "pret", "transformer"]
+    },
+    {
+      "id": "reservations_annuler",
+      "titre": "Annuler une reservation",
+      "description": "Annuler une reservation en attente ou prete",
+      "role_min": "benevole",
+      "procedure": [
+        "Acceder a la page Reservations",
+        "Localiser la reservation a annuler",
+        "Cliquer sur le bouton 'Annuler'",
+        "Confirmer l'annulation",
+        "La reservation passe au statut 'Annulee'",
+        "Le suivant dans la file est notifie si l'article etait pret"
+      ],
+      "faq": [
+        {
+          "question": "L'usager peut-il annuler lui-meme sa reservation ?",
+          "reponse": "Oui, depuis son espace usager, il peut annuler ses reservations en attente."
+        },
+        {
+          "question": "Y a-t-il des penalites pour annulation ?",
+          "reponse": "Non, les annulations sont libres. Cependant, des annulations repetees peuvent etre signalees."
+        }
+      ],
+      "mots_cles": ["annuler", "supprimer", "annulation", "abandon"]
+    },
+    {
+      "id": "reservations_limites",
+      "titre": "Limites de reservation",
+      "description": "Configurer les limites de reservations par usager",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Acceder a Parametres > Emprunts et Reservations",
+        "Definir la limite globale de reservations actives (ex: 3)",
+        "Optionnel : definir des limites par module (jeux, livres, etc.)",
+        "Optionnel : definir des limites par genre",
+        "Enregistrer les modifications",
+        "Les limites sont verifiees a chaque nouvelle reservation"
+      ],
+      "faq": [
+        {
+          "question": "Les limites s'appliquent-elles aux reservations et emprunts ensemble ?",
+          "reponse": "Les limites de reservation sont separees des limites d'emprunt. Un usager peut avoir 3 reservations ET 5 emprunts simultanes."
+        },
+        {
+          "question": "Peut-on avoir des limites differentes selon le type d'usager ?",
+          "reponse": "Oui, les limites peuvent etre configurees par type d'adhesion."
+        }
+      ],
+      "mots_cles": ["limite", "quota", "maximum", "restriction", "regle"]
+    },
+    {
+      "id": "reservations_statistiques",
+      "titre": "Statistiques des reservations",
+      "description": "Consulter les statistiques de reservations",
+      "role_min": "gestionnaire",
+      "procedure": [
+        "Acceder a la page Statistiques",
+        "Consulter la section Reservations",
+        "Voir les indicateurs : reservations actives, converties, expirees, annulees",
+        "Identifier les articles les plus reserves",
+        "Analyser les delais moyens d'attente"
+      ],
+      "faq": [
+        {
+          "question": "Comment identifier les articles a acquerir en priorite ?",
+          "reponse": "Consultez le classement des articles avec le plus de reservations. Un article souvent reserve merite peut-etre un deuxieme exemplaire."
+        },
+        {
+          "question": "Quel est le taux de conversion moyen ?",
+          "reponse": "Les statistiques montrent le pourcentage de reservations converties en emprunts vs expirees/annulees."
+        }
+      ],
+      "mots_cles": ["statistiques", "analyse", "rapport", "attente", "populaire"]
+    }
+  ]
+}
