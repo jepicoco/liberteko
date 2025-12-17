@@ -77,9 +77,9 @@ if (process.env.NODE_ENV === 'production') {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net", "cdn.quilljs.com"],
         scriptSrcAttr: ["'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdn.jsdelivr.net"],
+        styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdn.jsdelivr.net", "cdn.quilljs.com"],
         fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
         imgSrc: ["'self'", "data:", "https:"],
         connectSrc: ["'self'", "cdn.jsdelivr.net"],
