@@ -9,6 +9,10 @@ Liberteko is a multi-collection library management system for French association
 ## Commands
 
 ```bash
+# Installation (first time setup)
+npm run install:first    # Complete installation: env check, DB test, migrations, seeds, admin creation
+node scripts/install.js --check  # Verify installation without making changes
+
 # Development
 npm run dev              # Start with nodemon (auto-reload)
 npm start                # Production start
@@ -96,6 +100,8 @@ npm run check-triggers        # Diagnostic: check event triggers status
   - `limiteEmpruntService.js` - Loan limits enforcement
   - `caisseService.js` - Cash register operations
   - `themeService.js` - Site theme CSS variable management
+  - `migrationService.js` - Database migration status and execution via API
+  - `frequentationService.js` - Visitor counting questionnaires and statistics
 - `middleware/`:
   - `auth.js` - JWT verification (`verifyToken`)
   - `checkRole.js` - Role-based access control
@@ -128,6 +134,12 @@ npm run check-triggers        # Diagnostic: check event triggers status
 
 10. **EAN Lookup**: `/api/lookup` (external APIs for barcode data: UPCitemdb, BNF, OpenLibrary, TMDB, MusicBrainz)
 
+11. **System**: `/api/system/version` (public), `/api/system/migrations` (admin) - Version info and migration management
+
+12. **Frequentation**: `/api/frequentation/questionnaires`, `/api/frequentation/enregistrements`, `/api/frequentation/config` - Visitor counting and tablet PWA configuration
+
+13. **Reservations**: `/api/reservations` - Article reservation queue management
+
 ### Frontend (frontend/)
 
 - `admin/` - Bootstrap 5 admin interface
@@ -139,6 +151,12 @@ npm run check-triggers        # Diagnostic: check event triggers status
   - `manifest.json` defines theme metadata
   - `usager/` subfolder for member portal pages
 - `usager/` - Fallback member self-service portal (when no theme selected)
+- `tablet/` - Visitor counting PWA for tablets
+  - `index.html` - Main counting interface
+  - `setup.html` - Tablet configuration (QR code scan or manual)
+  - `js/app.js` - PWA logic with offline support
+  - `service-worker.js` - Offline caching and sync
+  - `css/default.css`, `theme-dark.css` - Light/dark themes
 
 ### Database
 
@@ -155,6 +173,8 @@ MySQL with Sequelize ORM. Key model groups:
 - **Family**: `Famille`, `RelationFamiliale` - Family groupings for shared memberships
 - **Invoicing**: `Facture`, `LigneFacture` - Invoice generation
 - **Loan Limits**: `LimiteEmprunt` - Configurable loan limits per user type/status
+- **Frequentation**: `QuestionnaireFrequentation`, `EnregistrementFrequentation`, `CommuneFavorite`, `ApiKey`, `ApiKeyQuestionnaire` - Visitor counting system with tablet PWA
+- **Reservations**: `Reservation` - Article reservation queue system
 
 **Terminology Note**: The codebase uses "utilisateur" internally for the user model. The API route `/api/adherents` is maintained as an alias for `/api/utilisateurs` for backward compatibility. Frontend labels use "usager" (member) for the public-facing portal.
 
@@ -287,6 +307,49 @@ module.exports = { up, down };
 ```
 
 Migrations should be idempotent (check before creating) to allow re-running safely.
+
+**Admin UI**: Migrations can also be managed via the admin interface at `Paramètres > Migrations`. The page shows:
+- All migrations with their status (executed/pending)
+- Batch numbers and execution dates
+- Button to run pending migrations
+
+**API Endpoints**:
+- `GET /api/system/migrations` - Full migration status (admin only)
+- `GET /api/system/migrations/pending` - Pending count for badge display
+- `POST /api/system/migrations/run` - Execute pending migrations
+
+## Version System
+
+The application version is tracked in `version.json` at the project root:
+```json
+{
+  "version": "0.8.1",
+  "buildDate": "2024-12-17"
+}
+```
+
+**API Endpoint**: `GET /api/system/version`
+- Public: Returns `{ version, buildDate }`
+- Admin: Also includes `pendingMigrations` count
+
+**Frontend Display**: Version is shown in the admin footer via `admin-template.js`. The `window.APP_VERSION` global is set on page load.
+
+## Installation Script
+
+The `scripts/install.js` script automates first-time setup:
+
+1. **Environment check**: Creates `.env` from `.env.example` with secure generated secrets
+2. **Database test**: Verifies MySQL connection and database existence
+3. **Migrations**: Runs all pending database migrations
+4. **System seeds**: Initializes templates, event triggers, and themes
+5. **Admin creation**: Creates default admin account if none exists
+
+```bash
+npm run install:first        # Full installation
+node scripts/install.js --check  # Verification only (no changes)
+```
+
+The script generates secure 64-character hex secrets for `JWT_SECRET` and `EMAIL_ENCRYPTION_KEY` automatically.
 
 ## Default Admin
 
