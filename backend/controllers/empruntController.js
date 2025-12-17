@@ -3,6 +3,7 @@ const { Op, Transaction } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
 const limiteEmpruntService = require('../services/limiteEmpruntService');
+const charteValidationService = require('../services/charteValidationService');
 
 // Configuration des modules pour l'emprunt multi-collection
 const EMPRUNT_MODULES = {
@@ -188,6 +189,17 @@ const createEmprunt = async (req, res) => {
       return res.status(403).json({
         error: 'Forbidden',
         message: `Le compte utilisateur est ${utilisateur.statut}. Seuls les membres actifs peuvent emprunter.`
+      });
+    }
+
+    // Vérifier si l'utilisateur est bloqué pour validation de charte
+    const estBloquePourCharte = await charteValidationService.estBloquePourEmprunt(userId);
+    if (estBloquePourCharte) {
+      await transaction.rollback();
+      return res.status(403).json({
+        error: 'Charte non validee',
+        message: 'Vous devez valider la charte avant de pouvoir emprunter. La periode de grace est depassee.',
+        charteRequired: true
       });
     }
 

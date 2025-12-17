@@ -81,7 +81,12 @@ exports.updateParametres = async (req, res) => {
       // Prolongations - Discotheque
       prolongation_jours_discotheque, prolongation_auto_max_discotheque,
       prolongation_manuelle_discotheque, prolongation_msg_reservation_discotheque,
-      prolongation_active_discotheque
+      prolongation_active_discotheque,
+      // Charte usager
+      module_charte, charte_active, charte_grace_jours,
+      charte_otp_email, charte_otp_email_config_id,
+      charte_otp_sms, charte_otp_sms_config_id,
+      charte_otp_preference
     } = req.body;
 
     let parametres = await ParametresFront.findOne();
@@ -208,6 +213,16 @@ exports.updateParametres = async (req, res) => {
       if (prolongation_manuelle_discotheque !== undefined) updates.prolongation_manuelle_discotheque = prolongation_manuelle_discotheque;
       if (prolongation_msg_reservation_discotheque !== undefined) updates.prolongation_msg_reservation_discotheque = prolongation_msg_reservation_discotheque;
       if (prolongation_active_discotheque !== undefined) updates.prolongation_active_discotheque = prolongation_active_discotheque;
+
+      // Charte usager
+      if (module_charte !== undefined) updates.module_charte = module_charte;
+      if (charte_active !== undefined) updates.charte_active = charte_active;
+      if (charte_grace_jours !== undefined) updates.charte_grace_jours = charte_grace_jours;
+      if (charte_otp_email !== undefined) updates.charte_otp_email = charte_otp_email;
+      if (charte_otp_email_config_id !== undefined) updates.charte_otp_email_config_id = charte_otp_email_config_id;
+      if (charte_otp_sms !== undefined) updates.charte_otp_sms = charte_otp_sms;
+      if (charte_otp_sms_config_id !== undefined) updates.charte_otp_sms_config_id = charte_otp_sms_config_id;
+      if (charte_otp_preference !== undefined) updates.charte_otp_preference = charte_otp_preference;
 
       await parametres.update(updates);
     }

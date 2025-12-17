@@ -182,6 +182,10 @@ const QuestionnaireCommuneFavoriteModel = require('./QuestionnaireCommuneFavorit
 const EnregistrementFrequentationModel = require('./EnregistrementFrequentation');
 const ApiKeyQuestionnaireModel = require('./ApiKeyQuestionnaire');
 
+// Import Charte Usager (validation signature numerique)
+const CharteUsagerModel = require('./CharteUsager');
+const ValidationCharteModel = require('./ValidationCharte');
+
 // Initialize models
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
@@ -360,6 +364,10 @@ const QuestionnaireFrequentation = QuestionnaireFrequentationModel(sequelize);
 const QuestionnaireCommuneFavorite = QuestionnaireCommuneFavoriteModel(sequelize);
 const EnregistrementFrequentation = EnregistrementFrequentationModel(sequelize);
 const ApiKeyQuestionnaire = ApiKeyQuestionnaireModel(sequelize);
+
+// Initialize Charte Usager (validation signature numerique)
+const CharteUsager = CharteUsagerModel(sequelize);
+const ValidationCharte = ValidationCharteModel(sequelize);
 
 // Define associations
 
@@ -1877,6 +1885,43 @@ Site.hasMany(ApiKeyQuestionnaire, {
   as: 'tablettesFrequentation'
 });
 
+// ============================================
+// Charte Usager (Validation signature numerique)
+// ============================================
+
+// CharteUsager <-> ValidationCharte (One-to-Many)
+CharteUsager.hasMany(ValidationCharte, {
+  foreignKey: 'charte_id',
+  as: 'validations'
+});
+
+ValidationCharte.belongsTo(CharteUsager, {
+  foreignKey: 'charte_id',
+  as: 'charte'
+});
+
+// Utilisateur <-> ValidationCharte (One-to-Many)
+Utilisateur.hasMany(ValidationCharte, {
+  foreignKey: 'utilisateur_id',
+  as: 'validationsCharte'
+});
+
+ValidationCharte.belongsTo(Utilisateur, {
+  foreignKey: 'utilisateur_id',
+  as: 'utilisateur'
+});
+
+// Cotisation <-> ValidationCharte (One-to-One)
+Cotisation.hasOne(ValidationCharte, {
+  foreignKey: 'cotisation_id',
+  as: 'validationCharte'
+});
+
+ValidationCharte.belongsTo(Cotisation, {
+  foreignKey: 'cotisation_id',
+  as: 'cotisation'
+});
+
 // Export models and sequelize instance
 module.exports = {
   sequelize,
@@ -2029,5 +2074,8 @@ module.exports = {
   QuestionnaireFrequentation,
   QuestionnaireCommuneFavorite,
   EnregistrementFrequentation,
-  ApiKeyQuestionnaire
+  ApiKeyQuestionnaire,
+  // Charte Usager (validation signature numerique)
+  CharteUsager,
+  ValidationCharte
 };

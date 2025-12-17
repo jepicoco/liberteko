@@ -471,6 +471,108 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Charte usager - visible uniquement si module charte actif dans holodeck -->
+              <div id="section-charte-container" style="display: none;">
+              <div class="card section-card">
+                <div class="card-header">
+                  <i class="bi bi-file-earmark-check"></i> Charte usager
+                </div>
+                <div class="card-body">
+                  <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    La charte usager permet de faire valider des conditions d'utilisation aux membres lors de leur cotisation.
+                    <a href="parametres-charte.html" class="alert-link">Gerer le contenu des chartes</a>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="charte_active">
+                        <label class="form-check-label" for="charte_active">
+                          <strong>Activer la validation de charte</strong>
+                        </label>
+                      </div>
+                      <p class="text-muted small">
+                        Si active, les usagers devront valider la charte lors de chaque cotisation.
+                        Un code OTP sera envoye pour confirmer la signature.
+                      </p>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="mb-3">
+                        <label for="charte_grace_jours" class="form-label">Periode de grace (jours)</label>
+                        <input type="number" class="form-control" id="charte_grace_jours" value="7" min="0" max="30">
+                        <div class="form-text">Delai avant blocage des emprunts si la charte n'est pas validee</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr>
+                  <h6>Canaux de validation OTP</h6>
+                  <div class="row">
+                    <!-- Canal Email -->
+                    <div class="col-md-6 mb-3">
+                      <div class="card h-100">
+                        <div class="card-body">
+                          <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="form-check form-switch mb-0">
+                              <input class="form-check-input" type="checkbox" id="charte_otp_email" checked onchange="toggleOtpChannel('email')">
+                              <label class="form-check-label" for="charte_otp_email">
+                                <i class="bi bi-envelope me-1"></i> <strong>Email</strong>
+                              </label>
+                            </div>
+                          </div>
+                          <div id="charte_email_config_container">
+                            <label for="charte_otp_email_config_id" class="form-label small">Expediteur</label>
+                            <select class="form-select form-select-sm" id="charte_otp_email_config_id">
+                              <option value="">Configuration par defaut</option>
+                            </select>
+                            <div class="form-text">
+                              <a href="parametres-email.html" class="small">Gerer les expediteurs email</a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Canal SMS -->
+                    <div class="col-md-6 mb-3">
+                      <div class="card h-100">
+                        <div class="card-body">
+                          <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="form-check form-switch mb-0">
+                              <input class="form-check-input" type="checkbox" id="charte_otp_sms" onchange="toggleOtpChannel('sms')">
+                              <label class="form-check-label" for="charte_otp_sms">
+                                <i class="bi bi-phone me-1"></i> <strong>SMS</strong>
+                              </label>
+                            </div>
+                          </div>
+                          <div id="charte_sms_config_container" style="display: none;">
+                            <label for="charte_otp_sms_config_id" class="form-label small">Expediteur</label>
+                            <select class="form-select form-select-sm" id="charte_otp_sms_config_id">
+                              <option value="">Configuration par defaut</option>
+                            </select>
+                            <div class="form-text">
+                              <a href="parametres-sms.html" class="small">Gerer les expediteurs SMS</a>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Preference si les deux canaux sont actifs -->
+                  <div id="charte_preference_container" class="mt-2" style="display: none;">
+                    <label for="charte_otp_preference" class="form-label">Si les deux canaux sont actifs</label>
+                    <select class="form-select" id="charte_otp_preference">
+                      <option value="email">Email par defaut</option>
+                      <option value="sms">SMS par defaut</option>
+                      <option value="choix_usager">Laisser le choix a l'usager</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              </div><!-- /section-charte-container -->
             </div>
 
             <!-- ======================== -->
@@ -698,6 +800,7 @@
       initEditors();
       loadParametres();
       loadCurrentIp();
+      loadOtpConfigurations();
 
       // Afficher la carte Reservations si le module est actif dans le holodeck
       if (isModuleActive('reservations')) {
@@ -712,6 +815,11 @@
       // Afficher la carte Plan interactif si le module est actif dans le holodeck
       if (isModuleActive('plans')) {
         document.getElementById('card-module-plan-interactif-container').style.display = 'block';
+      }
+
+      // Afficher la section Charte usager si le module est actif dans le holodeck
+      if (isModuleActive('charte')) {
+        document.getElementById('section-charte-container').style.display = 'block';
       }
     });
 
@@ -893,6 +1001,20 @@
       document.getElementById('module_plan_interactif').checked = data.module_plan_interactif || false;
       ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque', 'inscriptions', 'reservations', 'paiement', 'recherche-ia', 'plan-interactif'].forEach(updateModuleCard);
 
+      // Charte usager
+      document.getElementById('charte_active').checked = data.charte_active || false;
+      document.getElementById('charte_grace_jours').value = data.charte_grace_jours || 7;
+      document.getElementById('charte_otp_email').checked = data.charte_otp_email !== false;
+      document.getElementById('charte_otp_sms').checked = data.charte_otp_sms || false;
+      document.getElementById('charte_otp_preference').value = data.charte_otp_preference || 'email';
+      document.getElementById('charte_otp_email_config_id').value = data.charte_otp_email_config_id || '';
+      document.getElementById('charte_otp_sms_config_id').value = data.charte_otp_sms_config_id || '';
+
+      // Mise a jour affichage canaux OTP
+      toggleOtpChannel('email');
+      toggleOtpChannel('sms');
+      updateOtpPreferenceVisibility();
+
       // Legal (Quill editors)
       if (data.cgv) editors.cgv.root.innerHTML = data.cgv;
       if (data.cgu) editors.cgu.root.innerHTML = data.cgu;
@@ -952,6 +1074,15 @@
         module_paiement_en_ligne: document.getElementById('module_paiement_en_ligne').checked,
         module_recherche_ia: document.getElementById('module_recherche_ia').checked,
         module_plan_interactif: document.getElementById('module_plan_interactif').checked,
+
+        // Charte usager
+        charte_active: document.getElementById('charte_active').checked,
+        charte_grace_jours: parseInt(document.getElementById('charte_grace_jours').value) || 7,
+        charte_otp_email: document.getElementById('charte_otp_email').checked,
+        charte_otp_email_config_id: document.getElementById('charte_otp_email_config_id').value || null,
+        charte_otp_sms: document.getElementById('charte_otp_sms').checked,
+        charte_otp_sms_config_id: document.getElementById('charte_otp_sms_config_id').value || null,
+        charte_otp_preference: document.getElementById('charte_otp_preference').value,
 
         // Legal
         cgv: editors.cgv.root.innerHTML,
@@ -1068,6 +1199,69 @@
         }
       } catch (error) {
         document.getElementById('current-ip').textContent = 'Non disponible';
+      }
+    }
+
+    // =============================================
+    // Gestion des canaux OTP pour la charte
+    // =============================================
+
+    // Charger les configurations email et SMS disponibles
+    async function loadOtpConfigurations() {
+      try {
+        // Charger les configurations email
+        const emailConfigs = await apiRequest('/parametres/configurations-email');
+        const emailSelect = document.getElementById('charte_otp_email_config_id');
+
+        // Garder l'option par defaut
+        emailSelect.innerHTML = '<option value="">Configuration par defaut</option>';
+        (emailConfigs || []).filter(c => c.actif).forEach(config => {
+          const option = document.createElement('option');
+          option.value = config.id;
+          option.textContent = `${config.libelle} (${config.email_expediteur})`;
+          if (config.est_defaut) option.textContent += ' *';
+          emailSelect.appendChild(option);
+        });
+
+        // Charger les configurations SMS
+        const smsConfigs = await apiRequest('/parametres/configurations-sms');
+        const smsSelect = document.getElementById('charte_otp_sms_config_id');
+
+        // Garder l'option par defaut
+        smsSelect.innerHTML = '<option value="">Configuration par defaut</option>';
+        (smsConfigs || []).filter(c => c.actif).forEach(config => {
+          const option = document.createElement('option');
+          option.value = config.id;
+          option.textContent = `${config.libelle} (${config.sender_name || config.provider})`;
+          if (config.est_defaut) option.textContent += ' *';
+          smsSelect.appendChild(option);
+        });
+
+      } catch (error) {
+        console.error('Erreur chargement configurations OTP:', error);
+      }
+    }
+
+    // Toggle affichage du conteneur de config selon l'etat du checkbox
+    function toggleOtpChannel(channel) {
+      const checkbox = document.getElementById(`charte_otp_${channel}`);
+      const container = document.getElementById(`charte_${channel}_config_container`);
+
+      if (container) {
+        container.style.display = checkbox.checked ? 'block' : 'none';
+      }
+
+      updateOtpPreferenceVisibility();
+    }
+
+    // Afficher la preference uniquement si les deux canaux sont actifs
+    function updateOtpPreferenceVisibility() {
+      const emailChecked = document.getElementById('charte_otp_email').checked;
+      const smsChecked = document.getElementById('charte_otp_sms').checked;
+      const preferenceContainer = document.getElementById('charte_preference_container');
+
+      if (preferenceContainer) {
+        preferenceContainer.style.display = (emailChecked && smsChecked) ? 'block' : 'none';
       }
     }
 

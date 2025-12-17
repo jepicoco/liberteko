@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Charte usager - Parametres - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link href="css/admin-style.css" rel="stylesheet">
+  <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+  <style>
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+    .section-card { margin-bottom: 1.5rem; }
+    .section-card .card-header { background-color: #f8f9fa; font-weight: 600; }
+    .charte-card { transition: transform 0.2s; cursor: pointer; }
+    .charte-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .charte-card.active { border-color: #198754; border-width: 2px; }
+    .charte-card.locked { background-color: #f8f9fa; }
+    .badge-active { background-color: #198754; }
+    .badge-locked { background-color: #6c757d; }
+    .badge-signatures { background-color: #0d6efd; }
+    .ql-container { min-height: 300px; }
+    .preview-container { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 0.375rem; padding: 1rem; min-height: 200px; max-height: 400px; overflow-y: auto; }
+    .version-badge { font-family: monospace; }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div id="sub-nav-container"></div>
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0">
+              <i class="bi bi-file-earmark-check me-2"></i>
+              Charte usager
+            </h1>
+            <p class="text-muted mb-0">Gestion du contenu et des versions de la charte</p>
+          </div>
+          <button class="btn btn-primary" onclick="openAddModal()">
+            <i class="bi bi-plus-lg me-1"></i> Nouvelle charte
+          </button>
+        </div>
+
+        <!-- Alerte si pas de charte active -->
+        <div id="alertNoActive" class="alert alert-warning d-none" role="alert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Attention :</strong> Aucune charte n'est actuellement active.
+          Les usagers ne pourront pas valider de charte.
+        </div>
+
+        <div id="chartes-container">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Charte -->
+  <div class="modal fade" id="modalCharte" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCharteTitle">Nouvelle charte</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCharte">
+            <input type="hidden" id="charte_id">
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="charte_titre" class="form-label">Titre <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="charte_titre" required placeholder="Charte d'utilisation de la ludotheque">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="charte_date" class="form-label">Date de publication</label>
+                  <input type="date" class="form-control" id="charte_date">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <label class="form-label mb-0">Contenu <span class="text-danger">*</span></label>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="importerModeleDefaut()">
+                  <i class="bi bi-file-earmark-text me-1"></i> Importer modele par defaut
+                </button>
+              </div>
+              <div id="editor-container"></div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveCharte()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Preview -->
+  <div class="modal fade" id="modalPreview" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Apercu de la charte</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="preview-container" id="preview-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Stats -->
+  <div class="modal fade" id="modalStats" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Statistiques de la charte</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="stats-content">
+            <div class="text-center py-3">
+              <div class="spinner-border text-primary" role="status"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmation -->
+  <div class="modal fade" id="modalConfirm" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmTitle">Confirmation</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p id="confirmMessage"></p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" id="confirmBtn">Confirmer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
+    <div id="toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toast-message"></div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
+  <script>
+    let chartes = [];
+    let quillEditor = null;
+    let currentCharteId = null;
+    let confirmAction = null;
+
+    // Initialisation template
+    initTemplate('parametres');
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Sous-navigation
+      renderSubNav('general', 'charte');
+
+      await loadChartes();
+      initQuillEditor();
+    });
+
+    // Initialise l'editeur Quill
+    function initQuillEditor() {
+      quillEditor = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            [{ 'header': [1, 2, 3, false] }],
+            ['bold', 'italic', 'underline', 'strike'],
+            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+            [{ 'indent': '-1'}, { 'indent': '+1' }],
+            ['link'],
+            ['clean']
+          ]
+        },
+        placeholder: 'Redigez le contenu de la charte...'
+      });
+    }
+
+    // Charge toutes les chartes
+    async function loadChartes() {
+      try {
+        const response = await apiRequest('/chartes');
+        chartes = response.chartes || [];
+        renderChartes();
+      } catch (error) {
+        console.error('Erreur chargement chartes:', error);
+        showError('Erreur lors du chargement des chartes');
+      }
+    }
+
+    // Affiche les chartes
+    function renderChartes() {
+      const container = document.getElementById('chartes-container');
+      const alertNoActive = document.getElementById('alertNoActive');
+
+      const hasActive = chartes.some(c => c.est_active);
+      alertNoActive.classList.toggle('d-none', hasActive);
+
+      if (chartes.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-file-earmark-x display-4 text-muted"></i>
+            <p class="mt-3 text-muted">Aucune charte creee</p>
+            <button class="btn btn-primary" onclick="openAddModal()">
+              <i class="bi bi-plus"></i> Creer une charte
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="row">
+          ${chartes.map(charte => `
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card charte-card ${charte.est_active ? 'active' : ''} ${charte.est_verrouillee ? 'locked' : ''}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span class="version-badge badge bg-secondary">v${charte.version}</span>
+                  <div>
+                    ${charte.est_active ? '<span class="badge badge-active me-1">Active</span>' : ''}
+                    ${charte.est_verrouillee ? '<span class="badge badge-locked"><i class="bi bi-lock"></i></span>' : ''}
+                  </div>
+                </div>
+                <div class="card-body">
+                  <h5 class="card-title">${escapeHtml(charte.titre)}</h5>
+                  <p class="card-text text-muted small">
+                    <i class="bi bi-calendar"></i> ${formatDate(charte.date_publication)}
+                  </p>
+                  <p class="card-text">
+                    <span class="badge badge-signatures">
+                      <i class="bi bi-pen"></i> ${charte.nb_signatures} signature${charte.nb_signatures > 1 ? 's' : ''}
+                    </span>
+                  </p>
+                </div>
+                <div class="card-footer bg-transparent">
+                  <div class="btn-group w-100">
+                    <button class="btn btn-outline-secondary btn-sm" onclick="previewCharte(${charte.id})" title="Apercu">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    ${!charte.est_verrouillee ? `
+                      <button class="btn btn-outline-primary btn-sm" onclick="editCharte(${charte.id})" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                      </button>
+                    ` : ''}
+                    ${!charte.est_active ? `
+                      <button class="btn btn-outline-success btn-sm" onclick="activerCharte(${charte.id})" title="Activer">
+                        <i class="bi bi-check-circle"></i>
+                      </button>
+                    ` : ''}
+                    <button class="btn btn-outline-info btn-sm" onclick="dupliquerCharte(${charte.id})" title="Dupliquer">
+                      <i class="bi bi-copy"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="showStats(${charte.id})" title="Statistiques">
+                      <i class="bi bi-graph-up"></i>
+                    </button>
+                    ${!charte.est_verrouillee && (!charte.est_active || charte.nb_signatures === 0) ? `
+                      <button class="btn btn-outline-danger btn-sm" onclick="confirmDelete(${charte.id})" title="Supprimer">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // Ouvre le modal d'ajout
+    function openAddModal() {
+      currentCharteId = null;
+      document.getElementById('modalCharteTitle').textContent = 'Nouvelle charte';
+      document.getElementById('charte_id').value = '';
+      document.getElementById('charte_titre').value = '';
+      document.getElementById('charte_date').value = new Date().toISOString().split('T')[0];
+      quillEditor.setContents([]);
+
+      const modal = new bootstrap.Modal(document.getElementById('modalCharte'));
+      modal.show();
+    }
+
+    // Edite une charte
+    async function editCharte(id) {
+      const charte = chartes.find(c => c.id === id);
+      if (!charte) return;
+
+      if (charte.est_verrouillee) {
+        showError('Cette charte est verrouillee et ne peut pas etre modifiee. Dupliquez-la pour creer une nouvelle version.');
+        return;
+      }
+
+      currentCharteId = id;
+      document.getElementById('modalCharteTitle').textContent = 'Modifier la charte';
+      document.getElementById('charte_id').value = id;
+      document.getElementById('charte_titre').value = charte.titre;
+      document.getElementById('charte_date').value = charte.date_publication;
+
+      // Charger le contenu HTML dans Quill
+      quillEditor.root.innerHTML = charte.contenu || '';
+
+      const modal = new bootstrap.Modal(document.getElementById('modalCharte'));
+      modal.show();
+    }
+
+    // Sauvegarde la charte
+    async function saveCharte() {
+      const titre = document.getElementById('charte_titre').value.trim();
+      const date_publication = document.getElementById('charte_date').value;
+      const contenu = quillEditor.root.innerHTML;
+
+      if (!titre) {
+        showError('Le titre est obligatoire');
+        return;
+      }
+
+      if (!contenu || contenu === '<p><br></p>') {
+        showError('Le contenu est obligatoire');
+        return;
+      }
+
+      const data = { titre, contenu, date_publication };
+
+      try {
+        if (currentCharteId) {
+          await apiRequest(`/chartes/${currentCharteId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+          });
+          showSuccess('Charte mise a jour');
+        } else {
+          await apiRequest('/chartes', {
+            method: 'POST',
+            body: JSON.stringify(data)
+          });
+          showSuccess('Charte creee');
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('modalCharte')).hide();
+        await loadChartes();
+      } catch (error) {
+        console.error('Erreur sauvegarde charte:', error);
+        showError(error.message || 'Erreur lors de la sauvegarde');
+      }
+    }
+
+    // Active une charte
+    async function activerCharte(id) {
+      try {
+        await apiRequest(`/chartes/${id}/activer`, { method: 'POST' });
+        showSuccess('Charte activee');
+        await loadChartes();
+      } catch (error) {
+        console.error('Erreur activation charte:', error);
+        showError(error.message || 'Erreur lors de l\'activation');
+      }
+    }
+
+    // Duplique une charte
+    async function dupliquerCharte(id) {
+      try {
+        await apiRequest(`/chartes/${id}/dupliquer`, { method: 'POST' });
+        showSuccess('Charte dupliquee');
+        await loadChartes();
+      } catch (error) {
+        console.error('Erreur duplication charte:', error);
+        showError(error.message || 'Erreur lors de la duplication');
+      }
+    }
+
+    // Confirmation de suppression
+    function confirmDelete(id) {
+      document.getElementById('confirmTitle').textContent = 'Supprimer la charte';
+      document.getElementById('confirmMessage').textContent = 'Etes-vous sur de vouloir supprimer cette charte ? Cette action est irreversible.';
+      document.getElementById('confirmBtn').className = 'btn btn-danger';
+      confirmAction = () => deleteCharte(id);
+
+      const modal = new bootstrap.Modal(document.getElementById('modalConfirm'));
+      modal.show();
+    }
+
+    // Supprime une charte
+    async function deleteCharte(id) {
+      try {
+        await apiRequest(`/chartes/${id}`, { method: 'DELETE' });
+        showSuccess('Charte supprimee');
+        bootstrap.Modal.getInstance(document.getElementById('modalConfirm')).hide();
+        await loadChartes();
+      } catch (error) {
+        console.error('Erreur suppression charte:', error);
+        showError(error.message || 'Erreur lors de la suppression');
+      }
+    }
+
+    // Confirme l'action
+    document.getElementById('confirmBtn').addEventListener('click', () => {
+      if (confirmAction) confirmAction();
+    });
+
+    // Apercu de la charte
+    function previewCharte(id) {
+      const charte = chartes.find(c => c.id === id);
+      if (!charte) return;
+
+      document.getElementById('preview-content').innerHTML = charte.contenu || '<p class="text-muted">Aucun contenu</p>';
+
+      const modal = new bootstrap.Modal(document.getElementById('modalPreview'));
+      modal.show();
+    }
+
+    // Affiche les statistiques
+    async function showStats(id) {
+      const modal = new bootstrap.Modal(document.getElementById('modalStats'));
+      modal.show();
+
+      try {
+        const stats = await apiRequest(`/chartes/${id}/stats`);
+        const charte = chartes.find(c => c.id === id);
+
+        document.getElementById('stats-content').innerHTML = `
+          <h6 class="mb-3">${escapeHtml(charte?.titre || 'Charte')}</h6>
+          <div class="row text-center">
+            <div class="col-6 mb-3">
+              <div class="h3 mb-0">${stats.nb_signatures}</div>
+              <small class="text-muted">Signatures</small>
+            </div>
+            <div class="col-6 mb-3">
+              <div class="h3 mb-0">${stats.total}</div>
+              <small class="text-muted">Validations initiees</small>
+            </div>
+          </div>
+          <hr>
+          <table class="table table-sm">
+            <tr><td>En attente</td><td class="text-end">${stats.en_attente}</td></tr>
+            <tr><td>Lue</td><td class="text-end">${stats.lue}</td></tr>
+            <tr><td>OTP envoye</td><td class="text-end">${stats.otp_envoye}</td></tr>
+            <tr><td>Validee</td><td class="text-end text-success">${stats.validee}</td></tr>
+            <tr><td>Expiree</td><td class="text-end text-danger">${stats.expiree}</td></tr>
+          </table>
+        `;
+      } catch (error) {
+        console.error('Erreur chargement stats:', error);
+        document.getElementById('stats-content').innerHTML = `
+          <div class="alert alert-danger">Erreur lors du chargement des statistiques</div>
+        `;
+      }
+    }
+
+    // Helpers
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('fr-FR');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showToast(message, type = 'success') {
+      const toastEl = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+
+      // Reset classes
+      toastEl.classList.remove('bg-success', 'bg-danger', 'bg-warning', 'bg-info', 'text-white');
+
+      // Apply type-specific classes
+      if (type === 'success') {
+        toastEl.classList.add('bg-success', 'text-white');
+      } else if (type === 'error') {
+        toastEl.classList.add('bg-danger', 'text-white');
+      } else if (type === 'warning') {
+        toastEl.classList.add('bg-warning');
+      } else {
+        toastEl.classList.add('bg-info', 'text-white');
+      }
+
+      toastMessage.textContent = message;
+
+      const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3000 });
+      toast.show();
+    }
+
+    function showSuccess(message) {
+      showToast(message, 'success');
+    }
+
+    function showError(message) {
+      showToast(message, 'error');
+    }
+
+    // Modele de charte par defaut
+    function importerModeleDefaut() {
+      // Remplir le titre si vide
+      const titreInput = document.getElementById('charte_titre');
+      if (!titreInput.value.trim()) {
+        titreInput.value = "Charte d'utilisation";
+      }
+
+      // Contenu HTML du modele par defaut
+      const modeleDefaut = `
+<h2>Objet de la charte</h2>
+<p>Cette charte definit les regles de bon usage du service de pret. Elle rappelle vos engagements en tant qu'emprunteur ainsi que vos droits. En la validant, vous vous engagez a la respecter.</p>
+
+<h2>Vos droits</h2>
+<ul>
+  <li><strong>Emprunter</strong> des articles dans la limite du nombre autorise par votre adhesion</li>
+  <li><strong>Prolonger</strong> vos emprunts selon les conditions en vigueur et sous reserve de disponibilite</li>
+  <li><strong>Reserver</strong> des articles actuellement indisponibles (si le service est actif)</li>
+  <li><strong>Acceder</strong> a votre historique d'emprunts depuis votre espace personnel</li>
+  <li><strong>Etre informe</strong> des dates de retour et des rappels par email ou SMS</li>
+</ul>
+
+<h2>Vos engagements</h2>
+
+<h3>Respect des articles empruntes</h3>
+<ul>
+  <li>Manipuler les articles avec soin</li>
+  <li>Ne pas les preter a des tiers</li>
+  <li>Les stocker dans de bonnes conditions</li>
+  <li>Verifier le contenu au moment de l'emprunt et du retour</li>
+  <li>Signaler immediatement toute anomalie, piece manquante ou deterioration</li>
+</ul>
+
+<h3>Respect des delais</h3>
+<ul>
+  <li>Retourner les articles a la date prevue</li>
+  <li>Demander une prolongation AVANT la date de retour si necessaire</li>
+  <li>Prevenir en cas d'impossibilite de restituer a temps</li>
+</ul>
+
+<h3>Respect de la structure et des autres usagers</h3>
+<ul>
+  <li>Adopter un comportement courtois envers les benevoles et les autres membres</li>
+  <li>Respecter les horaires d'ouverture</li>
+  <li>Ne pas monopoliser les articles tres demandes</li>
+</ul>
+
+<h2>En cas de non-respect</h2>
+
+<h3>Retard de restitution</h3>
+<p>En cas de retard non justifie :</p>
+<ul>
+  <li>1er rappel : notification par email/SMS</li>
+  <li>Retard prolonge : suspension temporaire du droit d'emprunt</li>
+  <li>Retard excessif : suspension de l'adhesion jusqu'a regularisation</li>
+</ul>
+
+<h3>Deterioration ou perte</h3>
+<ul>
+  <li>Piece manquante : remplacement de la piece ou remboursement</li>
+  <li>Article deteriore : reparation ou remplacement a vos frais</li>
+  <li>Article perdu : remboursement de la valeur de remplacement</li>
+</ul>
+
+<h3>Comportement inapproprie</h3>
+<p>Tout comportement irrespectueux, agressif ou frauduleux pourra entrainer une exclusion immediate et definitive, sans remboursement de la cotisation.</p>
+
+<h2>Limites du service</h2>
+<ul>
+  <li>Nombre maximum d'emprunts simultanes : selon votre type d'adhesion</li>
+  <li>Duree maximale d'emprunt : variable selon le type d'article</li>
+  <li>Prolongations : limitees en nombre et sous reserve de non-reservation par un autre usager</li>
+</ul>
+
+<p><strong>En validant cette charte, je confirme avoir lu et compris mes droits et mes engagements, et j'accepte de m'y conformer.</strong></p>
+`;
+
+      // Injecter dans l'editeur Quill
+      quillEditor.root.innerHTML = modeleDefaut.trim();
+      showSuccess('Modele par defaut importe. Vous pouvez le personnaliser.');
+    }
+  </script>
+</body>
+</html>

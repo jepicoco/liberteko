@@ -125,6 +125,12 @@ module.exports = (sequelize) => {
       defaultValue: false,
       comment: 'Plan interactif affiche sur le site public'
     },
+    module_charte: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Validation de charte usager activee'
+    },
 
     // === Pages legales ===
     cgv: {
@@ -593,6 +599,48 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: true,
       comment: 'Limite bloquante (disques) - si false, affiche un warning'
+    },
+
+    // === Parametres validation charte usager ===
+    charte_active: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Systeme de charte usager actif'
+    },
+    charte_grace_jours: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 7,
+      comment: 'Periode de grace en jours avant blocage des emprunts'
+    },
+    charte_otp_email: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Autoriser validation par email'
+    },
+    charte_otp_email_config_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'ID de la configuration email a utiliser pour OTP (null = defaut)'
+    },
+    charte_otp_sms: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Autoriser validation par SMS'
+    },
+    charte_otp_sms_config_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'ID de la configuration SMS a utiliser pour OTP (null = defaut)'
+    },
+    charte_otp_preference: {
+      type: DataTypes.ENUM('email', 'sms', 'choix_usager'),
+      allowNull: false,
+      defaultValue: 'email',
+      comment: 'Preference par defaut pour envoi OTP'
     }
   }, {
     tableName: 'parametres_front',
@@ -631,6 +679,7 @@ module.exports = (sequelize) => {
       module_paiement_en_ligne: this.module_paiement_en_ligne,
       module_recherche_ia: this.module_recherche_ia,
       module_plan_interactif: this.module_plan_interactif,
+      module_charte: this.module_charte,
       email_contact: this.email_contact,
       telephone_contact: this.telephone_contact,
       adresse_contact: this.adresse_contact,

@@ -1,8 +1,9 @@
-const { Cotisation, Utilisateur, TarifCotisation, CodeReduction, ModePaiement, ParametresStructure } = require('../models');
+const { Cotisation, Utilisateur, TarifCotisation, CodeReduction, ModePaiement, ParametresStructure, ParametresFront } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
 const pdfService = require('../services/pdfService');
+const charteValidationService = require('../services/charteValidationService');
 
 /**
  * Récupérer toutes les cotisations
@@ -286,6 +287,21 @@ exports.createCotisation = async (req, res) => {
     } catch (eventError) {
       console.error('Erreur déclenchement événement:', eventError);
       // Ne pas bloquer la création si l'événement échoue
+    }
+
+    // Déclencher la validation de charte si nécessaire
+    try {
+      const params = await ParametresFront.getParametres();
+      if (params.charte_active) {
+        const needsValidation = await charteValidationService.verifierRevalidationNecessaire(userId);
+        if (needsValidation) {
+          await charteValidationService.initierValidation(userId, cotisation.id);
+          console.log('Validation charte initiée pour utilisateur:', userId);
+        }
+      }
+    } catch (charteError) {
+      console.error('Erreur initiation validation charte:', charteError);
+      // Ne pas bloquer la création si la validation charte échoue
     }
 
     // Recharger la cotisation avec les relations

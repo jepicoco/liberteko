@@ -283,6 +283,10 @@ app.use('/api/usager/auth', require('./routes/usagerAuth'));
 app.use('/api/usager/emprunts', require('./routes/usagerEmprunts'));
 app.use('/api/usager/factures', require('./routes/usagerFactures'));
 
+// Routes charte usager (validation avec signature numerique)
+app.use('/api/chartes', require('./routes/chartes')); // Admin CRUD
+app.use('/api/charte', require('./routes/charteValidation')); // Validation publique
+
 // Middleware de gestion d'erreurs 404
 app.use((req, res) => {
   res.status(404).json({

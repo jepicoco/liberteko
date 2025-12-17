@@ -734,6 +734,79 @@ class EventTriggerService {
       reservationId: reservationData.id
     });
   }
+
+  // ============================================
+  // Triggers pour la validation de charte usager
+  // ============================================
+
+  /**
+   * Déclenche l'événement de demande de validation de charte
+   * @param {Object} data - {utilisateur, charte, validation, token, lien_validation, date_fin_grace}
+   */
+  async triggerCharteValidationRequested(data) {
+    const utilisateurData = typeof data.utilisateur?.toJSON === 'function' ? data.utilisateur.toJSON() : data.utilisateur;
+    const charteData = typeof data.charte?.toJSON === 'function' ? data.charte.toJSON() : data.charte;
+    const validationData = typeof data.validation?.toJSON === 'function' ? data.validation.toJSON() : data.validation;
+
+    return await this.triggerEvent('CHARTE_VALIDATION_REQUESTED', {
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      email: utilisateurData?.email,
+      charte_titre: charteData?.titre,
+      charte_version: charteData?.version,
+      lien_validation: data.lien_validation,
+      date_fin_grace: data.date_fin_grace ? new Date(data.date_fin_grace).toLocaleDateString('fr-FR') : '',
+      validation_id: validationData?.id
+    });
+  }
+
+  /**
+   * Déclenche l'événement d'envoi de code OTP par email pour validation charte
+   * @param {Object} data - {utilisateur, code_otp, validation}
+   */
+  async triggerCharteOTPEmail(data) {
+    const utilisateurData = typeof data.utilisateur?.toJSON === 'function' ? data.utilisateur.toJSON() : data.utilisateur;
+
+    return await this.triggerEvent('CHARTE_OTP_EMAIL', {
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      email: utilisateurData?.email,
+      code_otp: data.code_otp
+    });
+  }
+
+  /**
+   * Déclenche l'événement d'envoi de code OTP par SMS pour validation charte
+   * @param {Object} data - {utilisateur, code_otp, validation}
+   */
+  async triggerCharteOTPSMS(data) {
+    const utilisateurData = typeof data.utilisateur?.toJSON === 'function' ? data.utilisateur.toJSON() : data.utilisateur;
+
+    return await this.triggerEvent('CHARTE_OTP_SMS', {
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      telephone: utilisateurData?.telephone,
+      code_otp: data.code_otp
+    });
+  }
+
+  /**
+   * Déclenche l'événement de charte validée avec succès
+   * @param {Object} data - {utilisateur, charte, validation}
+   */
+  async triggerCharteValidated(data) {
+    const utilisateurData = typeof data.utilisateur?.toJSON === 'function' ? data.utilisateur.toJSON() : data.utilisateur;
+    const charteData = typeof data.charte?.toJSON === 'function' ? data.charte.toJSON() : data.charte;
+
+    return await this.triggerEvent('CHARTE_VALIDATED', {
+      adherent: utilisateurData,
+      utilisateur: utilisateurData,
+      email: utilisateurData?.email,
+      charte_titre: charteData?.titre,
+      charte_version: charteData?.version,
+      date_validation: new Date().toLocaleDateString('fr-FR')
+    });
+  }
 }
 
 // Export singleton

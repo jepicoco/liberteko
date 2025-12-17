@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Validation de charte - Usager</title>
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link href="/vendor/bootstrap-icons/bootstrap-icons.min.css" rel="stylesheet">
+  <script src="/js/theme-loader.js"></script>
+  <style>
+    :root {
+      --couleur-primaire: var(--primary-color, #0d6efd);
+    }
+    body {
+      background-color: #f8f9fa;
+    }
+    .navbar {
+      background: var(--couleur-primaire) !important;
+    }
+    .charte-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .charte-content {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .step {
+      display: flex;
+      align-items: center;
+      color: #6c757d;
+    }
+    .step.active {
+      color: var(--couleur-primaire);
+    }
+    .step.completed {
+      color: #198754;
+    }
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 0.5rem;
+      font-weight: 600;
+    }
+    .step.completed .step-circle {
+      background: #198754;
+      color: #fff;
+      border-color: #198754;
+    }
+    .step-connector {
+      width: 60px;
+      height: 2px;
+      background: #dee2e6;
+      margin: 0 1rem;
+    }
+    .otp-input {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .otp-input input {
+      width: 50px;
+      height: 60px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 600;
+      border: 2px solid #dee2e6;
+      border-radius: 0.5rem;
+    }
+    .otp-input input:focus {
+      border-color: var(--couleur-primaire);
+      outline: none;
+    }
+    .canal-option {
+      border: 2px solid #dee2e6;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .canal-option:hover {
+      border-color: var(--couleur-primaire);
+    }
+    .canal-option.selected {
+      border-color: var(--couleur-primaire);
+      background: rgba(13, 110, 253, 0.05);
+    }
+    .countdown {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+    .countdown.expiring {
+      color: #dc3545;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar simple -->
+  <nav class="navbar navbar-dark">
+    <div class="container">
+      <span class="navbar-brand">
+        <i class="bi bi-file-earmark-check"></i> Validation de charte
+      </span>
+    </div>
+  </nav>
+
+  <div class="container py-4">
+    <div class="charte-container">
+      <!-- Loading -->
+      <div id="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3">Chargement...</p>
+      </div>
+
+      <!-- Error -->
+      <div id="error" class="d-none">
+        <div class="card border-danger">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-exclamation-circle display-3 text-danger mb-3"></i>
+            <h4 class="text-danger">Lien invalide ou expire</h4>
+            <p class="text-muted" id="error-message">Ce lien de validation n'est plus valide.</p>
+            <a href="/usager/" class="btn btn-primary mt-3">Retour a mon espace</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success -->
+      <div id="success" class="d-none">
+        <div class="card border-success">
+          <div class="card-body text-center py-5">
+            <i class="bi bi-check-circle display-3 text-success mb-3"></i>
+            <h4 class="text-success">Charte validee avec succes</h4>
+            <p class="text-muted">Merci d'avoir valide la charte d'utilisation.</p>
+            <a href="/usager/" class="btn btn-success mt-3">Retour a mon espace</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div id="main-content" class="d-none">
+        <!-- Steps -->
+        <div class="step-indicator">
+          <div class="step" id="step1">
+            <div class="step-circle">1</div>
+            <span>Lecture</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" id="step2">
+            <div class="step-circle">2</div>
+            <span>Code OTP</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" id="step3">
+            <div class="step-circle">3</div>
+            <span>Validation</span>
+          </div>
+        </div>
+
+        <!-- Step 1: Lecture -->
+        <div id="section-lecture">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> <span id="charte-titre"></span></h5>
+              <small class="text-muted">Version <span id="charte-version"></span></small>
+            </div>
+            <div class="card-body">
+              <div class="charte-content" id="charte-contenu"></div>
+
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="checkbox-lu">
+                <label class="form-check-label" for="checkbox-lu">
+                  J'ai lu et compris le contenu de cette charte
+                </label>
+              </div>
+
+              <button class="btn btn-primary w-100" id="btn-continuer" disabled onclick="continuerVersOTP()">
+                Continuer <i class="bi bi-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div id="section-otp" class="d-none">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0"><i class="bi bi-shield-check"></i> Verification de votre identite</h5>
+            </div>
+            <div class="card-body">
+              <!-- Channel selection -->
+              <div id="canal-selection" class="mb-4">
+                <p class="text-center mb-3">Comment souhaitez-vous recevoir votre code de validation ?</p>
+                <div class="row justify-content-center" id="canaux-container"></div>
+              </div>
+
+              <!-- OTP input -->
+              <div id="otp-saisie" class="d-none">
+                <p class="text-center mb-3">
+                  Un code a 6 chiffres a ete envoye par <strong id="canal-utilise"></strong>.
+                </p>
+                <div class="otp-input mb-3">
+                  <input type="text" maxlength="1" class="otp-digit" data-index="0">
+                  <input type="text" maxlength="1" class="otp-digit" data-index="1">
+                  <input type="text" maxlength="1" class="otp-digit" data-index="2">
+                  <input type="text" maxlength="1" class="otp-digit" data-index="3">
+                  <input type="text" maxlength="1" class="otp-digit" data-index="4">
+                  <input type="text" maxlength="1" class="otp-digit" data-index="5">
+                </div>
+                <p class="text-center countdown" id="countdown">Code valide pendant 15:00</p>
+
+                <div id="otp-error" class="alert alert-danger d-none mb-3"></div>
+
+                <button class="btn btn-primary w-100 mb-2" id="btn-valider" onclick="validerOTP()">
+                  Valider le code
+                </button>
+                <button class="btn btn-link w-100" id="btn-renvoyer" onclick="renvoyerOTP()">
+                  Renvoyer le code
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script>
+    // Configuration
+    const API_BASE_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000/api'
+      : `${window.location.origin}/api`;
+
+    // State
+    let token = null;
+    let charteData = null;
+    let canauxData = null;
+    let selectedCanal = null;
+    let otpExpireTime = null;
+    let countdownInterval = null;
+
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Recuperer le token depuis l'URL
+      const urlParams = new URLSearchParams(window.location.search);
+      token = urlParams.get('token');
+
+      if (!token) {
+        showError('Aucun token fourni');
+        return;
+      }
+
+      await loadCharte();
+      initOTPInputs();
+    });
+
+    // Charge les donnees de la charte
+    async function loadCharte() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/charte/valider/${token}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          showError(data.error || 'Erreur de chargement');
+          return;
+        }
+
+        charteData = data.charte;
+        canauxData = data.canaux;
+
+        // Afficher le contenu
+        document.getElementById('charte-titre').textContent = charteData.titre;
+        document.getElementById('charte-version').textContent = charteData.version;
+        document.getElementById('charte-contenu').innerHTML = charteData.contenu;
+
+        // Afficher les canaux
+        renderCanaux();
+
+        // Afficher la section principale
+        document.getElementById('loading').classList.add('d-none');
+        document.getElementById('main-content').classList.remove('d-none');
+        setStep(1);
+
+        // Si deja lu, passer directement a l'OTP
+        if (data.validation.statut === 'lue' || data.validation.statut === 'otp_envoye') {
+          document.getElementById('checkbox-lu').checked = true;
+          document.getElementById('btn-continuer').disabled = false;
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        showError('Erreur de connexion au serveur');
+      }
+    }
+
+    // Affiche les canaux disponibles
+    function renderCanaux() {
+      const container = document.getElementById('canaux-container');
+
+      if (!canauxData || canauxData.length === 0) {
+        container.innerHTML = '<p class="text-danger">Aucun canal de validation disponible</p>';
+        return;
+      }
+
+      container.innerHTML = canauxData.map((canal, i) => `
+        <div class="col-md-5 mb-2">
+          <div class="canal-option ${i === 0 ? 'selected' : ''}" data-canal="${canal.code}" onclick="selectCanal('${canal.code}')">
+            <div class="d-flex align-items-center">
+              <i class="bi ${canal.code === 'email' ? 'bi-envelope' : 'bi-phone'} fs-3 me-3"></i>
+              <div>
+                <strong>${canal.label}</strong>
+                <div class="text-muted small">${canal.destination}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Selectionner le premier par defaut
+      if (canauxData.length > 0) {
+        selectedCanal = canauxData[0].code;
+      }
+    }
+
+    // Selectionne un canal
+    function selectCanal(canal) {
+      selectedCanal = canal;
+      document.querySelectorAll('.canal-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.canal === canal);
+      });
+    }
+
+    // Checkbox lu
+    document.getElementById('checkbox-lu').addEventListener('change', function() {
+      document.getElementById('btn-continuer').disabled = !this.checked;
+    });
+
+    // Continue vers OTP
+    async function continuerVersOTP() {
+      try {
+        // Marquer comme lu
+        await fetch(`${API_BASE_URL}/charte/valider/${token}/lue`, { method: 'POST' });
+
+        // Passer a l'etape OTP
+        document.getElementById('section-lecture').classList.add('d-none');
+        document.getElementById('section-otp').classList.remove('d-none');
+        setStep(2);
+
+        // Si un seul canal, envoyer directement
+        if (canauxData.length === 1) {
+          await envoyerOTP();
+        }
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur lors de la mise a jour');
+      }
+    }
+
+    // Envoie le code OTP
+    async function envoyerOTP() {
+      if (!selectedCanal) {
+        alert('Veuillez selectionner un canal');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/charte/valider/${token}/otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ canal: selectedCanal })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert(data.error || 'Erreur lors de l\'envoi');
+          return;
+        }
+
+        // Afficher la saisie OTP
+        document.getElementById('canal-selection').classList.add('d-none');
+        document.getElementById('otp-saisie').classList.remove('d-none');
+        document.getElementById('canal-utilise').textContent = selectedCanal === 'email' ? 'email' : 'SMS';
+
+        // Demarrer le compte a rebours
+        startCountdown(15 * 60);
+
+        // Focus sur le premier input
+        document.querySelector('.otp-digit').focus();
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('Erreur de connexion');
+      }
+    }
+
+    // Click sur un canal pour envoyer
+    document.getElementById('canaux-container').addEventListener('click', (e) => {
+      const option = e.target.closest('.canal-option');
+      if (option) {
+        selectCanal(option.dataset.canal);
+        envoyerOTP();
+      }
+    });
+
+    // Renvoie le code OTP
+    async function renvoyerOTP() {
+      document.getElementById('canal-selection').classList.remove('d-none');
+      document.getElementById('otp-saisie').classList.add('d-none');
+      clearOTPInputs();
+    }
+
+    // Valide le code OTP
+    async function validerOTP() {
+      const code = Array.from(document.querySelectorAll('.otp-digit'))
+        .map(input => input.value)
+        .join('');
+
+      if (code.length !== 6) {
+        showOTPError('Veuillez saisir les 6 chiffres');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/charte/valider/${token}/confirmer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          showOTPError(data.error || 'Code incorrect');
+          return;
+        }
+
+        // Succes
+        if (countdownInterval) clearInterval(countdownInterval);
+        setStep(3);
+        document.getElementById('main-content').classList.add('d-none');
+        document.getElementById('success').classList.remove('d-none');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showOTPError('Erreur de connexion');
+      }
+    }
+
+    // Initialise les inputs OTP
+    function initOTPInputs() {
+      const inputs = document.querySelectorAll('.otp-digit');
+
+      inputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          const value = e.target.value;
+          if (value.length === 1 && index < 5) {
+            inputs[index + 1].focus();
+          }
+          hideOTPError();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            inputs[index - 1].focus();
+          }
+        });
+
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const paste = (e.clipboardData || window.clipboardData).getData('text');
+          const digits = paste.replace(/\D/g, '').slice(0, 6);
+          digits.split('').forEach((digit, i) => {
+            if (inputs[i]) inputs[i].value = digit;
+          });
+          if (digits.length === 6) {
+            inputs[5].focus();
+          }
+        });
+      });
+    }
+
+    // Clear OTP inputs
+    function clearOTPInputs() {
+      document.querySelectorAll('.otp-digit').forEach(input => input.value = '');
+    }
+
+    // Affiche une erreur OTP
+    function showOTPError(message) {
+      const el = document.getElementById('otp-error');
+      el.textContent = message;
+      el.classList.remove('d-none');
+    }
+
+    // Cache l'erreur OTP
+    function hideOTPError() {
+      document.getElementById('otp-error').classList.add('d-none');
+    }
+
+    // Demarre le compte a rebours
+    function startCountdown(seconds) {
+      otpExpireTime = Date.now() + (seconds * 1000);
+
+      function update() {
+        const remaining = Math.max(0, Math.floor((otpExpireTime - Date.now()) / 1000));
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+
+        const el = document.getElementById('countdown');
+        el.textContent = `Code valide pendant ${mins}:${secs.toString().padStart(2, '0')}`;
+        el.classList.toggle('expiring', remaining < 120);
+
+        if (remaining <= 0) {
+          clearInterval(countdownInterval);
+          el.textContent = 'Code expire';
+        }
+      }
+
+      update();
+      countdownInterval = setInterval(update, 1000);
+    }
+
+    // Met a jour les indicateurs d'etape
+    function setStep(step) {
+      for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById(`step${i}`);
+        el.classList.remove('active', 'completed');
+        if (i < step) {
+          el.classList.add('completed');
+          el.querySelector('.step-circle').innerHTML = '<i class="bi bi-check"></i>';
+        } else if (i === step) {
+          el.classList.add('active');
+        }
+      }
+    }
+
+    // Affiche une erreur
+    function showError(message) {
+      document.getElementById('loading').classList.add('d-none');
+      document.getElementById('main-content').classList.add('d-none');
+      document.getElementById('error-message').textContent = message;
+      document.getElementById('error').classList.remove('d-none');
+    }
+  </script>
+</body>
+</html>

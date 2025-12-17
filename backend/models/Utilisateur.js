@@ -176,6 +176,29 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: false,
       comment: 'Indique si c\'est un compte enfant rattache a un parent'
+    },
+    // === Champs validation charte usager ===
+    charte_validee: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Charte actuellement validee'
+    },
+    charte_version_validee: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      comment: 'Version de la charte validee'
+    },
+    date_validation_charte: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      comment: 'Date de validation de la charte'
+    },
+    bypass_charte: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Bypass admin de la validation charte'
     }
   }, {
     tableName: 'utilisateurs',
@@ -332,6 +355,52 @@ module.exports = (sequelize) => {
     'gestionnaire': 3,
     'comptable': 4,
     'administrateur': 5
+  };
+
+  /**
+   * Verifie si l'utilisateur doit valider la charte
+   * Compare la version validee avec la version active
+   * @param {string} versionActive - Version de la charte actuellement active
+   * @returns {boolean}
+   */
+  Utilisateur.prototype.doitValiderCharte = function(versionActive) {
+    // Bypass admin
+    if (this.bypass_charte) {
+      return false;
+    }
+
+    // Si pas de charte validee
+    if (!this.charte_validee || !this.charte_version_validee) {
+      return true;
+    }
+
+    // Si version differente de la version active
+    if (this.charte_version_validee !== versionActive) {
+      return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * Marque la charte comme validee pour cet utilisateur
+   * @param {string} version - Version de la charte validee
+   */
+  Utilisateur.prototype.marquerCharteValidee = async function(version) {
+    this.charte_validee = true;
+    this.charte_version_validee = version;
+    this.date_validation_charte = new Date();
+    await this.save({ hooks: false });
+    return this;
+  };
+
+  /**
+   * Invalide la charte pour cet utilisateur (lors d'une nouvelle version)
+   */
+  Utilisateur.prototype.invaliderCharte = async function() {
+    this.charte_validee = false;
+    await this.save({ hooks: false });
+    return this;
   };
 
   return Utilisateur;

@@ -9,6 +9,7 @@ const PARAMETRES_CATEGORIES = {
     icon: 'bi-gear',
     pages: [
       { id: 'site-web', label: 'Site web', href: 'parametres-site-web.html', icon: 'bi-globe' },
+      { id: 'charte', label: 'Charte usager', href: 'parametres-charte.html', icon: 'bi-file-earmark-check' },
       { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
       { id: 'sites', label: 'Sites', href: 'parametres-sites.html', icon: 'bi-building' },
       { id: 'utilisateurs', label: 'Utilisateurs', href: 'parametres-utilisateurs.html', icon: 'bi-people' },

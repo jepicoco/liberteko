@@ -67,6 +67,7 @@
     "migrate-fk": "node database/migrations/addMissingForeignKeys.js up",
     "setup-nouveautes": "node database/migrations/addNouveauteParams.js up && node database/migrations/addStatutNouveaute.js up",
     "setup-reservations-communications": "node database/seeds/seedReservationCommunications.js",
+    "setup-charte-communications": "node database/seeds/seedCharteCommunications.js",
     "job-reservation-expirations": "node backend/jobs/reservationExpirations.js",
     "job-reservation-rappels": "node backend/jobs/reservationRappels.js",
     "install:first": "node scripts/install.js",

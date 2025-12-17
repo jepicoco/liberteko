@@ -185,6 +185,15 @@ async function up(connection) {
         couleur: '#17a2b8',
         actif: false,
         ordre_affichage: 11
+      },
+      {
+        code: 'charte',
+        libelle: 'Charte usager',
+        description: 'Validation de charte lors des cotisations. Les usagers doivent signer numeriquement via code OTP.',
+        icone: 'file-earmark-check',
+        couleur: '#5bc0de',
+        actif: false,
+        ordre_affichage: 12
       }
     ];
 
