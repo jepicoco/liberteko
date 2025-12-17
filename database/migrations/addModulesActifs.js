@@ -7,7 +7,8 @@ require('dotenv').config({ path: require('path').join(__dirname, '../../.env') }
 const sequelize = require('../../backend/config/sequelize');
 const { DataTypes } = require('sequelize');
 
-async function migrate() {
+async function up(connection) {
+  // Connection peut être passée par migrate.js ou on utilise sequelize directement
   const queryInterface = sequelize.getQueryInterface();
 
   try {
@@ -148,6 +149,42 @@ async function migrate() {
         couleur: 'secondary',
         actif: true,
         ordre_affichage: 7
+      },
+      {
+        code: 'reservations',
+        libelle: 'Reservations',
+        description: 'Systeme de reservations pour les articles. Permet aux usagers de reserver des articles indisponibles.',
+        icone: 'bookmark-check',
+        couleur: '#e8daef',
+        actif: false,
+        ordre_affichage: 8
+      },
+      {
+        code: 'recherche_ia',
+        libelle: 'Recherche IA',
+        description: 'Recherche en langage naturel et enrichissement automatique des fiches via IA.',
+        icone: 'robot',
+        couleur: '#e0cffc',
+        actif: false,
+        ordre_affichage: 9
+      },
+      {
+        code: 'plans',
+        libelle: 'Editeur de Plans',
+        description: 'Editeur de plans interactifs pour visualiser les emplacements des collections.',
+        icone: 'map',
+        couleur: '#c3f0ca',
+        actif: false,
+        ordre_affichage: 10
+      },
+      {
+        code: 'frequentation',
+        libelle: 'Frequentation',
+        description: 'Comptage des visiteurs. Deployer des tablettes pour enregistrer adultes/enfants et communes.',
+        icone: 'people-fill',
+        couleur: '#17a2b8',
+        actif: false,
+        ordre_affichage: 11
       }
     ];
 
@@ -178,9 +215,14 @@ async function migrate() {
   }
 }
 
+async function down(connection) {
+  // Note: On ne supprime pas les modules par defaut car cela pourrait casser l'application
+  console.log('Rollback addModulesActifs: rien a faire (modules conserves)');
+}
+
 // Execution si appele directement
 if (require.main === module) {
-  migrate()
+  up()
     .then(() => {
       console.log('\nMigration terminee.');
       process.exit(0);
@@ -191,4 +233,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = migrate;
+module.exports = { up, down };

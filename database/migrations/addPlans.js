@@ -390,19 +390,33 @@ async function down() {
   console.log('Rollback addPlans termine!');
 }
 
-// Execution
-const command = process.argv[2];
+// Wrapper pour compatibilite avec migrate.js
+// migrate.js passe une connection mysql2, mais cette migration utilise sequelize
+async function upWrapper(connection) {
+  // Ignorer la connection passee, utiliser sequelize directement
+  await up();
+}
 
-(async () => {
-  try {
-    if (command === 'down') {
-      await down();
-    } else {
-      await up();
+async function downWrapper(connection) {
+  await down();
+}
+
+// Execution si appele directement
+if (require.main === module) {
+  const command = process.argv[2];
+  (async () => {
+    try {
+      if (command === 'down') {
+        await down();
+      } else {
+        await up();
+      }
+      process.exit(0);
+    } catch (error) {
+      console.error('Erreur migration:', error);
+      process.exit(1);
     }
-    process.exit(0);
-  } catch (error) {
-    console.error('Erreur migration:', error);
-    process.exit(1);
-  }
-})();
+  })();
+}
+
+module.exports = { up: upWrapper, down: downWrapper };

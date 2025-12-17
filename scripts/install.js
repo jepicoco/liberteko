@@ -170,25 +170,33 @@ async function runMigrations() {
     const migratePath = path.join(__dirname, '..', 'database', 'migrate.js');
 
     return new Promise((resolve) => {
-      const child = spawn('node', [migratePath, 'up'], {
+      // Utiliser process.execPath pour s'assurer d'utiliser le bon Node.js
+      const child = spawn(process.execPath, [migratePath, 'up'], {
         cwd: path.join(__dirname, '..'),
-        stdio: 'pipe'
+        stdio: 'pipe',
+        env: { ...process.env }
       });
 
       let output = '';
+      let errorOutput = '';
 
       child.stdout.on('data', (data) => {
-        output += data.toString();
+        const text = data.toString();
+        output += text;
+        // Afficher en temps reel les migrations
+        process.stdout.write(text);
       });
 
       child.stderr.on('data', (data) => {
-        output += data.toString();
+        const text = data.toString();
+        errorOutput += text;
+        process.stderr.write(text);
       });
 
       child.on('close', (code) => {
         if (code === 0) {
           const lines = output.split('\n');
-          const migrated = lines.filter(l => l.includes('Succès') || l.includes('Success')).length;
+          const migrated = lines.filter(l => l.includes('Succès') || l.includes('Success') || l.includes('✓')).length;
 
           if (migrated > 0) {
             logSuccess(`${migrated} migration(s) executee(s)`);
@@ -200,9 +208,16 @@ async function runMigrations() {
           resolve(true);
         } else {
           logError('Erreur lors des migrations');
-          console.log(output);
+          if (errorOutput) {
+            console.log(errorOutput);
+          }
           resolve(false);
         }
+      });
+
+      child.on('error', (err) => {
+        logError(`Impossible de lancer les migrations: ${err.message}`);
+        resolve(false);
       });
     });
 
