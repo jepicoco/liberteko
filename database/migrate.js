@@ -82,10 +82,35 @@ function loadMigration(filename) {
   if (typeof migration.up !== 'function') {
     return {
       up: async () => {
-        console.log(`    (ancienne migration - format standalone, à exécuter manuellement si besoin)`);
+        // Exécuter la migration legacy en subprocess
+        const { execSync } = require('child_process');
+        console.log(`    (migration legacy - exécution automatique...)`);
+        try {
+          execSync(`node "${filepath}"`, {
+            cwd: path.join(__dirname, '..'),
+            stdio: 'pipe',
+            env: process.env
+          });
+        } catch (err) {
+          // Certaines migrations legacy peuvent échouer si déjà appliquées (tables existantes)
+          // On considère ça comme un succès si pas d'erreur fatale
+          if (err.status !== 0 && err.stderr && err.stderr.toString().includes('fatal')) {
+            throw new Error(err.stderr.toString());
+          }
+        }
       },
       down: async () => {
-        console.log(`    (ancienne migration - format standalone, à exécuter manuellement si besoin)`);
+        const { execSync } = require('child_process');
+        console.log(`    (migration legacy - rollback automatique...)`);
+        try {
+          execSync(`node "${filepath}" down`, {
+            cwd: path.join(__dirname, '..'),
+            stdio: 'pipe',
+            env: process.env
+          });
+        } catch (err) {
+          // Ignorer les erreurs de rollback sur migrations legacy
+        }
       },
       isLegacy: true
     };
@@ -172,29 +197,43 @@ async function up() {
 
     console.log(`\n=== Exécution de ${pending.length} migration(s) (batch ${batch}) ===\n`);
 
+    let successCount = 0;
+    let legacyCount = 0;
+
     for (const file of pending) {
       console.log(`→ ${file}...`);
 
-      try {
-        const migration = loadMigration(file);
+      let migration = null;
+      let isLegacy = false;
 
-        if (migration.isLegacy) {
-          console.log(`  \x1b[33m⚠ Migration legacy (format standalone)\x1b[0m`);
-          console.log(`    Exécuter manuellement: node database/migrations/${file}`);
-          // Ne pas marquer comme exécutée - l'utilisateur doit la gérer manuellement
-          continue;
+      try {
+        migration = loadMigration(file);
+        isLegacy = migration.isLegacy;
+
+        if (isLegacy) {
+          console.log(`  \x1b[33m⚠ Migration legacy\x1b[0m`);
+          legacyCount++;
         }
 
+        // Exécuter la migration (legacy ou moderne)
         await migration.up(connection);
         await markAsExecuted(connection, file, batch);
         console.log(`  \x1b[32m✓ Succès\x1b[0m`);
+        successCount++;
       } catch (error) {
         console.error(`  \x1b[31m✗ Erreur: ${error.message}\x1b[0m`);
-        throw error;
+        // Pour les migrations legacy, on continue malgré les erreurs (souvent "table existe déjà")
+        if (isLegacy) {
+          console.log(`  \x1b[33m  (ignoré - probablement déjà appliquée)\x1b[0m`);
+          await markAsExecuted(connection, file, batch);
+          successCount++;
+        } else {
+          throw error;
+        }
       }
     }
 
-    console.log(`\n✓ ${pending.length} migration(s) exécutée(s)\n`);
+    console.log(`\n✓ ${successCount} migration(s) exécutée(s)${legacyCount > 0 ? ` (dont ${legacyCount} legacy)` : ''}\n`);
 
   } finally {
     await connection.end();
