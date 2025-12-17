@@ -78,6 +78,7 @@ if (process.env.NODE_ENV === 'production') {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'", "cdn.jsdelivr.net"],
+        scriptSrcAttr: ["'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", "fonts.googleapis.com", "cdn.jsdelivr.net"],
         fontSrc: ["'self'", "fonts.gstatic.com", "cdn.jsdelivr.net"],
         imgSrc: ["'self'", "data:", "https:"],
