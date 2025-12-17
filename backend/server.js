@@ -114,8 +114,8 @@ app.use(express.urlencoded({ extended: true }));
 // Middleware de logging HTTP
 app.use(requestLogger);
 
-// Rate limiting global pour toutes les routes API
-app.use('/api/', apiLimiter);
+// Rate limiting uniquement pour les routes externes (API publique)
+// Les routes internes n'ont pas de limite
 
 // Redirection des anciennes URLs vers les nouvelles
 app.get('/connexion.html', (req, res) => {
@@ -270,12 +270,12 @@ app.use('/api/parametres/comptabilite', require('./routes/parametrageComptable')
 app.use('/api/caisses', require('./routes/caisse'));
 app.use('/api/factures', require('./routes/factures'));
 app.use('/api/api-keys', require('./routes/apiKeys'));
-app.use('/api/external', require('./routes/external'));
+app.use('/api/external', apiLimiter, require('./routes/external'));
 app.use('/api/plans', require('./routes/plans'));
 app.use('/api/aide', require('./routes/aide'));
 app.use('/api/frequentation', require('./routes/frequentation'));
 app.use('/api/communes', require('./routes/communes'));
-app.use('/api/external/frequentation', require('./routes/frequentationTablet'));
+app.use('/api/external/frequentation', apiLimiter, require('./routes/frequentationTablet'));
 app.use('/api/system', require('./routes/system'));
 
 // Routes espace usager (adherents)
