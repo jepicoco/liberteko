@@ -795,12 +795,34 @@ const deleteEmprunt = async (req, res) => {
 
 /**
  * Get overdue emprunts
- * GET /api/emprunts/overdue
+ * GET /api/emprunts/overdue?module=ludotheque
  *
  * Optimise: utilise un UPDATE groupe au lieu de N saves individuels
+ * Supporte le filtrage par module (ludotheque, bibliotheque, filmotheque, discotheque)
  */
 const getOverdueEmprunts = async (req, res) => {
   try {
+    const { module: moduleCode } = req.query;
+
+    // Mapping module -> foreign key field
+    const MODULE_FK_MAPPING = {
+      ludotheque: 'jeu_id',
+      bibliotheque: 'livre_id',
+      filmotheque: 'film_id',
+      discotheque: 'cd_id'
+    };
+
+    // Construire la clause WHERE
+    const where = {
+      statut: { [Op.in]: ['en_cours', 'en_retard'] },
+      date_retour_prevue: { [Op.lt]: new Date() }
+    };
+
+    // Filtrer par module si specifie
+    if (moduleCode && MODULE_FK_MAPPING[moduleCode]) {
+      where[MODULE_FK_MAPPING[moduleCode]] = { [Op.ne]: null };
+    }
+
     // Mise a jour groupee des statuts (evite N+1 writes)
     await Emprunt.update(
       { statut: 'en_retard' },
@@ -814,27 +836,48 @@ const getOverdueEmprunts = async (req, res) => {
 
     // Recuperer tous les emprunts en retard avec leurs associations
     const emprunts = await Emprunt.findAll({
-      where: {
-        statut: { [Op.in]: ['en_cours', 'en_retard'] },
-        date_retour_prevue: { [Op.lt]: new Date() }
-      },
+      where,
       include: [
         { model: Utilisateur, as: 'utilisateur' },
-        { model: Jeu, as: 'jeu' }
+        { model: Jeu, as: 'jeu' },
+        { model: Livre, as: 'livre' },
+        { model: Film, as: 'film' },
+        { model: Disque, as: 'disque' }
       ],
       order: [['date_retour_prevue', 'ASC']]
     });
 
-    // Ajouter alias adherent pour rétrocompatibilité frontend
+    // Ajouter alias et informations d'article unifie
     const empruntsWithAlias = emprunts.map(e => {
       const data = e.toJSON();
-      data.adherent = data.utilisateur;
+      data.adherent = data.utilisateur; // Retrocompatibilite
+
+      // Determiner le type d'article et l'article lui-meme
+      if (data.jeu_id && data.jeu) {
+        data.articleType = 'jeu';
+        data.articleModule = 'ludotheque';
+        data.article = data.jeu;
+      } else if (data.livre_id && data.livre) {
+        data.articleType = 'livre';
+        data.articleModule = 'bibliotheque';
+        data.article = data.livre;
+      } else if (data.film_id && data.film) {
+        data.articleType = 'film';
+        data.articleModule = 'filmotheque';
+        data.article = data.film;
+      } else if (data.cd_id && data.disque) {
+        data.articleType = 'disque';
+        data.articleModule = 'discotheque';
+        data.article = data.disque;
+      }
+
       return data;
     });
 
     res.json({
       emprunts: empruntsWithAlias,
-      total: emprunts.length
+      total: emprunts.length,
+      module: moduleCode || 'all'
     });
   } catch (error) {
     console.error('Get overdue emprunts error:', error);
