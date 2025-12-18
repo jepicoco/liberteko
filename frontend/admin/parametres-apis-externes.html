@@ -407,7 +407,11 @@
 
       let html = '<div class="row">';
       configs.forEach(config => {
-        const collections = config.collections_supportees || [];
+        let collections = config.collections_supportees || [];
+        // Parser si c'est une chaîne JSON
+        if (typeof collections === 'string') {
+          try { collections = JSON.parse(collections); } catch (e) { collections = []; }
+        }
         const collectionBadges = collections.map(c => {
           const colors = { jeu: 'primary', livre: 'purple', film: 'danger', disque: 'warning' };
           const icons = { jeu: 'dice-5', livre: 'book', film: 'film', disque: 'disc' };
