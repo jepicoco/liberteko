@@ -304,7 +304,7 @@ const getPopularItems = async (req, res) => {
 
       const popularItems = await Emprunt.findAll({
         attributes: [
-          [mapping.field],
+          mapping.field,
           [sequelize.fn('COUNT', sequelize.col(mapping.field)), 'emprunt_count']
         ],
         where: {
