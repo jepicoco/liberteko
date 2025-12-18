@@ -342,6 +342,7 @@
         if (typeof permissions === 'string') {
           try { permissions = JSON.parse(permissions); } catch (e) { permissions = []; }
         }
+
         const permBadges = permissions.slice(0, 3)
           .map(p => `<span class="badge bg-secondary permission-badge">${p}</span>`)
           .join('');

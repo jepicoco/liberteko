@@ -76,7 +76,8 @@
       "Bash(move tablet.css default.css)",
       "Bash(powershell -Command \"Rename-Item -Path ''C:\\Users\\jepic\\Documents\\Projets\\liberteko\\frontend\\tablet\\css\\tablet.css'' -NewName ''default.css''\")",
       "Bash(git restore:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(git rebase:*)"
     ],
     "deny": [],
     "ask": []
