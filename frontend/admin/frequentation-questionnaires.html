@@ -69,6 +69,9 @@
                         </nav>
                     </div>
                     <div class="btn-group">
+                        <button class="btn btn-outline-dark" onclick="showTabletQRCode()" title="QR code d'accès tablette">
+                            <i class="bi bi-qr-code me-1"></i>Accès tablette
+                        </button>
                         <a href="parametres-communes.html" class="btn btn-outline-info" title="Gérer le référentiel des communes">
                             <i class="bi bi-geo-alt me-1"></i>Communes
                         </a>
@@ -348,6 +351,33 @@
         </div>
     </div>
 
+    <!-- Modal QR Code Accès Tablette -->
+    <div class="modal fade" id="tabletQRModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-qr-code me-2"></i>Accès tablette</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p class="text-muted small mb-3">
+                        Scannez ce QR code depuis une tablette pour accéder à l'écran de configuration.
+                    </p>
+                    <img id="tablet-qr-code" class="qr-preview mb-3" style="width: 200px; height: 200px;" alt="QR Code">
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control font-monospace small" id="tablet-url" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('tablet-url')" title="Copier">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="js/api-admin.js"></script>
@@ -381,6 +411,18 @@
                 console.error('Erreur chargement:', error);
                 showError('Erreur de chargement des donnees');
             }
+        }
+
+        function showTabletQRCode() {
+            const tabletUrl = `${window.location.origin}/tablet/setup.html`;
+            document.getElementById('tablet-url').value = tabletUrl;
+
+            // Générer le QR code via API externe
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(tabletUrl)}`;
+            document.getElementById('tablet-qr-code').src = qrApiUrl;
+
+            const modal = new bootstrap.Modal(document.getElementById('tabletQRModal'));
+            modal.show();
         }
 
         function renderQuestionnaires() {
