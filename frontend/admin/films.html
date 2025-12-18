@@ -502,6 +502,89 @@
     </div>
   </div>
 
+  <!-- Exemplaire Modal (Create/Edit) -->
+  <div class="modal fade" id="exemplaireModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="exemplaireModalTitle">Nouvel exemplaire</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="exemplaireForm">
+            <input type="hidden" id="exemplaireId">
+
+            <div class="mb-3">
+              <label class="form-label">Code-barre</label>
+              <div class="input-group">
+                <input type="text" class="form-control font-monospace" id="exemplaire_code_barre"
+                       placeholder="Laisser vide pour attribuer plus tard">
+                <button type="button" class="btn btn-outline-secondary" onclick="scanExemplaireBarcode()">
+                  <i class="bi bi-upc-scan"></i>
+                </button>
+              </div>
+              <small class="text-muted">Optionnel - peut etre assigne via scanner</small>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Etat</label>
+                <select class="form-select" id="exemplaire_etat">
+                  <option value="neuf">Neuf</option>
+                  <option value="tres_bon" selected>Tres bon</option>
+                  <option value="bon">Bon</option>
+                  <option value="acceptable">Acceptable</option>
+                  <option value="mauvais">Mauvais</option>
+                </select>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Statut</label>
+                <select class="form-select" id="exemplaire_statut">
+                  <option value="disponible" selected>Disponible</option>
+                  <option value="maintenance">En maintenance</option>
+                  <option value="perdu">Perdu</option>
+                  <option value="archive">Archive</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Emplacement</label>
+              <select class="form-select" id="exemplaire_emplacement">
+                <option value="">-- Aucun --</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Prix d'achat</label>
+                <div class="input-group">
+                  <input type="number" step="0.01" min="0" class="form-control" id="exemplaire_prix_achat">
+                  <span class="input-group-text">EUR</span>
+                </div>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Date acquisition</label>
+                <input type="date" class="form-control" id="exemplaire_date_acquisition">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Notes</label>
+              <textarea class="form-control" id="exemplaire_notes" rows="2" placeholder="Informations supplementaires..."></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" onclick="saveExemplaire()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Delete Confirmation Modal -->
   <div class="modal fade" id="deleteModal" tabindex="-1">
     <div class="modal-dialog">
@@ -733,6 +816,11 @@
     let deleteModalInstance = null;
     let filmToDelete = null;
     let pagination = null;
+
+    // Exemplaires
+    let exemplaireModalInstance = null;
+    let currentArticleIdForExemplaires = null;
+    let exemplairesLoaded = false;
 
     // Tom-Select instances
     let tsGenres, tsThemes, tsLangues, tsSousTitres, tsRealisateurs, tsStudios;
@@ -1192,89 +1280,169 @@
       try {
         const film = await filmsAPI.getById(id);
 
+        // Reset exemplaires state
+        exemplairesLoaded = false;
+        currentArticleIdForExemplaires = id;
+
         const content = document.getElementById('viewFilmContent');
         content.innerHTML = `
-          <div class="row">
-            <div class="col-md-4 text-center">
-              ${film.image_url
-                ? `<img src="${film.image_url}" alt="${escapeHtml(film.titre)}" class="img-fluid rounded mb-3" style="max-height: 300px;">`
-                : '<div class="bg-secondary rounded d-flex align-items-center justify-content-center mb-3" style="height: 300px;"><i class="bi bi-film text-white" style="font-size: 4rem;"></i></div>'
-              }
-              ${film.bande_annonce_url
-                ? `<a href="${film.bande_annonce_url}" target="_blank" class="btn btn-outline-danger btn-sm">
-                    <i class="bi bi-play-circle me-1"></i>Bande-annonce
-                  </a>`
-                : ''}
-            </div>
-            <div class="col-md-8">
-              <h4>${escapeHtml(film.titre)}</h4>
-              ${film.titre_original && film.titre_original !== film.titre
-                ? `<p class="text-muted fst-italic">${escapeHtml(film.titre_original)}</p>`
-                : ''}
+          <!-- Onglets -->
+          <ul class="nav nav-pills mb-3" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#view-tab-details" type="button">
+                <i class="bi bi-info-circle"></i> Details
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" data-bs-toggle="pill" data-bs-target="#view-tab-exemplaires" type="button" id="view-tab-exemplaires-btn">
+                <i class="bi bi-boxes"></i> Exemplaires
+                <span class="badge bg-secondary ms-1" id="view_exemplaires_count">-</span>
+              </button>
+            </li>
+          </ul>
 
-              <div class="mb-3">
-                ${film.annee_sortie ? `<span class="badge bg-secondary me-2">${film.annee_sortie}</span>` : ''}
-                ${film.duree ? `<span class="badge bg-secondary me-2">${film.duree} min</span>` : ''}
-                <span class="badge classification-badge classification-${film.classification || 'TP'}">${getClassificationLabel(film.classification)}</span>
-                <span class="badge bg-${getStatutColor(film.statut)} ms-2">${getStatutLabel(film.statut)}</span>
+          <!-- Contenu des onglets -->
+          <div class="tab-content">
+            <!-- Onglet Details -->
+            <div class="tab-pane fade show active" id="view-tab-details">
+              <div class="row">
+                <div class="col-md-4 text-center">
+                  ${film.image_url
+                    ? `<img src="${film.image_url}" alt="${escapeHtml(film.titre)}" class="img-fluid rounded mb-3" style="max-height: 300px;">`
+                    : '<div class="bg-secondary rounded d-flex align-items-center justify-content-center mb-3" style="height: 300px;"><i class="bi bi-film text-white" style="font-size: 4rem;"></i></div>'
+                  }
+                  ${film.bande_annonce_url
+                    ? `<a href="${film.bande_annonce_url}" target="_blank" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-play-circle me-1"></i>Bande-annonce
+                      </a>`
+                    : ''}
+                </div>
+                <div class="col-md-8">
+                  <h4>${escapeHtml(film.titre)}</h4>
+                  ${film.titre_original && film.titre_original !== film.titre
+                    ? `<p class="text-muted fst-italic">${escapeHtml(film.titre_original)}</p>`
+                    : ''}
+
+                  <div class="mb-3">
+                    ${film.annee_sortie ? `<span class="badge bg-secondary me-2">${film.annee_sortie}</span>` : ''}
+                    ${film.duree ? `<span class="badge bg-secondary me-2">${film.duree} min</span>` : ''}
+                    <span class="badge classification-badge classification-${film.classification || 'TP'}">${getClassificationLabel(film.classification)}</span>
+                    <span class="badge bg-${getStatutColor(film.statut)} ms-2">${getStatutLabel(film.statut)}</span>
+                  </div>
+
+                  ${film.synopsis ? `<p>${escapeHtml(film.synopsis)}</p>` : ''}
+
+                  ${film.realisateursRef?.length ? `
+                    <p><strong><i class="bi bi-camera-reels me-1"></i>Realisateur(s):</strong>
+                      ${film.realisateursRef.map(r => r.prenom ? `${r.prenom} ${r.nom}` : r.nom).join(', ')}
+                    </p>
+                  ` : ''}
+
+                  ${film.acteursRef?.length ? `
+                    <p><strong><i class="bi bi-people me-1"></i>Casting:</strong></p>
+                    <ul class="list-unstyled ps-3">
+                      ${film.acteursRef.map(a => `
+                        <li>
+                          ${a.prenom ? `${a.prenom} ${a.nom}` : a.nom}
+                          ${a.FilmActeur?.role ? `<span class="text-muted fst-italic"> - ${a.FilmActeur.role}</span>` : ''}
+                        </li>
+                      `).join('')}
+                    </ul>
+                  ` : ''}
+
+                  ${film.genresRef?.length ? `
+                    <p><strong><i class="bi bi-tags me-1"></i>Genres:</strong>
+                      ${film.genresRef.map(g => `<span class="badge bg-info me-1">${g.nom}</span>`).join('')}
+                    </p>
+                  ` : ''}
+
+                  ${film.studiosRef?.length ? `
+                    <p><strong><i class="bi bi-building me-1"></i>Studios:</strong>
+                      ${film.studiosRef.map(s => s.nom).join(', ')}
+                    </p>
+                  ` : ''}
+
+                  <hr>
+
+                  <div class="row small text-muted">
+                    <div class="col-6">
+                      <p class="mb-1"><strong>Support:</strong> ${film.supportRef?.nom || '-'}</p>
+                      <p class="mb-1"><strong>Emplacement:</strong> ${film.emplacementRef ? `
+                        <span class="d-inline-flex align-items-center gap-1">
+                          <span style="width:10px;height:10px;border-radius:50%;background:${film.emplacementRef.couleur || '#6c757d'};display:inline-block;"></span>
+                          <i class="bi bi-${film.emplacementRef.icone || 'geo-alt'}" style="color:${film.emplacementRef.couleur || '#6c757d'};"></i>
+                          ${film.emplacementRef.code ? `[${film.emplacementRef.code}]` : ''} ${film.emplacementRef.libelle}
+                        </span>
+                      ` : '-'}</p>
+                      <p class="mb-1"><strong>Code-barres:</strong> ${film.code_barre || '-'}</p>
+                    </div>
+                    <div class="col-6">
+                      <p class="mb-1"><strong>Etat:</strong> ${getEtatLabel(film.etat)}</p>
+                      <p class="mb-1"><strong>Emprunts:</strong> ${film.nb_emprunts || 0}</p>
+                      <p class="mb-1"><strong>Acquisition:</strong> ${film.date_acquisition || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div id="thematiques-container-${id}" class="mt-3">
+                <!-- Thematiques IA chargees dynamiquement -->
+              </div>
+            </div>
+
+            <!-- Onglet Exemplaires -->
+            <div class="tab-pane fade" id="view-tab-exemplaires">
+              <!-- Stats rapides -->
+              <div class="row text-center mb-3" id="exemplaires_stats">
+                <div class="col-3">
+                  <div class="card bg-light">
+                    <div class="card-body py-2">
+                      <h4 class="mb-0 text-success" id="stat_disponibles">-</h4>
+                      <small class="text-muted">Disponibles</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-3">
+                  <div class="card bg-light">
+                    <div class="card-body py-2">
+                      <h4 class="mb-0 text-warning" id="stat_empruntes">-</h4>
+                      <small class="text-muted">Empruntes</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-3">
+                  <div class="card bg-light">
+                    <div class="card-body py-2">
+                      <h4 class="mb-0 text-info" id="stat_maintenance">-</h4>
+                      <small class="text-muted">Maintenance</small>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-3">
+                  <div class="card bg-light">
+                    <div class="card-body py-2">
+                      <h4 class="mb-0" id="stat_total">-</h4>
+                      <small class="text-muted">Total</small>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              ${film.synopsis ? `<p>${escapeHtml(film.synopsis)}</p>` : ''}
+              <!-- Actions -->
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0">Liste des exemplaires</h6>
+                <button class="btn btn-sm btn-danger" onclick="openCreateExemplaireModal()">
+                  <i class="bi bi-plus-lg"></i> Ajouter
+                </button>
+              </div>
 
-              ${film.realisateursRef?.length ? `
-                <p><strong><i class="bi bi-camera-reels me-1"></i>Realisateur(s):</strong>
-                  ${film.realisateursRef.map(r => r.prenom ? `${r.prenom} ${r.nom}` : r.nom).join(', ')}
-                </p>
-              ` : ''}
-
-              ${film.acteursRef?.length ? `
-                <p><strong><i class="bi bi-people me-1"></i>Casting:</strong></p>
-                <ul class="list-unstyled ps-3">
-                  ${film.acteursRef.map(a => `
-                    <li>
-                      ${a.prenom ? `${a.prenom} ${a.nom}` : a.nom}
-                      ${a.FilmActeur?.role ? `<span class="text-muted fst-italic"> - ${a.FilmActeur.role}</span>` : ''}
-                    </li>
-                  `).join('')}
-                </ul>
-              ` : ''}
-
-              ${film.genresRef?.length ? `
-                <p><strong><i class="bi bi-tags me-1"></i>Genres:</strong>
-                  ${film.genresRef.map(g => `<span class="badge bg-info me-1">${g.nom}</span>`).join('')}
-                </p>
-              ` : ''}
-
-              ${film.studiosRef?.length ? `
-                <p><strong><i class="bi bi-building me-1"></i>Studios:</strong>
-                  ${film.studiosRef.map(s => s.nom).join(', ')}
-                </p>
-              ` : ''}
-
-              <hr>
-
-              <div class="row small text-muted">
-                <div class="col-6">
-                  <p class="mb-1"><strong>Support:</strong> ${film.supportRef?.nom || '-'}</p>
-                  <p class="mb-1"><strong>Emplacement:</strong> ${film.emplacementRef ? `
-                    <span class="d-inline-flex align-items-center gap-1">
-                      <span style="width:10px;height:10px;border-radius:50%;background:${film.emplacementRef.couleur || '#6c757d'};display:inline-block;"></span>
-                      <i class="bi bi-${film.emplacementRef.icone || 'geo-alt'}" style="color:${film.emplacementRef.couleur || '#6c757d'};"></i>
-                      ${film.emplacementRef.code ? `[${film.emplacementRef.code}]` : ''} ${film.emplacementRef.libelle}
-                    </span>
-                  ` : '-'}</p>
-                  <p class="mb-1"><strong>Code-barres:</strong> ${film.code_barre || '-'}</p>
-                </div>
-                <div class="col-6">
-                  <p class="mb-1"><strong>Etat:</strong> ${getEtatLabel(film.etat)}</p>
-                  <p class="mb-1"><strong>Emprunts:</strong> ${film.nb_emprunts || 0}</p>
-                  <p class="mb-1"><strong>Acquisition:</strong> ${film.date_acquisition || '-'}</p>
+              <!-- Liste -->
+              <div id="exemplaires_list" style="max-height: 350px; overflow-y: auto;">
+                <div class="text-center py-3">
+                  <div class="spinner-border spinner-border-sm"></div>
+                  <span class="ms-2">Cliquez sur l'onglet pour charger...</span>
                 </div>
               </div>
             </div>
-          </div>
-          <div id="thematiques-container-${id}" class="mt-3">
-            <!-- Thematiques IA chargees dynamiquement -->
           </div>
         `;
 
@@ -1282,6 +1450,17 @@
           if (viewModalInstance) viewModalInstance.hide();
           editFilm(id);
         };
+
+        // Setup lazy loading pour l'onglet Exemplaires
+        const exemplairesTab = document.getElementById('view-tab-exemplaires-btn');
+        if (exemplairesTab) {
+          exemplairesTab.addEventListener('shown.bs.tab', () => {
+            if (!exemplairesLoaded) {
+              loadExemplaires(id);
+              exemplairesLoaded = true;
+            }
+          });
+        }
 
         // Charger les thematiques IA si le module est actif
         if (typeof isModuleActive === 'function' && isModuleActive('recherche_ia')) {
@@ -1471,6 +1650,205 @@
 
     // Delete confirmation handler
     document.getElementById('btnConfirmDelete').addEventListener('click', confirmDelete);
+
+    // ============================================
+    // GESTION DES EXEMPLAIRES
+    // ============================================
+
+    // Charger les exemplaires d'un film
+    async function loadExemplaires(articleId) {
+      currentArticleIdForExemplaires = articleId;
+      const container = document.getElementById('exemplaires_list');
+
+      try {
+        container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm"></div></div>';
+
+        const [exemplaires, stats] = await Promise.all([
+          exemplairesAPI.getByArticle('films', articleId),
+          exemplairesAPI.getStats('films', articleId)
+        ]);
+
+        // Mettre a jour stats
+        document.getElementById('stat_disponibles').textContent = stats.disponibles || 0;
+        document.getElementById('stat_empruntes').textContent = stats.empruntes || 0;
+        document.getElementById('stat_maintenance').textContent = stats.maintenance || 0;
+        document.getElementById('stat_total').textContent = stats.total || 0;
+        document.getElementById('view_exemplaires_count').textContent = stats.total || 0;
+
+        // Rendre liste
+        const list = exemplaires.exemplaires || exemplaires;
+        if (!list || !list.length) {
+          container.innerHTML = `
+            <div class="text-center text-muted py-4">
+              <i class="bi bi-box-seam fs-1"></i>
+              <p class="mt-2">Aucun exemplaire pour ce film</p>
+              <button class="btn btn-sm btn-danger" onclick="openCreateExemplaireModal()">
+                <i class="bi bi-plus"></i> Creer le premier exemplaire
+              </button>
+            </div>`;
+          return;
+        }
+
+        container.innerHTML = list.map(ex => `
+          <div class="card mb-2">
+            <div class="card-body py-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <span class="badge bg-${getExemplaireStatutColor(ex.statut)} me-2">${getExemplaireStatutLabel(ex.statut)}</span>
+                  <strong>#${ex.numero_exemplaire || ex.id}</strong>
+                  ${ex.code_barre ? `<code class="ms-2">${ex.code_barre}</code>` : '<span class="text-muted ms-2 small"><i>Sans code-barre</i></span>'}
+                </div>
+                <div>
+                  <span class="badge bg-${getExemplaireEtatColor(ex.etat)}">${getExemplaireEtatLabel(ex.etat)}</span>
+                  <button class="btn btn-sm btn-outline-primary ms-2" onclick="editExemplaire(${ex.id})" title="Modifier">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  ${ex.statut !== 'emprunte' ? `
+                  <button class="btn btn-sm btn-outline-danger" onclick="deleteExemplaire(${ex.id})" title="Supprimer">
+                    <i class="bi bi-trash"></i>
+                  </button>` : ''}
+                </div>
+              </div>
+              ${ex.emplacement ? `<small class="text-muted"><i class="bi bi-geo-alt"></i> ${ex.emplacement.libelle || ex.emplacement.nom}</small>` : ''}
+              ${ex.notes ? `<small class="d-block text-muted fst-italic">${escapeHtml(ex.notes)}</small>` : ''}
+            </div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Erreur chargement exemplaires:', error);
+        container.innerHTML = `<div class="alert alert-danger">Erreur: ${error.message}</div>`;
+      }
+    }
+
+    // Couleurs et labels pour les exemplaires
+    function getExemplaireStatutColor(statut) {
+      const colors = { disponible: 'success', emprunte: 'warning', reserve: 'info', maintenance: 'secondary', perdu: 'danger', archive: 'dark' };
+      return colors[statut] || 'secondary';
+    }
+
+    function getExemplaireStatutLabel(statut) {
+      const labels = { disponible: 'Disponible', emprunte: 'Emprunte', reserve: 'Reserve', maintenance: 'Maintenance', perdu: 'Perdu', archive: 'Archive' };
+      return labels[statut] || statut;
+    }
+
+    function getExemplaireEtatColor(etat) {
+      const colors = { neuf: 'success', tres_bon: 'primary', bon: 'info', acceptable: 'warning', mauvais: 'danger' };
+      return colors[etat] || 'secondary';
+    }
+
+    function getExemplaireEtatLabel(etat) {
+      const labels = { neuf: 'Neuf', tres_bon: 'Tres bon', bon: 'Bon', acceptable: 'Acceptable', mauvais: 'Mauvais' };
+      return labels[etat] || etat;
+    }
+
+    // Ouvrir modal creation exemplaire
+    function openCreateExemplaireModal() {
+      document.getElementById('exemplaireModalTitle').textContent = 'Nouvel exemplaire';
+      document.getElementById('exemplaireForm').reset();
+      document.getElementById('exemplaireId').value = '';
+      document.getElementById('exemplaire_etat').value = 'tres_bon';
+      document.getElementById('exemplaire_statut').value = 'disponible';
+
+      // Remplir le select des emplacements
+      populateEmplacementSelect();
+
+      if (!exemplaireModalInstance) {
+        exemplaireModalInstance = new bootstrap.Modal(document.getElementById('exemplaireModal'));
+      }
+      exemplaireModalInstance.show();
+    }
+
+    // Remplir le select des emplacements
+    function populateEmplacementSelect() {
+      const select = document.getElementById('exemplaire_emplacement');
+      select.innerHTML = '<option value="">-- Aucun --</option>';
+      if (refCache.emplacements && refCache.emplacements.length) {
+        refCache.emplacements.forEach(emp => {
+          const opt = document.createElement('option');
+          opt.value = emp.id;
+          opt.textContent = emp.libelle || emp.nom || `Emplacement ${emp.id}`;
+          select.appendChild(opt);
+        });
+      }
+    }
+
+    // Editer un exemplaire
+    async function editExemplaire(id) {
+      try {
+        const ex = await apiRequest(`/exemplaires/film/${id}`);
+
+        document.getElementById('exemplaireModalTitle').textContent = `Exemplaire #${ex.numero_exemplaire || ex.id}`;
+        document.getElementById('exemplaireId').value = ex.id;
+        document.getElementById('exemplaire_code_barre').value = ex.code_barre || '';
+        document.getElementById('exemplaire_etat').value = ex.etat || 'tres_bon';
+        document.getElementById('exemplaire_statut').value = ex.statut || 'disponible';
+        document.getElementById('exemplaire_prix_achat').value = ex.prix_achat || '';
+        document.getElementById('exemplaire_date_acquisition').value = ex.date_acquisition ? ex.date_acquisition.split('T')[0] : '';
+        document.getElementById('exemplaire_notes').value = ex.notes || '';
+
+        // Remplir et selectionner l'emplacement
+        populateEmplacementSelect();
+        document.getElementById('exemplaire_emplacement').value = ex.emplacement_id || '';
+
+        if (!exemplaireModalInstance) {
+          exemplaireModalInstance = new bootstrap.Modal(document.getElementById('exemplaireModal'));
+        }
+        exemplaireModalInstance.show();
+      } catch (error) {
+        console.error('Erreur chargement exemplaire:', error);
+        showToast('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    // Sauvegarder un exemplaire
+    async function saveExemplaire() {
+      const id = document.getElementById('exemplaireId').value;
+      const data = {
+        code_barre: document.getElementById('exemplaire_code_barre').value || null,
+        etat: document.getElementById('exemplaire_etat').value,
+        statut: document.getElementById('exemplaire_statut').value,
+        emplacement_id: document.getElementById('exemplaire_emplacement').value || null,
+        prix_achat: document.getElementById('exemplaire_prix_achat').value || null,
+        date_acquisition: document.getElementById('exemplaire_date_acquisition').value || null,
+        notes: document.getElementById('exemplaire_notes').value || null
+      };
+
+      try {
+        if (id) {
+          await exemplairesAPI.update('film', id, data);
+          showToast('Exemplaire modifie avec succes', 'success');
+        } else {
+          await exemplairesAPI.create('films', currentArticleIdForExemplaires, data);
+          showToast('Exemplaire cree avec succes', 'success');
+        }
+        exemplaireModalInstance.hide();
+        loadExemplaires(currentArticleIdForExemplaires);
+      } catch (error) {
+        console.error('Erreur sauvegarde exemplaire:', error);
+        showToast('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    // Supprimer un exemplaire
+    async function deleteExemplaire(id) {
+      if (!confirm('Supprimer cet exemplaire ?')) return;
+
+      try {
+        await exemplairesAPI.delete('film', id);
+        showToast('Exemplaire supprime', 'success');
+        loadExemplaires(currentArticleIdForExemplaires);
+      } catch (error) {
+        console.error('Erreur suppression exemplaire:', error);
+        showToast('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    // Scanner un code-barre pour l'exemplaire (placeholder)
+    function scanExemplaireBarcode() {
+      document.getElementById('exemplaire_code_barre').focus();
+      showToast('Scannez le code-barre avec votre scanner', 'info');
+    }
 
     // Toast notification
     function showToast(message, type = 'info') {

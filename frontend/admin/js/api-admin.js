@@ -1119,3 +1119,89 @@ const apiAdmin = {
     });
   }
 };
+
+// ============ EXEMPLAIRES API ============
+
+/**
+ * API pour la gestion des exemplaires (copies multiples d'articles)
+ */
+const exemplairesAPI = {
+  /**
+   * Liste tous les exemplaires d'un article
+   * @param {string} module - 'jeux', 'livres', 'films', 'disques'
+   * @param {number} articleId - ID de l'article
+   */
+  async getByArticle(module, articleId) {
+    return await apiRequest(`/${module}/${articleId}/exemplaires`);
+  },
+
+  /**
+   * Statistiques des exemplaires d'un article
+   */
+  async getStats(module, articleId) {
+    return await apiRequest(`/${module}/${articleId}/exemplaires/stats`);
+  },
+
+  /**
+   * Exemplaires disponibles uniquement
+   */
+  async getDisponibles(module, articleId) {
+    return await apiRequest(`/${module}/${articleId}/exemplaires/disponibles`);
+  },
+
+  /**
+   * Recuperer un exemplaire par ID
+   * @param {string} moduleSingular - 'jeu', 'livre', 'film', 'disque'
+   */
+  async getById(moduleSingular, exemplaireId) {
+    return await apiRequest(`/exemplaires/${moduleSingular}/${exemplaireId}`);
+  },
+
+  /**
+   * Creer un nouvel exemplaire
+   * @param {string} module - 'jeux', 'livres', 'films', 'disques'
+   */
+  async create(module, articleId, data) {
+    return await apiRequest(`/${module}/${articleId}/exemplaires`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Modifier un exemplaire
+   * @param {string} moduleSingular - 'jeu', 'livre', 'film', 'disque'
+   */
+  async update(moduleSingular, exemplaireId, data) {
+    return await apiRequest(`/exemplaires/${moduleSingular}/${exemplaireId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data)
+    });
+  },
+
+  /**
+   * Supprimer un exemplaire
+   */
+  async delete(moduleSingular, exemplaireId) {
+    return await apiRequest(`/exemplaires/${moduleSingular}/${exemplaireId}`, {
+      method: 'DELETE'
+    });
+  },
+
+  /**
+   * Rechercher par code-barre (tous modules)
+   */
+  async findByBarcode(codeBarre) {
+    return await apiRequest(`/exemplaires/by-barcode/${codeBarre}`);
+  },
+
+  /**
+   * Assigner un code-barre a un exemplaire
+   */
+  async assignBarcode(moduleSingular, exemplaireId, codeBarre) {
+    return await apiRequest('/exemplaires/assign-barcode', {
+      method: 'POST',
+      body: JSON.stringify({ module: moduleSingular, exemplaireId, codeBarre })
+    });
+  }
+};
