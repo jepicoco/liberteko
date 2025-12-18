@@ -20,7 +20,7 @@ const { verifyToken, checkRole } = require('../middleware/auth');
 router.get(
   '/formats',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.getFormats
 );
 
@@ -33,7 +33,7 @@ router.get(
 router.get(
   '/formats/:format',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.getFormatConfig
 );
 
@@ -47,7 +47,7 @@ router.get(
 router.put(
   '/formats/:format',
   verifyToken,
-  checkRole(['admin']),
+  checkRole(['administrateur']),
   ExportComptableController.updateFormatConfig
 );
 
@@ -64,7 +64,7 @@ router.put(
 router.get(
   '/export/:format',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.exportFormat
 );
 
@@ -77,7 +77,7 @@ router.get(
 router.get(
   '/statistiques-complet/:exercice',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.getStatistiquesComplet
 );
 
@@ -94,7 +94,7 @@ router.get(
 router.get(
   '/fec',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.exportFEC
 );
 
@@ -106,7 +106,7 @@ router.get(
 router.get(
   '/exercices',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.listeExercices
 );
 
@@ -119,7 +119,7 @@ router.get(
 router.get(
   '/statistiques/:exercice',
   verifyToken,
-  checkRole(['admin', 'comptable']),
+  checkRole(['administrateur', 'comptable']),
   ExportComptableController.getStatistiquesExercice
 );
 
