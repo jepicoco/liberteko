@@ -85,13 +85,8 @@
             </div>
         </div>
 
-        <!-- Bouton validation -->
-        <button class="validate-btn" id="validateBtn" onclick="validateRecord()" disabled>
-            &#10003; VALIDER
-        </button>
-
         <!-- Forcer date/heure (admin only) -->
-        <div class="card admin-only" style="margin-top: 1rem; border-left: 4px solid #ffc107;">
+        <div class="card admin-only" style="margin-top: 1rem; margin-bottom: 1rem; border-left: 4px solid #ffc107;">
             <div class="card-body" style="padding: 0.75rem;">
                 <label style="font-size: 0.9rem; font-weight: 600; color: #856404;">
                     &#9888; Forcer date/heure (rectification)
@@ -100,6 +95,11 @@
                        style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid #ffc107; border-radius: 4px;">
             </div>
         </div>
+
+        <!-- Bouton validation -->
+        <button class="validate-btn" id="validateBtn" onclick="validateRecord()" disabled>
+            &#10003; VALIDER
+        </button>
 
         <!-- Dernier enregistrement (admin only) -->
         <div id="lastRecord" class="admin-only"></div>

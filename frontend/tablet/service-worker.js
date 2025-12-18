@@ -3,7 +3,7 @@
  * Gere le cache et le fonctionnement offline
  */
 
-const CACHE_NAME = 'frequentation-v7';
+const CACHE_NAME = 'frequentation-v8';
 const STATIC_ASSETS = [
     '/tablet/',
     '/tablet/index.html',
