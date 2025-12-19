@@ -26,7 +26,8 @@ async function runMigration() {
       `);
       console.log('   ✓ Colonne periode ajoutée');
     } catch (e) {
-      if (e.message.includes('Duplicate column')) {
+      // ER_DUP_FIELDNAME (1060) - message en anglais ou français selon config MySQL
+      if (e.original?.code === 'ER_DUP_FIELDNAME' || e.original?.errno === 1060) {
         console.log('   ⚠ Colonne periode existe déjà');
       } else {
         throw e;
@@ -44,7 +45,8 @@ async function runMigration() {
       `);
       console.log('   ✓ Colonne horaires_vacances_identiques ajoutée');
     } catch (e) {
-      if (e.message.includes('Duplicate column')) {
+      // ER_DUP_FIELDNAME (1060) - message en anglais ou français selon config MySQL
+      if (e.original?.code === 'ER_DUP_FIELDNAME' || e.original?.errno === 1060) {
         console.log('   ⚠ Colonne horaires_vacances_identiques existe déjà');
       } else {
         throw e;
@@ -59,7 +61,8 @@ async function runMigration() {
       `);
       console.log('   ✓ Index idx_periode créé');
     } catch (e) {
-      if (e.message.includes('Duplicate key name')) {
+      // ER_DUP_KEYNAME (1061) - message en anglais ou français selon config MySQL
+      if (e.original?.code === 'ER_DUP_KEYNAME' || e.original?.errno === 1061) {
         console.log('   ⚠ Index existe déjà');
       } else {
         throw e;

@@ -187,7 +187,12 @@ async function up() {
     }
   });
 
-  await queryInterface.addIndex('etages', ['plan_id', 'ordre_affichage']);
+  try {
+    await queryInterface.addIndex('etages', ['plan_id', 'ordre_affichage']);
+  } catch (e) {
+    if (e.original?.errno !== 1061) throw e; // ER_DUP_KEYNAME
+    console.log('  Index etages_plan_id_ordre_affichage existe deja');
+  }
 
   console.log('Creation de la table elements_plan...');
   await queryInterface.createTable('elements_plan', {
@@ -278,8 +283,18 @@ async function up() {
     }
   });
 
-  await queryInterface.addIndex('elements_plan', ['etage_id', 'calque', 'ordre_affichage']);
-  await queryInterface.addIndex('elements_plan', ['type_element']);
+  try {
+    await queryInterface.addIndex('elements_plan', ['etage_id', 'calque', 'ordre_affichage']);
+  } catch (e) {
+    if (e.original?.errno !== 1061) throw e;
+    console.log('  Index elements_plan_etage_id existe deja');
+  }
+  try {
+    await queryInterface.addIndex('elements_plan', ['type_element']);
+  } catch (e) {
+    if (e.original?.errno !== 1061) throw e;
+    console.log('  Index elements_plan_type_element existe deja');
+  }
 
   console.log('Creation de la table elements_emplacements...');
   await queryInterface.createTable('elements_emplacements', {
@@ -363,7 +378,12 @@ async function up() {
     }
   });
 
-  await queryInterface.addIndex('elements_emplacements', ['element_plan_id', 'type_collection']);
+  try {
+    await queryInterface.addIndex('elements_emplacements', ['element_plan_id', 'type_collection']);
+  } catch (e) {
+    if (e.original?.errno !== 1061) throw e;
+    console.log('  Index elements_emplacements_element_plan_id existe deja');
+  }
 
   console.log('Ajout du module plans dans modules_actifs...');
   await sequelize.query(`
