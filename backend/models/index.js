@@ -44,6 +44,7 @@ const JeuLangueModel = require('./JeuLangue');
 const JeuEditeurModel = require('./JeuEditeur');
 const JeuAuteurModel = require('./JeuAuteur');
 const JeuIllustrateurModel = require('./JeuIllustrateur');
+const JeuEanModel = require('./JeuEan');
 
 // Import Livres models (normalisation livres)
 const GenreLitteraireModel = require('./GenreLitteraire');
@@ -236,6 +237,7 @@ const JeuLangue = JeuLangueModel(sequelize);
 const JeuEditeur = JeuEditeurModel(sequelize);
 const JeuAuteur = JeuAuteurModel(sequelize);
 const JeuIllustrateur = JeuIllustrateurModel(sequelize);
+const JeuEan = JeuEanModel(sequelize);
 
 // Initialize Livres reference tables
 const GenreLitteraire = GenreLitteraireModel(sequelize);
@@ -462,6 +464,17 @@ Jeu.hasMany(ExemplaireJeu, {
 });
 
 ExemplaireJeu.belongsTo(Jeu, {
+  foreignKey: 'jeu_id',
+  as: 'jeu'
+});
+
+// Jeu <-> JeuEan (One-to-Many) - EAN multiples par jeu
+Jeu.hasMany(JeuEan, {
+  foreignKey: 'jeu_id',
+  as: 'eans'
+});
+
+JeuEan.belongsTo(Jeu, {
   foreignKey: 'jeu_id',
   as: 'jeu'
 });
@@ -2142,6 +2155,7 @@ module.exports = {
   JeuEditeur,
   JeuAuteur,
   JeuIllustrateur,
+  JeuEan,
   // Livres reference tables
   GenreLitteraire,
   CollectionLivre,

@@ -21,7 +21,10 @@ const {
   JeuLangue,
   JeuEditeur,
   JeuAuteur,
-  JeuIllustrateur
+  JeuIllustrateur,
+  JeuEan,
+  Thematique,
+  ArticleThematique
 } = require('../models');
 const fs = require('fs');
 const path = require('path');
@@ -439,6 +442,64 @@ async function findOrCreateGamme(nom) {
 }
 
 /**
+ * Extrait et sauvegarde les EAN multiples pour un jeu
+ * @param {number} jeuId - ID du jeu
+ * @param {string} eanString - Chaine EAN (peut contenir plusieurs EAN separes par virgule)
+ * @param {string} source - Source de l'EAN (import, manuel, bgg, upcitemdb)
+ * @returns {Promise<string[]>} Liste des EAN sauvegardes
+ */
+async function extractAndSaveEans(jeuId, eanString, source = 'import') {
+  if (!eanString || typeof eanString !== 'string') return [];
+
+  // Splitter par virgule et nettoyer
+  const eans = eanString.split(',')
+    .map(e => e.trim())
+    .filter(e => e.length >= 8 && e.length <= 13);
+
+  if (eans.length === 0) return [];
+
+  const saved = [];
+  let firstEan = null;
+
+  for (let i = 0; i < eans.length; i++) {
+    const ean = eans[i];
+    const isPrincipal = i === 0;
+
+    if (isPrincipal) {
+      firstEan = ean;
+    }
+
+    try {
+      const [jeuEan, created] = await JeuEan.findOrCreate({
+        where: { ean },
+        defaults: {
+          jeu_id: jeuId,
+          ean,
+          principal: isPrincipal,
+          source
+        }
+      });
+
+      if (created) {
+        saved.push(ean);
+      } else if (jeuEan.jeu_id !== jeuId) {
+        // EAN deja utilise par un autre jeu - log warning
+        console.warn(`EAN ${ean} deja utilise par jeu ${jeuEan.jeu_id}`);
+      }
+    } catch (error) {
+      console.error(`Erreur sauvegarde EAN ${ean}:`, error.message);
+    }
+  }
+
+  // Mettre a jour jeux.ean avec le premier EAN (compatibilite)
+  if (firstEan) {
+    await Jeu.update({ ean: firstEan }, { where: { id: jeuId } });
+  }
+
+  return saved;
+}
+
+/**
  * Cree les relations many-to-many pour un jeu
  */
 async function createJeuRelations(jeu, rawData, mapping) {
@@ -579,7 +640,9 @@ function transformRow(row, mapping) {
         break;
 
       case 'ean':
-        jeu.ean = value.toString().trim();
+        // Si EAN multiples (separes par virgule), prendre le premier
+        const eanValue = value.toString().trim();
+        jeu.ean = eanValue.includes(',') ? eanValue.split(',')[0].trim() : eanValue;
         break;
 
       // Texte simple
@@ -592,15 +655,21 @@ function transformRow(row, mapping) {
         break;
 
       case 'editeur':
-        jeu.editeur = value.toString().trim();
+        // Stocke uniquement si valeur courte (sinon utilise table normalisee jeu_editeurs)
+        const editeurVal = value.toString().trim();
+        if (editeurVal.length <= 255) jeu.editeur = editeurVal;
         break;
 
       case 'auteur':
-        jeu.auteur = value.toString().trim();
+        // Stocke uniquement si valeur courte (sinon utilise table normalisee jeu_auteurs)
+        const auteurVal = value.toString().trim();
+        if (auteurVal.length <= 255) jeu.auteur = auteurVal;
         break;
 
       case 'illustrateur':
-        jeu.illustrateur = value.toString().trim();
+        // Stocke uniquement si valeur courte (sinon utilise table normalisee jeu_illustrateurs)
+        const illustrateurVal = value.toString().trim();
+        if (illustrateurVal.length <= 255) jeu.illustrateur = illustrateurVal;
         break;
 
       case 'univers':
@@ -876,6 +945,12 @@ const importJeux = async (req, res) => {
         // Creer les relations many-to-many avec les referentiels
         if (jeuInstance) {
           await createJeuRelations(jeuInstance, row, mapping);
+
+          // Sauvegarder les EAN (gere les EAN multiples)
+          const eanField = Object.keys(mapping).find(k => mapping[k] === 'ean');
+          if (eanField && row[eanField]) {
+            await extractAndSaveEans(jeuInstance.id, row[eanField], 'import');
+          }
         }
 
       } catch (error) {
@@ -984,8 +1059,546 @@ const getAvailableFields = async (req, res) => {
   res.json({ fields });
 };
 
+// ==================== IMPORT PAR LISTES MYLUDO ====================
+
+/**
+ * Groupe les lignes CSV par cle de deduplication (EAN ou Titre)
+ * Agrege les valeurs de la colonne "liste"
+ * @param {object[]} rows - Lignes CSV parsees
+ * @returns {Map} - Map avec cle = EAN|Titre, valeur = {data, listes: Set}
+ */
+function groupByDeduplicationKey(rows) {
+  const groups = new Map();
+
+  for (const row of rows) {
+    // Cle de deduplication: EAN prioritaire (premier EAN si multiples), sinon Titre
+    const eanRaw = row['EAN'] || row['ean'];
+    const titre = row['Titre'] || row['titre'];
+
+    // Si EAN contient des virgules, prendre le premier
+    let ean = null;
+    if (eanRaw && eanRaw.trim()) {
+      ean = eanRaw.split(',')[0].trim();
+    }
+
+    const key = ean || (titre && titre.trim());
+
+    if (!key) continue;
+
+    if (!groups.has(key)) {
+      groups.set(key, {
+        data: row,
+        listes: new Set()
+      });
+    }
+
+    // Ajouter la liste a l'ensemble
+    const liste = row['liste'] || row['Liste'];
+    if (liste && liste.trim()) {
+      groups.get(key).listes.add(liste.trim());
+    }
+  }
+
+  return groups;
+}
+
+/**
+ * Preview d'un import par listes MyLudo
+ * POST /api/import/jeux-listes/preview
+ */
+const previewListImport = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Aucun fichier fourni'
+      });
+    }
+
+    const separator = req.body.separator || ';';
+    const { columns, rows } = await parseCSV(req.file.path, separator);
+
+    // Verifier que la colonne "liste" existe
+    const listeColumn = columns.find(c => c.toLowerCase() === 'liste');
+    if (!listeColumn) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'La colonne "liste" est obligatoire. Assurez-vous que le fichier provient d\'un export par listes MyLudo.'
+      });
+    }
+
+    // Grouper par EAN/Titre
+    const groups = groupByDeduplicationKey(rows);
+
+    // Extraire les listes uniques avec comptage
+    const listeCounts = {};
+    for (const [, group] of groups) {
+      for (const liste of group.listes) {
+        listeCounts[liste] = (listeCounts[liste] || 0) + 1;
+      }
+    }
+
+    // Trier les listes par nombre de jeux (desc)
+    const listes = Object.entries(listeCounts)
+      .map(([nom, count]) => ({ nom, count }))
+      .sort((a, b) => b.count - a.count);
+
+    // Suggerer le mapping (sans la colonne liste)
+    const mappingColumns = columns.filter(c => c.toLowerCase() !== 'liste');
+    const mapping = suggestMapping(mappingColumns);
+
+    // Preparer le preview des 5 premiers jeux uniques
+    const previewGames = [];
+    let count = 0;
+    for (const [key, group] of groups) {
+      if (count >= 5) break;
+
+      const jeuData = transformRow(group.data, mapping);
+      jeuData.listes = Array.from(group.listes);
+
+      previewGames.push(jeuData);
+      count++;
+    }
+
+    // Nettoyer le fichier temporaire
+    fs.unlink(req.file.path, () => {});
+
+    res.json({
+      success: true,
+      columns,
+      mapping,
+      totalRows: rows.length,
+      uniqueGames: groups.size,
+      listes,
+      preview: previewGames
+    });
+
+  } catch (error) {
+    console.error('Erreur preview import listes:', error);
+
+    if (req.file) {
+      fs.unlink(req.file.path, () => {});
+    }
+
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Import effectif des jeux depuis un export par listes
+ * Les listes sont ajoutees comme thematiques
+ * POST /api/import/jeux-listes
+ */
+const importJeuxFromLists = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'Aucun fichier fourni'
+      });
+    }
+
+    const separator = req.body.separator || ';';
+    const customMapping = req.body.mapping ? JSON.parse(req.body.mapping) : null;
+
+    const { columns, rows } = await parseCSV(req.file.path, separator);
+
+    // Verifier colonne liste
+    const listeColumn = columns.find(c => c.toLowerCase() === 'liste');
+    if (!listeColumn) {
+      fs.unlink(req.file.path, () => {});
+      return res.status(400).json({
+        error: 'Validation error',
+        message: 'La colonne "liste" est obligatoire'
+      });
+    }
+
+    // Grouper les lignes
+    const groups = groupByDeduplicationKey(rows);
+
+    // Mapping sans la colonne liste
+    const mappingColumns = columns.filter(c => c.toLowerCase() !== 'liste');
+    const mapping = customMapping || suggestMapping(mappingColumns);
+
+    const results = {
+      total: rows.length,
+      uniqueGames: groups.size,
+      imported: 0,
+      updated: 0,
+      errors: [],
+      themesCreated: 0,
+      themesLinked: 0
+    };
+
+    // Importer chaque jeu unique
+    let gameIndex = 0;
+    for (const [key, group] of groups) {
+      gameIndex++;
+
+      try {
+        const jeuData = transformRow(group.data, mapping);
+
+        // Verifier que le titre existe
+        if (!jeuData.titre) {
+          results.errors.push({
+            line: gameIndex,
+            error: 'Titre manquant',
+            data: { key, listes: Array.from(group.listes) }
+          });
+          continue;
+        }
+
+        // Chercher un jeu existant (par EAN ou titre)
+        let existing = null;
+        if (jeuData.ean) {
+          existing = await Jeu.findOne({ where: { ean: jeuData.ean } });
+        }
+        if (!existing) {
+          existing = await Jeu.findOne({ where: { titre: jeuData.titre } });
+        }
+
+        let jeuInstance = null;
+
+        if (existing) {
+          // Mettre a jour le jeu existant
+          await existing.update(jeuData);
+          jeuInstance = existing;
+          results.updated++;
+        } else {
+          // Creer le jeu
+          jeuInstance = await Jeu.create(jeuData);
+          results.imported++;
+        }
+
+        // Creer les relations many-to-many avec les referentiels
+        if (jeuInstance) {
+          await createJeuRelations(jeuInstance, group.data, mapping);
+
+          // Sauvegarder les EAN (gere les EAN multiples)
+          const eanValue = group.data['EAN'] || group.data['ean'];
+          if (eanValue) {
+            await extractAndSaveEans(jeuInstance.id, eanValue, 'import');
+          }
+
+          // Ajouter les listes comme thematiques
+          for (const listeNom of group.listes) {
+            try {
+              // Trouver ou creer la thematique
+              const [thematique, created] = await Thematique.findOrCreate({
+                where: {
+                  nom_normalise: Thematique.normaliserNom(listeNom)
+                },
+                defaults: {
+                  nom: listeNom,
+                  nom_normalise: Thematique.normaliserNom(listeNom),
+                  type: 'theme',
+                  actif: true
+                }
+              });
+
+              if (created) {
+                results.themesCreated++;
+              }
+
+              // Lier au jeu via ArticleThematique
+              const [articleThematique, linkCreated] = await ArticleThematique.findOrCreate({
+                where: {
+                  type_article: 'jeu',
+                  article_id: jeuInstance.id,
+                  thematique_id: thematique.id
+                },
+                defaults: {
+                  type_article: 'jeu',
+                  article_id: jeuInstance.id,
+                  thematique_id: thematique.id,
+                  force: 0.8,
+                  source: 'import'
+                }
+              });
+
+              if (linkCreated) {
+                results.themesLinked++;
+                // Incrementer le compteur d'usage
+                await thematique.increment('usage_count');
+              }
+
+            } catch (themeError) {
+              console.error(`Erreur creation thematique ${listeNom}:`, themeError.message);
+            }
+          }
+        }
+
+      } catch (error) {
+        results.errors.push({
+          line: gameIndex,
+          error: error.message,
+          data: { key, listes: Array.from(group.listes) }
+        });
+      }
+    }
+
+    // Nettoyer le fichier temporaire
+    fs.unlink(req.file.path, () => {});
+
+    res.json({
+      success: true,
+      ...results
+    });
+
+  } catch (error) {
+    console.error('Erreur import listes:', error);
+
+    if (req.file) {
+      fs.unlink(req.file.path, () => {});
+    }
+
+    res.status(500).json({
+      error: 'Server error',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Import de jeux par listes avec streaming SSE pour progression en temps reel
+ */
+const importJeuxFromListsStream = async (req, res) => {
+  // Configuration SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Pour nginx
+
+  const sendEvent = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+    if (res.flush) res.flush();
+  };
+
+  try {
+    if (!req.file) {
+      sendEvent({ type: 'error', message: 'Aucun fichier fourni' });
+      return res.end();
+    }
+
+    const separator = req.body.separator || ';';
+    const customMapping = req.body.mapping ? JSON.parse(req.body.mapping) : null;
+
+    sendEvent({ type: 'status', message: 'Analyse du fichier...' });
+
+    const { columns, rows } = await parseCSV(req.file.path, separator);
+
+    // Verifier colonne liste
+    const listeColumn = columns.find(c => c.toLowerCase() === 'liste');
+    if (!listeColumn) {
+      fs.unlink(req.file.path, () => {});
+      sendEvent({ type: 'error', message: 'La colonne "liste" est obligatoire' });
+      return res.end();
+    }
+
+    // Grouper les lignes
+    const groups = groupByDeduplicationKey(rows);
+    const totalGames = groups.size;
+
+    sendEvent({
+      type: 'start',
+      total: totalGames,
+      message: `Import de ${totalGames} jeux uniques...`
+    });
+
+    // Mapping sans la colonne liste
+    const mappingColumns = columns.filter(c => c.toLowerCase() !== 'liste');
+    const mapping = customMapping || suggestMapping(mappingColumns);
+
+    const results = {
+      total: rows.length,
+      uniqueGames: totalGames,
+      imported: 0,
+      updated: 0,
+      errors: [],
+      themesCreated: 0,
+      themesLinked: 0
+    };
+
+    // Importer chaque jeu unique
+    let gameIndex = 0;
+    for (const [key, group] of groups) {
+      gameIndex++;
+
+      try {
+        const jeuData = transformRow(group.data, mapping);
+
+        // Verifier que le titre existe
+        if (!jeuData.titre) {
+          results.errors.push({
+            line: gameIndex,
+            error: 'Titre manquant',
+            data: { key, listes: Array.from(group.listes) }
+          });
+          sendEvent({
+            type: 'progress',
+            current: gameIndex,
+            total: totalGames,
+            percent: Math.round((gameIndex / totalGames) * 100),
+            game: key,
+            status: 'error',
+            imported: results.imported,
+            updated: results.updated,
+            errors: results.errors.length
+          });
+          continue;
+        }
+
+        // Chercher un jeu existant (par EAN ou titre)
+        let existing = null;
+        if (jeuData.ean) {
+          existing = await Jeu.findOne({ where: { ean: jeuData.ean } });
+        }
+        if (!existing) {
+          existing = await Jeu.findOne({ where: { titre: jeuData.titre } });
+        }
+
+        let jeuInstance = null;
+        let gameStatus = 'created';
+
+        if (existing) {
+          // Mettre a jour le jeu existant
+          await existing.update(jeuData);
+          jeuInstance = existing;
+          results.updated++;
+          gameStatus = 'updated';
+        } else {
+          // Creer le jeu
+          jeuInstance = await Jeu.create(jeuData);
+          results.imported++;
+        }
+
+        // Creer les relations many-to-many avec les referentiels
+        if (jeuInstance) {
+          await createJeuRelations(jeuInstance, group.data, mapping);
+
+          // Sauvegarder les EAN (gere les EAN multiples)
+          const eanValue = group.data['EAN'] || group.data['ean'];
+          if (eanValue) {
+            await extractAndSaveEans(jeuInstance.id, eanValue, 'import');
+          }
+
+          // Ajouter les listes comme thematiques
+          for (const listeNom of group.listes) {
+            try {
+              // Trouver ou creer la thematique
+              const [thematique, created] = await Thematique.findOrCreate({
+                where: {
+                  nom_normalise: Thematique.normaliserNom(listeNom)
+                },
+                defaults: {
+                  nom: listeNom,
+                  nom_normalise: Thematique.normaliserNom(listeNom),
+                  type: 'theme',
+                  actif: true
+                }
+              });
+
+              if (created) {
+                results.themesCreated++;
+              }
+
+              // Lier au jeu via ArticleThematique
+              const [articleThematique, linkCreated] = await ArticleThematique.findOrCreate({
+                where: {
+                  type_article: 'jeu',
+                  article_id: jeuInstance.id,
+                  thematique_id: thematique.id
+                },
+                defaults: {
+                  type_article: 'jeu',
+                  article_id: jeuInstance.id,
+                  thematique_id: thematique.id,
+                  force: 0.8,
+                  source: 'import'
+                }
+              });
+
+              if (linkCreated) {
+                results.themesLinked++;
+                // Incrementer le compteur d'usage
+                await thematique.increment('usage_count');
+              }
+
+            } catch (themeError) {
+              console.error(`Erreur creation thematique ${listeNom}:`, themeError.message);
+            }
+          }
+        }
+
+        // Envoyer la progression
+        sendEvent({
+          type: 'progress',
+          current: gameIndex,
+          total: totalGames,
+          percent: Math.round((gameIndex / totalGames) * 100),
+          game: jeuData.titre,
+          status: gameStatus,
+          imported: results.imported,
+          updated: results.updated,
+          errors: results.errors.length,
+          themesCreated: results.themesCreated,
+          themesLinked: results.themesLinked
+        });
+
+      } catch (error) {
+        results.errors.push({
+          line: gameIndex,
+          error: error.message,
+          data: { key, listes: Array.from(group.listes) }
+        });
+
+        sendEvent({
+          type: 'progress',
+          current: gameIndex,
+          total: totalGames,
+          percent: Math.round((gameIndex / totalGames) * 100),
+          game: key,
+          status: 'error',
+          imported: results.imported,
+          updated: results.updated,
+          errors: results.errors.length
+        });
+      }
+    }
+
+    // Nettoyer le fichier temporaire
+    fs.unlink(req.file.path, () => {});
+
+    // Envoyer le resultat final
+    sendEvent({
+      type: 'complete',
+      success: true,
+      ...results
+    });
+
+    res.end();
+
+  } catch (error) {
+    console.error('Erreur import listes stream:', error);
+
+    if (req.file) {
+      fs.unlink(req.file.path, () => {});
+    }
+
+    sendEvent({ type: 'error', message: error.message });
+    res.end();
+  }
+};
+
 module.exports = {
   previewImport,
   importJeux,
-  getAvailableFields
+  getAvailableFields,
+  previewListImport,
+  importJeuxFromLists,
+  importJeuxFromListsStream
 };

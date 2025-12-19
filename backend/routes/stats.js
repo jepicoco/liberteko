@@ -76,4 +76,28 @@ router.get('/categories', verifyToken, isBenevole(), statsController.getCategory
  */
 router.get('/cotisations', verifyToken, isComptable(), statsController.getCotisationsStats);
 
+/**
+ * @route   GET /api/stats/never-borrowed
+ * @desc    Get items that have never been borrowed (for weeding/desherbage)
+ * @access  Private (benevole+)
+ * @query   ?module=ludotheque&limit=10
+ */
+router.get('/never-borrowed', verifyToken, isBenevole(), statsController.getNeverBorrowed);
+
+/**
+ * @route   GET /api/stats/nouveautes
+ * @desc    Get recent acquisitions with their borrow stats
+ * @access  Private (benevole+)
+ * @query   ?module=ludotheque&limit=10&months=3
+ */
+router.get('/nouveautes', verifyToken, isBenevole(), statsController.getNouveautesStats);
+
+/**
+ * @route   GET /api/stats/editeurs
+ * @desc    Get publisher/editor statistics
+ * @access  Private (benevole+)
+ * @query   ?module=ludotheque&limit=10
+ */
+router.get('/editeurs', verifyToken, isBenevole(), statsController.getEditeursStats);
+
 module.exports = router;

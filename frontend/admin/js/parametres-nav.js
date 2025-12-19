@@ -76,6 +76,7 @@ const PARAMETRES_CATEGORIES = {
     icon: 'bi-tools',
     pages: [
       { id: 'import', label: 'Import jeux', href: 'import-jeux.html', icon: 'bi-upload' },
+      { id: 'import-listes', label: 'Import par listes', href: 'import-listes.html', icon: 'bi-tags' },
       { id: 'archives', label: 'Archives RGPD', href: 'parametres-archives.html', icon: 'bi-archive' },
       { id: 'thematiques', label: 'Thematiques IA', href: 'parametres-thematiques.html', icon: 'bi-tags', module: 'recherche_ia' }
     ]

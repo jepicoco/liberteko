@@ -98,4 +98,30 @@ router.post('/jeux',
   importController.importJeux
 );
 
+// ==================== IMPORT PAR LISTES MYLUDO ====================
+
+// POST /api/import/jeux-listes/preview - Preview d'un import par listes
+router.post('/jeux-listes/preview',
+  verifyToken,
+  upload.single('file'),
+  handleMulterError,
+  importController.previewListImport
+);
+
+// POST /api/import/jeux-listes - Import effectif par listes
+router.post('/jeux-listes',
+  verifyToken,
+  upload.single('file'),
+  handleMulterError,
+  importController.importJeuxFromLists
+);
+
+// POST /api/import/jeux-listes/stream - Import par listes avec progression SSE
+router.post('/jeux-listes/stream',
+  verifyToken,
+  upload.single('file'),
+  handleMulterError,
+  importController.importJeuxFromListsStream
+);
+
 module.exports = router;

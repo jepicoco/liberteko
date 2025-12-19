@@ -16,6 +16,7 @@ const {
   EmplacementLivre,
   EmplacementFilm,
   EmplacementDisque,
+  JeuEan,
   sequelize
 } = require('../models');
 const { Op } = require('sequelize');
@@ -437,7 +438,7 @@ exports.searchByEAN = async (req, res) => {
 
     // Chercher dans tous les types d'articles
     for (const [module, ArticleModel] of Object.entries(ARTICLE_MODELS)) {
-      const article = await ArticleModel.findOne({
+      let article = await ArticleModel.findOne({
         where: { ean },
         include: [
           {
@@ -451,6 +452,32 @@ exports.searchByEAN = async (req, res) => {
           }
         ]
       });
+
+      // Pour les jeux, chercher aussi dans jeu_eans (EAN alternatifs)
+      if (!article && module === 'jeu') {
+        const jeuEan = await JeuEan.findOne({
+          where: { ean },
+          include: [{
+            model: Jeu,
+            as: 'jeu',
+            include: [
+              {
+                model: ExemplaireJeu,
+                as: 'exemplaires',
+                where: { code_barre: { [Op.is]: null } },
+                required: false,
+                include: [
+                  { model: EmplacementJeu, as: 'emplacement' }
+                ]
+              }
+            ]
+          }]
+        });
+
+        if (jeuEan && jeuEan.jeu) {
+          article = jeuEan.jeu;
+        }
+      }
 
       if (article) {
         return res.json({

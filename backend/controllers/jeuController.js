@@ -4,7 +4,8 @@ const {
   Editeur, Auteur, Illustrateur,
   Gamme, EmplacementJeu,
   JeuCategorie, JeuTheme, JeuMecanisme, JeuLangue,
-  JeuEditeur, JeuAuteur, JeuIllustrateur
+  JeuEditeur, JeuAuteur, JeuIllustrateur,
+  JeuEan
 } = require('../models');
 const { Op } = require('sequelize');
 const eanLookupService = require('../services/eanLookupService');
@@ -57,12 +58,20 @@ const getAllJeux = async (req, res) => {
     }
 
     if (search) {
+      // Chercher aussi dans les EAN alternatifs (table jeu_eans)
+      const jeuEanIds = await JeuEan.findAll({
+        attributes: ['jeu_id'],
+        where: { ean: { [Op.like]: `%${search}%` } }
+      });
+      const eanJeuIds = jeuEanIds.map(je => je.jeu_id);
+
       where[Op.or] = [
         { titre: { [Op.like]: `%${search}%` } },
         { editeur: { [Op.like]: `%${search}%` } },
         { auteur: { [Op.like]: `%${search}%` } },
         { code_barre: { [Op.like]: `%${search}%` } },
-        { ean: { [Op.like]: `%${search}%` } }
+        { ean: { [Op.like]: `%${search}%` } },
+        ...(eanJeuIds.length > 0 ? [{ id: { [Op.in]: eanJeuIds } }] : [])
       ];
     }
 
@@ -157,6 +166,11 @@ const getJeuById = async (req, res) => {
           }],
           order: [['date_emprunt', 'DESC']],
           limit: 10
+        },
+        {
+          model: JeuEan,
+          as: 'eans',
+          attributes: ['id', 'ean', 'principal', 'source']
         }
       ]
     });
@@ -254,6 +268,60 @@ async function syncJeuRelations(jeu, data) {
 }
 
 /**
+ * Synchronise les EAN multiples pour un jeu
+ * @param {number} jeuId - ID du jeu
+ * @param {Array} eans - Liste des EAN [{ean, principal, id?}, ...]
+ */
+async function syncJeuEans(jeuId, eans) {
+  if (!eans || !Array.isArray(eans)) return;
+
+  // Recuperer les EAN existants pour ce jeu
+  const existingEans = await JeuEan.findAll({ where: { jeu_id: jeuId } });
+  const existingEanMap = new Map(existingEans.map(e => [e.ean, e]));
+
+  // EAN a garder (presents dans la nouvelle liste)
+  const newEanSet = new Set(eans.map(e => e.ean?.trim()).filter(Boolean));
+
+  // Supprimer les EAN qui ne sont plus dans la liste
+  for (const existing of existingEans) {
+    if (!newEanSet.has(existing.ean)) {
+      await existing.destroy();
+    }
+  }
+
+  // Ajouter ou mettre a jour les EAN
+  for (const eanData of eans) {
+    const eanValue = eanData.ean?.trim();
+    if (!eanValue) continue;
+
+    const existing = existingEanMap.get(eanValue);
+    if (existing) {
+      // Mettre a jour si le statut principal a change
+      if (existing.principal !== eanData.principal) {
+        existing.principal = eanData.principal;
+        await existing.save();
+      }
+    } else {
+      // Creer le nouvel EAN (ignorer si deja utilise par un autre jeu)
+      try {
+        await JeuEan.create({
+          jeu_id: jeuId,
+          ean: eanValue,
+          principal: eanData.principal || false,
+          source: 'manuel'
+        });
+      } catch (error) {
+        if (!error.message.includes('Duplicate') && !error.message.includes('UNIQUE')) {
+          throw error;
+        }
+        // EAN deja utilise par un autre jeu - ignorer silencieusement
+        console.warn(`EAN ${eanValue} deja utilise par un autre jeu`);
+      }
+    }
+  }
+}
+
+/**
  * Create new jeu
  * POST /api/jeux
  */
@@ -271,7 +339,9 @@ const createJeu = async (req, res) => {
       personnalise, figurines_peintes, reference, referent, ean, id_externe,
       // Relations normalisées (tableaux d'IDs)
       categorie_ids, theme_ids, mecanisme_ids, langue_ids,
-      editeur_ids, auteur_ids, illustrateur_ids
+      editeur_ids, auteur_ids, illustrateur_ids,
+      // EAN multiples
+      eans
     } = req.body;
 
     // Validate required fields
@@ -342,8 +412,15 @@ const createJeu = async (req, res) => {
       editeur_ids, auteur_ids, illustrateur_ids
     });
 
+    // Synchroniser les EAN multiples
+    if (eans && eans.length > 0) {
+      await syncJeuEans(jeu.id, eans);
+    }
+
     // Recharger avec les associations
-    const jeuComplet = await Jeu.findByPk(jeu.id, { include: INCLUDE_REFS });
+    const jeuComplet = await Jeu.findByPk(jeu.id, {
+      include: [...INCLUDE_REFS, { model: JeuEan, as: 'eans', attributes: ['id', 'ean', 'principal', 'source'] }]
+    });
 
     res.status(201).json({
       message: 'Jeu created successfully',
@@ -385,7 +462,9 @@ const updateJeu = async (req, res) => {
       personnalise, figurines_peintes, reference, referent, ean, id_externe,
       // Relations normalisées
       categorie_ids, theme_ids, mecanisme_ids, langue_ids,
-      editeur_ids, auteur_ids, illustrateur_ids
+      editeur_ids, auteur_ids, illustrateur_ids,
+      // EAN multiples
+      eans
     } = req.body;
 
     const jeu = await Jeu.findByPk(id);
@@ -457,8 +536,15 @@ const updateJeu = async (req, res) => {
       editeur_ids, auteur_ids, illustrateur_ids
     });
 
+    // Synchroniser les EAN multiples
+    if (eans !== undefined) {
+      await syncJeuEans(jeu.id, eans);
+    }
+
     // Recharger avec les associations
-    const jeuComplet = await Jeu.findByPk(jeu.id, { include: INCLUDE_REFS });
+    const jeuComplet = await Jeu.findByPk(jeu.id, {
+      include: [...INCLUDE_REFS, { model: JeuEan, as: 'eans', attributes: ['id', 'ean', 'principal', 'source'] }]
+    });
 
     res.json({
       message: 'Jeu updated successfully',
@@ -629,6 +715,35 @@ const lookupEAN = async (req, res) => {
   }
 };
 
+/**
+ * Trouve un jeu par EAN (cherche dans jeu_eans et jeux.ean)
+ * @param {string} ean - Code EAN a rechercher
+ * @returns {Promise<Jeu|null>} Le jeu trouve ou null
+ */
+const findJeuByEan = async (ean) => {
+  if (!ean) return null;
+
+  // Chercher dans jeu_eans d'abord (EAN alternatifs)
+  const jeuEan = await JeuEan.findOne({
+    where: { ean: ean.trim() },
+    include: [{
+      model: Jeu,
+      as: 'jeu',
+      include: INCLUDE_REFS
+    }]
+  });
+
+  if (jeuEan && jeuEan.jeu) {
+    return jeuEan.jeu;
+  }
+
+  // Fallback: chercher dans jeux.ean (compatibilite)
+  return await Jeu.findOne({
+    where: { ean: ean.trim() },
+    include: INCLUDE_REFS
+  });
+};
+
 module.exports = {
   getAllJeux,
   getJeuById,
@@ -636,5 +751,6 @@ module.exports = {
   updateJeu,
   deleteJeu,
   getCategories,
-  lookupEAN
+  lookupEAN,
+  findJeuByEan
 };

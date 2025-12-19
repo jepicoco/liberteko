@@ -611,6 +611,55 @@ const importAPI = {
     }
 
     return await response.json();
+  },
+
+  // ==================== IMPORT PAR LISTES MYLUDO ====================
+
+  async previewJeuxListes(file, separator = ';') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('separator', separator);
+
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/import/jeux-listes/preview`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur preview');
+    }
+
+    return await response.json();
+  },
+
+  async importJeuxListes(file, options = {}) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('separator', options.separator || ';');
+    if (options.mapping) {
+      formData.append('mapping', JSON.stringify(options.mapping));
+    }
+
+    const token = getAuthToken();
+    const response = await fetch(`${API_BASE_URL}/import/jeux-listes`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur import');
+    }
+
+    return await response.json();
   }
 };
 

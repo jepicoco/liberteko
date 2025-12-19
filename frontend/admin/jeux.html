@@ -202,11 +202,24 @@
                 <!-- Codes et Annee -->
                 <div class="row mb-3">
                   <div class="col-md-4">
-                    <label for="ean" class="form-label">
+                    <label class="form-label">
                       <i class="bi bi-upc me-1"></i>Code EAN
                     </label>
-                    <input type="text" id="ean" class="form-control font-monospace" placeholder="3760093330145" maxlength="20">
-                    <small class="text-muted">Code-barres commercial</small>
+                    <div id="ean-container">
+                      <!-- EAN principal -->
+                      <div class="input-group mb-1">
+                        <input type="text" id="ean" class="form-control font-monospace" placeholder="3760093330145" maxlength="13">
+                        <span class="input-group-text bg-primary text-white" title="EAN principal">
+                          <i class="bi bi-star-fill"></i>
+                        </span>
+                      </div>
+                      <!-- EAN alternatifs -->
+                      <div id="ean-alternatifs" class="mt-1"></div>
+                      <button type="button" class="btn btn-sm btn-outline-secondary mt-1" onclick="addEanAlternatif()">
+                        <i class="bi bi-plus me-1"></i>Ajouter EAN alternatif
+                      </button>
+                    </div>
+                    <small class="text-muted">Code-barres commercial (plusieurs editions possibles)</small>
                   </div>
                   <div class="col-md-4">
                     <label for="annee_sortie" class="form-label">
@@ -1212,6 +1225,74 @@
       if (tsEmplacement) tsEmplacement.setValue('');
     }
 
+    // ========== EAN multiples ==========
+
+    function renderEanAlternatifs(eans) {
+      const container = document.getElementById('ean-alternatifs');
+      container.innerHTML = '';
+
+      if (!eans || eans.length === 0) return;
+
+      // Filtrer les EAN non-principaux
+      const alternatifs = eans.filter(e => !e.principal);
+
+      alternatifs.forEach(eanObj => {
+        const div = document.createElement('div');
+        div.className = 'input-group mb-1';
+        div.innerHTML = `
+          <input type="text" class="form-control form-control-sm font-monospace ean-alternatif"
+                 value="${eanObj.ean}" maxlength="13" data-id="${eanObj.id || ''}">
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEanAlternatif(this)" title="Supprimer">
+            <i class="bi bi-x"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function addEanAlternatif() {
+      const container = document.getElementById('ean-alternatifs');
+      const div = document.createElement('div');
+      div.className = 'input-group mb-1';
+      div.innerHTML = `
+        <input type="text" class="form-control form-control-sm font-monospace ean-alternatif"
+               placeholder="Code EAN alternatif" maxlength="13" data-id="">
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEanAlternatif(this)" title="Supprimer">
+          <i class="bi bi-x"></i>
+        </button>
+      `;
+      container.appendChild(div);
+      div.querySelector('input').focus();
+    }
+
+    function removeEanAlternatif(btn) {
+      btn.closest('.input-group').remove();
+    }
+
+    function clearEanAlternatifs() {
+      document.getElementById('ean-alternatifs').innerHTML = '';
+    }
+
+    function collectEans() {
+      const eans = [];
+
+      // EAN principal
+      const principal = document.getElementById('ean').value.trim();
+      if (principal) {
+        eans.push({ ean: principal, principal: true });
+      }
+
+      // EAN alternatifs
+      document.querySelectorAll('.ean-alternatif').forEach(input => {
+        const val = input.value.trim();
+        if (val) {
+          eans.push({ ean: val, principal: false, id: input.dataset.id || null });
+        }
+      });
+
+      return eans;
+    }
+
     // ========== Modal functions ==========
 
     async function openCreateModal() {
@@ -1220,6 +1301,7 @@
       document.getElementById('jeuId').value = '';
 
       clearTomSelects();
+      clearEanAlternatifs();
 
       // Cacher la barre d'enrichissement pour les nouveaux jeux
       document.getElementById('enrichmentBar').classList.add('d-none');
@@ -1246,6 +1328,7 @@
         document.getElementById('jeuId').value = jeu.id;
         document.getElementById('titre').value = jeu.titre || '';
         document.getElementById('ean').value = jeu.ean || '';
+        renderEanAlternatifs(jeu.eans);
         document.getElementById('annee_sortie').value = jeu.annee_sortie || '';
         document.getElementById('image_url').value = jeu.image_url || '';
         document.getElementById('age_min').value = jeu.age_min || '';
@@ -1560,9 +1643,11 @@
         const id = document.getElementById('jeuId').value;
 
         // Collecter les IDs des referentiels selectionnes
+        const eansList = collectEans();
         const formData = {
           titre: document.getElementById('titre').value,
           ean: document.getElementById('ean').value || null,
+          eans: eansList, // EAN multiples
           annee_sortie: document.getElementById('annee_sortie').value || null,
           image_url: document.getElementById('image_url').value || null,
           age_min: document.getElementById('age_min').value || null,
@@ -2179,6 +2264,7 @@
       // Cacher la barre d'enrichissement pour les nouveaux jeux
       document.getElementById('enrichmentBar').classList.add('d-none');
       clearEnrichmentHighlights();
+      clearEanAlternatifs();
 
       // Pre-remplir les champs de base (gere les formats BGG, Wikiludo et legacy)
       document.getElementById('titre').value = data.titre || data.title || '';

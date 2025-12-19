@@ -43,17 +43,17 @@ module.exports = (sequelize) => {
       comment: 'Type: jeu de base, extension, standalone, accessoire'
     },
     editeur: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.TEXT,
       allowNull: true,
       comment: 'Peut contenir plusieurs editeurs separes par virgule'
     },
     auteur: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.TEXT,
       allowNull: true,
       comment: 'Peut contenir plusieurs auteurs separes par virgule'
     },
     illustrateur: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.TEXT,
       allowNull: true,
       comment: 'Peut contenir plusieurs illustrateurs separes par virgule'
     },
