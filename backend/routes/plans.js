@@ -8,12 +8,16 @@ const planController = require('../controllers/planController');
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/checkRole');
 const { checkModuleActif } = require('../middleware/checkModuleActif');
+const { structureContext, requireStructureRole } = require('../middleware/structureContext');
 
 // Middleware pour routes admin (gestionnaire ou admin)
 const modulePlansActif = checkModuleActif('plans');
 
 // Middleware pour routes admin (gestionnaire ou admin + module actif)
 const authAdmin = [verifyToken, checkRole(['gestionnaire', 'administrateur']), modulePlansActif];
+
+// Middleware pour lecture de references (benevole+ dans la structure)
+const authReadRefs = [verifyToken, structureContext(), requireStructureRole('benevole')];
 
 // Middleware pour routes publiques (optionnel token)
 const authOptional = (req, res, next) => {
@@ -50,8 +54,8 @@ router.delete('/:id', authAdmin, planController.deletePlan);
 // ROUTES ADMIN - REFERENCES (avant routes avec params)
 // ============================================
 
-// Liste les emplacements disponibles par type
-router.get('/refs/emplacements/:type', authAdmin, planController.getEmplacementsDisponibles);
+// Liste les emplacements disponibles par type (accessible benevole+ pour filtres)
+router.get('/refs/emplacements/:type', authReadRefs, planController.getEmplacementsDisponibles);
 
 // Cree un nouvel emplacement (creation rapide)
 router.post('/refs/emplacements/:type', authAdmin, planController.createEmplacement);

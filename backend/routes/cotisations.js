@@ -3,6 +3,7 @@ const router = express.Router();
 const cotisationController = require('../controllers/cotisationController');
 const { verifyToken } = require('../middleware/auth');
 const { validate, schemas, param } = require('../middleware/validate');
+const { structureContext, requireStructureRole } = require('../middleware/structureContext');
 
 // Toutes les routes nécessitent une authentification
 router.use(verifyToken);
@@ -12,18 +13,18 @@ const validateAdherentId = validate([
   param('adherent_id').isInt({ min: 1 }).withMessage('adherent_id invalide')
 ]);
 
-// Routes pour les cotisations
-router.get('/', validate(schemas.cotisation.list), cotisationController.getAllCotisations);
-router.get('/statistiques', cotisationController.getStatistiques);
-router.get('/:id', validate(schemas.cotisation.getById), cotisationController.getCotisationById);
-router.post('/', validate(schemas.cotisation.create), cotisationController.createCotisation);
-router.put('/:id', validate(schemas.cotisation.update), cotisationController.updateCotisation);
-router.delete('/:id', validate(schemas.cotisation.getById), cotisationController.deleteCotisation);
+// Routes pour les cotisations (lecture = benevole+, écriture = gestionnaire+)
+router.get('/', structureContext(), requireStructureRole('benevole'), validate(schemas.cotisation.list), cotisationController.getAllCotisations);
+router.get('/statistiques', structureContext(), requireStructureRole('benevole'), cotisationController.getStatistiques);
+router.get('/:id', structureContext(), requireStructureRole('benevole'), validate(schemas.cotisation.getById), cotisationController.getCotisationById);
+router.post('/', structureContext({ required: true }), requireStructureRole('gestionnaire'), validate(schemas.cotisation.create), cotisationController.createCotisation);
+router.put('/:id', structureContext({ required: true }), requireStructureRole('gestionnaire'), validate(schemas.cotisation.update), cotisationController.updateCotisation);
+router.delete('/:id', structureContext({ required: true }), requireStructureRole('gestionnaire'), validate(schemas.cotisation.getById), cotisationController.deleteCotisation);
 
 // Routes spéciales
-router.post('/:id/annuler', validate(schemas.cotisation.getById), cotisationController.annulerCotisation);
-router.get('/adherent/:adherent_id/active', validateAdherentId, cotisationController.verifierCotisationActive);
-router.post('/update-statuts-expires', cotisationController.mettreAJourStatutsExpires);
-router.get('/:id/recu', validate(schemas.cotisation.getById), cotisationController.genererRecuPDF);
+router.post('/:id/annuler', structureContext({ required: true }), requireStructureRole('gestionnaire'), validate(schemas.cotisation.getById), cotisationController.annulerCotisation);
+router.get('/adherent/:adherent_id/active', structureContext(), requireStructureRole('benevole'), validateAdherentId, cotisationController.verifierCotisationActive);
+router.post('/update-statuts-expires', structureContext(), requireStructureRole('gestionnaire'), cotisationController.mettreAJourStatutsExpires);
+router.get('/:id/recu', structureContext(), requireStructureRole('benevole'), validate(schemas.cotisation.getById), cotisationController.genererRecuPDF);
 
 module.exports = router;

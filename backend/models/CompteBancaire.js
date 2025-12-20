@@ -1,4 +1,44 @@
 const { DataTypes } = require('sequelize');
+const crypto = require('crypto');
+
+// Utilise la même clé de chiffrement que les emails
+const ENCRYPTION_KEY = process.env.EMAIL_ENCRYPTION_KEY
+  ? Buffer.from(process.env.EMAIL_ENCRYPTION_KEY, 'hex')
+  : null;
+
+/**
+ * Chiffre une valeur sensible (IBAN, BIC)
+ */
+function encryptValue(value) {
+  if (!value || !ENCRYPTION_KEY) return value;
+  // Si déjà chiffré (contient ':'), ne pas rechiffrer
+  if (value.includes(':')) return value;
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+  let encrypted = cipher.update(value, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
+
+/**
+ * Déchiffre une valeur sensible
+ */
+function decryptValue(encryptedValue) {
+  if (!encryptedValue || !ENCRYPTION_KEY) return encryptedValue;
+  // Si pas chiffré (pas de ':'), retourner tel quel
+  if (!encryptedValue.includes(':')) return encryptedValue;
+  try {
+    const [ivHex, encrypted] = encryptedValue.split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', ENCRYPTION_KEY, iv);
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return decrypted;
+  } catch (error) {
+    console.error('Erreur déchiffrement compte bancaire:', error.message);
+    return null;
+  }
+}
 
 module.exports = (sequelize) => {
   const CompteBancaire = sequelize.define('CompteBancaire', {
@@ -23,17 +63,33 @@ module.exports = (sequelize) => {
       comment: 'Nom de la banque'
     },
     iban: {
-      type: DataTypes.STRING(34),
+      type: DataTypes.STRING(255), // Taille augmentée pour données chiffrées
       allowNull: true,
-      validate: {
-        is: /^[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}$/i
+      set(value) {
+        // Valider le format avant chiffrement
+        if (value && !/^[A-Z]{2}[0-9]{2}[A-Z0-9]{4,30}$/i.test(value)) {
+          throw new Error('Format IBAN invalide');
+        }
+        this.setDataValue('iban', encryptValue(value));
+      },
+      get() {
+        const val = this.getDataValue('iban');
+        return decryptValue(val);
       }
     },
     bic: {
-      type: DataTypes.STRING(11),
+      type: DataTypes.STRING(255), // Taille augmentée pour données chiffrées
       allowNull: true,
-      validate: {
-        is: /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/i
+      set(value) {
+        // Valider le format avant chiffrement
+        if (value && !/^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/i.test(value)) {
+          throw new Error('Format BIC invalide');
+        }
+        this.setDataValue('bic', encryptValue(value));
+      },
+      get() {
+        const val = this.getDataValue('bic');
+        return decryptValue(val);
       }
     },
     par_defaut: {

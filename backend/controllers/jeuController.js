@@ -38,6 +38,11 @@ const getAllJeux = async (req, res) => {
 
     const where = {};
 
+    // Filtrer par structure si contexte present
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     if (statut) {
       where.statut = statut;
     }
@@ -403,7 +408,9 @@ const createJeu = async (req, res) => {
       referent,
       // Identifiants externes
       ean,
-      id_externe
+      id_externe,
+      // Structure proprietaire
+      structure_id: req.structureId || null
     });
 
     // Synchroniser les relations many-to-many

@@ -133,7 +133,8 @@ const getEffectiveRole = (user, structureAccess) => {
  * Helper pour verifier si l'utilisateur a un role minimum dans la structure
  */
 const hasMinRole = (effectiveRole, minRole) => {
-  const roleHierarchy = ['usager', 'benevole', 'gestionnaire', 'comptable', 'administrateur'];
+  // Doit correspondre a ROLE_HIERARCHY dans checkRole.js
+  const roleHierarchy = ['usager', 'benevole', 'agent', 'gestionnaire', 'comptable', 'administrateur'];
   const effectiveIndex = roleHierarchy.indexOf(effectiveRole);
   const minIndex = roleHierarchy.indexOf(minRole);
   return effectiveIndex >= minIndex;
@@ -164,9 +165,103 @@ const requireStructureRole = (minRole) => {
   };
 };
 
+/**
+ * Verifie si un utilisateur peut gerer une structure donnee
+ * @param {Object} user - Utilisateur (avec id et role)
+ * @param {number} structureId - ID de la structure cible
+ * @param {string} minRole - Role minimum requis (defaut: gestionnaire)
+ * @returns {Promise<boolean>}
+ */
+const canManageStructure = async (user, structureId, minRole = 'gestionnaire') => {
+  if (!user) return false;
+
+  // Admin global peut gerer toutes les structures
+  if (user.role === 'administrateur') return true;
+
+  // Verifier l'acces a la structure avec role suffisant
+  const access = await UtilisateurStructure.findOne({
+    where: {
+      utilisateur_id: user.id,
+      structure_id: structureId,
+      actif: true
+    }
+  });
+
+  if (!access) return false;
+
+  // Verifier dates de validite
+  const now = new Date();
+  if (access.date_debut && new Date(access.date_debut) > now) return false;
+  if (access.date_fin && new Date(access.date_fin) < now) return false;
+
+  // Verifier le role (role_structure ou role global en fallback)
+  const effectiveRole = access.role_structure || user.role;
+  return hasMinRole(effectiveRole, minRole);
+};
+
+/**
+ * Recupere toutes les structures accessibles par un utilisateur
+ * @param {Object} user - Utilisateur (avec id et role)
+ * @param {string} minRole - Role minimum (defaut: null = tous les acces)
+ * @returns {Promise<Array>} - Liste des structures avec role effectif
+ */
+const getAccessibleStructures = async (user, minRole = null) => {
+  if (!user) return [];
+
+  // Admin global a acces a toutes les structures
+  if (user.role === 'administrateur') {
+    const structures = await Structure.findAll({
+      where: { actif: true },
+      order: [['nom', 'ASC']]
+    });
+    return structures.map(s => ({
+      ...s.toJSON(),
+      role_effectif: 'administrateur',
+      is_admin_global: true
+    }));
+  }
+
+  // Recuperer les acces utilisateur
+  const accesses = await UtilisateurStructure.findAll({
+    where: {
+      utilisateur_id: user.id,
+      actif: true
+    },
+    include: [{
+      model: Structure,
+      as: 'structure',
+      where: { actif: true }
+    }]
+  });
+
+  const now = new Date();
+  return accesses
+    .filter(access => {
+      // Filtrer par dates
+      if (access.date_debut && new Date(access.date_debut) > now) return false;
+      if (access.date_fin && new Date(access.date_fin) < now) return false;
+      // Filtrer par role minimum si specifie
+      if (minRole) {
+        const effectiveRole = access.role_structure || user.role;
+        return hasMinRole(effectiveRole, minRole);
+      }
+      return true;
+    })
+    .map(access => ({
+      ...access.structure.toJSON(),
+      role_effectif: access.role_structure || user.role,
+      role_structure: access.role_structure,
+      date_debut: access.date_debut,
+      date_fin: access.date_fin,
+      is_admin_global: false
+    }));
+};
+
 module.exports = {
   structureContext,
   getEffectiveRole,
   hasMinRole,
-  requireStructureRole
+  requireStructureRole,
+  canManageStructure,
+  getAccessibleStructures
 };

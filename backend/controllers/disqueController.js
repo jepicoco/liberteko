@@ -45,6 +45,11 @@ const getAllDisques = async (req, res) => {
     const offset = (page - 1) * limit;
     const where = {};
 
+    // Filtrer par structure si contexte present
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     if (search) {
       where[Op.or] = [
         { titre: { [Op.like]: `%${search}%` } },
@@ -172,7 +177,9 @@ const createDisque = async (req, res) => {
       date_acquisition,
       prix_indicatif,
       prix_achat,
-      notes
+      notes,
+      // Structure proprietaire
+      structure_id: req.structureId || null
     });
 
     // Add artistes

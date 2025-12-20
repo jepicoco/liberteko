@@ -1,4 +1,4 @@
-const { SmsLog, Utilisateur } = require('../models');
+const { SmsLog, Utilisateur, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -23,6 +23,11 @@ exports.getAllSmsLogs = async (req, res) => {
     const offset = (page - 1) * limit;
     const where = {};
 
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     if (statut) {
       where.statut = statut;
     }
@@ -41,12 +46,16 @@ exports.getAllSmsLogs = async (req, res) => {
       where.utilisateur_id = userId;
     }
 
-    // Filtre par destinataire (téléphone ou nom)
+    // Filtre par destinataire (telephone ou nom) - insensible a la casse
     if (destinataire) {
-      where[Op.or] = [
-        { destinataire: { [Op.like]: `%${destinataire}%` } },
-        { destinataire_nom: { [Op.like]: `%${destinataire}%` } }
-      ];
+      const searchTerm = destinataire.toLowerCase();
+      where[Op.and] = where[Op.and] || [];
+      where[Op.and].push({
+        [Op.or]: [
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('destinataire')), { [Op.like]: `%${searchTerm}%` }),
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('destinataire_nom')), { [Op.like]: `%${searchTerm}%` })
+        ]
+      });
     }
 
     if (date_debut && date_fin) {
@@ -150,16 +159,64 @@ exports.getSmsStatistics = async (req, res) => {
     const dateDebut = date_debut ? new Date(date_debut) : null;
     const dateFin = date_fin ? new Date(date_fin) : null;
 
-    // Statistiques générales
-    const stats = await SmsLog.getStatistiques(dateDebut, dateFin);
+    // Condition de base pour filtrage par structure
+    const baseWhere = {};
+    if (req.structureId) {
+      baseWhere.structure_id = req.structureId;
+    }
 
-    // Coût total
-    const coutTotal = await SmsLog.getCoutTotal(dateDebut, dateFin);
+    // Statistiques générales (avec filtre structure)
+    const where = { ...baseWhere };
+    if (dateDebut && dateFin) {
+      where.date_envoi = { [Op.between]: [dateDebut, dateFin] };
+    }
 
-    // Statistiques par template
-    const parTemplate = await SmsLog.getParTemplate(10);
+    const [total, envoyes, delivres, erreurs] = await Promise.all([
+      SmsLog.count({ where }),
+      SmsLog.count({ where: { ...where, statut: 'envoye' } }),
+      SmsLog.count({ where: { ...where, statut: 'delivre' } }),
+      SmsLog.count({ where: { ...where, statut: { [Op.in]: ['erreur', 'echec_livraison'] } } })
+    ]);
 
-    // Statistiques par provider
+    const stats = {
+      total,
+      envoyes,
+      delivres,
+      erreurs,
+      tauxReussite: total > 0 ? (((envoyes + delivres) / total) * 100).toFixed(2) : 0
+    };
+
+    // Coût total (avec filtre structure)
+    const coutWhere = { ...baseWhere, cout: { [Op.ne]: null } };
+    if (dateDebut && dateFin) {
+      coutWhere.date_envoi = { [Op.between]: [dateDebut, dateFin] };
+    }
+    const coutTotal = await SmsLog.sum('cout', { where: coutWhere }) || 0;
+
+    // Statistiques par template (avec filtre structure)
+    const templateWhere = {
+      ...baseWhere,
+      template_code: { [Op.ne]: null }
+    };
+    const parTemplate = await SmsLog.findAll({
+      attributes: [
+        'template_code',
+        [SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'total'],
+        [SmsLog.sequelize.fn('SUM', SmsLog.sequelize.literal('CASE WHEN statut IN ("envoye", "delivre") THEN 1 ELSE 0 END')), 'envoyes'],
+        [SmsLog.sequelize.fn('SUM', SmsLog.sequelize.literal('CASE WHEN statut IN ("erreur", "echec_livraison") THEN 1 ELSE 0 END')), 'erreurs']
+      ],
+      where: templateWhere,
+      group: ['template_code'],
+      order: [[SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'DESC']],
+      limit: 10,
+      raw: true
+    });
+
+    // Statistiques par provider (avec filtre structure)
+    const providerWhere = {
+      ...baseWhere,
+      provider: { [Op.ne]: null }
+    };
     const parProvider = await SmsLog.findAll({
       attributes: [
         'provider',
@@ -168,17 +225,13 @@ exports.getSmsStatistics = async (req, res) => {
         [SmsLog.sequelize.fn('SUM', SmsLog.sequelize.literal('CASE WHEN statut IN ("erreur", "echec_livraison") THEN 1 ELSE 0 END')), 'erreurs'],
         [SmsLog.sequelize.fn('SUM', SmsLog.sequelize.col('cout')), 'cout_total']
       ],
-      where: {
-        provider: {
-          [Op.ne]: null
-        }
-      },
+      where: providerWhere,
       group: ['provider'],
       order: [[SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'DESC']],
       raw: true
     });
 
-    // Statistiques par jour (7 derniers jours)
+    // Statistiques par jour (7 derniers jours, avec filtre structure)
     const now = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -192,6 +245,7 @@ exports.getSmsStatistics = async (req, res) => {
         [SmsLog.sequelize.fn('SUM', SmsLog.sequelize.col('nb_segments')), 'segments']
       ],
       where: {
+        ...baseWhere,
         date_envoi: {
           [Op.between]: [sevenDaysAgo, now]
         }
@@ -229,13 +283,18 @@ exports.purgeOldLogs = async (req, res) => {
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - parseInt(jours));
 
-    const count = await SmsLog.destroy({
-      where: {
-        date_envoi: {
-          [Op.lt]: dateLimit
-        }
+    const where = {
+      date_envoi: {
+        [Op.lt]: dateLimit
       }
-    });
+    };
+
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
+    const count = await SmsLog.destroy({ where });
 
     res.json({
       message: `${count} log(s) SMS supprimé(s)`,
@@ -255,16 +314,23 @@ exports.purgeOldLogs = async (req, res) => {
  */
 exports.getTemplatesList = async (req, res) => {
   try {
+    const where = {
+      template_code: {
+        [Op.ne]: null
+      }
+    };
+
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     const templates = await SmsLog.findAll({
       attributes: [
         'template_code',
         [SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'total']
       ],
-      where: {
-        template_code: {
-          [Op.ne]: null
-        }
-      },
+      where,
       group: ['template_code'],
       order: [[SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'DESC']],
       raw: true
@@ -285,16 +351,23 @@ exports.getTemplatesList = async (req, res) => {
  */
 exports.getProvidersList = async (req, res) => {
   try {
+    const where = {
+      provider: {
+        [Op.ne]: null
+      }
+    };
+
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     const providers = await SmsLog.findAll({
       attributes: [
         'provider',
         [SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'total']
       ],
-      where: {
-        provider: {
-          [Op.ne]: null
-        }
-      },
+      where,
       group: ['provider'],
       order: [[SmsLog.sequelize.fn('COUNT', SmsLog.sequelize.col('id')), 'DESC']],
       raw: true

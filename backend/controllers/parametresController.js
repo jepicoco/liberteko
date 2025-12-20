@@ -1,4 +1,6 @@
-const { ParametresStructure, Utilisateur } = require('../models');
+const { ParametresStructure, Utilisateur, UtilisateurStructure, Structure } = require('../models');
+const { Op } = require('sequelize');
+const { canManageStructure, getAccessibleStructures, hasMinRole } = require('../middleware/structureContext');
 
 /**
  * Récupérer les paramètres de la structure
@@ -118,12 +120,18 @@ exports.uploadLogo = async (req, res) => {
 };
 
 /**
- * Récupérer la liste des utilisateurs avec leurs rôles
+ * Récupérer la liste des utilisateurs avec leurs rôles et accès structures
  * Accessible aux administrateurs et gestionnaires
+ * Filtre selon les structures accessibles par l'appelant
  */
 exports.getUtilisateurs = async (req, res) => {
   try {
-    const { role, statut } = req.query;
+    const { role, statut, structure_id } = req.query;
+
+    // Récupérer les structures accessibles par l'appelant
+    const accessibleStructures = await getAccessibleStructures(req.user, 'gestionnaire');
+    const accessibleStructureIds = accessibleStructures.map(s => s.id);
+    const isGlobalAdmin = req.user.role === 'administrateur';
 
     let where = {};
 
@@ -135,28 +143,89 @@ exports.getUtilisateurs = async (req, res) => {
       where.statut = statut;
     }
 
+    // Construire la requête avec include des accès structure
     const utilisateurs = await Utilisateur.findAll({
       where,
       attributes: [
         'id', 'nom', 'prenom', 'email', 'telephone',
         'role', 'statut', 'date_adhesion', 'code_barre', 'modules_autorises'
       ],
+      include: [{
+        model: UtilisateurStructure,
+        as: 'accesStructures',
+        required: false,
+        include: [{
+          model: Structure,
+          as: 'structure',
+          attributes: ['id', 'code', 'nom', 'couleur', 'icone']
+        }]
+      }],
       order: [['nom', 'ASC'], ['prenom', 'ASC']]
     });
 
-    // S'assurer que modules_autorises est correctement formaté
-    const result = utilisateurs.map(u => {
-      const userData = u.toJSON();
-      // Parser si c'est une chaîne JSON
-      if (typeof userData.modules_autorises === 'string') {
-        try {
-          userData.modules_autorises = JSON.parse(userData.modules_autorises);
-        } catch (e) {
-          userData.modules_autorises = null;
+    // Filtrer et formater les résultats
+    const result = utilisateurs
+      .map(u => {
+        const userData = u.toJSON();
+
+        // Parser modules_autorises si c'est une chaîne JSON
+        if (typeof userData.modules_autorises === 'string') {
+          try {
+            userData.modules_autorises = JSON.parse(userData.modules_autorises);
+          } catch (e) {
+            userData.modules_autorises = null;
+          }
         }
-      }
-      return userData;
-    });
+
+        // Formater les accès structure
+        userData.structures = (userData.accesStructures || [])
+          .filter(access => {
+            // Si filtre par structure_id, appliquer
+            if (structure_id && access.structure_id !== parseInt(structure_id)) {
+              return false;
+            }
+            // Si pas admin global, filtrer par structures accessibles
+            if (!isGlobalAdmin && !accessibleStructureIds.includes(access.structure_id)) {
+              return false;
+            }
+            return true;
+          })
+          .map(access => ({
+            structure_id: access.structure_id,
+            structure_code: access.structure?.code,
+            structure_nom: access.structure?.nom,
+            structure_couleur: access.structure?.couleur,
+            structure_icone: access.structure?.icone,
+            role_structure: access.role_structure,
+            role_effectif: access.role_structure || userData.role,
+            actif: access.actif,
+            date_debut: access.date_debut,
+            date_fin: access.date_fin
+          }));
+
+        delete userData.accesStructures;
+        return userData;
+      })
+      .filter(u => {
+        // Exclure les usagers simples (sans rôle admin ni accès structure)
+        if (u.role === 'usager' && (!u.structures || u.structures.length === 0)) {
+          return false;
+        }
+        // Si filtre par structure, exclure ceux sans accès à cette structure
+        if (structure_id) {
+          const hasStructureAccess = u.structures.some(s => s.structure_id === parseInt(structure_id));
+          const isAdminWithoutExplicit = u.role === 'administrateur';
+          return hasStructureAccess || isAdminWithoutExplicit;
+        }
+        // Si pas admin global, exclure ceux qu'on ne peut pas voir
+        if (!isGlobalAdmin) {
+          // Garder si a au moins un accès aux structures qu'on gère
+          const hasVisibleAccess = u.structures.length > 0;
+          // Ou si c'est un admin (visible par tous les gestionnaires)
+          return hasVisibleAccess || u.role === 'administrateur';
+        }
+        return true;
+      });
 
     res.json(result);
   } catch (error) {
@@ -386,6 +455,322 @@ exports.getRoles = async (req, res) => {
     console.error('Erreur lors de la récupération des rôles:', error);
     res.status(500).json({
       error: 'Erreur lors de la récupération des rôles',
+      message: error.message
+    });
+  }
+};
+
+// ========================================
+// Gestion des accès structure utilisateur
+// ========================================
+
+/**
+ * Récupérer les structures auxquelles un utilisateur a accès
+ * GET /api/parametres/utilisateurs/:id/structures
+ */
+exports.getUtilisateurStructures = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifier que l'utilisateur cible existe
+    const utilisateur = await Utilisateur.findByPk(id, {
+      attributes: ['id', 'nom', 'prenom', 'email', 'role']
+    });
+
+    if (!utilisateur) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Récupérer les structures accessibles par l'appelant
+    const accessibleStructures = await getAccessibleStructures(req.user, 'gestionnaire');
+    const accessibleStructureIds = accessibleStructures.map(s => s.id);
+    const isGlobalAdmin = req.user.role === 'administrateur';
+
+    // Récupérer les accès structure de l'utilisateur cible
+    const accesses = await UtilisateurStructure.findAll({
+      where: { utilisateur_id: id },
+      include: [{
+        model: Structure,
+        as: 'structure',
+        attributes: ['id', 'code', 'nom', 'couleur', 'icone', 'type_structure']
+      }]
+    });
+
+    // Filtrer selon les structures accessibles par l'appelant
+    const result = accesses
+      .filter(access => isGlobalAdmin || accessibleStructureIds.includes(access.structure_id))
+      .map(access => ({
+        id: access.id,
+        structure_id: access.structure_id,
+        structure_code: access.structure?.code,
+        structure_nom: access.structure?.nom,
+        structure_couleur: access.structure?.couleur,
+        structure_icone: access.structure?.icone,
+        structure_type: access.structure?.type_structure,
+        role_structure: access.role_structure,
+        role_effectif: access.role_structure || utilisateur.role,
+        actif: access.actif,
+        date_debut: access.date_debut,
+        date_fin: access.date_fin,
+        created_at: access.created_at,
+        // Indiquer si l'appelant peut modifier cet accès
+        can_edit: isGlobalAdmin || accessibleStructureIds.includes(access.structure_id)
+      }));
+
+    res.json({
+      utilisateur: {
+        id: utilisateur.id,
+        nom: utilisateur.nom,
+        prenom: utilisateur.prenom,
+        email: utilisateur.email,
+        role: utilisateur.role
+      },
+      structures: result,
+      // Structures disponibles pour ajout (celles que l'appelant gère et où l'utilisateur n'a pas encore accès)
+      structures_disponibles: accessibleStructures
+        .filter(s => !accesses.some(a => a.structure_id === s.id))
+        .map(s => ({
+          id: s.id,
+          code: s.code,
+          nom: s.nom,
+          couleur: s.couleur,
+          icone: s.icone
+        }))
+    });
+  } catch (error) {
+    console.error('Erreur getUtilisateurStructures:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la récupération des accès structure',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Ajouter un accès structure à un utilisateur
+ * POST /api/parametres/utilisateurs/:id/structures
+ */
+exports.addUtilisateurStructure = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { structure_id, role_structure, date_debut, date_fin } = req.body;
+
+    // Validation
+    if (!structure_id) {
+      return res.status(400).json({ error: 'structure_id requis' });
+    }
+
+    // Vérifier que l'utilisateur cible existe
+    const utilisateur = await Utilisateur.findByPk(id);
+    if (!utilisateur) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+
+    // Vérifier que la structure existe
+    const structure = await Structure.findByPk(structure_id);
+    if (!structure) {
+      return res.status(404).json({ error: 'Structure non trouvée' });
+    }
+
+    // Vérifier que l'appelant peut gérer cette structure
+    const canManage = await canManageStructure(req.user, structure_id);
+    if (!canManage) {
+      return res.status(403).json({
+        error: 'Accès refusé',
+        message: 'Vous ne pouvez pas gérer les accès de cette structure'
+      });
+    }
+
+    // Vérifier que l'accès n'existe pas déjà
+    const existingAccess = await UtilisateurStructure.findOne({
+      where: { utilisateur_id: id, structure_id }
+    });
+    if (existingAccess) {
+      return res.status(409).json({
+        error: 'Accès existant',
+        message: 'Cet utilisateur a déjà un accès à cette structure'
+      });
+    }
+
+    // Valider le role_structure si fourni
+    if (role_structure) {
+      const rolesValides = ['usager', 'benevole', 'agent', 'gestionnaire', 'comptable', 'administrateur'];
+      if (!rolesValides.includes(role_structure)) {
+        return res.status(400).json({ error: 'Role invalide' });
+      }
+      // Ne pas permettre d'attribuer un rôle supérieur au sien
+      if (!hasMinRole(req.user.role, role_structure)) {
+        return res.status(403).json({
+          error: 'Accès refusé',
+          message: 'Vous ne pouvez pas attribuer un rôle supérieur au vôtre'
+        });
+      }
+    }
+
+    // Créer l'accès
+    const access = await UtilisateurStructure.create({
+      utilisateur_id: parseInt(id),
+      structure_id: parseInt(structure_id),
+      role_structure: role_structure || null,
+      actif: true,
+      date_debut: date_debut || null,
+      date_fin: date_fin || null
+    });
+
+    res.status(201).json({
+      message: 'Accès structure ajouté',
+      access: {
+        id: access.id,
+        structure_id: access.structure_id,
+        structure_nom: structure.nom,
+        role_structure: access.role_structure,
+        role_effectif: access.role_structure || utilisateur.role,
+        actif: access.actif,
+        date_debut: access.date_debut,
+        date_fin: access.date_fin
+      }
+    });
+  } catch (error) {
+    console.error('Erreur addUtilisateurStructure:', error);
+    res.status(500).json({
+      error: 'Erreur lors de l\'ajout de l\'accès structure',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Modifier un accès structure d'un utilisateur
+ * PUT /api/parametres/utilisateurs/:id/structures/:structureId
+ */
+exports.updateUtilisateurStructure = async (req, res) => {
+  try {
+    const { id, structureId } = req.params;
+    const { role_structure, actif, date_debut, date_fin } = req.body;
+
+    // Vérifier que l'accès existe
+    const access = await UtilisateurStructure.findOne({
+      where: { utilisateur_id: id, structure_id: structureId },
+      include: [{ model: Structure, as: 'structure' }]
+    });
+
+    if (!access) {
+      return res.status(404).json({ error: 'Accès structure non trouvé' });
+    }
+
+    // Vérifier que l'appelant peut gérer cette structure
+    const canManage = await canManageStructure(req.user, parseInt(structureId));
+    if (!canManage) {
+      return res.status(403).json({
+        error: 'Accès refusé',
+        message: 'Vous ne pouvez pas gérer les accès de cette structure'
+      });
+    }
+
+    // Valider le role_structure si fourni
+    if (role_structure !== undefined && role_structure !== null) {
+      const rolesValides = ['usager', 'benevole', 'agent', 'gestionnaire', 'comptable', 'administrateur'];
+      if (!rolesValides.includes(role_structure)) {
+        return res.status(400).json({ error: 'Role invalide' });
+      }
+      // Ne pas permettre d'attribuer un rôle supérieur au sien
+      if (!hasMinRole(req.user.role, role_structure)) {
+        return res.status(403).json({
+          error: 'Accès refusé',
+          message: 'Vous ne pouvez pas attribuer un rôle supérieur au vôtre'
+        });
+      }
+    }
+
+    // Mettre à jour
+    const updateData = {};
+    if (role_structure !== undefined) updateData.role_structure = role_structure || null;
+    if (actif !== undefined) updateData.actif = actif;
+    if (date_debut !== undefined) updateData.date_debut = date_debut || null;
+    if (date_fin !== undefined) updateData.date_fin = date_fin || null;
+
+    await access.update(updateData);
+
+    // Récupérer l'utilisateur pour le role effectif
+    const utilisateur = await Utilisateur.findByPk(id, { attributes: ['role'] });
+
+    res.json({
+      message: 'Accès structure mis à jour',
+      access: {
+        id: access.id,
+        structure_id: access.structure_id,
+        structure_nom: access.structure?.nom,
+        role_structure: access.role_structure,
+        role_effectif: access.role_structure || utilisateur?.role,
+        actif: access.actif,
+        date_debut: access.date_debut,
+        date_fin: access.date_fin
+      }
+    });
+  } catch (error) {
+    console.error('Erreur updateUtilisateurStructure:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la mise à jour de l\'accès structure',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Supprimer un accès structure d'un utilisateur
+ * DELETE /api/parametres/utilisateurs/:id/structures/:structureId
+ */
+exports.deleteUtilisateurStructure = async (req, res) => {
+  try {
+    const { id, structureId } = req.params;
+
+    // Vérifier que l'accès existe
+    const access = await UtilisateurStructure.findOne({
+      where: { utilisateur_id: id, structure_id: structureId },
+      include: [{ model: Structure, as: 'structure', attributes: ['nom'] }]
+    });
+
+    if (!access) {
+      return res.status(404).json({ error: 'Accès structure non trouvé' });
+    }
+
+    // Vérifier que l'appelant peut gérer cette structure
+    const canManage = await canManageStructure(req.user, parseInt(structureId));
+    if (!canManage) {
+      return res.status(403).json({
+        error: 'Accès refusé',
+        message: 'Vous ne pouvez pas gérer les accès de cette structure'
+      });
+    }
+
+    const structureNom = access.structure?.nom;
+    await access.destroy();
+
+    res.json({
+      message: `Accès à ${structureNom} supprimé`,
+      structure_id: parseInt(structureId)
+    });
+  } catch (error) {
+    console.error('Erreur deleteUtilisateurStructure:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la suppression de l\'accès structure',
+      message: error.message
+    });
+  }
+};
+
+/**
+ * Récupérer les structures accessibles par l'utilisateur connecté
+ * GET /api/parametres/mes-structures
+ */
+exports.getMesStructures = async (req, res) => {
+  try {
+    const structures = await getAccessibleStructures(req.user);
+    res.json(structures);
+  } catch (error) {
+    console.error('Erreur getMesStructures:', error);
+    res.status(500).json({
+      error: 'Erreur lors de la récupération des structures',
       message: error.message
     });
   }

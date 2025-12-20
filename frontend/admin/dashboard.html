@@ -8,14 +8,58 @@
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <style>
+    /* Variables couleurs modules (valeurs par defaut) */
+    :root {
+      --color-ludotheque: #6f42c1;
+      --color-bibliotheque: #20c997;
+      --color-filmotheque: #fd7e14;
+      --color-discotheque: #e83e8c;
+      --textcolor-ludotheque: #ffffff;
+      --textcolor-bibliotheque: #ffffff;
+      --textcolor-filmotheque: #ffffff;
+      --textcolor-discotheque: #ffffff;
+    }
+
+    /* Styles onglets modules */
     .module-tab {
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
-    .module-tab .badge {
-      font-size: 0.7rem;
+    .module-tab .module-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
     }
+    .module-tab.global .module-icon { background: #e9ecef; color: #6c757d; }
+    .module-tab.ludotheque .module-icon { background: color-mix(in srgb, var(--color-ludotheque) 15%, white); color: var(--color-ludotheque); }
+    .module-tab.bibliotheque .module-icon { background: color-mix(in srgb, var(--color-bibliotheque) 15%, white); color: var(--color-bibliotheque); }
+    .module-tab.filmotheque .module-icon { background: color-mix(in srgb, var(--color-filmotheque) 15%, white); color: var(--color-filmotheque); }
+    .module-tab.discotheque .module-icon { background: color-mix(in srgb, var(--color-discotheque) 15%, white); color: var(--color-discotheque); }
+
+    .nav-tabs .nav-link.active.global .module-icon { background: #6c757d; color: #fff !important; }
+    .nav-tabs .nav-link.active.ludotheque .module-icon { background: var(--color-ludotheque); color: var(--textcolor-ludotheque) !important; }
+    .nav-tabs .nav-link.active.bibliotheque .module-icon { background: var(--color-bibliotheque); color: var(--textcolor-bibliotheque) !important; }
+    .nav-tabs .nav-link.active.filmotheque .module-icon { background: var(--color-filmotheque); color: var(--textcolor-filmotheque) !important; }
+    .nav-tabs .nav-link.active.discotheque .module-icon { background: var(--color-discotheque); color: var(--textcolor-discotheque) !important; }
+
+    .nav-tabs .nav-link.active.global { background: #e9ecef; color: #495057; border-color: #dee2e6 #dee2e6 #fff; }
+    .nav-tabs .nav-link.active.ludotheque { background: color-mix(in srgb, var(--color-ludotheque) 15%, white); color: var(--color-ludotheque); }
+    .nav-tabs .nav-link.active.bibliotheque { background: color-mix(in srgb, var(--color-bibliotheque) 15%, white); color: var(--color-bibliotheque); }
+    .nav-tabs .nav-link.active.filmotheque { background: color-mix(in srgb, var(--color-filmotheque) 15%, white); color: var(--color-filmotheque); }
+    .nav-tabs .nav-link.active.discotheque { background: color-mix(in srgb, var(--color-discotheque) 15%, white); color: var(--color-discotheque); }
+
+    /* Bordure gauche panel selon module */
+    .content-panel.global { border-left: 4px solid #6c757d; }
+    .content-panel.ludotheque { border-left: 4px solid var(--color-ludotheque); }
+    .content-panel.bibliotheque { border-left: 4px solid var(--color-bibliotheque); }
+    .content-panel.filmotheque { border-left: 4px solid var(--color-filmotheque); }
+    .content-panel.discotheque { border-left: 4px solid var(--color-discotheque); }
+
     .stat-card {
       transition: transform 0.2s;
     }
@@ -34,9 +78,15 @@
     }
     .nav-tabs .nav-link {
       font-weight: 500;
+      border-radius: 0.5rem 0.5rem 0 0;
     }
     .nav-tabs .nav-link.active {
       font-weight: 600;
+    }
+    .content-panel {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 0 0 0.5rem 0.5rem;
     }
     @media (max-width: 768px) {
       .nav-tabs {
@@ -61,11 +111,17 @@
       <!-- Main Content -->
       <div class="col-md-10">
         <div class="mb-4">
-          <h1>Tableau de bord</h1>
+          <h1><i class="bi bi-speedometer2 me-2"></i>Tableau de bord</h1>
+        </div>
+
+        <!-- Alerte si aucun module accessible -->
+        <div id="noModulesAlert" class="alert alert-warning d-none">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          Aucun module n'est accessible pour la structure selectionnee.
         </div>
 
         <!-- Onglets modules -->
-        <ul class="nav nav-tabs mb-4" id="moduleTabs" role="tablist">
+        <ul class="nav nav-tabs mb-0" id="moduleTabs" role="tablist">
           <!-- Generes dynamiquement -->
         </ul>
 
@@ -144,49 +200,133 @@
       global: { code: 'global', libelle: 'Global', icon: 'bi-grid-3x3-gap', color: '#6c757d', always: true },
       ludotheque: { code: 'ludotheque', libelle: 'Ludotheque', icon: 'bi-dice-6', color: '#6f42c1' },
       bibliotheque: { code: 'bibliotheque', libelle: 'Bibliotheque', icon: 'bi-book', color: '#20c997' },
-      discotheque: { code: 'discotheque', libelle: 'Discotheque', icon: 'bi-disc', color: '#e83e8c' },
-      filmotheque: { code: 'filmotheque', libelle: 'Filmotheque', icon: 'bi-film', color: '#fd7e14' }
+      filmotheque: { code: 'filmotheque', libelle: 'Filmotheque', icon: 'bi-film', color: '#fd7e14' },
+      discotheque: { code: 'discotheque', libelle: 'Discotheque', icon: 'bi-disc', color: '#e83e8c' }
+    };
+
+    // Mapping collection -> module
+    const COLLECTION_TO_MODULE = {
+      'jeux': 'ludotheque',
+      'livres': 'bibliotheque',
+      'films': 'filmotheque',
+      'disques': 'discotheque'
     };
 
     // Cache des donnees chargees par onglet
-    const tabDataCache = {};
+    let tabDataCache = {};
 
-    // Obtenir les modules accessibles
+    /**
+     * Applique les couleurs de modules depuis l'API
+     */
+    function applyModuleColors() {
+      const root = document.documentElement;
+      if (typeof getModuleColors === 'function') {
+        const colors = getModuleColors();
+        if (colors.ludotheque) {
+          root.style.setProperty('--color-ludotheque', colors.ludotheque.couleur);
+          root.style.setProperty('--textcolor-ludotheque', colors.ludotheque.couleur_texte);
+        }
+        if (colors.bibliotheque) {
+          root.style.setProperty('--color-bibliotheque', colors.bibliotheque.couleur);
+          root.style.setProperty('--textcolor-bibliotheque', colors.bibliotheque.couleur_texte);
+        }
+        if (colors.filmotheque) {
+          root.style.setProperty('--color-filmotheque', colors.filmotheque.couleur);
+          root.style.setProperty('--textcolor-filmotheque', colors.filmotheque.couleur_texte);
+        }
+        if (colors.discotheque) {
+          root.style.setProperty('--color-discotheque', colors.discotheque.couleur);
+          root.style.setProperty('--textcolor-discotheque', colors.discotheque.couleur_texte);
+        }
+      }
+    }
+
+    /**
+     * Obtenir les modules accessibles selon la structure courante
+     * Utilise le meme pattern que emprunts.html et desherbage.js
+     */
+    function getStructureModules() {
+      // Si pas de structure selectionnee
+      if (!window.CURRENT_STRUCTURE_ID) {
+        // Admin global ou pas de structures configurees : tous les modules
+        if (window.IS_ADMIN_GLOBAL || !window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+          return null; // null = tous les modules
+        }
+        // Plusieurs structures : union des modules
+        const allModules = new Set();
+        window.USER_STRUCTURES.forEach(s => {
+          if (s.modules_actifs && s.modules_actifs.length > 0) {
+            s.modules_actifs.forEach(m => allModules.add(COLLECTION_TO_MODULE[m] || m));
+          }
+        });
+        return allModules.size > 0 ? Array.from(allModules) : null;
+      }
+
+      // Structure selectionnee : ses modules
+      const currentStructure = window.USER_STRUCTURES?.find(s => s.id === window.CURRENT_STRUCTURE_ID);
+      if (!currentStructure || !currentStructure.modules_actifs || currentStructure.modules_actifs.length === 0) {
+        return null; // null = tous les modules (compatibilite ascendante)
+      }
+      return currentStructure.modules_actifs.map(m => COLLECTION_TO_MODULE[m] || m);
+    }
+
+    /**
+     * Obtenir les modules accessibles (combine modules globaux actifs + droits utilisateur + structure)
+     */
     function getAccessibleModules() {
-      const modules = ['global'];
+      const modules = ['global']; // Toujours inclure l'onglet global
+      const structureModules = getStructureModules();
+
       for (const [code, config] of Object.entries(DASHBOARD_MODULES)) {
         if (code === 'global') continue;
-        // Verifier si le module est actif ET si l'utilisateur y a acces
-        const isActive = window.ACTIVE_MODULES?.includes(code);
+
+        // Verifier si le module est actif globalement
+        const isActiveGlobally = window.ACTIVE_MODULES?.includes(code);
+
+        // Verifier si l'utilisateur a acces a ce module
         const hasAccess = hasUserModuleAccess(code);
-        if (isActive && hasAccess) {
+
+        // Verifier si le module est actif dans la structure courante
+        const isActiveInStructure = structureModules === null || structureModules.includes(code);
+
+        if (isActiveGlobally && hasAccess && isActiveInStructure) {
           modules.push(code);
         }
       }
+
       return modules;
     }
 
-    // Generer les onglets
+    /**
+     * Genere les onglets de modules
+     */
     function renderModuleTabs() {
       const accessible = getAccessibleModules();
       const tabsContainer = document.getElementById('moduleTabs');
       const contentContainer = document.getElementById('moduleTabContent');
+      const noModulesAlert = document.getElementById('noModulesAlert');
+
+      // Afficher alerte si aucun module (sauf global)
+      if (accessible.length <= 1) {
+        noModulesAlert.classList.remove('d-none');
+      } else {
+        noModulesAlert.classList.add('d-none');
+      }
 
       // Generer les boutons d'onglets
       tabsContainer.innerHTML = accessible.map((code, i) => {
         const config = DASHBOARD_MODULES[code];
         const active = i === 0 ? 'active' : '';
-        const color = typeof getModuleColor === 'function' && code !== 'global'
-          ? getModuleColor(code)
-          : config.color;
         return `
           <li class="nav-item" role="presentation">
-            <button class="nav-link ${active}" id="tab-${code}-btn"
+            <button class="nav-link ${active} ${code}" id="tab-${code}-btn"
                     data-bs-toggle="tab" data-bs-target="#tab-${code}"
                     type="button" role="tab" data-module="${code}">
-              <span class="module-tab">
-                <i class="bi ${config.icon}" style="color: ${color}"></i>
-                ${config.libelle}
+              <span class="module-tab ${code}">
+                <span class="module-icon">
+                  <i class="bi ${config.icon}"></i>
+                </span>
+                <span class="d-none d-sm-inline">${config.libelle}</span>
               </span>
             </button>
           </li>
@@ -198,13 +338,15 @@
         const active = i === 0 ? 'show active' : '';
         return `
           <div class="tab-pane fade ${active}" id="tab-${code}" role="tabpanel">
-            <div class="loading-placeholder" id="loading-${code}">
-              <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Chargement...</span>
+            <div class="content-panel ${code}">
+              <div class="loading-placeholder" id="loading-${code}">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Chargement...</span>
+                </div>
+                <p class="mt-2 text-muted">Chargement des statistiques...</p>
               </div>
-              <p class="mt-2 text-muted">Chargement des statistiques...</p>
+              <div id="content-${code}" style="display: none;"></div>
             </div>
-            <div id="content-${code}" style="display: none;"></div>
           </div>
         `;
       }).join('');
@@ -223,10 +365,14 @@
       }
     }
 
-    // Charger les donnees d'un module
+    /**
+     * Charger les donnees d'un module
+     */
     async function loadModuleData(moduleCode) {
       const loadingEl = document.getElementById(`loading-${moduleCode}`);
       const contentEl = document.getElementById(`content-${moduleCode}`);
+
+      if (!loadingEl || !contentEl) return;
 
       // Utiliser le cache si disponible
       if (tabDataCache[moduleCode]) {
@@ -262,9 +408,22 @@
       contentEl.style.display = 'block';
     }
 
-    // Rendre l'onglet Global
+    /**
+     * Obtenir la couleur d'un module (depuis l'API ou config par defaut)
+     */
+    function getModuleColorValue(moduleCode) {
+      if (typeof getModuleColor === 'function') {
+        return getModuleColor(moduleCode);
+      }
+      return DASHBOARD_MODULES[moduleCode]?.color || '#6c757d';
+    }
+
+    /**
+     * Rendre l'onglet Global
+     */
     function renderGlobalTab(stats, overdueEmprunts) {
       const contentEl = document.getElementById('content-global');
+      const accessibleModules = getAccessibleModules().filter(m => m !== 'global');
 
       contentEl.innerHTML = `
         <!-- Stats Grid -->
@@ -324,7 +483,7 @@
         </div>
 
         <!-- Stats par module -->
-        ${renderModulesOverview(stats.modules)}
+        ${renderModulesOverview(stats.modules, accessibleModules)}
 
         <!-- Emprunts en retard -->
         <div class="card mb-4">
@@ -339,32 +498,39 @@
       `;
     }
 
-    // Apercu des stats par module
-    function renderModulesOverview(modules) {
+    /**
+     * Apercu des stats par module (filtre par modules accessibles)
+     */
+    function renderModulesOverview(modules, accessibleModules) {
       if (!modules || Object.keys(modules).length === 0) return '';
 
-      const moduleCards = Object.entries(modules).map(([code, data]) => {
-        const config = DASHBOARD_MODULES[code];
-        if (!config) return '';
-        const color = typeof getModuleColor === 'function' ? getModuleColor(code) : config.color;
-        return `
-          <div class="col-md-3 col-6">
-            <div class="card h-100" style="border-left: 4px solid ${color}">
-              <div class="card-body py-2">
-                <div class="d-flex align-items-center mb-2">
-                  <i class="bi ${config.icon} me-2" style="color: ${color}"></i>
-                  <strong>${config.libelle}</strong>
-                </div>
-                <div class="d-flex justify-content-between small">
-                  <span class="text-success">${data.collection?.disponibles || 0} dispo</span>
-                  <span class="text-warning">${data.emprunts?.enCours || 0} prets</span>
-                  <span class="text-danger">${data.emprunts?.enRetard || 0} retard</span>
+      const moduleCards = accessibleModules
+        .filter(code => modules[code])
+        .map(code => {
+          const data = modules[code];
+          const config = DASHBOARD_MODULES[code];
+          if (!config) return '';
+          const color = getModuleColorValue(code);
+          return `
+            <div class="col-md-3 col-6">
+              <div class="card h-100" style="border-left: 4px solid ${color}">
+                <div class="card-body py-2">
+                  <div class="d-flex align-items-center mb-2">
+                    <i class="bi ${config.icon} me-2" style="color: ${color}"></i>
+                    <strong>${config.libelle}</strong>
+                  </div>
+                  <div class="d-flex justify-content-between small">
+                    <span class="text-success">${data.collection?.disponibles || 0} dispo</span>
+                    <span class="text-warning">${data.emprunts?.enCours || 0} prets</span>
+                    <span class="text-danger">${data.emprunts?.enRetard || 0} retard</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        `;
-      }).join('');
+          `;
+        }).join('');
+
+      if (!moduleCards) return '';
 
       return `
         <div class="row g-3 mb-4">
@@ -376,12 +542,14 @@
       `;
     }
 
-    // Rendre un onglet de module specifique
+    /**
+     * Rendre un onglet de module specifique
+     */
     function renderModuleTab(moduleCode, stats, popular, overdueEmprunts) {
       const contentEl = document.getElementById(`content-${moduleCode}`);
       const config = DASHBOARD_MODULES[moduleCode];
       const moduleStats = stats.modules?.[moduleCode] || {};
-      const color = typeof getModuleColor === 'function' ? getModuleColor(moduleCode) : config.color;
+      const color = getModuleColorValue(moduleCode);
 
       contentEl.innerHTML = `
         <!-- Stats du module -->
@@ -475,7 +643,9 @@
       `;
     }
 
-    // Rendre le tableau des articles populaires
+    /**
+     * Rendre le tableau des articles populaires
+     */
     function renderPopularItems(popular, moduleCode) {
       const items = popular?.items || popular?.modules?.[moduleCode]?.items || [];
 
@@ -508,7 +678,9 @@
       `;
     }
 
-    // Rendre le tableau des emprunts en retard
+    /**
+     * Rendre le tableau des emprunts en retard
+     */
     function renderOverdueTable(emprunts, showType = true) {
       if (!emprunts || emprunts.length === 0) {
         return '<p class="text-center text-success py-4"><i class="bi bi-check-circle me-2"></i>Aucun emprunt en retard</p>';
@@ -519,6 +691,7 @@
         const article = emprunt.article || emprunt.jeu || emprunt.livre || emprunt.film || emprunt.disque;
         const articleType = emprunt.articleType || 'jeu';
         const typeConfig = DASHBOARD_MODULES[emprunt.articleModule] || DASHBOARD_MODULES.ludotheque;
+        const color = getModuleColorValue(emprunt.articleModule || 'ludotheque');
 
         return `
           <tr>
@@ -528,7 +701,7 @@
             </td>
             <td>
               ${article?.titre || 'N/A'}
-              ${showType ? `<span class="badge" style="background: ${typeConfig.color}; font-size: 0.65rem; margin-left: 4px;">${articleType}</span>` : ''}
+              ${showType ? `<span class="badge" style="background: ${color}; font-size: 0.65rem; margin-left: 4px;">${articleType}</span>` : ''}
             </td>
             <td>${new Date(emprunt.date_retour_prevue).toLocaleDateString('fr-FR')}</td>
             <td><span class="badge bg-danger">${daysLate}j</span></td>
@@ -558,7 +731,9 @@
       `;
     }
 
-    // Charger les tarifs pour le calculateur
+    /**
+     * Charger les tarifs pour le calculateur
+     */
     async function loadTarifsForCalculator() {
       try {
         const tarifs = await apiRequest('/tarifs-cotisation?actif=true&valide=true');
@@ -580,7 +755,9 @@
       }
     }
 
-    // Charger les statistiques de cotisations
+    /**
+     * Charger les statistiques de cotisations
+     */
     async function loadCotisationsStats() {
       try {
         const stats = await apiRequest('/cotisations/statistiques');
@@ -618,7 +795,9 @@
       }
     }
 
-    // Calculer une cotisation
+    /**
+     * Calculer une cotisation
+     */
     async function calculateCotisation() {
       const tarifId = document.getElementById('calc_tarif').value;
       const dateDebut = document.getElementById('calc_date').value;
@@ -678,7 +857,9 @@
       }
     }
 
-    // Rendre les stats de cotisations
+    /**
+     * Rendre les stats de cotisations
+     */
     function renderCotisationsStats(stats) {
       const container = document.getElementById('cotisationsStats');
 
@@ -741,13 +922,37 @@
       `;
     }
 
-    // Initialisation
+    /**
+     * Reinitialiser le dashboard (appele lors du changement de structure)
+     */
+    function resetDashboard() {
+      // Vider le cache
+      tabDataCache = {};
+      // Re-rendre les onglets
+      renderModuleTabs();
+    }
+
+    /**
+     * Initialisation
+     */
     document.addEventListener('DOMContentLoaded', () => {
       initTemplate('dashboard');
 
-      // Attendre que les modules soient charges
+      // Ecouter les changements de structure (sans reload, juste reset)
+      window.addEventListener('structureChanged', (e) => {
+        // Le reload est deja fait par setCurrentStructure, mais on prepare pour le futur
+        // resetDashboard();
+      });
+
+      // Attendre que les modules et structures soient charges
       setTimeout(async () => {
+        // Appliquer les couleurs de modules
+        applyModuleColors();
+
+        // Rendre les onglets
         renderModuleTabs();
+
+        // Charger le calculateur et stats cotisations
         await loadTarifsForCalculator();
         await loadCotisationsStats();
       }, 500);

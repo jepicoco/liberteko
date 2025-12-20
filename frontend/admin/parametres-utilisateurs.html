@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Utilisateurs - Parametres - Ludotheque Admin</title>
+  <title>Utilisateurs - Parametres - Liberteko Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
@@ -34,6 +34,7 @@
     .role-administrateur { background-color: #dc3545; color: white; }
     .role-comptable { background-color: #fd7e14; color: white; }
     .role-gestionnaire { background-color: #0d6efd; color: white; }
+    .role-agent { background-color: #17a2b8; color: white; }
     .role-benevole { background-color: #198754; color: white; }
     .role-usager { background-color: #6c757d; color: white; }
     .role-card {
@@ -78,6 +79,15 @@
     .search-result-item:last-child {
       border-bottom: none;
     }
+    .structure-badge {
+      font-size: 0.85rem;
+    }
+    .structure-card {
+      transition: all 0.2s;
+    }
+    .structure-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
   </style>
 </head>
 <body>
@@ -97,7 +107,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
             <h1><i class="bi bi-people"></i> Gestion des utilisateurs</h1>
-            <p class="text-muted mb-0">Attribution des roles et droits d'acces</p>
+            <p class="text-muted mb-0">Attribution des roles et acces aux structures</p>
           </div>
           <div class="d-flex gap-2">
             <button class="btn btn-success" onclick="openPromoteModal()">
@@ -115,7 +125,7 @@
             <div class="card text-center">
               <div class="card-body py-2">
                 <h4 class="mb-0" id="stat-total">-</h4>
-                <small class="text-muted">Total</small>
+                <small class="text-muted">Total staff</small>
               </div>
             </div>
           </div>
@@ -153,6 +163,9 @@
           </div>
         </div>
 
+        <!-- Stats par structure -->
+        <div class="mb-3" id="structure-stats"></div>
+
         <!-- Roles description -->
         <div class="card section-card mb-4">
           <div class="card-header d-flex justify-content-between align-items-center">
@@ -161,7 +174,7 @@
               <i class="bi bi-chevron-down"></i>
             </button>
           </div>
-          <div class="collapse show" id="rolesCollapse">
+          <div class="collapse" id="rolesCollapse">
             <div class="card-body">
               <div class="row g-3">
                 <div class="col">
@@ -170,7 +183,7 @@
                       <h6 class="mb-1"><span class="badge role-badge role-administrateur">Administrateur</span></h6>
                       <p class="small text-muted mb-2">Acces complet</p>
                       <ul class="permission-list small">
-                        <li><i class="bi bi-check-circle text-success"></i> Tout gerer</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Toutes structures</li>
                         <li><i class="bi bi-check-circle text-success"></i> Parametres systeme</li>
                         <li><i class="bi bi-check-circle text-success"></i> Gerer les roles</li>
                       </ul>
@@ -186,7 +199,6 @@
                         <li><i class="bi bi-check-circle text-success"></i> Cotisations</li>
                         <li><i class="bi bi-check-circle text-success"></i> Statistiques</li>
                         <li><i class="bi bi-check-circle text-success"></i> Exports comptables</li>
-                        <li><i class="bi bi-x-circle text-danger"></i> Gestion adherents</li>
                       </ul>
                     </div>
                   </div>
@@ -197,10 +209,9 @@
                       <h6 class="mb-1"><span class="badge role-badge role-gestionnaire">Gestionnaire</span></h6>
                       <p class="small text-muted mb-2">Gestion quotidienne</p>
                       <ul class="permission-list small">
-                        <li><i class="bi bi-check-circle text-success"></i> Adherents</li>
+                        <li><i class="bi bi-check-circle text-success"></i> Usagers</li>
                         <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
                         <li><i class="bi bi-check-circle text-success"></i> Cotisations</li>
-                        <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
                       </ul>
                     </div>
                   </div>
@@ -214,24 +225,15 @@
                         <li><i class="bi bi-check-circle text-success"></i> Emprunts/Retours</li>
                         <li><i class="bi bi-check-circle text-success"></i> Consultation</li>
                         <li><i class="bi bi-x-circle text-danger"></i> Modification</li>
-                        <li><i class="bi bi-x-circle text-danger"></i> Parametres</li>
                       </ul>
                     </div>
                   </div>
                 </div>
-                <div class="col">
-                  <div class="card role-card role-usager h-100">
-                    <div class="card-body p-2">
-                      <h6 class="mb-1"><span class="badge role-badge role-usager">Usager</span></h6>
-                      <p class="small text-muted mb-2">Espace membre</p>
-                      <ul class="permission-list small">
-                        <li><i class="bi bi-check-circle text-success"></i> Son profil</li>
-                        <li><i class="bi bi-check-circle text-success"></i> Ses emprunts</li>
-                        <li><i class="bi bi-x-circle text-danger"></i> Administration</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+              </div>
+              <div class="alert alert-info mt-3 mb-0 small">
+                <i class="bi bi-info-circle"></i>
+                <strong>Multi-structures :</strong> Chaque utilisateur peut avoir un role different par structure.
+                Le role global s'applique si aucun role specifique n'est defini pour une structure.
               </div>
             </div>
           </div>
@@ -239,9 +241,13 @@
 
         <!-- Users list -->
         <div class="card section-card">
-          <div class="card-header d-flex justify-content-between align-items-center">
+          <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span><i class="bi bi-people-fill"></i> Utilisateurs avec acces administration</span>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+              <select class="form-select form-select-sm" id="filter-structure" style="width: auto;">
+                <option value="">Toutes les structures</option>
+                <!-- Options generees dynamiquement -->
+              </select>
               <select class="form-select form-select-sm" id="filter-role" style="width: auto;">
                 <option value="">Tous les roles</option>
                 <option value="administrateur">Administrateur</option>
@@ -260,8 +266,8 @@
                     <th style="width: 50px;"></th>
                     <th>Nom</th>
                     <th>Email</th>
-                    <th>Role</th>
-                    <th>Statut</th>
+                    <th>Role global</th>
+                    <th>Acces structures</th>
                     <th class="text-end">Actions</th>
                   </tr>
                 </thead>
@@ -281,12 +287,12 @@
     </div>
   </div>
 
-  <!-- Modal Changer Role -->
+  <!-- Modal Changer Role Global -->
   <div class="modal fade" id="modalRole" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Modifier le role</h5>
+          <h5 class="modal-title"><i class="bi bi-shield"></i> Modifier le role global</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
@@ -295,33 +301,13 @@
             <p class="form-control-plaintext fw-bold" id="modal-user-name">-</p>
           </div>
           <div class="mb-3">
-            <label for="modal-new-role" class="form-label">Nouveau role</label>
+            <label for="modal-new-role" class="form-label">Nouveau role global</label>
             <select class="form-select" id="modal-new-role">
               <!-- Options generees dynamiquement -->
             </select>
-          </div>
-          <div class="mb-3" id="modal-modules-container">
-            <label class="form-label">Modules autorises</label>
-            <div class="small text-muted mb-2">Si aucun module n'est coche, l'utilisateur a acces a tous les modules actifs.</div>
-            <div class="d-flex flex-wrap gap-3" id="modal-modules-checkboxes">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="mod-ludotheque" value="ludotheque">
-                <label class="form-check-label" for="mod-ludotheque"><i class="bi bi-dice-6 me-1"></i>Ludotheque</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="mod-bibliotheque" value="bibliotheque">
-                <label class="form-check-label" for="mod-bibliotheque"><i class="bi bi-book me-1"></i>Bibliotheque</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="mod-discotheque" value="discotheque">
-                <label class="form-check-label" for="mod-discotheque"><i class="bi bi-disc me-1"></i>Discotheque</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="mod-filmotheque" value="filmotheque">
-                <label class="form-check-label" for="mod-filmotheque"><i class="bi bi-film me-1"></i>Filmotheque</label>
-              </div>
+            <div class="form-text">
+              Le role global s'applique a toutes les structures ou aucun role specifique n'est defini.
             </div>
-            <div class="small text-info mt-2"><i class="bi bi-info-circle me-1"></i>L'utilisateur devra se reconnecter pour que les changements prennent effet.</div>
           </div>
           <div class="alert alert-warning" id="modal-warning" style="display: none;">
             <i class="bi bi-exclamation-triangle"></i>
@@ -331,6 +317,43 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
           <button type="button" class="btn btn-primary" onclick="saveRole()">Enregistrer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Gerer Acces Structures -->
+  <div class="modal fade" id="modalAccesStructures" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-building"></i> Gerer les acces structures</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3 pb-3 border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong id="acces-user-name">-</strong>
+                <div class="small text-muted">
+                  Role global: <span class="badge bg-secondary" id="acces-user-role">-</span>
+                  <span class="text-muted">(utilise si aucun role specifique)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="mb-3">Acces aux structures</h6>
+          <div id="structures-list">
+            <!-- Genere dynamiquement -->
+          </div>
+
+          <div id="add-structure-container" class="mt-3" style="display: none;">
+            <!-- Select pour ajouter une structure -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
         </div>
       </div>
     </div>
@@ -346,11 +369,11 @@
         </div>
         <div class="modal-body">
           <div class="mb-3">
-            <label for="promote-search" class="form-label">Rechercher un usager</label>
+            <label for="promote-search" class="form-label">1. Rechercher un usager</label>
             <input type="text" class="form-control" id="promote-search" placeholder="Nom, prenom ou email...">
             <div class="form-text">Seuls les usagers sans role administratif sont affiches</div>
           </div>
-          <div id="promote-results" class="border rounded" style="max-height: 250px; overflow-y: auto; display: none;">
+          <div id="promote-results" class="border rounded" style="max-height: 200px; overflow-y: auto; display: none;">
             <!-- Resultats de recherche -->
           </div>
           <div id="promote-selected" class="alert alert-info mt-3" style="display: none;">
@@ -359,32 +382,20 @@
               <button type="button" class="btn-close btn-sm" onclick="clearPromoteSelection()"></button>
             </div>
           </div>
+
           <div class="mb-3 mt-3" id="promote-role-container" style="display: none;">
-            <label for="promote-role" class="form-label">Role a attribuer</label>
+            <label for="promote-role" class="form-label">2. Role global a attribuer</label>
             <select class="form-select" id="promote-role">
-              <!-- Options generees dynamiquement selon le niveau de l'utilisateur courant -->
+              <!-- Options generees dynamiquement -->
             </select>
+            <div class="form-text">Ce role s'appliquera par defaut a toutes les structures</div>
           </div>
-          <div class="mb-3" id="promote-modules-container" style="display: none;">
-            <label class="form-label">Modules autorises</label>
-            <div class="small text-muted mb-2">Si aucun module n'est coche, l'utilisateur aura acces a tous les modules actifs.</div>
-            <div class="d-flex flex-wrap gap-3" id="promote-modules-checkboxes">
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="promote-mod-ludotheque" value="ludotheque">
-                <label class="form-check-label" for="promote-mod-ludotheque"><i class="bi bi-dice-6 me-1"></i>Ludotheque</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="promote-mod-bibliotheque" value="bibliotheque">
-                <label class="form-check-label" for="promote-mod-bibliotheque"><i class="bi bi-book me-1"></i>Bibliotheque</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="promote-mod-discotheque" value="discotheque">
-                <label class="form-check-label" for="promote-mod-discotheque"><i class="bi bi-disc me-1"></i>Discotheque</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="promote-mod-filmotheque" value="filmotheque">
-                <label class="form-check-label" for="promote-mod-filmotheque"><i class="bi bi-film me-1"></i>Filmotheque</label>
-              </div>
+
+          <div class="mb-3" id="promote-structures-container" style="display: none;">
+            <label class="form-label">3. Structures (optionnel)</label>
+            <div class="small text-muted mb-2">Cochez les structures auxquelles l'utilisateur aura acces</div>
+            <div id="promote-structures-checkboxes" class="d-flex flex-wrap gap-3">
+              <!-- Checkboxes generees dynamiquement -->
             </div>
           </div>
         </div>
@@ -426,625 +437,10 @@
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
   <script src="js/parametres-nav.js"></script>
+  <script src="js/parametres-utilisateurs.js"></script>
   <script>
-    let users = [];
-    let allAdherents = [];
-    let currentUserId = null;
-    let currentUserRole = null;
-    let selectedPromoteAdherent = null;
-    let resetPasswordUserId = null;
-    let modalRole, modalPromote, modalResetPassword;
-
-    // ROLE_HIERARCHY est deja defini dans admin-template.js
-
-    const ROLE_LABELS = {
-      'usager': 'Usager',
-      'benevole': 'Benevole',
-      'agent': 'Agent',
-      'gestionnaire': 'Gestionnaire',
-      'comptable': 'Comptable',
-      'administrateur': 'Administrateur'
-    };
-
-    // Initialisation
+    // Initialisation du template
     initTemplate('parametres');
-
-    document.addEventListener('DOMContentLoaded', async () => {
-      renderSubNav('general', 'utilisateurs');
-
-      modalRole = new bootstrap.Modal(document.getElementById('modalRole'));
-      modalPromote = new bootstrap.Modal(document.getElementById('modalPromote'));
-      modalResetPassword = new bootstrap.Modal(document.getElementById('modalResetPassword'));
-
-      // Recuperer le role de l'utilisateur courant
-      await loadCurrentUser();
-
-      loadUsers();
-
-      // Filtres
-      document.getElementById('filter-role').addEventListener('change', renderUsers);
-      document.getElementById('search-user').addEventListener('input', renderUsers);
-
-      // Warning quand on change le role
-      document.getElementById('modal-new-role').addEventListener('change', updateModalWarning);
-
-      // Recherche pour promotion
-      let searchTimeout;
-      document.getElementById('promote-search').addEventListener('input', (e) => {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => searchAdherents(e.target.value), 300);
-      });
-    });
-
-    async function loadCurrentUser() {
-      try {
-        const response = await fetch('/api/auth/profile', {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          currentUserRole = data.user?.role || 'usager';
-        }
-      } catch (error) {
-        console.error('Erreur chargement profil:', error);
-        currentUserRole = 'usager';
-      }
-    }
-
-    async function loadUsers() {
-      try {
-        const response = await fetch('/api/parametres/utilisateurs', {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Erreur chargement');
-
-        users = await response.json();
-        updateStats();
-        renderUsers();
-      } catch (error) {
-        console.error('Erreur:', error);
-        document.getElementById('users-list').innerHTML = `
-          <tr><td colspan="6" class="text-center py-4">
-            <div class="alert alert-danger mb-0">Erreur lors du chargement des utilisateurs</div>
-          </td></tr>
-        `;
-      }
-    }
-
-    function updateStats() {
-      // Compter uniquement les utilisateurs avec un role administratif (pas usager)
-      const adminUsers = users.filter(u => u.role && u.role !== 'usager');
-
-      document.getElementById('stat-total').textContent = adminUsers.length;
-      document.getElementById('stat-administrateur').textContent = users.filter(u => u.role === 'administrateur').length;
-      document.getElementById('stat-comptable').textContent = users.filter(u => u.role === 'comptable').length;
-      document.getElementById('stat-gestionnaire').textContent = users.filter(u => u.role === 'gestionnaire').length;
-      document.getElementById('stat-benevole').textContent = users.filter(u => u.role === 'benevole').length;
-    }
-
-    function renderUsers() {
-      const container = document.getElementById('users-list');
-      const filterRole = document.getElementById('filter-role').value;
-      const searchTerm = document.getElementById('search-user').value.toLowerCase();
-
-      // Filtrer les utilisateurs avec un role administratif (pas usager)
-      let filteredUsers = users.filter(u => u.role && u.role !== 'usager');
-
-      if (filterRole) {
-        filteredUsers = filteredUsers.filter(u => u.role === filterRole);
-      }
-
-      if (searchTerm) {
-        filteredUsers = filteredUsers.filter(u =>
-          (u.nom && u.nom.toLowerCase().includes(searchTerm)) ||
-          (u.prenom && u.prenom.toLowerCase().includes(searchTerm)) ||
-          (u.email && u.email.toLowerCase().includes(searchTerm))
-        );
-      }
-
-      if (filteredUsers.length === 0) {
-        container.innerHTML = `
-          <tr><td colspan="6" class="text-center py-5 text-muted">
-            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
-            <p class="mt-2 mb-0">Aucun utilisateur trouve</p>
-          </td></tr>
-        `;
-        return;
-      }
-
-      container.innerHTML = filteredUsers.map(user => {
-        const initials = getInitials(user);
-        const roleClass = `role-${user.role}`;
-        const statutBadge = user.statut === 'actif'
-          ? '<span class="badge bg-success">Actif</span>'
-          : user.statut === 'suspendu'
-            ? '<span class="badge bg-warning">Suspendu</span>'
-            : '<span class="badge bg-secondary">Inactif</span>';
-
-        // Determiner si on peut modifier/reinitialiser cet utilisateur
-        const canModify = canModifyUser(user);
-        const canResetPwd = canResetPassword(user);
-
-        // Afficher les modules autorises
-        const modulesHtml = getModulesHtml(user.modules_autorises);
-
-        return `
-          <tr>
-            <td>
-              <div class="user-avatar">${initials}</div>
-            </td>
-            <td>
-              <div class="fw-semibold">${user.prenom || ''} ${user.nom || ''}</div>
-              <small class="text-muted">${user.telephone || ''}</small>
-            </td>
-            <td>${user.email}</td>
-            <td>
-              <span class="badge role-badge ${roleClass}">${ROLE_LABELS[user.role] || user.role}</span>
-              ${modulesHtml}
-            </td>
-            <td>${statutBadge}</td>
-            <td class="text-end">
-              <div class="btn-group">
-                <a href="usagers.html?id=${user.id}" class="btn btn-sm btn-outline-secondary btn-action" title="Voir le profil">
-                  <i class="bi bi-eye"></i>
-                </a>
-                ${canResetPwd ? `
-                  <button class="btn btn-sm btn-outline-warning btn-action" onclick="openResetPasswordModal(${user.id}, '${user.email}')" title="Reinitialiser le mot de passe">
-                    <i class="bi bi-key"></i>
-                  </button>
-                ` : ''}
-                ${canModify ? `
-                  <button class="btn btn-sm btn-outline-primary btn-action" onclick="openRoleModal(${user.id})" title="Modifier le role">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-                ` : ''}
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function canModifyUser(user) {
-      // Un utilisateur peut modifier le role d'un autre utilisateur si:
-      // - Il est administrateur ET
-      // - L'utilisateur cible n'est pas lui-meme
-      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
-      return currentLevel >= ROLE_HIERARCHY['administrateur'];
-    }
-
-    function canResetPassword(user) {
-      // On peut reinitialiser le mot de passe si:
-      // - On est admin ET l'utilisateur cible n'est pas admin
-      // - OU on est gestionnaire et l'utilisateur est benevole
-      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
-      const targetLevel = ROLE_HIERARCHY[user.role] || 0;
-
-      // Admins peuvent reset tout le monde sauf les autres admins
-      if (currentLevel >= ROLE_HIERARCHY['administrateur']) {
-        return user.role !== 'administrateur';
-      }
-      return false;
-    }
-
-    function getInitials(user) {
-      const prenom = user.prenom || '';
-      const nom = user.nom || '';
-      if (prenom && nom) {
-        return (prenom[0] + nom[0]).toUpperCase();
-      }
-      if (user.email) {
-        return user.email[0].toUpperCase();
-      }
-      return '?';
-    }
-
-    // Parser les modules_autorises (peut etre string JSON ou array)
-    function parseModulesAutorises(modules_autorises) {
-      if (!modules_autorises) return [];
-      if (Array.isArray(modules_autorises)) return modules_autorises;
-      if (typeof modules_autorises === 'string') {
-        try {
-          const parsed = JSON.parse(modules_autorises);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch (e) {
-          console.warn('Erreur parsing modules_autorises:', e);
-          return [];
-        }
-      }
-      return [];
-    }
-
-    function getModulesHtml(modules_autorises) {
-      const MODULE_ICONS = {
-        ludotheque: { icon: 'bi-dice-6', title: 'Ludotheque' },
-        bibliotheque: { icon: 'bi-book', title: 'Bibliotheque' },
-        discotheque: { icon: 'bi-disc', title: 'Discotheque' },
-        filmotheque: { icon: 'bi-film', title: 'Filmotheque' }
-      };
-
-      const modules = parseModulesAutorises(modules_autorises);
-
-      // null ou vide = tous les modules
-      if (modules.length === 0) {
-        return '<span class="ms-2 text-muted small" title="Acces a tous les modules"><i class="bi bi-check-all"></i> Tous</span>';
-      }
-
-      // Modules specifiques
-      const icons = modules
-        .filter(mod => MODULE_ICONS[mod])
-        .map(mod => `<i class="bi ${MODULE_ICONS[mod].icon}" title="${MODULE_ICONS[mod].title}"></i>`)
-        .join(' ');
-
-      return `<span class="ms-2 text-secondary small">${icons}</span>`;
-    }
-
-    function openRoleModal(userId) {
-      const user = users.find(u => u.id === userId);
-      if (!user) return;
-
-      currentUserId = userId;
-      document.getElementById('modal-user-name').textContent = `${user.prenom || ''} ${user.nom || ''} (${user.email})`;
-
-      // Generer les options de role selon le niveau de l'utilisateur courant
-      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
-      const roleSelect = document.getElementById('modal-new-role');
-      roleSelect.innerHTML = '';
-
-      Object.entries(ROLE_HIERARCHY).forEach(([role, level]) => {
-        // On ne peut attribuer que des roles inferieurs ou egaux a son propre niveau
-        if (level <= currentLevel) {
-          const option = document.createElement('option');
-          option.value = role;
-          option.textContent = `${ROLE_LABELS[role]} - ${getRoleDescription(role)}`;
-          if (user.role === role) option.selected = true;
-          roleSelect.appendChild(option);
-        }
-      });
-
-      // Gerer les checkboxes des modules
-      const moduleCheckboxes = ['ludotheque', 'bibliotheque', 'discotheque', 'filmotheque'];
-      const userModules = parseModulesAutorises(user.modules_autorises);
-
-      moduleCheckboxes.forEach(mod => {
-        const checkbox = document.getElementById(`mod-${mod}`);
-        if (checkbox) {
-          // Afficher uniquement les modules actifs
-          const container = checkbox.closest('.form-check');
-          if (window.ACTIVE_MODULES && !window.ACTIVE_MODULES.includes(mod)) {
-            container.style.display = 'none';
-          } else {
-            container.style.display = '';
-          }
-          // Cocher si l'utilisateur a ce module (si userModules vide/null = tous = decocher tout)
-          checkbox.checked = userModules.length > 0 && userModules.includes(mod);
-        }
-      });
-
-      document.getElementById('modal-warning').style.display = 'none';
-      modalRole.show();
-    }
-
-    function getRoleDescription(role) {
-      const descriptions = {
-        'usager': 'Espace membre uniquement',
-        'benevole': 'Operations de base',
-        'agent': 'Operations et prets',
-        'gestionnaire': 'Gestion quotidienne',
-        'comptable': 'Finances et statistiques',
-        'administrateur': 'Acces complet'
-      };
-      return descriptions[role] || '';
-    }
-
-    function updateModalWarning() {
-      const newRole = document.getElementById('modal-new-role').value;
-      const user = users.find(u => u.id === currentUserId);
-      const warning = document.getElementById('modal-warning');
-      const warningText = document.getElementById('modal-warning-text');
-
-      if (user && user.role === 'administrateur' && newRole !== 'administrateur') {
-        const adminCount = users.filter(u => u.role === 'administrateur').length;
-        if (adminCount <= 1) {
-          warning.style.display = 'block';
-          warning.className = 'alert alert-danger';
-          warningText.textContent = 'Impossible: vous etes le dernier administrateur!';
-          return;
-        }
-        warning.style.display = 'block';
-        warning.className = 'alert alert-warning';
-        warningText.textContent = 'Cet utilisateur perdra ses droits d\'administration.';
-      } else if (newRole === 'administrateur') {
-        warning.style.display = 'block';
-        warning.className = 'alert alert-warning';
-        warningText.textContent = 'Cet utilisateur aura un acces complet a l\'administration.';
-      } else if (newRole === 'usager' && user.role !== 'usager') {
-        warning.style.display = 'block';
-        warning.className = 'alert alert-warning';
-        warningText.textContent = 'Cet utilisateur perdra tous ses droits d\'acces a l\'administration.';
-      } else {
-        warning.style.display = 'none';
-      }
-    }
-
-    async function saveRole() {
-      const newRole = document.getElementById('modal-new-role').value;
-      const user = users.find(u => u.id === currentUserId);
-
-      // Verification de securite
-      if (user && user.role === 'administrateur' && newRole !== 'administrateur') {
-        const adminCount = users.filter(u => u.role === 'administrateur').length;
-        if (adminCount <= 1) {
-          showToast('Impossible: vous etes le dernier administrateur', 'error');
-          return;
-        }
-      }
-
-      // Collecter les modules coches
-      const moduleCheckboxes = ['ludotheque', 'bibliotheque', 'discotheque', 'filmotheque'];
-      const selectedModules = moduleCheckboxes.filter(mod => {
-        const checkbox = document.getElementById(`mod-${mod}`);
-        return checkbox && checkbox.checked;
-      });
-
-      // Si aucun module coche => null (tous les modules)
-      const modules_autorises = selectedModules.length > 0 ? selectedModules : null;
-
-      try {
-        const response = await fetch(`/api/parametres/utilisateurs/${currentUserId}/role`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify({ role: newRole, modules_autorises })
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Erreur');
-        }
-
-        const result = await response.json();
-
-        // Si l'utilisateur modifie est l'utilisateur connecte, mettre a jour le localStorage
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        if (currentUser.id === currentUserId) {
-          // Mettre a jour les modules dans localStorage
-          if (modules_autorises === null || modules_autorises.length === 0) {
-            localStorage.removeItem('userModulesAutorises');
-          } else {
-            localStorage.setItem('userModulesAutorises', JSON.stringify(modules_autorises));
-          }
-          // Mettre a jour le role
-          if (newRole) {
-            localStorage.setItem('userRole', newRole);
-            currentUser.role = newRole;
-          }
-          currentUser.modules_autorises = modules_autorises;
-          localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          // Purger le cache des modules pour forcer le rechargement
-          if (typeof purgeModulesCache === 'function') {
-            purgeModulesCache();
-          }
-          showToast('Vos permissions ont ete modifiees. Veuillez rafraichir la page.', 'warning');
-        } else {
-          showToast('Role et modules mis a jour avec succes', 'success');
-        }
-
-        modalRole.hide();
-        loadUsers();
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast(error.message, 'error');
-      }
-    }
-
-    // === Promotion d'adherent ===
-
-    function openPromoteModal() {
-      selectedPromoteAdherent = null;
-      document.getElementById('promote-search').value = '';
-      document.getElementById('promote-results').style.display = 'none';
-      document.getElementById('promote-results').innerHTML = '';
-      document.getElementById('promote-selected').style.display = 'none';
-      document.getElementById('promote-role-container').style.display = 'none';
-      document.getElementById('promote-modules-container').style.display = 'none';
-      document.getElementById('btn-promote').disabled = true;
-
-      // Generer les options de role selon le niveau de l'utilisateur courant
-      const currentLevel = ROLE_HIERARCHY[currentUserRole] || 0;
-      const roleSelect = document.getElementById('promote-role');
-      roleSelect.innerHTML = '';
-
-      // On peut promouvoir jusqu'a son propre niveau - 1 (sauf admin qui peut tout)
-      const maxLevel = currentUserRole === 'administrateur' ? currentLevel : currentLevel - 1;
-
-      Object.entries(ROLE_HIERARCHY).forEach(([role, level]) => {
-        if (level > 0 && level <= maxLevel) { // Exclure 'usager' et respecter la hierarchie
-          const option = document.createElement('option');
-          option.value = role;
-          option.textContent = ROLE_LABELS[role];
-          roleSelect.appendChild(option);
-        }
-      });
-
-      // Configurer les checkboxes des modules selon les modules actifs
-      const moduleCheckboxes = ['ludotheque', 'bibliotheque', 'discotheque', 'filmotheque'];
-      moduleCheckboxes.forEach(mod => {
-        const checkbox = document.getElementById(`promote-mod-${mod}`);
-        if (checkbox) {
-          checkbox.checked = false;
-          const container = checkbox.closest('.form-check');
-          if (window.ACTIVE_MODULES && !window.ACTIVE_MODULES.includes(mod)) {
-            container.style.display = 'none';
-          } else {
-            container.style.display = '';
-          }
-        }
-      });
-
-      modalPromote.show();
-      setTimeout(() => document.getElementById('promote-search').focus(), 500);
-    }
-
-    async function searchAdherents(term) {
-      const resultsContainer = document.getElementById('promote-results');
-
-      if (term.length < 2) {
-        resultsContainer.style.display = 'none';
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/adherents?search=${encodeURIComponent(term)}&limit=10`, {
-          headers: { 'Authorization': `Bearer ${getAuthToken()}` }
-        });
-
-        if (!response.ok) throw new Error('Erreur recherche');
-
-        const result = await response.json();
-        const adherents = result.adherents || result;
-
-        // Filtrer les adherents qui ont deja un role administratif
-        const eligibles = adherents.filter(a => !a.role || a.role === 'usager');
-
-        if (eligibles.length === 0) {
-          resultsContainer.innerHTML = '<div class="p-3 text-muted text-center">Aucun usager eligible trouve</div>';
-        } else {
-          resultsContainer.innerHTML = eligibles.map(a => `
-            <div class="search-result-item" onclick="selectAdherentToPromote(${a.id}, '${a.prenom} ${a.nom}', '${a.email}')">
-              <div class="fw-semibold">${a.prenom} ${a.nom}</div>
-              <small class="text-muted">${a.email}</small>
-            </div>
-          `).join('');
-        }
-        resultsContainer.style.display = 'block';
-      } catch (error) {
-        console.error('Erreur recherche:', error);
-        resultsContainer.innerHTML = '<div class="p-3 text-danger">Erreur lors de la recherche</div>';
-        resultsContainer.style.display = 'block';
-      }
-    }
-
-    function selectAdherentToPromote(id, name, email) {
-      selectedPromoteAdherent = { id, name, email };
-      document.getElementById('promote-results').style.display = 'none';
-      document.getElementById('promote-search').value = '';
-      document.getElementById('promote-selected').style.display = 'block';
-      document.getElementById('promote-selected-name').innerHTML = `<strong>${name}</strong><br><small>${email}</small>`;
-      document.getElementById('promote-role-container').style.display = 'block';
-      document.getElementById('promote-modules-container').style.display = 'block';
-      document.getElementById('btn-promote').disabled = false;
-    }
-
-    function clearPromoteSelection() {
-      selectedPromoteAdherent = null;
-      document.getElementById('promote-selected').style.display = 'none';
-      document.getElementById('promote-role-container').style.display = 'none';
-      document.getElementById('promote-modules-container').style.display = 'none';
-      document.getElementById('btn-promote').disabled = true;
-    }
-
-    async function promoteAdherent() {
-      if (!selectedPromoteAdherent) return;
-
-      const newRole = document.getElementById('promote-role').value;
-
-      // Collecter les modules coches
-      const moduleCheckboxes = ['ludotheque', 'bibliotheque', 'discotheque', 'filmotheque'];
-      const selectedModules = moduleCheckboxes.filter(mod => {
-        const checkbox = document.getElementById(`promote-mod-${mod}`);
-        return checkbox && checkbox.checked;
-      });
-
-      // Si aucun module coche => null (tous les modules)
-      const modules_autorises = selectedModules.length > 0 ? selectedModules : null;
-
-      try {
-        const response = await fetch(`/api/parametres/utilisateurs/${selectedPromoteAdherent.id}/role`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          },
-          body: JSON.stringify({ role: newRole, modules_autorises })
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || err.message || 'Erreur');
-        }
-
-        modalPromote.hide();
-        showToast(`${selectedPromoteAdherent.name} est maintenant ${ROLE_LABELS[newRole]}`, 'success');
-        loadUsers();
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast(error.message, 'error');
-      }
-    }
-
-    // === Reset Password ===
-
-    function openResetPasswordModal(userId, email) {
-      resetPasswordUserId = userId;
-      document.getElementById('reset-email').textContent = email;
-      modalResetPassword.show();
-    }
-
-    async function confirmResetPassword() {
-      if (!resetPasswordUserId) return;
-
-      try {
-        const response = await fetch(`/api/parametres/utilisateurs/${resetPasswordUserId}/reset-password`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getAuthToken()}`
-          }
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || err.message || 'Erreur');
-        }
-
-        modalResetPassword.hide();
-        showToast('Email de reinitialisation envoye', 'success');
-      } catch (error) {
-        console.error('Erreur:', error);
-        showToast(error.message, 'error');
-      }
-    }
-
-    // Toast notification
-    function showToast(message, type = 'info') {
-      const toastContainer = document.getElementById('toast-container') || createToastContainer();
-      const toast = document.createElement('div');
-      toast.className = `toast align-items-center text-white bg-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} border-0`;
-      toast.setAttribute('role', 'alert');
-      toast.innerHTML = `
-        <div class="d-flex">
-          <div class="toast-body">${message}</div>
-          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-      `;
-      toastContainer.appendChild(toast);
-      const bsToast = new bootstrap.Toast(toast);
-      bsToast.show();
-      toast.addEventListener('hidden.bs.toast', () => toast.remove());
-    }
-
-    function createToastContainer() {
-      const container = document.createElement('div');
-      container.id = 'toast-container';
-      container.className = 'toast-container position-fixed top-0 end-0 p-3';
-      container.style.zIndex = '1100';
-      document.body.appendChild(container);
-      return container;
-    }
   </script>
 </body>
 </html>

@@ -11,12 +11,15 @@ const { checkRole } = require('../middleware/checkRole');
 // Toutes les routes nécessitent une authentification
 router.use(verifyToken);
 
+// Rôles autorisés pour accéder aux données financières
+const ROLES_CAISSE = ['administrateur', 'comptable', 'gestionnaire', 'benevole'];
+
 // ============================================
 // DONNÉES DE RÉFÉRENCE
 // ============================================
 
 // GET /api/caisses/references - Données de référence pour les formulaires
-router.get('/references', caisseController.getReferences);
+router.get('/references', checkRole(ROLES_CAISSE), caisseController.getReferences);
 
 // GET /api/caisses/statistiques - Statistiques globales
 router.get('/statistiques',
@@ -29,10 +32,10 @@ router.get('/statistiques',
 // ============================================
 
 // GET /api/caisses - Liste des caisses
-router.get('/', caisseController.getCaisses);
+router.get('/', checkRole(ROLES_CAISSE), caisseController.getCaisses);
 
 // GET /api/caisses/:id - Détail d'une caisse
-router.get('/:id', caisseController.getCaisseById);
+router.get('/:id', checkRole(ROLES_CAISSE), caisseController.getCaisseById);
 
 // POST /api/caisses - Créer une caisse (admin seulement)
 router.post('/',
@@ -57,7 +60,7 @@ router.delete('/:id',
 // ============================================
 
 // GET /api/caisses/:id/session - Session ouverte d'une caisse
-router.get('/:id/session', caisseController.getSessionOuverte);
+router.get('/:id/session', checkRole(ROLES_CAISSE), caisseController.getSessionOuverte);
 
 // POST /api/caisses/:id/session/ouvrir - Ouvrir une session
 router.post('/:id/session/ouvrir',
@@ -66,14 +69,14 @@ router.post('/:id/session/ouvrir',
 );
 
 // GET /api/caisses/:id/sessions - Historique des sessions
-router.get('/:id/sessions', caisseController.getHistoriqueSessions);
+router.get('/:id/sessions', checkRole(ROLES_CAISSE), caisseController.getHistoriqueSessions);
 
 // ============================================
 // ROUTES SESSIONS (par ID de session)
 // ============================================
 
 // GET /api/caisses/sessions/:sessionId - Détail d'une session
-router.get('/sessions/:sessionId', caisseController.getSessionById);
+router.get('/sessions/:sessionId', checkRole(ROLES_CAISSE), caisseController.getSessionById);
 
 // POST /api/caisses/sessions/:sessionId/cloturer - Clôturer une session
 router.post('/sessions/:sessionId/cloturer',
@@ -92,7 +95,7 @@ router.post('/sessions/:sessionId/annuler',
 // ============================================
 
 // GET /api/caisses/sessions/:sessionId/mouvements - Mouvements d'une session
-router.get('/sessions/:sessionId/mouvements', caisseController.getMouvementsSession);
+router.get('/sessions/:sessionId/mouvements', checkRole(ROLES_CAISSE), caisseController.getMouvementsSession);
 
 // POST /api/caisses/sessions/:sessionId/mouvements - Enregistrer un mouvement
 router.post('/sessions/:sessionId/mouvements',

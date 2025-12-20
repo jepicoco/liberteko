@@ -56,6 +56,7 @@
     "migrate-disques": "node database/migrations/addDisquesNormalization.js",
     "setup-disques": "npm run migrate-disques",
     "seed-sysadmin": "node database/seeds/seedSysadmin.js",
+    "seed-test-structures": "node database/seeds/seedTestMultiStructures.js",
     "migrate-ip-autorisees": "node database/migrations/addIpAutorisees.js",
     "migrate-modules-actifs": "node database/migrations/addModulesActifs.js",
     "seed-all": "node database/seeds/seedAllData.js",

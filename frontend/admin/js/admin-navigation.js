@@ -3,6 +3,14 @@
  * Configuration centralisée des menus de l'interface admin
  */
 
+// Mapping entre les codes modules du menu et les codes dans Structure.modules_actifs
+const MENU_TO_COLLECTION = {
+    'ludotheque': 'jeux',
+    'bibliotheque': 'livres',
+    'filmotheque': 'films',
+    'discotheque': 'disques'
+};
+
 // Couleurs par défaut pour les modules collections (fond)
 const DEFAULT_MODULE_COLORS = {
     ludotheque: '#6f42c1',
@@ -271,6 +279,66 @@ const MENU_ITEMS = [
  */
 function getMenuItems() {
     return MENU_ITEMS;
+}
+
+/**
+ * Retourne les items du menu filtres selon:
+ * - Les modules actifs de la structure selectionnee
+ * - Le role de l'utilisateur
+ * @returns {Array} Items du menu filtres
+ */
+function getFilteredMenuItems() {
+    const items = [...MENU_ITEMS];
+
+    // Recuperer la structure courante
+    const currentStructure = getCurrentStructure();
+
+    // Recuperer le role de l'utilisateur depuis localStorage
+    const userRole = localStorage.getItem('userRole') || 'usager';
+
+    // Hierarchie des roles pour comparaison
+    const ROLE_HIERARCHY = ['usager', 'benevole', 'agent', 'gestionnaire', 'comptable', 'administrateur'];
+    const userRoleIndex = ROLE_HIERARCHY.indexOf(userRole);
+
+    return items.filter(item => {
+        // Les separateurs passent toujours
+        if (item.separator) return true;
+
+        // Verifier le role minimum si defini
+        if (item.minRole) {
+            const minRoleIndex = ROLE_HIERARCHY.indexOf(item.minRole);
+            if (userRoleIndex < minRoleIndex) {
+                return false;
+            }
+        }
+
+        // Verifier le module si defini et si une structure est selectionnee
+        if (item.module && currentStructure && currentStructure.modules_actifs) {
+            // Convertir le code module du menu vers le code collection
+            const collectionCode = MENU_TO_COLLECTION[item.module];
+
+            if (collectionCode) {
+                // Verifier si la collection est active dans la structure
+                if (!currentStructure.modules_actifs.includes(collectionCode)) {
+                    return false;
+                }
+            }
+            // Les modules non-collection (scanner, reservations, etc.) passent
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Recupere la structure actuellement selectionnee depuis window.USER_STRUCTURES
+ * @returns {Object|null} Structure courante ou null
+ */
+function getCurrentStructure() {
+    if (!window.CURRENT_STRUCTURE_ID || !window.USER_STRUCTURES) {
+        return null;
+    }
+    return window.USER_STRUCTURES.find(s => s.id === window.CURRENT_STRUCTURE_ID) || null;
 }
 
 /**

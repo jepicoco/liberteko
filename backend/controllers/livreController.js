@@ -35,6 +35,11 @@ const getAllLivres = async (req, res) => {
 
     const where = {};
 
+    // Filtrer par structure si contexte present
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     if (statut) {
       where.statut = statut;
     }
@@ -308,7 +313,9 @@ const createLivre = async (req, res) => {
       date_acquisition,
       etat,
       statut: 'disponible',
-      image_url
+      image_url,
+      // Structure proprietaire
+      structure_id: req.structureId || null
     };
 
     // Ajouter code_barre seulement si code_ean est fourni

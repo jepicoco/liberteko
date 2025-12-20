@@ -297,37 +297,57 @@
     }
 
     // ==================== PERMISSIONS ====================
-    function getUserAllowedModules() {
-      const stored = localStorage.getItem('userModulesAutorises');
-      const user = getCurrentUser();
+    // Mapping des codes collection vers codes module menu
+    const COLLECTION_TO_MODULE = {
+      'jeux': 'ludotheque',
+      'livres': 'bibliotheque',
+      'films': 'filmotheque',
+      'disques': 'discotheque'
+    };
 
-      // Admin ou pas de restriction = acces a tout
-      if (!stored || user?.role === 'administrateur') {
-        return null; // null = tous les modules
+    function getStructureModules() {
+      // Si pas de structure selectionnee, verifier si admin global
+      if (!window.CURRENT_STRUCTURE_ID) {
+        // Admin global ou pas de filtre = tous les modules
+        if (window.IS_ADMIN_GLOBAL || !window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+          return null; // null = tous les modules
+        }
+        // Pas de structure selectionnee mais pas admin = union de tous les modules accessibles
+        const allModules = new Set();
+        window.USER_STRUCTURES.forEach(s => {
+          if (s.modules_actifs) {
+            s.modules_actifs.forEach(m => allModules.add(COLLECTION_TO_MODULE[m] || m));
+          }
+        });
+        return allModules.size > 0 ? Array.from(allModules) : null;
       }
 
-      try {
-        const modules = JSON.parse(stored);
-        return modules && modules.length > 0 ? modules : null;
-      } catch {
+      // Structure selectionnee: recuperer ses modules
+      const currentStructure = window.USER_STRUCTURES?.find(s => s.id === window.CURRENT_STRUCTURE_ID);
+      if (!currentStructure || !currentStructure.modules_actifs) {
         return null;
       }
+
+      // Convertir codes collection en codes module
+      return currentStructure.modules_actifs.map(m => COLLECTION_TO_MODULE[m] || m);
     }
 
     function initializeModules() {
-      const allowedModules = getUserAllowedModules();
+      const structureModules = getStructureModules();
 
-      if (allowedModules === null) {
+      if (structureModules === null) {
         // Acces a tous les modules
         hasAllModules = true;
         userModules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
       } else {
-        hasAllModules = false;
-        userModules = allowedModules;
+        // Filtrer aux modules de la structure
+        hasAllModules = structureModules.length === 4;
+        userModules = structureModules.filter(m => ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'].includes(m));
       }
 
       // Initialiser les states pour chaque module
       const modulesToInit = hasAllModules ? ['general', ...userModules] : userModules;
+      moduleStates = {}; // Reset states
       modulesToInit.forEach(mod => {
         moduleStates[mod] = {
           selectedUsager: null,
@@ -1424,9 +1444,9 @@
     }
 
     // ==================== INIT ====================
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       applyModuleColors();
-      initTemplate('emprunts');
+      await initTemplate('emprunts');
       initializeModules();
     });
   </script>

@@ -16,6 +16,10 @@ let lastScanTime = 0;
 // File d'articles en attente (nouveau systeme multi-articles)
 let pendingItems = [];
 
+// Multi-structure state
+let userStructures = [];
+let currentStructureId = null;
+
 // Config
 const SCAN_COOLDOWN = 500; // 0.5 seconde entre chaque scan
 const BARCODE_RESCAN_COOLDOWN = 5000; // 5 secondes avant de pouvoir rescanner le meme code-barre
@@ -29,6 +33,112 @@ const scannedCodesHistory = new Map(); // code -> timestamp du dernier scan
 let barcodeBuffer = '';
 let barcodeTimeout = null;
 
+// ==================== MULTI-STRUCTURE ====================
+
+/**
+ * Charge les structures accessibles par l'utilisateur connecte
+ * Comme admin-template.js mais adapte au scanner standalone
+ */
+async function loadStructures() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const response = await fetch('/api/parametres/mes-structures', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+      userStructures = await response.json();
+      window.USER_STRUCTURES = userStructures;
+
+      // Recuperer structure sauvegardee
+      const savedId = localStorage.getItem('selectedStructureId');
+      if (savedId && userStructures.find(s => s.id === parseInt(savedId))) {
+        currentStructureId = parseInt(savedId);
+      } else if (userStructures.length === 1) {
+        currentStructureId = userStructures[0].id;
+      } else if (userStructures.length > 1) {
+        // Plusieurs structures, prendre la premiere par defaut
+        currentStructureId = userStructures[0].id;
+      }
+      window.CURRENT_STRUCTURE_ID = currentStructureId;
+
+      renderStructureIndicator();
+    }
+  } catch (error) {
+    console.error('[Scanner] Erreur chargement structures:', error);
+  }
+}
+
+/**
+ * Fonction globale pour api-admin.js
+ * Permet d'envoyer le header X-Structure-Id avec les requetes API
+ */
+window.getCurrentStructureId = () => currentStructureId;
+
+/**
+ * Affiche l'indicateur de structure dans le header du scanner
+ */
+function renderStructureIndicator() {
+  const container = document.getElementById('structure-indicator');
+  if (!container) return;
+
+  if (!userStructures || userStructures.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  if (userStructures.length === 1) {
+    // Une seule structure : badge statique
+    const s = userStructures[0];
+    container.innerHTML = `
+      <span class="structure-badge" style="background:${s.couleur || '#6c757d'}; color:${s.couleur_texte || '#fff'}">
+        <i class="bi bi-${s.icone || 'building'}"></i>
+        ${s.nom}
+      </span>
+    `;
+    return;
+  }
+
+  // Plusieurs structures : selecteur
+  container.innerHTML = `
+    <select class="structure-select" onchange="changeStructure(this.value)">
+      ${userStructures.map(s => `
+        <option value="${s.id}" ${s.id === currentStructureId ? 'selected' : ''}>
+          ${s.nom}
+        </option>
+      `).join('')}
+    </select>
+  `;
+}
+
+/**
+ * Change la structure courante et reinitialise l'etat du scanner
+ */
+function changeStructure(id) {
+  currentStructureId = parseInt(id);
+  window.CURRENT_STRUCTURE_ID = currentStructureId;
+  localStorage.setItem('selectedStructureId', id);
+
+  // Reinitialiser l'etat
+  clearAdherent();
+  pendingItems = [];
+  updatePendingItemsDisplay();
+  scanHistory = [];
+  saveHistory();
+  renderHistory();
+
+  renderStructureIndicator();
+
+  // Feedback visuel
+  const structure = userStructures.find(s => s.id === currentStructureId);
+  if (structure) {
+    updateStatus(`Structure : ${structure.nom}`, 'success');
+    addToHistory('info', 'Structure changee', structure.nom);
+  }
+}
+
 // ==================== INITIALIZATION ====================
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -37,6 +147,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = 'login.html';
     return;
   }
+
+  // Charger les structures accessibles (multi-structure)
+  await loadStructures();
 
   // Charger l'historique depuis localStorage
   loadHistory();

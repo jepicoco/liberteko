@@ -37,6 +37,14 @@
         .chart-bar {
             transition: height 0.3s ease;
         }
+        /* Onglets dynamiques avec couleurs des modules */
+        .nav-pills .nav-link.active {
+            background-color: var(--tab-color, #0d6efd) !important;
+            color: var(--tab-text, #ffffff) !important;
+        }
+        .nav-pills .nav-link.active i {
+            color: var(--tab-text, #ffffff) !important;
+        }
     </style>
 </head>
 <body>
@@ -223,22 +231,55 @@
     <script src="js/admin-navigation.js"></script>
     <script src="js/admin-template.js"></script>
     <script>
-        // Configuration des modules
+        // Configuration des modules avec couleurs par defaut
         const MODULE_CONFIG = {
-            ludotheque: { icon: 'dice-6', color: 'primary', label: 'Ludotheque', itemLabel: 'jeux', itemLabelSingular: 'jeu' },
-            bibliotheque: { icon: 'book', color: 'success', label: 'Bibliotheque', itemLabel: 'livres', itemLabelSingular: 'livre' },
-            filmotheque: { icon: 'film', color: 'danger', label: 'Filmotheque', itemLabel: 'films', itemLabelSingular: 'film' },
-            discotheque: { icon: 'disc', color: 'warning', label: 'Discotheque', itemLabel: 'disques', itemLabelSingular: 'disque' }
+            ludotheque: { icon: 'dice-6', color: '#6f42c1', label: 'Ludotheque', itemLabel: 'jeux', itemLabelSingular: 'jeu' },
+            bibliotheque: { icon: 'book', color: '#20c997', label: 'Bibliotheque', itemLabel: 'livres', itemLabelSingular: 'livre' },
+            filmotheque: { icon: 'film', color: '#fd7e14', label: 'Filmotheque', itemLabel: 'films', itemLabelSingular: 'film' },
+            discotheque: { icon: 'disc', color: '#e83e8c', label: 'Discotheque', itemLabel: 'disques', itemLabelSingular: 'disque' }
+        };
+
+        // Mapping collection -> module
+        const COLLECTION_TO_MODULE = {
+            'jeux': 'ludotheque',
+            'livres': 'bibliotheque',
+            'films': 'filmotheque',
+            'disques': 'discotheque'
         };
 
         let dashboardData = null;
         let userRole = null;
         let accessibleModules = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initTemplate('statistiques');
+        // Recupere les couleurs dynamiques des modules depuis admin-template.js
+        function loadModuleColorsIntoConfig() {
+            if (typeof getModuleColor === 'function') {
+                Object.keys(MODULE_CONFIG).forEach(mod => {
+                    MODULE_CONFIG[mod].color = getModuleColor(mod);
+                    MODULE_CONFIG[mod].textColor = typeof getModuleTextColor === 'function' ? getModuleTextColor(mod) : '#ffffff';
+                });
+            }
+        }
+
+        // Filtre les modules selon la structure selectionnee
+        function getStructureModules() {
+            if (!window.CURRENT_STRUCTURE_ID) {
+                // Pas de structure selectionnee = tous les modules de l'API
+                return null;
+            }
+            const currentStructure = window.USER_STRUCTURES?.find(s => s.id === window.CURRENT_STRUCTURE_ID);
+            if (!currentStructure || !currentStructure.modules_actifs) {
+                return null;
+            }
+            return currentStructure.modules_actifs.map(m => COLLECTION_TO_MODULE[m] || m);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initTemplate('statistiques');
+            // Charger les couleurs des modules
+            loadModuleColorsIntoConfig();
             // Recuperer le role depuis le token
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('authToken');
             if (token) {
                 try {
                     const payload = JSON.parse(atob(token.split('.')[1]));
@@ -284,10 +325,20 @@
             const tabsContainer = document.getElementById('statsTabs');
             const contentContainer = document.getElementById('statsTabContent');
 
+            // Filtrer les modules selon la structure selectionnee
+            const structureModules = getStructureModules();
+            const filteredModules = structureModules
+                ? accessibleModules.filter(m => structureModules.includes(m))
+                : accessibleModules;
+
             // Ajouter les onglets pour chaque module accessible
-            accessibleModules.forEach(moduleCode => {
+            filteredModules.forEach(moduleCode => {
                 const config = MODULE_CONFIG[moduleCode];
                 if (!config) return;
+
+                // Couleurs dynamiques
+                const bgColor = config.color || '#6c757d';
+                const textColor = config.textColor || '#ffffff';
 
                 // Ajouter l'onglet
                 const tabLi = document.createElement('li');
@@ -296,8 +347,9 @@
                 tabLi.innerHTML = `
                     <button class="nav-link" id="${moduleCode}-tab" data-bs-toggle="pill"
                             data-bs-target="#${moduleCode}" type="button" role="tab"
-                            onclick="loadModuleStats('${moduleCode}')">
-                        <i class="bi bi-${config.icon} tab-icon me-2 text-${config.color}"></i>${config.label}
+                            onclick="loadModuleStats('${moduleCode}')"
+                            style="--tab-color: ${bgColor}; --tab-text: ${textColor};">
+                        <i class="bi bi-${config.icon} tab-icon me-2" style="color: ${bgColor};"></i>${config.label}
                     </button>
                 `;
                 tabsContainer.appendChild(tabLi);
@@ -310,7 +362,7 @@
                 tabPane.innerHTML = `
                     <div id="${moduleCode}-content">
                         <div class="text-center p-5">
-                            <div class="spinner-border text-${config.color}" role="status">
+                            <div class="spinner-border" style="color: ${bgColor};" role="status">
                                 <span class="visually-hidden">Chargement...</span>
                             </div>
                             <p class="mt-2 text-muted">Chargement des statistiques ${config.label}...</p>
@@ -327,12 +379,18 @@
         function renderModulesSummary() {
             const container = document.getElementById('modulesSummary');
 
-            if (accessibleModules.length === 0) {
-                container.innerHTML = '<div class="col-12"><div class="alert alert-warning">Aucun module accessible</div></div>';
+            // Filtrer les modules selon la structure selectionnee
+            const structureModules = getStructureModules();
+            const filteredModules = structureModules
+                ? accessibleModules.filter(m => structureModules.includes(m))
+                : accessibleModules;
+
+            if (filteredModules.length === 0) {
+                container.innerHTML = '<div class="col-12"><div class="alert alert-warning">Aucun module accessible pour cette structure</div></div>';
                 return;
             }
 
-            container.innerHTML = accessibleModules.map(moduleCode => {
+            container.innerHTML = filteredModules.map(moduleCode => {
                 const config = MODULE_CONFIG[moduleCode];
                 if (!config) return '';
 
@@ -341,18 +399,19 @@
                 const disponibles = moduleStats?.collection?.disponibles || 0;
                 const emprunts = moduleStats?.emprunts?.enCours || 0;
                 const retards = moduleStats?.emprunts?.enRetard || 0;
+                const moduleColor = config.color || '#6c757d';
 
                 return `
                     <div class="col-md-3 col-6">
-                        <div class="card border-${config.color} stat-card h-100">
+                        <div class="card stat-card h-100" style="border-left: 4px solid ${moduleColor};">
                             <div class="card-body">
                                 <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-${config.icon} fs-4 text-${config.color} me-2"></i>
+                                    <i class="bi bi-${config.icon} fs-4 me-2" style="color: ${moduleColor};"></i>
                                     <h6 class="mb-0">${config.label}</h6>
                                 </div>
                                 <div class="row text-center">
                                     <div class="col-6 border-end">
-                                        <h4 class="mb-0 text-${config.color}">${total}</h4>
+                                        <h4 class="mb-0" style="color: ${moduleColor};">${total}</h4>
                                         <small class="text-muted">${config.itemLabel}</small>
                                     </div>
                                     <div class="col-6">
@@ -380,8 +439,12 @@
                 document.getElementById('statRetards').innerHTML = `<i class="bi bi-exclamation-triangle"></i> ${retards} en retard`;
             }
 
-            // Details collection par module
-            const details = accessibleModules.map(m => {
+            // Details collection par module (filtre par structure)
+            const structureModules = getStructureModules();
+            const modulesToShow = structureModules
+                ? accessibleModules.filter(m => structureModules.includes(m))
+                : accessibleModules;
+            const details = modulesToShow.map(m => {
                 const count = dashboardData.modules?.[m]?.collection?.total || 0;
                 return count > 0 ? `${count} ${MODULE_CONFIG[m]?.itemLabel || m}` : null;
             }).filter(Boolean);
@@ -415,16 +478,17 @@
             const collection = moduleStats.collection;
             const emprunts = moduleStats.emprunts;
             const disponibilite = collection.total > 0 ? ((collection.disponibles / collection.total) * 100).toFixed(1) : 0;
+            const moduleColor = config.color || '#6c757d';
 
             // Generer le contenu de l'onglet
             container.innerHTML = `
                 <!-- Stats du module -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-3 col-6">
-                        <div class="card border-${config.color} stat-card">
+                        <div class="card stat-card" style="border-left: 4px solid ${moduleColor};">
                             <div class="card-body">
                                 <h6 class="text-muted mb-2">Total ${config.itemLabel}</h6>
-                                <h3 class="mb-0 text-${config.color}">${collection.total}</h3>
+                                <h3 class="mb-0" style="color: ${moduleColor};">${collection.total}</h3>
                             </div>
                         </div>
                     </div>
@@ -463,14 +527,14 @@
                         <div class="card h-100">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
-                                    <i class="bi bi-trophy text-${config.color}"></i>
+                                    <i class="bi bi-trophy" style="color: ${moduleColor};"></i>
                                     Top 10 ${config.itemLabel} les plus empruntes
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div id="${moduleCode}-topItems">
                                     <div class="text-center p-4">
-                                        <div class="spinner-border spinner-border-sm text-${config.color}" role="status"></div>
+                                        <div class="spinner-border spinner-border-sm" style="color: ${moduleColor};" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -521,14 +585,14 @@
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
-                                    <i class="bi bi-pie-chart text-${config.color}"></i>
+                                    <i class="bi bi-pie-chart" style="color: ${moduleColor};"></i>
                                     Repartition par Categorie
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div id="${moduleCode}-categories">
                                     <div class="text-center p-4">
-                                        <div class="spinner-border spinner-border-sm text-${config.color}" role="status"></div>
+                                        <div class="spinner-border spinner-border-sm" style="color: ${moduleColor};" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -538,14 +602,14 @@
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title mb-0">
-                                    <i class="bi bi-building text-${config.color}"></i>
+                                    <i class="bi bi-building" style="color: ${moduleColor};"></i>
                                     Top Editeurs
                                 </h5>
                             </div>
                             <div class="card-body">
                                 <div id="${moduleCode}-editeurs">
                                     <div class="text-center p-4">
-                                        <div class="spinner-border spinner-border-sm text-${config.color}" role="status"></div>
+                                        <div class="spinner-border spinner-border-sm" style="color: ${moduleColor};" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -557,14 +621,14 @@
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title mb-0">
-                            <i class="bi bi-bar-chart text-${config.color}"></i>
+                            <i class="bi bi-bar-chart" style="color: ${moduleColor};"></i>
                             Emprunts Mensuels (12 derniers mois)
                         </h5>
                     </div>
                     <div class="card-body">
                         <div id="${moduleCode}-monthly">
                             <div class="text-center p-4">
-                                <div class="spinner-border text-${config.color}" role="status"></div>
+                                <div class="spinner-border" style="color: ${moduleColor};" role="status"></div>
                             </div>
                         </div>
                     </div>
@@ -591,6 +655,7 @@
                 const data = await apiRequest(`/stats/popular-items?module=${moduleCode}&limit=10`);
                 const items = data.items || [];
                 const container = document.getElementById(`${moduleCode}-topItems`);
+                const moduleColor = config.color || '#6c757d';
 
                 if (items.length === 0) {
                     container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
@@ -602,7 +667,7 @@
                         ${items.map((entry, index) => `
                             <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                                 <div>
-                                    <span class="badge bg-${config.color} rounded-pill me-2">${index + 1}</span>
+                                    <span class="badge rounded-pill me-2" style="background-color: ${moduleColor}; color: ${config.textColor || '#ffffff'};">${index + 1}</span>
                                     <strong>${entry.item?.titre || 'N/A'}</strong>
                                 </div>
                                 <span class="badge bg-info rounded-pill">${entry.emprunts} emprunts</span>
@@ -681,6 +746,7 @@
                 const data = await apiRequest(`/stats/categories?module=${moduleCode}`);
                 const categories = data.categories || [];
                 const container = document.getElementById(`${moduleCode}-categories`);
+                const moduleColor = config.color || '#6c757d';
 
                 if (categories.length === 0) {
                     container.innerHTML = '<p class="text-center text-muted">Aucune donnee disponible</p>';
@@ -700,7 +766,7 @@
                                         <small class="text-muted">${cat.count}</small>
                                     </div>
                                     <div class="progress progress-thin">
-                                        <div class="progress-bar bg-${config.color}" style="width: ${percentage}%"></div>
+                                        <div class="progress-bar" style="width: ${percentage}%; background-color: ${moduleColor};"></div>
                                     </div>
                                 </div>
                             `;
@@ -715,6 +781,7 @@
 
         async function loadEditeurs(moduleCode, config) {
             const container = document.getElementById(`${moduleCode}-editeurs`);
+            const moduleColor = config.color || '#6c757d';
             try {
                 const data = await apiRequest(`/stats/editeurs?module=${moduleCode}&limit=8`);
                 const editeurs = data.editeurs || [];
@@ -737,7 +804,7 @@
                                         <small class="text-muted">${ed.count}</small>
                                     </div>
                                     <div class="progress progress-thin">
-                                        <div class="progress-bar bg-${config.color}" style="width: ${percentage}%"></div>
+                                        <div class="progress-bar" style="width: ${percentage}%; background-color: ${moduleColor};"></div>
                                     </div>
                                 </div>
                             `;
@@ -772,6 +839,11 @@
             const maxValue = Math.max(...monthly.map(m => m.emprunts), 1);
             const monthNames = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aout', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+            // Support both Bootstrap classes (e.g., 'primary') and hex colors (e.g., '#6f42c1')
+            const isHexColor = color && color.startsWith('#');
+            const barClass = isHexColor ? '' : `bg-${color}`;
+            const barStyle = isHexColor ? `background-color: ${color};` : '';
+
             container.innerHTML = `
                 <div class="d-flex align-items-end justify-content-around" style="height: 200px;">
                     ${monthly.map(m => {
@@ -780,8 +852,8 @@
                         const label = monthNames[parseInt(month) - 1];
                         return `
                             <div class="text-center" style="flex: 1; max-width: 60px;">
-                                <div class="bg-${color} rounded-top mx-1 chart-bar"
-                                     style="height: ${Math.max(height, 5)}%; min-height: 5px;"
+                                <div class="${barClass} rounded-top mx-1 chart-bar"
+                                     style="height: ${Math.max(height, 5)}%; min-height: 5px; ${barStyle}"
                                      title="${m.emprunts} emprunts">
                                 </div>
                                 <small class="text-muted d-block mt-1">${label}</small>

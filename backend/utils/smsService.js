@@ -358,6 +358,7 @@ async function isModuleActive() {
  * @param {string} options.text - Texte du SMS
  * @param {number} [options.adherent_id] - ID de l'adhérent (optionnel)
  * @param {string} [options.template_code] - Code du template utilisé (optionnel)
+ * @param {number} [options.structure_id] - ID de la structure (optionnel, multi-structure)
  * @returns {Promise<Object>} - {success: boolean, ticket: string, error: string, smsLogId: number}
  */
 async function sendSMS(configurationId, options) {
@@ -389,17 +390,24 @@ async function sendSMS(configurationId, options) {
     }
 
     // Créer le log SMS en statut "en_attente"
+    // SECURITY: Ne stocker qu'un aperçu du message (160 premiers caractères)
+    // pour minimiser les données PII dans les logs
+    const messagePreview = options.text && options.text.length > 160
+      ? options.text.substring(0, 160) + '...'
+      : options.text;
+
     smsLog = await createSmsLog({
       template_code: options.template_code || null,
       destinataire: options.to,
       destinataire_nom: options.destinataire_nom || null,
-      message: options.text,
+      message: messagePreview,
       nb_segments: calculateSegments(options.text),
       statut: 'en_attente',
       provider: configuration.provider,
-      adherent_id: options.adherent_id || null,
+      utilisateur_id: options.adherent_id || null,
       emprunt_id: options.emprunt_id || null,
       cotisation_id: options.cotisation_id || null,
+      structure_id: options.structure_id || null,
       metadata: {
         configuration_id: configurationId,
         configuration_libelle: configuration.libelle,
@@ -555,7 +563,8 @@ async function sendSMSFromTemplate(configurationId, templateCode, numeroDestinat
       text: text,
       template_code: templateCode,
       adherent_id: data.adherent_id,
-      destinataire_nom: data.destinataire_nom
+      destinataire_nom: data.destinataire_nom,
+      structure_id: data.structure_id
     });
   } catch (error) {
     console.error('[SMS] Erreur lors de l\'envoi depuis template:', error);

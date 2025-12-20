@@ -4,6 +4,7 @@ const filmController = require('../controllers/filmController');
 const exemplaireController = require('../controllers/exemplaireController');
 const { verifyToken } = require('../middleware/auth');
 const { isAgent, checkModuleAccess } = require('../middleware/checkRole');
+const { structureContext } = require('../middleware/structureContext');
 
 // Middleware pour vérifier l'accès au module filmothèque
 const checkFilmoAccess = checkModuleAccess('filmotheque');
@@ -80,11 +81,11 @@ router.patch('/referentiels/emplacements/:id/toggle', isAgent(), checkFilmoAcces
 // ============================================
 // Films CRUD (/:id en DERNIER pour éviter conflit avec routes spécifiques)
 // ============================================
-router.get('/', filmController.getAll);
-router.get('/:id', filmController.getById);
-router.post('/', isAgent(), checkFilmoAccess, filmController.create);
-router.put('/:id', isAgent(), checkFilmoAccess, filmController.update);
-router.delete('/:id', isAgent(), checkFilmoAccess, filmController.delete);
+router.get('/', structureContext(), filmController.getAll);
+router.get('/:id', structureContext(), filmController.getById);
+router.post('/', structureContext({ required: true }), isAgent(), checkFilmoAccess, filmController.create);
+router.put('/:id', structureContext({ required: true }), isAgent(), checkFilmoAccess, filmController.update);
+router.delete('/:id', structureContext({ required: true }), isAgent(), checkFilmoAccess, filmController.delete);
 
 // ============================================
 // Routes Exemplaires
@@ -93,36 +94,36 @@ router.delete('/:id', isAgent(), checkFilmoAccess, filmController.delete);
 /**
  * @route   GET /api/films/:id/exemplaires
  * @desc    Liste les exemplaires d'un film
- * @access  Private (agent+ avec accès filmothèque)
+ * @access  Private (agent+ avec accès filmothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplaires);
+router.get('/:id/exemplaires', structureContext(), isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplaires);
 
 /**
  * @route   POST /api/films/:id/exemplaires
  * @desc    Créer un nouvel exemplaire pour un film
- * @access  Private (agent+ avec accès filmothèque)
+ * @access  Private (agent+ avec accès filmothèque, structure requise)
  */
-router.post('/:id/exemplaires', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.createExemplaire);
+router.post('/:id/exemplaires', structureContext({ required: true }), isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.createExemplaire);
 
 /**
  * @route   GET /api/films/:id/exemplaires/disponibles
  * @desc    Liste les exemplaires disponibles d'un film
- * @access  Private (agent+ avec accès filmothèque)
+ * @access  Private (agent+ avec accès filmothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires/disponibles', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesDisponibles);
+router.get('/:id/exemplaires/disponibles', structureContext(), isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesDisponibles);
 
 /**
  * @route   GET /api/films/:id/exemplaires/sans-code-barre
  * @desc    Liste les exemplaires sans code-barre d'un film
- * @access  Private (agent+ avec accès filmothèque)
+ * @access  Private (agent+ avec accès filmothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires/sans-code-barre', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesSansCodeBarre);
+router.get('/:id/exemplaires/sans-code-barre', structureContext(), isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesSansCodeBarre);
 
 /**
  * @route   GET /api/films/:id/exemplaires/stats
  * @desc    Statistiques des exemplaires d'un film
- * @access  Private (agent+ avec accès filmothèque)
+ * @access  Private (agent+ avec accès filmothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires/stats', isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesStats);
+router.get('/:id/exemplaires/stats', structureContext(), isAgent(), checkFilmoAccess, setModuleFilm, exemplaireController.getExemplairesStats);
 
 module.exports = router;

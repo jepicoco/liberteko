@@ -77,10 +77,13 @@ const getJeuBarcodeImage = async (req, res) => {
  * POST /api/barcodes/scan
  * Body: { code: "ADH00000001" }
  * Supports: ADH (adherent), JEU, LIV (livre), FLM (film), DSQ (disque)
+ *
+ * Multi-structure: Si X-Structure-Id est fourni, verifie que l'article appartient a la structure
  */
 const scanBarcode = async (req, res) => {
   try {
     const { code } = req.body;
+    const structureId = req.structureId; // Injecte par structureContext middleware
 
     if (!code) {
       return res.status(400).json({
@@ -101,6 +104,8 @@ const scanBarcode = async (req, res) => {
     let responseType = decoded.type;
 
     if (decoded.type === 'utilisateur') {
+      // Les utilisateurs ne sont pas filtres par structure ici
+      // (ils peuvent avoir acces a plusieurs structures)
       entity = await Utilisateur.findByPk(decoded.id);
       if (!entity) {
         return res.status(404).json({
@@ -117,12 +122,25 @@ const scanBarcode = async (req, res) => {
           message: 'Jeu non trouve'
         });
       }
+      // Verifier que l'article appartient a la structure courante
+      if (structureId && entity.structure_id && entity.structure_id !== structureId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Cet article n\'appartient pas a votre structure'
+        });
+      }
     } else if (decoded.type === 'livre') {
       entity = await Livre.findByPk(decoded.id);
       if (!entity) {
         return res.status(404).json({
           error: 'Not found',
           message: 'Livre non trouve'
+        });
+      }
+      if (structureId && entity.structure_id && entity.structure_id !== structureId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Cet article n\'appartient pas a votre structure'
         });
       }
     } else if (decoded.type === 'film') {
@@ -133,12 +151,24 @@ const scanBarcode = async (req, res) => {
           message: 'Film non trouve'
         });
       }
+      if (structureId && entity.structure_id && entity.structure_id !== structureId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Cet article n\'appartient pas a votre structure'
+        });
+      }
     } else if (decoded.type === 'cd' || decoded.type === 'disque') {
       entity = await Disque.findByPk(decoded.id);
       if (!entity) {
         return res.status(404).json({
           error: 'Not found',
           message: 'Disque non trouve'
+        });
+      }
+      if (structureId && entity.structure_id && entity.structure_id !== structureId) {
+        return res.status(403).json({
+          error: 'Forbidden',
+          message: 'Cet article n\'appartient pas a votre structure'
         });
       }
       responseType = 'disque';

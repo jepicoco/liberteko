@@ -105,6 +105,16 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: 'auto',
       comment: 'Statut nouveaute: auto, force_nouveau, jamais_nouveau'
+    },
+    // Gestion multi-structure
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'structures',
+        key: 'id'
+      },
+      comment: 'FK vers la structure proprietaire (NULL = toutes structures)'
     }
   }, {
     tableName: 'livres',

@@ -8,9 +8,9 @@ const { Utilisateur } = require('../models');
  */
 const verifyToken = async (req, res, next) => {
   try {
-    // Get token from header OR query parameter (for print pages opened in new window)
+    // Get token from Authorization header only (Bearer token)
+    // SECURITY: Query parameter tokens are disabled to prevent exposure in logs/history
     const authHeader = req.headers.authorization;
-    const queryToken = req.query.token;
 
     let token = null;
 
@@ -20,9 +20,6 @@ const verifyToken = async (req, res, next) => {
       if (parts.length === 2 && parts[0] === 'Bearer') {
         token = parts[1];
       }
-    } else if (queryToken) {
-      // Token passed via query parameter (for print pages)
-      token = queryToken;
     }
 
     if (!token) {

@@ -177,7 +177,7 @@ class EmailService {
   /**
    * Envoie un email avec pièce jointe
    */
-  async sendEmailWithAttachment(to, subject, html, attachmentPath, attachmentName) {
+  async sendEmailWithAttachment(to, subject, html, attachmentPath, attachmentName, options = {}) {
     // Vérifier si le module communications est actif
     const moduleActif = await this.isModuleActive();
     if (!moduleActif) {
@@ -205,13 +205,19 @@ class EmailService {
       ]
     };
 
+    // SECURITY: Ne stocker qu'un aperçu du corps (500 premiers caractères)
+    // pour minimiser les données PII dans les logs
+    const corpsPreview = html ? html.replace(/<[^>]*>/g, ' ').substring(0, 500) + '...' : '';
+
     // Créer le log avant l'envoi
     const emailLog = await EmailLog.create({
       destinataire: to,
       objet: subject,
-      corps: html,
+      corps: corpsPreview,
       statut: 'en_attente',
       date_envoi: new Date(),
+      utilisateur_id: options.adherentId || null,
+      structure_id: options.structureId || null,
       metadata: { attachment: attachmentName }
     });
 
@@ -241,7 +247,7 @@ class EmailService {
   /**
    * Envoie un email
    */
-  async sendEmail({ to, subject, html, from = null, templateCode = null, metadata = null, adherentId = null, empruntId = null, cotisationId = null }) {
+  async sendEmail({ to, subject, html, from = null, templateCode = null, metadata = null, adherentId = null, empruntId = null, cotisationId = null, structureId = null }) {
     // Vérifier si le module communications est actif
     const moduleActif = await this.isModuleActive();
     if (!moduleActif) {
@@ -263,18 +269,23 @@ class EmailService {
       html
     };
 
+    // SECURITY: Ne stocker qu'un aperçu du corps (500 premiers caractères)
+    // pour minimiser les données PII dans les logs
+    const corpsPreview = html ? html.replace(/<[^>]*>/g, ' ').substring(0, 500) + '...' : '';
+
     // Créer le log avant l'envoi
     const emailLog = await EmailLog.create({
       template_code: templateCode,
       destinataire: to,
       destinataire_nom: metadata?.destinataire_nom || null,
       objet: subject,
-      corps: html,
+      corps: corpsPreview,
       statut: 'en_attente',
       date_envoi: new Date(),
-      adherent_id: adherentId,
+      utilisateur_id: adherentId,
       emprunt_id: empruntId,
       cotisation_id: cotisationId,
+      structure_id: structureId,
       metadata: metadata
     });
 

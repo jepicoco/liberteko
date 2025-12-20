@@ -1,4 +1,4 @@
-const { EmailLog, Utilisateur } = require('../models');
+const { EmailLog, Utilisateur, sequelize } = require('../models');
 const { Op } = require('sequelize');
 
 /**
@@ -22,6 +22,11 @@ exports.getAllEmailLogs = async (req, res) => {
     const offset = (page - 1) * limit;
     const where = {};
 
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     if (statut) {
       where.statut = statut;
     }
@@ -36,12 +41,16 @@ exports.getAllEmailLogs = async (req, res) => {
       where.utilisateur_id = userId;
     }
 
-    // Filtre par destinataire (email ou nom)
+    // Filtre par destinataire (email ou nom) - insensible a la casse
     if (destinataire) {
-      where[Op.or] = [
-        { destinataire: { [Op.like]: `%${destinataire}%` } },
-        { destinataire_nom: { [Op.like]: `%${destinataire}%` } }
-      ];
+      const searchTerm = destinataire.toLowerCase();
+      where[Op.and] = where[Op.and] || [];
+      where[Op.and].push({
+        [Op.or]: [
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('destinataire')), { [Op.like]: `%${searchTerm}%` }),
+          sequelize.where(sequelize.fn('LOWER', sequelize.col('destinataire_nom')), { [Op.like]: `%${searchTerm}%` })
+        ]
+      });
     }
 
     if (date_debut && date_fin) {
@@ -145,13 +154,51 @@ exports.getEmailStatistics = async (req, res) => {
     const dateDebut = date_debut ? new Date(date_debut) : null;
     const dateFin = date_fin ? new Date(date_fin) : null;
 
-    // Statistiques générales
-    const stats = await EmailLog.getStatistiques(dateDebut, dateFin);
+    // Condition de base pour filtrage par structure
+    const baseWhere = {};
+    if (req.structureId) {
+      baseWhere.structure_id = req.structureId;
+    }
 
-    // Statistiques par template
-    const parTemplate = await EmailLog.getParTemplate(10);
+    // Statistiques générales (avec filtre structure)
+    const where = { ...baseWhere };
+    if (dateDebut && dateFin) {
+      where.date_envoi = { [Op.between]: [dateDebut, dateFin] };
+    }
 
-    // Statistiques par jour (7 derniers jours)
+    const [total, envoyes, erreurs] = await Promise.all([
+      EmailLog.count({ where }),
+      EmailLog.count({ where: { ...where, statut: 'envoye' } }),
+      EmailLog.count({ where: { ...where, statut: 'erreur' } })
+    ]);
+
+    const stats = {
+      total,
+      envoyes,
+      erreurs,
+      tauxReussite: total > 0 ? ((envoyes / total) * 100).toFixed(2) : 0
+    };
+
+    // Statistiques par template (avec filtre structure)
+    const templateWhere = {
+      ...baseWhere,
+      template_code: { [Op.ne]: null }
+    };
+    const parTemplate = await EmailLog.findAll({
+      attributes: [
+        'template_code',
+        [EmailLog.sequelize.fn('COUNT', EmailLog.sequelize.col('id')), 'total'],
+        [EmailLog.sequelize.fn('SUM', EmailLog.sequelize.literal('CASE WHEN statut = "envoye" THEN 1 ELSE 0 END')), 'envoyes'],
+        [EmailLog.sequelize.fn('SUM', EmailLog.sequelize.literal('CASE WHEN statut = "erreur" THEN 1 ELSE 0 END')), 'erreurs']
+      ],
+      where: templateWhere,
+      group: ['template_code'],
+      order: [[EmailLog.sequelize.fn('COUNT', EmailLog.sequelize.col('id')), 'DESC']],
+      limit: 10,
+      raw: true
+    });
+
+    // Statistiques par jour (7 derniers jours, avec filtre structure)
     const now = new Date();
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -164,6 +211,7 @@ exports.getEmailStatistics = async (req, res) => {
         [EmailLog.sequelize.fn('SUM', EmailLog.sequelize.literal('CASE WHEN statut = "erreur" THEN 1 ELSE 0 END')), 'erreurs']
       ],
       where: {
+        ...baseWhere,
         date_envoi: {
           [Op.between]: [sevenDaysAgo, now]
         }
@@ -197,13 +245,18 @@ exports.purgeOldLogs = async (req, res) => {
     const dateLimit = new Date();
     dateLimit.setDate(dateLimit.getDate() - parseInt(jours));
 
-    const count = await EmailLog.destroy({
-      where: {
-        date_envoi: {
-          [Op.lt]: dateLimit
-        }
+    const where = {
+      date_envoi: {
+        [Op.lt]: dateLimit
       }
-    });
+    };
+
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
+    const count = await EmailLog.destroy({ where });
 
     res.json({
       message: `${count} log(s) supprimé(s)`,
@@ -223,16 +276,23 @@ exports.purgeOldLogs = async (req, res) => {
  */
 exports.getTemplatesList = async (req, res) => {
   try {
+    const where = {
+      template_code: {
+        [Op.ne]: null
+      }
+    };
+
+    // Filtrage par structure (multi-structure)
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     const templates = await EmailLog.findAll({
       attributes: [
         'template_code',
         [EmailLog.sequelize.fn('COUNT', EmailLog.sequelize.col('id')), 'total']
       ],
-      where: {
-        template_code: {
-          [Op.ne]: null
-        }
-      },
+      where,
       group: ['template_code'],
       order: [[EmailLog.sequelize.fn('COUNT', EmailLog.sequelize.col('id')), 'DESC']],
       raw: true

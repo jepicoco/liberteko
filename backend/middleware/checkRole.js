@@ -95,9 +95,10 @@ const checkMinRole = (minRole) => {
 };
 
 /**
+ * @deprecated Utiliser checkStructureModule de middleware/checkStructureModule.js
  * Vérifie que l'utilisateur a accès à un module spécifique
  * Admin a toujours accès
- * NULL ou tableau vide = accès à tous les modules (permissif)
+ * SECURITY: NULL ou tableau vide = AUCUN accès (deny by default)
  * @param {string} module - Code du module requis
  * @returns {Function} Middleware Express
  */
@@ -117,9 +118,13 @@ const checkModuleAccess = (module) => {
 
     const modulesAutorises = req.user.modules_autorises;
 
-    // NULL ou tableau vide = accès à tous les modules
+    // SECURITY: NULL ou tableau vide = aucun accès (deny by default)
     if (!modulesAutorises || modulesAutorises.length === 0) {
-      return next();
+      return res.status(403).json({
+        error: 'Accès refusé',
+        message: 'Aucun module autorisé pour cet utilisateur',
+        required_module: module
+      });
     }
 
     // Vérifier si le module est dans la liste autorisée
@@ -137,7 +142,9 @@ const checkModuleAccess = (module) => {
 };
 
 /**
+ * @deprecated Utiliser checkAnyStructureModule de middleware/checkStructureModule.js
  * Vérifie que l'utilisateur a accès à au moins un des modules spécifiés
+ * SECURITY: NULL ou tableau vide = AUCUN accès (deny by default)
  * @param {Array<string>} modules - Liste des modules acceptés
  * @returns {Function} Middleware Express
  */
@@ -157,9 +164,13 @@ const checkAnyModuleAccess = (modules) => {
 
     const modulesAutorises = req.user.modules_autorises;
 
-    // NULL ou tableau vide = accès à tous les modules
+    // SECURITY: NULL ou tableau vide = aucun accès (deny by default)
     if (!modulesAutorises || modulesAutorises.length === 0) {
-      return next();
+      return res.status(403).json({
+        error: 'Accès refusé',
+        message: 'Aucun module autorisé pour cet utilisateur',
+        required_modules: modules
+      });
     }
 
     // Vérifier si au moins un module est autorisé
@@ -178,9 +189,11 @@ const checkAnyModuleAccess = (modules) => {
 };
 
 /**
+ * @deprecated Utiliser Structure.getModulesActifs() avec le contexte de structure
  * Obtenir les modules accessibles pour un utilisateur
+ * SECURITY: NULL ou tableau vide = aucun module (deny by default)
  * @param {Object} user - Objet utilisateur
- * @returns {Array<string>|null} - Liste des modules ou null pour tous
+ * @returns {Array<string>|null} - Liste des modules ou null pour tous (admin seulement)
  */
 const getUserAllowedModules = (user) => {
   if (!user) return [];
@@ -188,14 +201,16 @@ const getUserAllowedModules = (user) => {
   // Admin a accès à tout
   if (user.role === 'administrateur') return null;
 
-  // NULL ou vide = accès à tout
-  if (!user.modules_autorises || user.modules_autorises.length === 0) return null;
+  // SECURITY: NULL ou vide = aucun accès (deny by default)
+  if (!user.modules_autorises || user.modules_autorises.length === 0) return [];
 
   return user.modules_autorises;
 };
 
 /**
+ * @deprecated Utiliser Structure.hasModule() avec le contexte de structure
  * Vérifie si un utilisateur a accès à un module
+ * SECURITY: NULL ou tableau vide = AUCUN accès (deny by default)
  * @param {Object} user - Objet utilisateur
  * @param {string} module - Code du module
  * @returns {boolean}
@@ -206,8 +221,8 @@ const hasModuleAccess = (user, module) => {
   // Admin a accès à tout
   if (user.role === 'administrateur') return true;
 
-  // NULL ou vide = accès à tout
-  if (!user.modules_autorises || user.modules_autorises.length === 0) return true;
+  // SECURITY: NULL ou vide = aucun accès (deny by default)
+  if (!user.modules_autorises || user.modules_autorises.length === 0) return false;
 
   return user.modules_autorises.includes(module);
 };
@@ -294,11 +309,47 @@ const getModuleFromRoute = (route) => {
   return null;
 };
 
+/**
+ * @deprecated Utiliser checkDynamicStructureModule de middleware/checkStructureModule.js
+ * Verifie l'acces au module de maniere dynamique (depuis params ou body)
+ * Utilise req.params.module ou req.body.module pour determiner le module
+ * @param {string} paramName - Nom du parametre (defaut: 'module')
+ * @returns {Function} Middleware Express
+ */
+const checkDynamicModuleAccess = (paramName = 'module') => {
+  return (req, res, next) => {
+    // Recuperer le code de route (jeux, livres, films, disques)
+    const routeCode = req.params[paramName] || req.body?.[paramName];
+
+    if (!routeCode) {
+      return res.status(400).json({
+        error: 'Module manquant',
+        message: `Le parametre ${paramName} est requis`
+      });
+    }
+
+    // Mapper vers le code module (ludotheque, bibliotheque, etc.)
+    const moduleCode = getModuleFromRoute(routeCode);
+
+    if (!moduleCode) {
+      return res.status(400).json({
+        error: 'Module invalide',
+        message: `Module inconnu: ${routeCode}`,
+        valid_modules: Object.values(MODULE_MAPPING).map(m => m.route)
+      });
+    }
+
+    // Appliquer la verification de module
+    return checkModuleAccess(moduleCode)(req, res, next);
+  };
+};
+
 module.exports = {
   checkRole,
   checkMinRole,
   checkModuleAccess,
   checkAnyModuleAccess,
+  checkDynamicModuleAccess,
   getUserAllowedModules,
   hasModuleAccess,
   isAdmin,

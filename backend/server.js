@@ -230,6 +230,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// SECURITY: Global rate limiting for all API routes
+// Prevents DoS attacks and excessive API usage
+app.use('/api', apiLimiter);
+
 // API Routes avec rate limiting spécifique
 app.use('/api/auth', require('./routes/auth'));
 // Routes utilisateurs (nouvelle nomenclature) + alias adherents pour retrocompatibilité

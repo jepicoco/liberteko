@@ -5,6 +5,7 @@ const livreReferentielsController = require('../controllers/livreReferentielsCon
 const exemplaireController = require('../controllers/exemplaireController');
 const { verifyToken } = require('../middleware/auth');
 const { isAgent, checkModuleAccess } = require('../middleware/checkRole');
+const { structureContext } = require('../middleware/structureContext');
 
 // Middleware pour vérifier l'accès au module bibliothèque
 const checkBiblioAccess = checkModuleAccess('bibliotheque');
@@ -49,14 +50,14 @@ router.put('/referentiels/emplacements/:id', verifyToken, isAgent(), checkBiblio
 router.delete('/referentiels/emplacements/:id', verifyToken, isAgent(), checkBiblioAccess, livreReferentielsController.deleteEmplacement);
 router.patch('/referentiels/emplacements/:id/toggle', verifyToken, isAgent(), checkBiblioAccess, livreReferentielsController.toggleEmplacement);
 
-// Routes CRUD pour les livres (lecture publique)
-router.get('/', livreController.getAllLivres);
-router.get('/:id', livreController.getLivreById);
+// Routes CRUD pour les livres (lecture publique, structure optionnelle)
+router.get('/', structureContext(), livreController.getAllLivres);
+router.get('/:id', structureContext(), livreController.getLivreById);
 
-// Routes protégées (agent+ avec accès bibliothèque)
-router.post('/', verifyToken, isAgent(), checkBiblioAccess, livreController.createLivre);
-router.put('/:id', verifyToken, isAgent(), checkBiblioAccess, livreController.updateLivre);
-router.delete('/:id', verifyToken, isAgent(), checkBiblioAccess, livreController.deleteLivre);
+// Routes protégées (agent+ avec accès bibliothèque, structure requise pour écriture)
+router.post('/', verifyToken, structureContext({ required: true }), isAgent(), checkBiblioAccess, livreController.createLivre);
+router.put('/:id', verifyToken, structureContext({ required: true }), isAgent(), checkBiblioAccess, livreController.updateLivre);
+router.delete('/:id', verifyToken, structureContext({ required: true }), isAgent(), checkBiblioAccess, livreController.deleteLivre);
 
 // ============================================
 // Routes Exemplaires
@@ -65,36 +66,36 @@ router.delete('/:id', verifyToken, isAgent(), checkBiblioAccess, livreController
 /**
  * @route   GET /api/livres/:id/exemplaires
  * @desc    Liste les exemplaires d'un livre
- * @access  Private (agent+ avec accès bibliothèque)
+ * @access  Private (agent+ avec accès bibliothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires', verifyToken, isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplaires);
+router.get('/:id/exemplaires', verifyToken, structureContext(), isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplaires);
 
 /**
  * @route   POST /api/livres/:id/exemplaires
  * @desc    Créer un nouvel exemplaire pour un livre
- * @access  Private (agent+ avec accès bibliothèque)
+ * @access  Private (agent+ avec accès bibliothèque, structure requise)
  */
-router.post('/:id/exemplaires', verifyToken, isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.createExemplaire);
+router.post('/:id/exemplaires', verifyToken, structureContext({ required: true }), isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.createExemplaire);
 
 /**
  * @route   GET /api/livres/:id/exemplaires/disponibles
  * @desc    Liste les exemplaires disponibles d'un livre
- * @access  Private (agent+ avec accès bibliothèque)
+ * @access  Private (agent+ avec accès bibliothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires/disponibles', verifyToken, isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplairesDisponibles);
+router.get('/:id/exemplaires/disponibles', verifyToken, structureContext(), isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplairesDisponibles);
 
 /**
  * @route   GET /api/livres/:id/exemplaires/sans-code-barre
  * @desc    Liste les exemplaires sans code-barre d'un livre
- * @access  Private (agent+ avec accès bibliothèque)
+ * @access  Private (agent+ avec accès bibliothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires/sans-code-barre', verifyToken, isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplairesSansCodeBarre);
+router.get('/:id/exemplaires/sans-code-barre', verifyToken, structureContext(), isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplairesSansCodeBarre);
 
 /**
  * @route   GET /api/livres/:id/exemplaires/stats
  * @desc    Statistiques des exemplaires d'un livre
- * @access  Private (agent+ avec accès bibliothèque)
+ * @access  Private (agent+ avec accès bibliothèque, structure optionnelle)
  */
-router.get('/:id/exemplaires/stats', verifyToken, isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplairesStats);
+router.get('/:id/exemplaires/stats', verifyToken, structureContext(), isAgent(), checkBiblioAccess, setModuleLivre, exemplaireController.getExemplairesStats);
 
 module.exports = router;

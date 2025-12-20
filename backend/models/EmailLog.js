@@ -73,6 +73,15 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: 'ID de la cotisation concernée'
     },
+    structure_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'structures',
+        key: 'id'
+      },
+      comment: 'ID de la structure concernée (multi-structure)'
+    },
     metadata: {
       type: DataTypes.JSON,
       allowNull: true,
@@ -98,6 +107,9 @@ module.exports = (sequelize) => {
       },
       {
         fields: ['utilisateur_id']
+      },
+      {
+        fields: ['structure_id']
       }
     ]
   });

@@ -110,6 +110,9 @@ npm run check-triggers        # Diagnostic: check event triggers status
   - `rateLimiter.js` - Rate limiting configurations
   - `validate.js` - Request validation middleware
   - `requestLogger.js` - HTTP request logging
+  - `structureContext.js` - Injects current structure into request (multi-structure)
+  - `groupeFrontendContext.js` - Resolves portal group from domain/slug
+  - `portalResolver.js` - Resolves public portal settings from request
 - `utils/` - `logger.js` (Winston with daily rotation), `auditLogger.js` (structured audit events)
 
 ### Route Structure
@@ -139,6 +142,12 @@ npm run check-triggers        # Diagnostic: check event triggers status
 12. **Frequentation**: `/api/frequentation/questionnaires`, `/api/frequentation/enregistrements`, `/api/frequentation/config` - Visitor counting and tablet PWA configuration
 
 13. **Reservations**: `/api/reservations` - Article reservation queue management
+
+14. **Multi-Structure** (V0.9):
+    - `/api/organisations` - Organisation CRUD
+    - `/api/structures` - Structure CRUD with user access management
+    - `/api/groupes-frontend` - Portal groupings
+    - `/api/parametres/structure-connecteurs` - Email/SMS connector overrides per structure
 
 ### Frontend (frontend/)
 
@@ -175,6 +184,14 @@ MySQL with Sequelize ORM. Key model groups:
 - **Loan Limits**: `LimiteEmprunt` - Configurable loan limits per user type/status
 - **Frequentation**: `QuestionnaireFrequentation`, `EnregistrementFrequentation`, `CommuneFavorite`, `ApiKey`, `ApiKeyQuestionnaire` - Visitor counting system with tablet PWA
 - **Reservations**: `Reservation` - Article reservation queue system
+- **Multi-Structure** (V0.9):
+  - `Organisation` - Parent entity (e.g., "Foyer Culturel")
+  - `Structure` - Operational unit (e.g., "Bibliothèque", "Ludothèque") with its own collections, memberships, and staff
+  - `GroupeFrontend` - Portal grouping for shared public websites
+  - `GroupeFrontendStructure` - Junction table for portal-structure associations
+  - `UtilisateurStructure` - User access per structure with role override
+  - `ParametresFrontStructure` - Frontend settings per structure
+  - `StructureConnecteurCategorie`, `StructureConnecteurEvenement` - Email/SMS connector overrides per category/event
 
 **Terminology Note**: The codebase uses "utilisateur" internally for the user model. The API route `/api/adherents` is maintained as an alias for `/api/utilisateurs` for backward compatibility. Frontend labels use "usager" (member) for the public-facing portal.
 
@@ -270,6 +287,34 @@ When adding a new collection module:
 3. Define all associations in `models/index.js`
 4. Create migration in `database/migrations/add[Module]Normalization.js`
 
+## Multi-Structure Architecture (V0.9)
+
+The application supports multiple operational structures under a parent organisation:
+
+```
+Organisation (e.g., "Foyer Culturel de Sciez")
+├── Structure: Bibliothèque
+│   ├── Sites (locations)
+│   ├── Collections (jeux, livres, films, disques)
+│   ├── Cotisations (membership fees)
+│   ├── Staff (with structure-specific roles)
+│   └── Email/SMS connectors
+├── Structure: Ludothèque
+│   ├── Sites
+│   ├── Collections
+│   └── ...
+└── GroupeFrontend (shared portal)
+    └── Links to one or more structures
+```
+
+**Key concepts**:
+- Each `Structure` has its own collections, memberships, and staff access
+- `UtilisateurStructure` grants users access to specific structures with optional role override
+- `GroupeFrontend` allows multiple structures to share a single public portal
+- `StructureConnecteurCategorie/Evenement` override email/SMS settings per structure
+- Articles (jeux, livres, etc.) have a `structure_id` foreign key
+- Filtering by structure is applied via `structureContext` middleware
+
 ## Test Structure
 
 Tests are located in `tests/unit/` with the following organization:
@@ -284,7 +329,7 @@ Jest configuration in `jest.config.js`:
 
 ## Migration System
 
-The project uses a custom migration runner (`database/migrate.js`) that tracks executed migrations in a `sequelize_migrations` table. Migrations are JavaScript files in `database/migrations/` that export `up()` and optionally `down()` functions.
+The project uses a custom migration runner (`database/migrate.js`) that tracks executed migrations in a `migrations` table. Migrations are JavaScript files in `database/migrations/` that export `up()` and optionally `down()` functions.
 
 **Migration file pattern**:
 ```javascript
@@ -307,6 +352,8 @@ module.exports = { up, down };
 ```
 
 Migrations should be idempotent (check before creating) to allow re-running safely.
+
+**Migration naming**: Use date prefix `YYYYMMDD_` for migrations with dependencies to ensure correct execution order (alphabetical sort). Example: `20241218_addStructures.js` runs before `20241220_add_parametres_portail.js`.
 
 **Admin UI**: Migrations can also be managed via the admin interface at `Paramètres > Migrations`. The page shows:
 - All migrations with their status (executed/pending)

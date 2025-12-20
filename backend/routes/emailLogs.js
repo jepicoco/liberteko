@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const emailLogController = require('../controllers/emailLogController');
 const { verifyToken } = require('../middleware/auth');
+const { structureContext } = require('../middleware/structureContext');
 
 // Toutes les routes nécessitent une authentification
 router.use(verifyToken);
@@ -10,24 +11,27 @@ router.use(verifyToken);
  * @route   GET /api/email-logs
  * @desc    Récupérer tous les logs d'emails avec filtres et pagination
  * @query   statut, template_code, adherent_id, date_debut, date_fin, page, limit
+ * @header  X-Structure-Id (optionnel, filtre par structure)
  * @access  Private
  */
-router.get('/', emailLogController.getAllEmailLogs);
+router.get('/', structureContext(), emailLogController.getAllEmailLogs);
 
 /**
  * @route   GET /api/email-logs/statistics
  * @desc    Récupérer les statistiques des emails envoyés
  * @query   date_debut, date_fin
+ * @header  X-Structure-Id (optionnel, filtre par structure)
  * @access  Private
  */
-router.get('/statistics', emailLogController.getEmailStatistics);
+router.get('/statistics', structureContext(), emailLogController.getEmailStatistics);
 
 /**
  * @route   GET /api/email-logs/templates
  * @desc    Récupérer la liste des templates utilisés
+ * @header  X-Structure-Id (optionnel, filtre par structure)
  * @access  Private
  */
-router.get('/templates', emailLogController.getTemplatesList);
+router.get('/templates', structureContext(), emailLogController.getTemplatesList);
 
 /**
  * @route   GET /api/email-logs/:id
@@ -40,8 +44,9 @@ router.get('/:id', emailLogController.getEmailLogById);
  * @route   POST /api/email-logs/purge
  * @desc    Supprimer les anciens logs d'emails
  * @body    { jours: 90 }
+ * @header  X-Structure-Id (optionnel, filtre par structure)
  * @access  Private
  */
-router.post('/purge', emailLogController.purgeOldLogs);
+router.post('/purge', structureContext(), emailLogController.purgeOldLogs);
 
 module.exports = router;

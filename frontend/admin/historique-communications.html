@@ -116,9 +116,21 @@
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-body">
                         <div class="row g-3 align-items-end">
-                            <div class="col-md-3">
+                            <div class="col-md-2" id="filter-structure-container">
+                                <label class="form-label">Structure</label>
+                                <select class="form-select" id="filter-structure" onchange="onStructureFilterChange()">
+                                    <option value="">Toutes les structures</option>
+                                    <!-- Populated by JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-2">
                                 <label class="form-label">Destinataire</label>
-                                <input type="text" class="form-control" id="filter-destinataire" placeholder="Email, telephone ou nom..." onkeyup="if(event.key==='Enter') loadLogs(1)">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="filter-destinataire" placeholder="Email, tel, nom...">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="loadLogs(1)">
+                                        <i class="bi bi-search"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Statut</label>
@@ -138,16 +150,16 @@
                                     <!-- Populated by JavaScript -->
                                 </select>
                             </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Date debut</label>
-                                <input type="date" class="form-control" id="filter-date-debut" onchange="loadLogs(1)">
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Date fin</label>
-                                <input type="date" class="form-control" id="filter-date-fin" onchange="loadLogs(1)">
+                            <div class="col-md-3">
+                                <label class="form-label">Plage de dates</label>
+                                <div class="input-group">
+                                    <input type="date" class="form-control" id="filter-date-debut" onchange="loadLogs(1)" title="Date debut">
+                                    <span class="input-group-text"><i class="bi bi-arrow-right"></i></span>
+                                    <input type="date" class="form-control" id="filter-date-fin" onchange="loadLogs(1)" title="Date fin">
+                                </div>
                             </div>
                             <div class="col-md-1">
-                                <button class="btn btn-secondary w-100" onclick="resetFilters()" title="Reinitialiser">
+                                <button class="btn btn-secondary w-100" onclick="resetFilters()" title="Reinitialiser les filtres">
                                     <i class="bi bi-arrow-counterclockwise"></i>
                                 </button>
                             </div>

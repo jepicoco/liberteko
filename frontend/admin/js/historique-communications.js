@@ -11,12 +11,108 @@ const logsPerPage = 50;
 let emailStats = null;
 let smsStats = null;
 
+// Filtre structure local (independant du selecteur global)
+let localStructureFilter = null;
+
 /**
  * Verifie si l'utilisateur est administrateur
  */
 function isAdmin() {
   const userRole = localStorage.getItem('userRole') || 'usager';
   return userRole === 'administrateur';
+}
+
+/**
+ * Charge la liste des structures pour le filtre
+ */
+async function loadStructuresFilter() {
+  try {
+    const select = document.getElementById('filter-structure');
+    if (!select) return;
+
+    // Charger toutes les structures accessibles
+    const structures = await apiRequest('/structures');
+
+    // Vider et repeupler le select
+    select.innerHTML = '<option value="">Toutes les structures</option>';
+
+    if (structures && structures.length > 0) {
+      structures.forEach(structure => {
+        const option = document.createElement('option');
+        option.value = structure.id;
+        option.textContent = structure.nom;
+        select.appendChild(option);
+      });
+      // Afficher le filtre
+      document.getElementById('filter-structure-container').style.display = 'block';
+
+      // Synchroniser avec la structure globale si selectionnee
+      syncStructureFilterWithGlobal();
+    } else {
+      // Cacher le filtre si pas de structures
+      document.getElementById('filter-structure-container').style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Erreur chargement structures:', error);
+    document.getElementById('filter-structure-container').style.display = 'none';
+  }
+}
+
+/**
+ * Synchronise le filtre structure avec le selecteur global
+ */
+function syncStructureFilterWithGlobal() {
+  const select = document.getElementById('filter-structure');
+  if (!select) return;
+
+  // Utiliser la structure globale courante
+  const globalStructureId = window.CURRENT_STRUCTURE_ID || (typeof getCurrentStructureId === 'function' ? getCurrentStructureId() : null);
+
+  if (globalStructureId) {
+    select.value = globalStructureId;
+    localStructureFilter = parseInt(globalStructureId);
+  } else {
+    select.value = '';
+    localStructureFilter = null;
+  }
+}
+
+/**
+ * Gere le changement de filtre structure
+ */
+function onStructureFilterChange() {
+  const select = document.getElementById('filter-structure');
+  localStructureFilter = select.value ? parseInt(select.value) : null;
+
+  // Invalider le cache des statistiques
+  emailStats = null;
+  smsStats = null;
+
+  // Recharger toutes les donnees
+  loadAllStatistics();
+  loadLogs(1);
+  loadProvidersFilter();
+}
+
+/**
+ * Wrapper pour apiRequest avec structure locale
+ * Utilise le filtre structure local au lieu du selecteur global
+ */
+async function apiRequestWithStructure(endpoint, options = {}) {
+  // Sauvegarder la valeur globale actuelle
+  const originalGetCurrentStructureId = window.getCurrentStructureId;
+
+  // Remplacer temporairement pour utiliser le filtre local
+  if (localStructureFilter !== null) {
+    window.getCurrentStructureId = () => localStructureFilter;
+  }
+
+  try {
+    return await apiRequest(endpoint, options);
+  } finally {
+    // Restaurer la fonction originale
+    window.getCurrentStructureId = originalGetCurrentStructureId;
+  }
 }
 
 /**
@@ -36,6 +132,9 @@ function initCommunicationsPage() {
     }
   }
 
+  // Charger les structures pour le filtre
+  loadStructuresFilter();
+
   // Charger les stats et les logs
   loadAllStatistics();
   loadLogs(1);
@@ -54,6 +153,31 @@ function initCommunicationsPage() {
   if (form) {
     form.addEventListener('submit', handlePurgeSubmit);
   }
+
+  // Event listener pour le filtre destinataire (Enter key)
+  const destinataireInput = document.getElementById('filter-destinataire');
+  if (destinataireInput) {
+    destinataireInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        loadLogs(1);
+      }
+    });
+  }
+
+  // Recharger au changement de structure globale
+  window.addEventListener('structureChanged', () => {
+    // Synchroniser le filtre avec la nouvelle structure globale
+    syncStructureFilterWithGlobal();
+
+    // Invalider le cache des statistiques
+    emailStats = null;
+    smsStats = null;
+
+    // Recharger toutes les donnees
+    loadAllStatistics();
+    loadLogs(1);
+    loadProvidersFilter();
+  });
 }
 
 /**
@@ -84,10 +208,10 @@ function switchTab(type) {
  */
 async function loadAllStatistics() {
   try {
-    // Charger les deux en parallele
+    // Charger les deux en parallele (avec filtre structure local)
     const [emailData, smsData] = await Promise.all([
-      apiRequest('/email-logs/statistics').catch(() => null),
-      apiRequest('/sms-logs/statistics').catch(() => null)
+      apiRequestWithStructure('/email-logs/statistics').catch(() => null),
+      apiRequestWithStructure('/sms-logs/statistics').catch(() => null)
     ]);
 
     emailStats = emailData;
@@ -318,26 +442,36 @@ async function loadLogs(page = 1) {
   const dateDebut = document.getElementById('filter-date-debut')?.value || '';
   const dateFin = document.getElementById('filter-date-fin')?.value || '';
 
+  // Detecter si des filtres sont actifs (incluant le filtre structure local)
+  const hasFilters = destinataire || statut || provider || dateDebut || dateFin || localStructureFilter;
+
   try {
     let allLogs = [];
     let totalItems = 0;
+    let emailTotal = 0;
+    let smsTotal = 0;
 
-    if (currentType === 'tous' || currentType === 'email') {
+    // Statuts specifiques aux SMS (ne pas charger les emails pour ces statuts)
+    const smsOnlyStatuts = ['delivre', 'echec_livraison'];
+    const shouldLoadEmails = (currentType === 'tous' || currentType === 'email') && !smsOnlyStatuts.includes(statut);
+
+    if (shouldLoadEmails) {
       const emailParams = new URLSearchParams({
         page: currentPage,
         limit: currentType === 'tous' ? Math.floor(logsPerPage / 2) : logsPerPage
       });
       if (destinataire) emailParams.append('destinataire', destinataire);
-      if (statut && !['delivre', 'echec_livraison'].includes(statut)) emailParams.append('statut', statut);
+      if (statut) emailParams.append('statut', statut);
       if (dateDebut) emailParams.append('date_debut', dateDebut);
       if (dateFin) emailParams.append('date_fin', dateFin);
 
       try {
-        const emailData = await apiRequest(`/email-logs?${emailParams.toString()}`);
+        const emailData = await apiRequestWithStructure(`/email-logs?${emailParams.toString()}`);
         const emailLogs = (emailData.emailLogs || []).map(log => ({ ...log, _type: 'email' }));
         allLogs = allLogs.concat(emailLogs);
+        emailTotal = emailData.pagination?.total || 0;
         if (currentType === 'email') {
-          totalItems = emailData.pagination?.total || 0;
+          totalItems = emailTotal;
         }
       } catch (e) {
         console.warn('Erreur chargement emails:', e);
@@ -356,11 +490,12 @@ async function loadLogs(page = 1) {
       if (dateFin) smsParams.append('date_fin', dateFin);
 
       try {
-        const smsData = await apiRequest(`/sms-logs?${smsParams.toString()}`);
+        const smsData = await apiRequestWithStructure(`/sms-logs?${smsParams.toString()}`);
         const smsLogs = (smsData.smsLogs || []).map(log => ({ ...log, _type: 'sms' }));
         allLogs = allLogs.concat(smsLogs);
+        smsTotal = smsData.pagination?.total || 0;
         if (currentType === 'sms') {
-          totalItems = smsData.pagination?.total || 0;
+          totalItems = smsTotal;
         }
       } catch (e) {
         console.warn('Erreur chargement SMS:', e);
@@ -373,11 +508,22 @@ async function loadLogs(page = 1) {
     // Pour l'onglet "tous", limiter au nombre de logs par page
     if (currentType === 'tous') {
       allLogs = allLogs.slice(0, logsPerPage);
-      totalItems = (emailStats?.statistiquesGenerales?.total || 0) + (smsStats?.statistiquesGenerales?.total || 0);
+      // Utiliser les totaux filtres si des filtres sont actifs, sinon les stats globales
+      if (hasFilters) {
+        totalItems = emailTotal + smsTotal;
+      } else {
+        totalItems = (emailStats?.statistiquesGenerales?.total || 0) + (smsStats?.statistiquesGenerales?.total || 0);
+      }
     }
 
     displayLogs(allLogs);
-    displayPagination({ page: currentPage, total: totalItems, limit: logsPerPage, totalPages: Math.ceil(totalItems / logsPerPage) });
+
+    // Masquer la pagination si aucun resultat
+    if (allLogs.length === 0) {
+      document.getElementById('logs-pagination').innerHTML = '';
+    } else {
+      displayPagination({ page: currentPage, total: totalItems, limit: logsPerPage, totalPages: Math.ceil(totalItems / logsPerPage) });
+    }
 
   } catch (error) {
     console.error('Erreur chargement logs:', error);
@@ -768,7 +914,7 @@ function buildSmsDetailsHtml(log) {
  */
 async function loadProvidersFilter() {
   try {
-    const providers = await apiRequest('/sms-logs/providers');
+    const providers = await apiRequestWithStructure('/sms-logs/providers');
 
     const select = document.getElementById('filter-provider');
     if (!select) return;
@@ -792,12 +938,22 @@ async function loadProvidersFilter() {
  * Reinitialise les filtres
  */
 function resetFilters() {
+  document.getElementById('filter-structure').value = '';
   document.getElementById('filter-destinataire').value = '';
   document.getElementById('filter-statut').value = '';
   document.getElementById('filter-provider').value = '';
   document.getElementById('filter-date-debut').value = '';
   document.getElementById('filter-date-fin').value = '';
+
+  // Reset le filtre structure local
+  localStructureFilter = null;
+
+  // Invalider le cache et recharger
+  emailStats = null;
+  smsStats = null;
+  loadAllStatistics();
   loadLogs(1);
+  loadProvidersFilter();
 }
 
 /**
@@ -854,7 +1010,7 @@ async function handlePurgeSubmit(e) {
 
     if (type === 'tous' || type === 'email') {
       try {
-        const emailResult = await apiRequest('/email-logs/purge', {
+        const emailResult = await apiRequestWithStructure('/email-logs/purge', {
           method: 'POST',
           body: JSON.stringify({ jours })
         });
@@ -866,7 +1022,7 @@ async function handlePurgeSubmit(e) {
 
     if (type === 'tous' || type === 'sms') {
       try {
-        const smsResult = await apiRequest('/sms-logs/purge', {
+        const smsResult = await apiRequestWithStructure('/sms-logs/purge', {
           method: 'POST',
           body: JSON.stringify({ jours })
         });

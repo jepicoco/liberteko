@@ -61,8 +61,8 @@ router.delete('/themes/:code/files/:type/:filename', verifyToken, isAdmin(), the
 // Routes pour les modules actifs
 // ============================================
 
-// Récupérer les modules actifs (pour le frontend - gestionnaire+)
-router.get('/modules-actifs', verifyToken, isGestionnaire(), modulesActifsController.getActifs);
+// Récupérer les modules actifs (pour le frontend - benevole+)
+router.get('/modules-actifs', verifyToken, modulesActifsController.getActifs);
 
 // Récupérer tous les modules avec détails (benevole+, pour les couleurs du menu)
 router.get('/modules-actifs/all', verifyToken, modulesActifsController.getAll);
@@ -143,10 +143,10 @@ router.patch('/modes-paiement/:id/toggle', verifyToken, isAdmin(), modesPaiement
 // Routes pour la gestion des utilisateurs
 // ============================================
 
-// Récupérer la liste des utilisateurs (admin et gestionnaire)
+// Récupérer la liste des utilisateurs avec leurs accès structure (gestionnaire+)
 router.get('/utilisateurs', verifyToken, isGestionnaire(), parametresController.getUtilisateurs);
 
-// Changer le rôle d'un utilisateur (admin seulement)
+// Changer le rôle global d'un utilisateur (admin seulement)
 router.put('/utilisateurs/:id/role', verifyToken, isAdmin(), parametresController.changerRole);
 
 // Réinitialiser le mot de passe d'un utilisateur (admin seulement)
@@ -154,6 +154,25 @@ router.post('/utilisateurs/:id/reset-password', verifyToken, isAdmin(), parametr
 
 // Récupérer la liste des rôles disponibles
 router.get('/roles', verifyToken, parametresController.getRoles);
+
+// ============================================
+// Routes pour les accès structure des utilisateurs
+// ============================================
+
+// Récupérer les structures accessibles par l'utilisateur connecté
+router.get('/mes-structures', verifyToken, parametresController.getMesStructures);
+
+// Récupérer les structures auxquelles un utilisateur a accès (gestionnaire+)
+router.get('/utilisateurs/:id/structures', verifyToken, isGestionnaire(), parametresController.getUtilisateurStructures);
+
+// Ajouter un accès structure à un utilisateur (gestionnaire+ de la structure)
+router.post('/utilisateurs/:id/structures', verifyToken, isGestionnaire(), parametresController.addUtilisateurStructure);
+
+// Modifier un accès structure d'un utilisateur (gestionnaire+ de la structure)
+router.put('/utilisateurs/:id/structures/:structureId', verifyToken, isGestionnaire(), parametresController.updateUtilisateurStructure);
+
+// Supprimer un accès structure d'un utilisateur (gestionnaire+ de la structure)
+router.delete('/utilisateurs/:id/structures/:structureId', verifyToken, isGestionnaire(), parametresController.deleteUtilisateurStructure);
 
 // ============================================
 // Routes pour les codes de réduction

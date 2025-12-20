@@ -133,7 +133,7 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: null,
-      comment: 'Liste des modules autorises: ludotheque, bibliotheque, filmotheque, discotheque. NULL = tous les modules'
+      comment: 'DEPRECATED: Utiliser Structure.modules_actifs + UtilisateurStructure. Liste des modules autorises au niveau utilisateur. NULL = tous les modules'
     },
     password_reset_token: {
       type: DataTypes.STRING(255),
@@ -309,6 +309,7 @@ module.exports = (sequelize) => {
   Utilisateur.getDefaultAdhesionEndDate = calculateDefaultAdhesionEndDate;
 
   /**
+   * @deprecated Utiliser Structure.hasModule() avec le contexte de structure
    * Check if user has access to a specific module
    * Admin has access to all modules
    * NULL or empty modules_autorises = access to all modules (permissive)
@@ -327,6 +328,7 @@ module.exports = (sequelize) => {
   };
 
   /**
+   * @deprecated Utiliser Structure.getModulesActifs() avec le contexte de structure
    * Get the list of allowed modules for this user
    * @returns {Array<string>|null} - Array of module codes or null for all modules
    */

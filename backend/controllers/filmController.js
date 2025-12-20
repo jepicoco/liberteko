@@ -60,6 +60,11 @@ exports.getAll = async (req, res) => {
     // Build where clause
     const where = {};
 
+    // Filtrer par structure si contexte present
+    if (req.structureId) {
+      where.structure_id = req.structureId;
+    }
+
     if (search) {
       where[Op.or] = [
         { titre: { [Op.like]: `%${search}%` } },
@@ -185,8 +190,11 @@ exports.create = async (req, res) => {
       ...filmData
     } = req.body;
 
-    // Create the film
-    const film = await Film.create(filmData, { transaction: t });
+    // Create the film avec structure_id
+    const film = await Film.create({
+      ...filmData,
+      structure_id: req.structureId || null
+    }, { transaction: t });
 
     // Add associations
     if (genres?.length) {

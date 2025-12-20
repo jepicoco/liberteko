@@ -109,6 +109,13 @@ const creerCle = async (req, res) => {
 
     logger.info(`Nouvelle cle API creee: ${nom} (${result.apiKey.key_prefix})`);
 
+    // SECURITY: Prevent caching of sensitive API key response
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     res.status(201).json({
       success: true,
       message: 'Cle API creee avec succes',

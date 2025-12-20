@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const barcodeController = require('../controllers/barcodeController');
 const { verifyToken } = require('../middleware/auth');
+const { structureContext } = require('../middleware/structureContext');
 
 /**
  * @route   GET /api/barcodes/adherent/:id/image
@@ -58,7 +59,7 @@ router.get('/disque/:id/label', verifyToken, barcodeController.getDisqueLabel);
  * @access  Private
  * @body    { code: "ADH00000001" }
  */
-router.post('/scan', verifyToken, barcodeController.scanBarcode);
+router.post('/scan', verifyToken, structureContext(), barcodeController.scanBarcode);
 
 /**
  * @route   POST /api/barcodes/adherents/batch
