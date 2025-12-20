@@ -14,22 +14,41 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const { getUserAllowedModules, hasModuleAccess, hasRoleLevel, MODULES, MODULE_MAPPING } = require('../middleware/checkRole');
+const { ROUTE_TO_MODULE } = require('../middleware/checkStructureModule');
 
 /**
- * Obtenir les modules accessibles pour les stats selon l'utilisateur
+ * Obtenir les modules accessibles pour les stats selon l'utilisateur ET la structure
  * @param {Object} user - Utilisateur connecte
+ * @param {Object} structure - Structure courante (optionnel, depuis req.structure)
  * @param {Array} requestedModules - Modules demandes (optionnel)
  * @returns {Array} Liste des modules accessibles
  */
-const getAccessibleModules = (user, requestedModules = null) => {
-  const allowedModules = getUserAllowedModules(user);
+const getAccessibleModules = (user, structure = null, requestedModules = null) => {
+  let allowedModules = getUserAllowedModules(user);
 
-  // Si gestionnaire+ ou admin, tous les modules sont accessibles
+  // Si gestionnaire+ ou admin, tous les modules utilisateur sont accessibles
   if (allowedModules === null) {
-    return requestedModules || MODULES;
+    allowedModules = [...MODULES];
   }
 
-  // Sinon, filtrer selon les modules autorises
+  // Si une structure est specifiee, filtrer par ses modules actifs
+  if (structure) {
+    // Recuperer modules_actifs (methode ou propriete directe)
+    const structureModules = typeof structure.getModulesActifs === 'function'
+      ? structure.getModulesActifs()
+      : (structure.modules_actifs || []);
+
+    // Si modules_actifs est null ou vide, tous les modules sont autorises (defaut)
+    if (structureModules && structureModules.length > 0) {
+      // Convertir les codes route (jeux) en codes module (ludotheque)
+      const structureModuleCodes = structureModules.map(code => ROUTE_TO_MODULE[code] || code);
+      // Intersection avec les modules utilisateur
+      allowedModules = allowedModules.filter(m => structureModuleCodes.includes(m));
+    }
+    // Si structureModules est vide/null, on garde tous les modules (compatibilite ascendante)
+  }
+
+  // Si des modules specifiques sont demandes, filtrer
   if (requestedModules) {
     return requestedModules.filter(m => allowedModules.includes(m));
   }
@@ -68,11 +87,12 @@ const buildModuleWhereClause = (modules) => {
 const getDashboardStats = async (req, res) => {
   try {
     const user = req.user;
+    const structure = req.structure || null;
     const requestedModules = req.query.modules
       ? req.query.modules.split(',').filter(m => MODULES.includes(m))
       : null;
 
-    const accessibleModules = getAccessibleModules(user, requestedModules);
+    const accessibleModules = getAccessibleModules(user, structure, requestedModules);
 
     // Stats globales utilisateurs (visible par tous)
     const utilisateursStats = await Utilisateur.findAll({
@@ -765,14 +785,22 @@ const getModuleLibelle = (moduleCode) => {
 /**
  * Get items that have never been borrowed (for weeding/desherbage)
  * GET /api/stats/never-borrowed?module=ludotheque&limit=10&thematique=5&emplacement=12
+ * Header X-Structure-Id pour filtrer par structure
  */
 const getNeverBorrowed = async (req, res) => {
   try {
     const { module: moduleCode = 'ludotheque', limit = 100, thematique, emplacement } = req.query;
+    const structure = req.structure || null;
 
-    // Verifier l'acces au module
-    if (!hasModuleAccess(req.user, moduleCode)) {
-      return res.status(403).json({ error: 'Access denied to this module' });
+    // Verifier l'acces au module (utilisateur + structure)
+    const accessibleModules = getAccessibleModules(req.user, structure);
+    if (!accessibleModules.includes(moduleCode)) {
+      return res.status(403).json({
+        error: 'Access denied to this module',
+        message: structure
+          ? `Le module ${moduleCode} n'est pas accessible pour cette structure`
+          : `Vous n'avez pas acces au module ${moduleCode}`
+      });
     }
 
     const modelMapping = {
@@ -810,6 +838,11 @@ const getNeverBorrowed = async (req, res) => {
       where[config.emplacementField] = parseInt(emplacement);
     }
 
+    // Filtre par structure si specifiee
+    if (structure) {
+      where.structure_id = structure.id;
+    }
+
     // Trouver les items qui n'ont jamais ete empruntes
     const items = await config.model.findAll({
       where,
@@ -821,7 +854,12 @@ const getNeverBorrowed = async (req, res) => {
     // Compter le total
     const total = await config.model.count({ where });
 
-    res.json({ items, total, module: moduleCode });
+    res.json({
+      items,
+      total,
+      module: moduleCode,
+      structure_id: structure?.id || null
+    });
   } catch (error) {
     console.error('Get never borrowed error:', error);
     res.status(500).json({ error: 'Server error', message: error.message });

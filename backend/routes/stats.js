@@ -11,14 +11,16 @@ const router = express.Router();
 const statsController = require('../controllers/statsController');
 const { verifyToken } = require('../middleware/auth');
 const { isBenevole, isComptable } = require('../middleware/checkRole');
+const { structureContext } = require('../middleware/structureContext');
 
 /**
  * @route   GET /api/stats/dashboard
- * @desc    Get dashboard statistics (multi-modules, filtre par droits)
+ * @desc    Get dashboard statistics (multi-modules, filtre par droits et structure)
  * @access  Private (benevole+)
  * @query   ?modules=ludotheque,bibliotheque (optionnel, filtre par modules autorises)
+ * @header  X-Structure-Id (optionnel, filtre par structure)
  */
-router.get('/dashboard', verifyToken, isBenevole(), statsController.getDashboardStats);
+router.get('/dashboard', verifyToken, isBenevole(), structureContext(), statsController.getDashboardStats);
 
 /**
  * @route   GET /api/stats/popular-items
@@ -80,9 +82,10 @@ router.get('/cotisations', verifyToken, isComptable(), statsController.getCotisa
  * @route   GET /api/stats/never-borrowed
  * @desc    Get items that have never been borrowed (for weeding/desherbage)
  * @access  Private (benevole+)
- * @query   ?module=ludotheque&limit=10
+ * @query   ?module=ludotheque&limit=10&thematique=5&emplacement=12
+ * @header  X-Structure-Id (optionnel, filtre par structure)
  */
-router.get('/never-borrowed', verifyToken, isBenevole(), statsController.getNeverBorrowed);
+router.get('/never-borrowed', verifyToken, isBenevole(), structureContext(), statsController.getNeverBorrowed);
 
 /**
  * @route   GET /api/stats/nouveautes

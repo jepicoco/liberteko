@@ -47,6 +47,14 @@ const MODULE_CONFIG = {
     }
 };
 
+// Mapping des codes collection vers codes module
+const COLLECTION_TO_MODULE = {
+    'jeux': 'ludotheque',
+    'livres': 'bibliotheque',
+    'films': 'filmotheque',
+    'disques': 'discotheque'
+};
+
 // Etat global
 let accessibleModules = [];
 let currentModule = null;
@@ -58,33 +66,121 @@ let emplacementsCache = {};
 let plansCache = {};
 
 // Initialisation
-document.addEventListener('DOMContentLoaded', () => {
-    initTemplate('desherbage');
-    loadAccessibleModules();
+document.addEventListener('DOMContentLoaded', async () => {
+    applyModuleColors();
+    await initTemplate('desherbage');
+    initializeModules();
+
+    // Ecouter les changements de structure pour reinitialiser les modules
+    window.addEventListener('structureChanged', () => {
+        initializeModules();
+    });
 });
 
 /**
- * Charge les modules accessibles depuis l'API
+ * Recupere les modules accessibles pour la structure courante
+ * Pattern copie de emprunts.html
+ * @returns {Array|null} Liste des codes module ou null pour tous
  */
-async function loadAccessibleModules() {
-    try {
-        const data = await apiRequest('/stats/dashboard');
-        accessibleModules = data.accessibleModules || [];
-
-        if (accessibleModules.length === 0) {
-            showAlert('Aucun module accessible', 'warning');
-            return;
+function getStructureModules() {
+    // Si pas de structure selectionnee, verifier si admin global
+    if (!window.CURRENT_STRUCTURE_ID) {
+        // Admin global ou pas de filtre = tous les modules
+        if (window.IS_ADMIN_GLOBAL || !window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+            return null; // null = tous les modules
         }
+        // Pas de structure selectionnee mais pas admin = union de tous les modules accessibles
+        const allModules = new Set();
+        window.USER_STRUCTURES.forEach(s => {
+            if (s.modules_actifs) {
+                s.modules_actifs.forEach(m => allModules.add(COLLECTION_TO_MODULE[m] || m));
+            }
+        });
+        return allModules.size > 0 ? Array.from(allModules) : null;
+    }
 
-        renderModuleTabs();
+    // Structure selectionnee: recuperer ses modules
+    const currentStructure = window.USER_STRUCTURES?.find(s => s.id === window.CURRENT_STRUCTURE_ID);
+    if (!currentStructure || !currentStructure.modules_actifs) {
+        return null;
+    }
 
-        // Activer le premier module
-        if (accessibleModules.length > 0) {
-            switchModule(accessibleModules[0]);
-        }
-    } catch (error) {
-        console.error('Error loading accessible modules:', error);
-        showAlert('Erreur lors du chargement des modules: ' + error.message, 'danger');
+    // Convertir codes collection en codes module
+    return currentStructure.modules_actifs.map(m => COLLECTION_TO_MODULE[m] || m);
+}
+
+/**
+ * Initialise les modules accessibles (pattern emprunts.html)
+ */
+function initializeModules() {
+    const structureModules = getStructureModules();
+
+    if (structureModules === null) {
+        // Acces a tous les modules
+        accessibleModules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
+    } else {
+        // Filtrer aux modules de la structure
+        accessibleModules = structureModules.filter(m =>
+            ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'].includes(m)
+        );
+    }
+
+    if (accessibleModules.length === 0) {
+        // Message si aucun module accessible
+        const currentStructure = typeof getCurrentStructure === 'function' ? getCurrentStructure() : null;
+        const tabsContainer = document.getElementById('moduleTabs');
+        const contentContainer = document.getElementById('moduleTabContent');
+
+        tabsContainer.innerHTML = '';
+        contentContainer.innerHTML = `
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${currentStructure
+                    ? `Aucun module de collection n'est actif pour la structure "<strong>${escapeHtml(currentStructure.nom)}</strong>".
+                       <br><small class="text-muted">Verifiez les modules actifs dans les parametres de la structure.</small>`
+                    : 'Aucun module accessible. Selectionnez une structure ou contactez un administrateur.'}
+            </div>
+        `;
+        return;
+    }
+
+    // Vider les caches
+    thematiquesCache = {};
+    emplacementsCache = {};
+    plansCache = {};
+    currentModule = null;
+    selectedItem = null;
+
+    renderModuleTabs();
+
+    // Activer le premier module
+    if (accessibleModules.length > 0) {
+        switchModule(accessibleModules[0]);
+    }
+}
+
+/**
+ * Applique les couleurs personnalisees des modules (depuis admin-template.js)
+ */
+function applyModuleColors() {
+    const root = document.documentElement;
+
+    // Appliquer les couleurs de fond
+    if (typeof getModuleColors === 'function') {
+        const colors = getModuleColors();
+        if (colors.ludotheque) root.style.setProperty('--color-ludotheque', colors.ludotheque);
+        if (colors.bibliotheque) root.style.setProperty('--color-bibliotheque', colors.bibliotheque);
+        if (colors.filmotheque) root.style.setProperty('--color-filmotheque', colors.filmotheque);
+        if (colors.discotheque) root.style.setProperty('--color-discotheque', colors.discotheque);
+    }
+
+    // Appliquer les couleurs de texte
+    if (typeof getModuleTextColors === 'function') {
+        const textColors = getModuleTextColors();
+        if (textColors.ludotheque) root.style.setProperty('--textcolor-ludotheque', textColors.ludotheque);
+        if (textColors.bibliotheque) root.style.setProperty('--textcolor-bibliotheque', textColors.bibliotheque);
+        if (textColors.filmotheque) root.style.setProperty('--textcolor-filmotheque', textColors.filmotheque);
+        if (textColors.discotheque) root.style.setProperty('--textcolor-discotheque', textColors.discotheque);
     }
 }
 
@@ -98,28 +194,39 @@ function renderModuleTabs() {
     tabsContainer.innerHTML = '';
     contentContainer.innerHTML = '';
 
+    // Mapping des icones Bootstrap pour chaque module
+    const moduleIcons = {
+        ludotheque: 'bi-dice-5',
+        bibliotheque: 'bi-book',
+        filmotheque: 'bi-film',
+        discotheque: 'bi-disc'
+    };
+
     accessibleModules.forEach((moduleCode, index) => {
         const config = MODULE_CONFIG[moduleCode];
         if (!config) return;
 
-        // Creer l'onglet
+        const icon = moduleIcons[moduleCode] || `bi-${config.icon}`;
+
+        // Creer l'onglet avec style module-tab
         const tabLi = document.createElement('li');
         tabLi.className = 'nav-item';
         tabLi.setAttribute('role', 'presentation');
         tabLi.innerHTML = `
-            <button class="nav-link ${index === 0 ? 'active' : ''}"
+            <button class="nav-link module-tab ${moduleCode} ${index === 0 ? 'active' : ''}"
                     id="${moduleCode}-tab"
                     data-bs-toggle="pill"
                     data-bs-target="#${moduleCode}-pane"
                     type="button"
                     role="tab"
                     onclick="switchModule('${moduleCode}')">
-                <i class="bi bi-${config.icon} tab-icon me-2 text-${config.color}"></i>${config.label}
+                <span class="module-icon"><i class="bi ${icon}"></i></span>
+                <span class="d-none d-md-inline">${config.label}</span>
             </button>
         `;
         tabsContainer.appendChild(tabLi);
 
-        // Creer le contenu de l'onglet
+        // Creer le contenu de l'onglet avec bordure coloree
         const tabPane = document.createElement('div');
         tabPane.className = `tab-pane fade ${index === 0 ? 'show active' : ''}`;
         tabPane.id = `${moduleCode}-pane`;
@@ -134,6 +241,7 @@ function renderModuleTabs() {
  */
 function createModuleContent(moduleCode, config) {
     return `
+        <div class="content-panel ${moduleCode} p-3 bg-white rounded">
         <!-- Filtres -->
         <div class="filter-section mb-4">
             <div class="row g-3 align-items-end">
@@ -171,7 +279,7 @@ function createModuleContent(moduleCode, config) {
                     <div class="card-body p-0">
                         <div class="item-list" id="${moduleCode}-list">
                             <div class="text-center p-4">
-                                <div class="spinner-border text-${config.color}" role="status">
+                                <div class="spinner-border" role="status" style="color: var(--color-${moduleCode})">
                                     <span class="visually-hidden">Chargement...</span>
                                 </div>
                             </div>
@@ -192,6 +300,7 @@ function createModuleContent(moduleCode, config) {
                 </div>
             </div>
         </div>
+        </div><!-- /content-panel -->
     `;
 }
 

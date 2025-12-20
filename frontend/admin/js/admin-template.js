@@ -41,7 +41,7 @@ function getUserRole() {
     if (storedRole) return storedRole;
 
     // Sinon extraire du token JWT
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
     if (token) {
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -236,23 +236,30 @@ function purgeModulesCache() {
 
 /**
  * Charge les structures accessibles a l'utilisateur
+ * Utilise /api/parametres/mes-structures pour obtenir les structures avec role effectif
  * @returns {Promise<Array>} Liste des structures
  */
 async function loadUserStructures() {
     try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('authToken');
         if (!token) {
             window.USER_STRUCTURES = [];
+            window.IS_ADMIN_GLOBAL = false;
             return [];
         }
 
-        const response = await fetch('/api/structures', {
+        // Utiliser la route qui retourne les structures avec role effectif
+        const response = await fetch('/api/parametres/mes-structures', {
             headers: { 'Authorization': `Bearer ${token}` }
         });
 
         if (response.ok) {
             const structures = await response.json();
             window.USER_STRUCTURES = Array.isArray(structures) ? structures : [];
+
+            // Detecter si l'utilisateur est admin global (is_admin_global sur toutes les structures)
+            window.IS_ADMIN_GLOBAL = window.USER_STRUCTURES.length > 0 &&
+                window.USER_STRUCTURES.every(s => s.is_admin_global === true);
 
             // Charger la structure selectionnee depuis localStorage
             const savedStructureId = localStorage.getItem('selectedStructureId');
@@ -262,6 +269,9 @@ async function loadUserStructures() {
                 // Si une seule structure, la selectionner automatiquement
                 window.CURRENT_STRUCTURE_ID = window.USER_STRUCTURES[0].id;
                 localStorage.setItem('selectedStructureId', window.CURRENT_STRUCTURE_ID);
+            } else if (window.IS_ADMIN_GLOBAL) {
+                // Admin global: par defaut pas de filtre (toutes structures)
+                window.CURRENT_STRUCTURE_ID = null;
             }
 
             return window.USER_STRUCTURES;
@@ -271,6 +281,7 @@ async function loadUserStructures() {
     }
 
     window.USER_STRUCTURES = [];
+    window.IS_ADMIN_GLOBAL = false;
     return [];
 }
 
@@ -453,20 +464,151 @@ function updateVersionDisplay() {
 }
 
 /**
+ * Génère le bandeau de structure (affiché sous la navbar)
+ */
+function renderStructureBanner() {
+    // Cas 0 structure : bandeau d'alerte pour les admins/gestionnaires
+    if (!window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+        // Afficher seulement si l'utilisateur peut creer des structures
+        if (!isGestionnaireOrAbove()) {
+            return '';
+        }
+        return `
+            <div class="structure-banner structure-banner-warning" style="background-color: #ffc107; color: #212529;">
+                <div class="container-fluid">
+                    <div class="d-flex align-items-center justify-content-between py-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-exclamation-triangle fs-5"></i>
+                            <span class="fw-semibold structure-label">Aucune structure configuree</span>
+                        </div>
+                        <a href="parametres-structures.html" class="btn btn-dark btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            <span class="d-none d-sm-inline">Creer une structure</span>
+                            <span class="d-sm-none">Creer</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <style>
+                .structure-banner {
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    position: relative;
+                    z-index: 1000;
+                }
+                .structure-banner .structure-label {
+                    font-size: 1.1rem;
+                    letter-spacing: 0.02em;
+                }
+            </style>
+        `;
+    }
+
+    // Cas 1 seule structure : pas de bandeau (badge dans navbar suffit)
+    if (window.USER_STRUCTURES.length === 1) {
+        return '';
+    }
+
+    // Cas 2+ structures : bandeau avec selecteur
+    const current = window.USER_STRUCTURES.find(s => s.id === window.CURRENT_STRUCTURE_ID);
+    const bgColor = current ? (current.couleur || '#6c757d') : '#6c757d';
+    const textColor = current ? (current.couleur_texte || '#ffffff') : '#ffffff';
+    const icon = current ? (current.icone || 'building') : 'collection';
+    const label = current ? current.nom : 'Toutes les structures';
+
+    // Générer les options du sélecteur
+    const options = `
+        <option value="" ${!window.CURRENT_STRUCTURE_ID ? 'selected' : ''}>
+            Toutes les structures
+        </option>
+        ${window.USER_STRUCTURES.map(s => `
+            <option value="${s.id}"
+                    ${s.id === window.CURRENT_STRUCTURE_ID ? 'selected' : ''}
+                    data-color="${s.couleur || '#6c757d'}"
+                    data-icon="${s.icone || 'building'}">
+                ${escapeHtml(s.nom)}
+            </option>
+        `).join('')}
+    `;
+
+    return `
+        <div class="structure-banner" style="background-color: ${bgColor}; color: ${textColor};">
+            <div class="container-fluid">
+                <div class="d-flex align-items-center justify-content-between py-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-${icon} fs-5"></i>
+                        <span class="fw-semibold structure-label">${escapeHtml(label)}</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="me-2 d-none d-md-inline opacity-75" style="font-size: 0.85rem;">
+                            <i class="bi bi-funnel"></i> Changer :
+                        </label>
+                        <select class="form-select form-select-sm structure-select"
+                                onchange="setCurrentStructure(this.value ? parseInt(this.value) : null)"
+                                style="width: auto; min-width: 180px; background-color: rgba(255,255,255,0.9); border: none;">
+                            ${options}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <style>
+            .structure-banner {
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                position: relative;
+                z-index: 1000;
+            }
+            .structure-banner .structure-label {
+                font-size: 1.1rem;
+                letter-spacing: 0.02em;
+            }
+            .structure-banner .structure-select {
+                font-weight: 500;
+            }
+            .structure-banner .structure-select:focus {
+                box-shadow: 0 0 0 2px rgba(255,255,255,0.5);
+            }
+            @media (max-width: 576px) {
+                .structure-banner .structure-label {
+                    font-size: 0.95rem;
+                }
+                .structure-banner .structure-select {
+                    min-width: 140px !important;
+                }
+            }
+        </style>
+    `;
+}
+
+/**
  * Génère le HTML de la navbar
  */
 function renderNavbar(activePage) {
-    const structureSelector = renderStructureSelector();
+    const structureBanner = renderStructureBanner();
+
+    // Badge structure dans la navbar (version compacte pour rappel)
+    let structureBadge = '';
+    if (window.USER_STRUCTURES && window.USER_STRUCTURES.length === 1) {
+        const s = window.USER_STRUCTURES[0];
+        structureBadge = `
+            <div class="me-3 d-flex align-items-center">
+                <span class="badge d-flex align-items-center gap-2"
+                      style="background-color: ${s.couleur || '#6c757d'}; color: ${s.couleur_texte || '#ffffff'}; padding: 0.5rem 0.75rem;">
+                    <i class="bi bi-${s.icone || 'building'}"></i>
+                    <span class="d-none d-md-inline">${escapeHtml(s.nom)}</span>
+                </span>
+            </div>
+        `;
+    }
 
     return `
         <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
             <div class="container-fluid">
                 <a class="navbar-brand" href="dashboard.html">
-                    <i class="bi bi-dice-5"></i> Ludothèque
+                    <i class="bi bi-dice-5"></i> Liberteko
                     <small class="opacity-75 ms-2" id="app-version-footer" style="font-size: 0.7rem;"></small>
                 </a>
                 <div class="navbar-nav ms-auto d-flex align-items-center">
-                    ${structureSelector}
+                    ${structureBadge}
                     <a class="nav-link position-relative me-2" href="notifications.html" title="Notifications">
                         <i class="bi bi-bell"></i>
                         <span class="notification-badge d-none position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notification-count">
@@ -478,6 +620,7 @@ function renderNavbar(activePage) {
                 </div>
             </div>
         </nav>
+        ${structureBanner}
         <style>
             .notification-badge {
                 font-size: 0.65rem;
@@ -550,7 +693,9 @@ function renderFloatingButton() {
  * Génère le HTML de la sidebar
  */
 function renderSidebar(activePage) {
-    const menuItems = getMenuItems();
+    // Utiliser getFilteredMenuItems() pour le filtrage par role et modules de structure
+    // Puis appliquer aussi les anciens filtres (isModuleActive) pour retrocompatibilite
+    const menuItems = typeof getFilteredMenuItems === 'function' ? getFilteredMenuItems() : getMenuItems();
 
     // Récupérer le rôle de l'utilisateur depuis le localStorage
     const userRole = localStorage.getItem('userRole') || 'usager';
