@@ -90,7 +90,22 @@ module.exports = (sequelize) => {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: ['jeux', 'livres', 'films', 'disques'],
-      comment: 'Liste des modules actifs pour cette structure'
+      comment: 'Liste des modules actifs pour cette structure',
+      // Getter pour gerer MariaDB qui retourne une string JSON au lieu d'un array
+      get() {
+        const raw = this.getDataValue('modules_actifs');
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string') {
+          try {
+            const parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            return [];
+          }
+        }
+        return [];
+      }
     },
     couleur: {
       type: DataTypes.STRING(7),
