@@ -9,6 +9,19 @@ const { sequelize } = require('../../backend/models');
 async function up() {
   const queryInterface = sequelize.getQueryInterface();
 
+  // Verifier si la table types_tarifs existe
+  const [tables] = await sequelize.query(`
+    SELECT TABLE_NAME
+    FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'types_tarifs'
+  `);
+
+  if (tables.length === 0) {
+    console.log('Table types_tarifs n\'existe pas encore - migration ignoree (sera geree par addTypeTarif)');
+    return;
+  }
+
   // Verifier si la colonne criteres existe deja
   const [columns] = await sequelize.query(`
     SELECT COLUMN_NAME
@@ -81,6 +94,19 @@ async function up() {
 }
 
 async function down() {
+  // Verifier si la table existe
+  const [tables] = await sequelize.query(`
+    SELECT TABLE_NAME
+    FROM INFORMATION_SCHEMA.TABLES
+    WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'types_tarifs'
+  `);
+
+  if (tables.length === 0) {
+    console.log('Table types_tarifs n\'existe pas - rien a supprimer');
+    return;
+  }
+
   // Supprimer la colonne criteres
   await sequelize.query(`
     ALTER TABLE types_tarifs
