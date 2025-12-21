@@ -17,6 +17,16 @@ async function up() {
     return;
   }
 
+  // Vérifier les tables de dépendance
+  const hasReglesReduction = tables.includes('regles_reduction');
+  const hasSectionsAnalytiques = tables.includes('sections_analytiques');
+  const hasRegroupementsAnalytiques = tables.includes('regroupements_analytiques');
+
+  if (!hasReglesReduction) {
+    console.log('Table regles_reduction n\'existe pas - migration ignoree (sera creee par addRegleReduction)');
+    return;
+  }
+
   // Créer la table cotisation_reductions
   await queryInterface.createTable('cotisation_reductions', {
     id: {
@@ -91,27 +101,15 @@ async function up() {
       allowNull: true,
       comment: 'Données contextuelles (QF utilisé, commune, etc.)'
     },
-    // Comptabilité analytique
+    // Comptabilité analytique (FK ajoutées si tables existent)
     section_analytique_id: {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'sections_analytiques',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Section analytique pour la réduction'
     },
     regroupement_analytique_id: {
       type: sequelize.Sequelize.DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'regroupements_analytiques',
-        key: 'id'
-      },
-      onUpdate: 'CASCADE',
-      onDelete: 'SET NULL',
       comment: 'Regroupement analytique pour la réduction'
     },
     created_at: {
@@ -134,6 +132,39 @@ async function up() {
   await queryInterface.addIndex('cotisation_reductions', ['type_source']);
 
   console.log('Index créés');
+
+  // Ajouter les FK conditionnelles pour les tables analytiques
+  if (hasSectionsAnalytiques) {
+    try {
+      await queryInterface.addConstraint('cotisation_reductions', {
+        fields: ['section_analytique_id'],
+        type: 'foreign key',
+        name: 'fk_cotisation_reductions_section',
+        references: { table: 'sections_analytiques', field: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      });
+      console.log('FK section_analytique_id ajoutée');
+    } catch (e) {
+      console.log('FK section_analytique_id non ajoutée:', e.message);
+    }
+  }
+
+  if (hasRegroupementsAnalytiques) {
+    try {
+      await queryInterface.addConstraint('cotisation_reductions', {
+        fields: ['regroupement_analytique_id'],
+        type: 'foreign key',
+        name: 'fk_cotisation_reductions_regroupement',
+        references: { table: 'regroupements_analytiques', field: 'id' },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
+      });
+      console.log('FK regroupement_analytique_id ajoutée');
+    } catch (e) {
+      console.log('FK regroupement_analytique_id non ajoutée:', e.message);
+    }
+  }
 }
 
 async function down() {
