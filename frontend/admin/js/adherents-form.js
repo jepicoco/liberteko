@@ -5,6 +5,238 @@
 // Rôles qui peuvent avoir des restrictions de modules
 const ROLES_AVEC_MODULES = ['agent', 'benevole', 'gestionnaire', 'comptable'];
 
+// Cache des tags disponibles
+let tagsDisponibles = [];
+
+/**
+ * Charge les tags disponibles depuis l'API
+ */
+async function loadTagsDisponibles() {
+  try {
+    const response = await apiAdmin.get('/parametres/tags-utilisateur/actifs');
+    tagsDisponibles = response || [];
+    renderTagsCheckboxes();
+  } catch (error) {
+    console.error('Erreur chargement tags:', error);
+    tagsDisponibles = [];
+    document.getElementById('tagsContainer').innerHTML =
+      '<span class="text-muted small">Aucun tag disponible</span>';
+  }
+}
+
+/**
+ * Affiche les checkboxes de tags avec bouton d'ajout
+ */
+function renderTagsCheckboxes() {
+  const container = document.getElementById('tagsContainer');
+  if (!container) return;
+
+  let html = '';
+
+  if (tagsDisponibles.length === 0) {
+    html = '<span class="text-muted small">Aucun tag disponible</span>';
+  } else {
+    html = tagsDisponibles.map(tag => `
+      <div>
+        <input type="checkbox" class="tag-checkbox" id="tag_${tag.id}" value="${tag.id}">
+        <label for="tag_${tag.id}" class="tag-label" style="--tag-color: ${tag.couleur};">
+          <i class="bi ${tag.icone || 'bi-tag'}"></i>
+          ${escapeHtml(tag.libelle)}
+        </label>
+      </div>
+    `).join('');
+  }
+
+  // Ajouter le bouton "+" pour creer un nouveau tag
+  html += `
+    <div>
+      <button type="button" class="btn btn-outline-secondary btn-sm add-tag-btn" onclick="ouvrirModalNouveauTag()" title="Ajouter un tag">
+        <i class="bi bi-plus-lg"></i>
+      </button>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+/**
+ * Ouvre un modal pour creer rapidement un nouveau tag
+ */
+function ouvrirModalNouveauTag() {
+  // Verifier si le modal existe deja
+  let modal = document.getElementById('modalNouveauTagRapide');
+
+  if (!modal) {
+    // Creer le modal
+    modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'modalNouveauTagRapide';
+    modal.tabIndex = -1;
+    modal.innerHTML = `
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header py-2">
+            <h6 class="modal-title"><i class="bi bi-tag-fill"></i> Nouveau tag</h6>
+            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="nouveauTagLibelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+              <input type="text" class="form-control form-control-sm" id="nouveauTagLibelle" placeholder="Ex: Etudiant" required>
+            </div>
+            <div class="row">
+              <div class="col-6">
+                <label for="nouveauTagCouleur" class="form-label">Couleur</label>
+                <input type="color" class="form-control form-control-sm form-control-color" id="nouveauTagCouleur" value="#6c757d">
+              </div>
+              <div class="col-6">
+                <label for="nouveauTagIcone" class="form-label">Icone</label>
+                <select class="form-select form-select-sm" id="nouveauTagIcone">
+                  <option value="bi-tag">Tag</option>
+                  <option value="bi-person">Personne</option>
+                  <option value="bi-star">Etoile</option>
+                  <option value="bi-heart">Coeur</option>
+                  <option value="bi-award">Badge</option>
+                  <option value="bi-briefcase">Travail</option>
+                  <option value="bi-mortarboard">Etudiant</option>
+                  <option value="bi-cash-stack">Argent</option>
+                  <option value="bi-universal-access">Accessibilite</option>
+                  <option value="bi-people">Famille</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer py-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="creerNouveauTagRapide()">
+              <i class="bi bi-check"></i> Creer
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+
+  // Reset le formulaire
+  document.getElementById('nouveauTagLibelle').value = '';
+  document.getElementById('nouveauTagCouleur').value = '#6c757d';
+  document.getElementById('nouveauTagIcone').value = 'bi-tag';
+
+  // Ouvrir le modal
+  new bootstrap.Modal(modal).show();
+}
+
+/**
+ * Cree un nouveau tag rapidement
+ */
+async function creerNouveauTagRapide() {
+  const libelle = document.getElementById('nouveauTagLibelle').value.trim();
+  const couleur = document.getElementById('nouveauTagCouleur').value;
+  const icone = document.getElementById('nouveauTagIcone').value;
+
+  if (!libelle) {
+    showToast('Le libelle est obligatoire', 'warning');
+    return;
+  }
+
+  // Generer un code a partir du libelle
+  const code = libelle.toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Enlever accents
+    .replace(/[^A-Z0-9]/g, '_')
+    .substring(0, 20);
+
+  try {
+    const response = await apiAdmin.post('/parametres/tags-utilisateur', {
+      code: code,
+      libelle: libelle,
+      couleur: couleur,
+      icone: icone,
+      actif: true
+    });
+
+    // Fermer le modal
+    bootstrap.Modal.getInstance(document.getElementById('modalNouveauTagRapide')).hide();
+
+    showToast('Tag cree avec succes', 'success');
+
+    // Recharger les tags et cocher le nouveau
+    await loadTagsDisponibles();
+
+    // Cocher le nouveau tag
+    if (response && response.id) {
+      const checkbox = document.getElementById(`tag_${response.id}`);
+      if (checkbox) checkbox.checked = true;
+    }
+
+  } catch (error) {
+    console.error('Erreur creation tag:', error);
+    showToast('Erreur: ' + (error.message || 'Impossible de creer le tag'), 'error');
+  }
+}
+
+/**
+ * Escape HTML pour eviter XSS
+ */
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Recupere les IDs des tags selectionnes
+ * @returns {Array} - Tableau des IDs de tags
+ */
+function getSelectedTags() {
+  const selected = [];
+  document.querySelectorAll('.tag-checkbox:checked').forEach(cb => {
+    selected.push(parseInt(cb.value));
+  });
+  return selected;
+}
+
+/**
+ * Definit les tags selectionnes dans le formulaire
+ * @param {Array} tags - Tableau des tags (objets avec id)
+ */
+function setSelectedTags(tags) {
+  // D'abord decocher tous
+  document.querySelectorAll('.tag-checkbox').forEach(cb => {
+    cb.checked = false;
+  });
+
+  // Cocher les tags de l'usager
+  if (tags && Array.isArray(tags)) {
+    tags.forEach(tag => {
+      const tagId = tag.id || tag;
+      const checkbox = document.getElementById(`tag_${tagId}`);
+      if (checkbox) {
+        checkbox.checked = true;
+      }
+    });
+  }
+}
+
+/**
+ * Affiche ou masque les champs de commune de prise en charge
+ */
+function toggleCommunePriseEnCharge() {
+  const checkbox = document.getElementById('commune_prise_en_charge_differente');
+  const fieldsContainer = document.getElementById('communePriseEnChargeFields');
+
+  if (checkbox && fieldsContainer) {
+    fieldsContainer.style.display = checkbox.checked ? 'flex' : 'none';
+
+    // Vider les champs si on décoche
+    if (!checkbox.checked) {
+      document.getElementById('code_postal_prise_en_charge').value = '';
+      document.getElementById('ville_prise_en_charge').value = '';
+    }
+  }
+}
+
 /**
  * Affiche ou masque la section des modules selon le rôle sélectionné
  */
@@ -270,6 +502,14 @@ function openCreateModal() {
   setSelectedModules(null);
   toggleModulesSection();
 
+  // Reinitialiser civilite, tags et commune prise en charge
+  document.getElementById('civilite').value = 'N';
+  setSelectedTags([]);
+  document.getElementById('commune_prise_en_charge_differente').checked = false;
+  document.getElementById('code_postal_prise_en_charge').value = '';
+  document.getElementById('ville_prise_en_charge').value = '';
+  toggleCommunePriseEnCharge();
+
   // Revenir au premier onglet
   const firstTab = new bootstrap.Tab(document.getElementById('tab-infos-btn'));
   firstTab.show();
@@ -312,6 +552,24 @@ async function editAdherent(id) {
     document.getElementById('adhesion_association').checked = adherent.adhesion_association || false;
     document.getElementById('date_adhesion').value = adherent.date_adhesion || '';
     document.getElementById('date_fin_adhesion').value = adherent.date_fin_adhesion || '';
+
+    // Charger civilite et tags
+    document.getElementById('civilite').value = adherent.sexe || 'N';
+    setSelectedTags(adherent.tags || []);
+
+    // Charger commune de prise en charge
+    const cpPriseEnCharge = adherent.code_postal_prise_en_charge || '';
+    const villePriseEnCharge = adherent.ville_prise_en_charge || '';
+    document.getElementById('code_postal_prise_en_charge').value = cpPriseEnCharge;
+    document.getElementById('ville_prise_en_charge').value = villePriseEnCharge;
+    // Si des valeurs existent, cocher la checkbox et afficher les champs
+    if (cpPriseEnCharge || villePriseEnCharge) {
+      document.getElementById('commune_prise_en_charge_differente').checked = true;
+      toggleCommunePriseEnCharge();
+    } else {
+      document.getElementById('commune_prise_en_charge_differente').checked = false;
+      toggleCommunePriseEnCharge();
+    }
 
     // Charger les modules autorisés
     setSelectedModules(adherent.modules_autorises);
@@ -368,6 +626,8 @@ async function submitAdherentForm(event) {
       adresse: document.getElementById('adresse').value || null,
       ville: document.getElementById('ville').value || null,
       code_postal: document.getElementById('code_postal').value || null,
+      code_postal_prise_en_charge: document.getElementById('code_postal_prise_en_charge').value || null,
+      ville_prise_en_charge: document.getElementById('ville_prise_en_charge').value || null,
       date_naissance: document.getElementById('date_naissance').value || null,
       statut: document.getElementById('statut').value,
       role: document.getElementById('role').value,
@@ -376,7 +636,9 @@ async function submitAdherentForm(event) {
       adhesion_association: document.getElementById('adhesion_association').checked,
       date_adhesion: document.getElementById('date_adhesion').value || null,
       date_fin_adhesion: document.getElementById('date_fin_adhesion').value || null,
-      modules_autorises: getSelectedModules()
+      modules_autorises: getSelectedModules(),
+      sexe: document.getElementById('civilite').value,
+      tags: getSelectedTags()
     };
 
     // Mot de passe uniquement si renseigné
@@ -433,6 +695,9 @@ function initAdherentForm() {
       rechercherEtChargerAdherent();
     }
   });
+
+  // Charger les tags disponibles
+  loadTagsDisponibles();
 }
 
 // Initialiser au chargement de la page

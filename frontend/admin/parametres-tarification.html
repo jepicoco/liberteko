@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/admin-style.css">
+  <style>
+    .sub-nav {
+      background: #f8f9fa;
+      padding: 0.75rem 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e9ecef;
+    }
+
+    /* Tabs principaux */
+    .main-tabs .nav-link {
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+    }
+    .main-tabs .nav-link.active {
+      background: #0d6efd;
+      color: white;
+    }
+
+    /* Cotisation card */
+    .cotisation-card {
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .cotisation-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .cotisation-card.inactive {
+      opacity: 0.7;
+      background: #f8f9fa;
+    }
+    .cotisation-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cotisation-header:hover {
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    }
+    .cotisation-header h5 {
+      margin: 0;
+      font-weight: 600;
+    }
+    .cotisation-header .chevron {
+      transition: transform 0.3s;
+    }
+    .cotisation-header.collapsed .chevron {
+      transform: rotate(-90deg);
+    }
+    .cotisation-body {
+      border-top: 1px solid #dee2e6;
+    }
+
+    /* Sub-tabs dans cotisation */
+    .cotisation-tabs .nav-link {
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: #6c757d;
+      padding: 0.75rem 1rem;
+    }
+    .cotisation-tabs .nav-link.active {
+      color: #0d6efd;
+      border-bottom-color: #0d6efd;
+      background: transparent;
+    }
+
+    /* Types de tarifs dans une cotisation */
+    .type-tarif-row {
+      display: flex;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .type-tarif-row:last-child {
+      border-bottom: none;
+    }
+    .type-tarif-label {
+      flex: 1;
+    }
+    .type-tarif-condition {
+      color: #6c757d;
+      font-size: 0.875rem;
+    }
+    .type-tarif-montant {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #198754;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    /* Modificateurs */
+    .modificateur-item {
+      background: white;
+      border: 1px solid #dee2e6;
+      border-left: 4px solid #0d6efd;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      position: relative;
+    }
+    .modificateur-item.inactive {
+      opacity: 0.5;
+      border-left-color: #6c757d;
+    }
+    .modificateur-item .drag-handle {
+      cursor: grab;
+      color: #adb5bd;
+      margin-right: 0.75rem;
+    }
+    .modificateur-ordre {
+      position: absolute;
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #0d6efd;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+    .modificateur-icon {
+      font-size: 1.25rem;
+      margin-right: 0.75rem;
+    }
+    .modificateur-valeur {
+      font-weight: 600;
+      color: #dc3545;
+    }
+
+    /* QF Table dans modificateur */
+    .qf-table {
+      font-size: 0.875rem;
+      margin-top: 0.75rem;
+    }
+    .qf-table th, .qf-table td {
+      padding: 0.5rem;
+      text-align: center;
+    }
+    .qf-table th {
+      background: #f8f9fa;
+    }
+
+    /* Infos periode/calcul */
+    .info-row {
+      display: flex;
+      gap: 2rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e9ecef;
+    }
+    .info-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .info-item i {
+      color: #6c757d;
+    }
+
+    /* Actions buttons */
+    .cotisation-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid #e9ecef;
+    }
+
+    /* Alert ordre */
+    .ordre-alert {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Simulateur modal */
+    .simulation-result {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+    .simulation-step {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed #dee2e6;
+    }
+    .simulation-step:last-child {
+      border-bottom: none;
+    }
+    .simulation-step.final {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: #198754;
+      padding-top: 0.75rem;
+      margin-top: 0.5rem;
+      border-top: 2px solid #198754;
+      border-bottom: none;
+    }
+    .simulation-step.reduction {
+      color: #dc3545;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem;
+      color: #6c757d;
+    }
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 px-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-1">
+              <i class="bi bi-currency-euro text-primary"></i>
+              Gestion des Tarifs
+            </h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item"><a href="parametres.html#comptabilite">Comptabilite</a></li>
+                <li class="breadcrumb-item active">Tarification</li>
+              </ol>
+            </nav>
+          </div>
+          <button class="btn btn-primary" onclick="ouvrirModalNouveauTarif()">
+            <i class="bi bi-plus-lg"></i> Nouveau tarif
+          </button>
+        </div>
+
+        <!-- Tabs principaux -->
+        <ul class="nav nav-pills main-tabs mb-4" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-cotisations">
+              <i class="bi bi-card-checklist"></i> Cotisations
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-prestations">
+              <i class="bi bi-receipt"></i> Prestations ponctuelles
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+          <!-- Tab Cotisations -->
+          <div class="tab-pane fade show active" id="tab-cotisations">
+            <div id="cotisations-list">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 mb-0 text-muted">Chargement des cotisations...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Prestations -->
+          <div class="tab-pane fade" id="tab-prestations">
+            <div class="empty-state">
+              <i class="bi bi-receipt-cutoff"></i>
+              <h5>Prestations ponctuelles</h5>
+              <p class="text-muted">
+                Gerez ici les tarifs pour les activites ponctuelles<br>
+                (animations, ateliers, locations exceptionnelles...)
+              </p>
+              <button class="btn btn-outline-primary" onclick="ouvrirModalNouveauTarif('prestation')">
+                <i class="bi bi-plus"></i> Ajouter une prestation
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- Modal: Nouveau/Modifier Tarif                    -->
+  <!-- ================================================ -->
+  <div class="modal fade" id="modalTarif" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTarifTitle">
+            <i class="bi bi-plus-circle"></i> Nouvelle cotisation
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formTarif">
+            <input type="hidden" id="tarif_id">
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="tarif_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="tarif_libelle" required
+                         placeholder="Ex: Cotisation annuelle 2025">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="tarif_montant" class="form-label">Montant de base <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" id="tarif_montant" required min="0" step="0.01">
+                    <span class="input-group-text">EUR</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="tarif_description" class="form-label">Description</label>
+              <textarea class="form-control" id="tarif_description" rows="2"></textarea>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tarif_periode" class="form-label">Type de periode</label>
+                  <select class="form-select" id="tarif_periode">
+                    <option value="annee_civile">Annee civile (janvier-decembre)</option>
+                    <option value="annee_scolaire">Annee scolaire (septembre-aout)</option>
+                    <option value="date_a_date">Date a date (12 mois glissants)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tarif_calcul" class="form-label">Mode de calcul</label>
+                  <select class="form-select" id="tarif_calcul">
+                    <option value="fixe">Montant fixe</option>
+                    <option value="prorata">Prorata mensuel</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <hr>
+            <h6 class="mb-3"><i class="bi bi-people"></i> Types de tarifs (categories)</h6>
+            <p class="text-muted small">Definissez des montants differents selon l'age de l'usager</p>
+
+            <div id="types-tarifs-container">
+              <!-- Genere dynamiquement -->
+            </div>
+
+            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="ajouterTypeTarif()">
+              <i class="bi bi-plus"></i> Ajouter un type
+            </button>
+
+            <hr>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="tarif_actif" checked>
+                  <label class="form-check-label" for="tarif_actif">Tarif actif</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="tarif_defaut">
+                  <label class="form-check-label" for="tarif_defaut">Tarif par defaut</label>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderTarif()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- Modal: Ajouter/Modifier Modificateur             -->
+  <!-- ================================================ -->
+  <div class="modal fade" id="modalModificateur" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalModificateurTitle">
+            <i class="bi bi-sliders"></i> Ajouter un modificateur
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formModificateur">
+            <input type="hidden" id="modificateur_id">
+            <input type="hidden" id="modificateur_tarif_id">
+
+            <!-- Type de modificateur -->
+            <div class="mb-4">
+              <label class="form-label fw-bold">Type de modificateur</label>
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <input type="radio" class="btn-check" name="mod_source" id="mod_source_commune" value="commune" onchange="afficherConfigModificateur('commune')">
+                  <label class="btn btn-outline-primary w-100 py-3" for="mod_source_commune">
+                    <i class="bi bi-geo-alt d-block fs-4 mb-1"></i>
+                    Commune
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <input type="radio" class="btn-check" name="mod_source" id="mod_source_quotient_familial" value="quotient_familial" onchange="afficherConfigModificateur('quotient_familial')">
+                  <label class="btn btn-outline-info w-100 py-3" for="mod_source_quotient_familial">
+                    <i class="bi bi-graph-up d-block fs-4 mb-1"></i>
+                    Quotient Familial
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <input type="radio" class="btn-check" name="mod_source" id="mod_source_age" value="age" onchange="afficherConfigModificateur('age')">
+                  <label class="btn btn-outline-secondary w-100 py-3" for="mod_source_age">
+                    <i class="bi bi-calendar-event d-block fs-4 mb-1"></i>
+                    Age
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <input type="radio" class="btn-check" name="mod_source" id="mod_source_fidelite" value="fidelite" onchange="afficherConfigModificateur('fidelite')">
+                  <label class="btn btn-outline-warning w-100 py-3" for="mod_source_fidelite">
+                    <i class="bi bi-award d-block fs-4 mb-1"></i>
+                    Fidelite
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <input type="radio" class="btn-check" name="mod_source" id="mod_source_multi_inscriptions" value="multi_inscriptions" onchange="afficherConfigModificateur('multi_inscriptions')">
+                  <label class="btn btn-outline-success w-100 py-3" for="mod_source_multi_inscriptions">
+                    <i class="bi bi-people-fill d-block fs-4 mb-1"></i>
+                    Multi-inscriptions
+                  </label>
+                </div>
+                <div class="col-md-4">
+                  <input type="radio" class="btn-check" name="mod_source" id="mod_source_statut_social" value="statut_social" onchange="afficherConfigModificateur('statut_social')">
+                  <label class="btn btn-outline-danger w-100 py-3" for="mod_source_statut_social">
+                    <i class="bi bi-person-badge d-block fs-4 mb-1"></i>
+                    Statut social
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Informations -->
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="mod_code" class="form-label">Code <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control text-uppercase" id="mod_code" required>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="mod_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="mod_libelle" required
+                         placeholder="Ex: Reduction habitants Sciez">
+                </div>
+              </div>
+            </div>
+
+            <!-- Calcul -->
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="mod_type_calcul" class="form-label">Type de reduction</label>
+                  <select class="form-select" id="mod_type_calcul" onchange="updateModificateurPreview()">
+                    <option value="fixe">Montant fixe (EUR)</option>
+                    <option value="pourcentage">Pourcentage (%)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="mod_valeur" class="form-label">Valeur <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text">-</span>
+                    <input type="number" class="form-control" id="mod_valeur" required min="0" step="0.01"
+                           oninput="updateModificateurPreview()">
+                    <span class="input-group-text" id="mod_valeur_suffix">EUR</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert alert-info small" id="mod_preview">
+              <i class="bi bi-calculator"></i> Sur 100EUR : <span id="mod_preview_text">-0EUR = 100EUR</span>
+            </div>
+
+            <!-- Condition specifique (dynamique) -->
+            <div id="mod_condition_container" style="display: none;">
+              <hr>
+              <div id="mod_condition_content"></div>
+            </div>
+
+            <!-- S'applique a -->
+            <hr>
+            <div class="mb-3">
+              <label class="form-label">S'applique aux types</label>
+              <div id="mod_types_applicable">
+                <!-- Checkboxes generees dynamiquement -->
+              </div>
+            </div>
+
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderModificateur()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- Modal: Simulateur                                -->
+  <!-- ================================================ -->
+  <div class="modal fade" id="modalSimulateur" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-warning">
+          <h5 class="modal-title">
+            <i class="bi bi-calculator-fill"></i> Simulateur de tarif
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formSimulateur">
+            <input type="hidden" id="sim_tarif_id">
+
+            <div class="mb-3">
+              <label for="sim_utilisateur" class="form-label">Usager</label>
+              <select class="form-select" id="sim_utilisateur">
+                <option value="">-- Saisie manuelle --</option>
+              </select>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label for="sim_age" class="form-label">Age</label>
+                <input type="number" class="form-control" id="sim_age" placeholder="Ex: 35" min="0" max="120">
+              </div>
+              <div class="col-6">
+                <label for="sim_qf" class="form-label">Quotient familial</label>
+                <input type="number" class="form-control" id="sim_qf" placeholder="Ex: 650" min="0">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="sim_commune" class="form-label">Commune</label>
+              <select class="form-select" id="sim_commune">
+                <option value="">-- Aucune --</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label for="sim_date" class="form-label">Date de debut</label>
+              <input type="date" class="form-control" id="sim_date">
+            </div>
+
+            <button type="button" class="btn btn-warning w-100" onclick="lancerSimulation()">
+              <i class="bi bi-play-fill"></i> Calculer
+            </button>
+          </form>
+
+          <div id="simulation-result" style="display: none;">
+            <hr>
+            <h6><i class="bi bi-receipt-cutoff"></i> Detail du calcul</h6>
+            <div id="simulation-detail"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- Modal: Configuration QF                          -->
+  <!-- ================================================ -->
+  <div class="modal fade" id="modalQF" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header bg-info text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-graph-up"></i> Configuration Quotient Familial
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Mode de calcul QF</label>
+            <div class="d-flex gap-3">
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="qf_mode" id="qf_mode_remplacement" value="remplacement" checked>
+                <label class="form-check-label" for="qf_mode_remplacement">
+                  <strong>Remplacement</strong>
+                  <small class="d-block text-muted">Le montant QF remplace le tarif de base</small>
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="qf_mode" id="qf_mode_reduction" value="reduction">
+                <label class="form-check-label" for="qf_mode_reduction">
+                  <strong>Reduction</strong>
+                  <small class="d-block text-muted">Le montant QF est soustrait du tarif</small>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <hr>
+
+          <h6 class="mb-3">Tranches et montants par type</h6>
+          <div class="table-responsive">
+            <table class="table table-bordered table-hover" id="qf-table">
+              <thead class="table-light">
+                <tr>
+                  <th>Tranche QF</th>
+                  <!-- Types de tarifs ajoutes dynamiquement -->
+                </tr>
+              </thead>
+              <tbody id="qf-table-body">
+                <!-- Tranches ajoutees dynamiquement -->
+              </tbody>
+            </table>
+          </div>
+
+          <button type="button" class="btn btn-sm btn-outline-primary" onclick="ajouterTrancheQF()">
+            <i class="bi bi-plus"></i> Ajouter une tranche
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-info" onclick="sauvegarderConfigQF()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================================================ -->
+  <!-- Modal: Criteres Type Tarif                       -->
+  <!-- ================================================ -->
+  <div class="modal fade" id="modalCriteres" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-funnel"></i> Criteres d'affichage - <span id="criteres_type_nom"></span>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCriteres">
+            <input type="hidden" id="criteres_type_id">
+
+            <div class="alert alert-info mb-4">
+              <i class="bi bi-info-circle"></i>
+              Les criteres sont cumulatifs (ET logique). Un usager doit correspondre a tous les criteres actifs pour voir ce type de tarif.
+            </div>
+
+            <!-- Critere Age -->
+            <div class="card mb-3">
+              <div class="card-header py-2">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="critere_age_actif" onchange="toggleCritereSection('age')">
+                  <label class="form-check-label fw-bold" for="critere_age_actif">
+                    <i class="bi bi-calendar-event text-secondary"></i> Critere d'age
+                  </label>
+                </div>
+              </div>
+              <div class="card-body" id="critere_age_config" style="display: none;">
+                <div class="row align-items-center">
+                  <div class="col-md-4">
+                    <select class="form-select" id="critere_age_operateur" onchange="toggleCritereAgeInputs()">
+                      <option value="<">Moins de</option>
+                      <option value="<=">Jusqu'a</option>
+                      <option value=">">Plus de</option>
+                      <option value=">=">A partir de</option>
+                      <option value="entre">Entre</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3" id="critere_age_min_col" style="display: none;">
+                    <div class="input-group input-group-sm">
+                      <input type="number" class="form-control" id="critere_age_min" min="0" max="120" placeholder="Min">
+                      <span class="input-group-text">ans</span>
+                    </div>
+                  </div>
+                  <div class="col-md-1 text-center" id="critere_age_et" style="display: none;">et</div>
+                  <div class="col-md-3" id="critere_age_max_col">
+                    <div class="input-group input-group-sm">
+                      <input type="number" class="form-control" id="critere_age_max" min="0" max="120" placeholder="Max">
+                      <span class="input-group-text">ans</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Critere Sexe -->
+            <div class="card mb-3">
+              <div class="card-header py-2">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="critere_sexe_actif" onchange="toggleCritereSection('sexe')">
+                  <label class="form-check-label fw-bold" for="critere_sexe_actif">
+                    <i class="bi bi-gender-ambiguous text-info"></i> Critere de sexe
+                  </label>
+                </div>
+              </div>
+              <div class="card-body" id="critere_sexe_config" style="display: none;">
+                <div class="d-flex gap-4">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="critere_sexe_M" value="M" checked>
+                    <label class="form-check-label" for="critere_sexe_M">Masculin</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="critere_sexe_F" value="F" checked>
+                    <label class="form-check-label" for="critere_sexe_F">Feminin</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="critere_sexe_A" value="A" checked>
+                    <label class="form-check-label" for="critere_sexe_A">Autre</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Critere Commune -->
+            <div class="card mb-3">
+              <div class="card-header py-2">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="critere_commune_actif" onchange="toggleCritereSection('commune')">
+                  <label class="form-check-label fw-bold" for="critere_commune_actif">
+                    <i class="bi bi-geo-alt text-primary"></i> Critere de commune
+                  </label>
+                </div>
+              </div>
+              <div class="card-body" id="critere_commune_config" style="display: none;">
+                <div class="mb-3">
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="critere_commune_type" id="critere_commune_type_communaute" value="communaute" checked onchange="toggleCritereCommuneInputs()">
+                    <label class="form-check-label" for="critere_commune_type_communaute">Communaute de communes</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="critere_commune_type" id="critere_commune_type_liste" value="liste" onchange="toggleCritereCommuneInputs()">
+                    <label class="form-check-label" for="critere_commune_type_liste">Liste de communes</label>
+                  </div>
+                </div>
+                <div id="critere_communaute_select_container">
+                  <select class="form-select" id="critere_communaute_id">
+                    <option value="">-- Selectionnez une communaute --</option>
+                  </select>
+                </div>
+                <div id="critere_communes_liste_container" style="display: none;">
+                  <select class="form-select" id="critere_communes_ids" multiple size="5">
+                  </select>
+                  <small class="text-muted">Maintenez Ctrl pour selectionner plusieurs communes</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Critere Adhesion -->
+            <div class="card mb-3">
+              <div class="card-header py-2">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="critere_adhesion_actif">
+                  <label class="form-check-label fw-bold" for="critere_adhesion_actif">
+                    <i class="bi bi-building text-success"></i> Adhesion association active requise
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Critere Tags -->
+            <div class="card mb-3">
+              <div class="card-header py-2">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" id="critere_tags_actif" onchange="toggleCritereSection('tags')">
+                  <label class="form-check-label fw-bold" for="critere_tags_actif">
+                    <i class="bi bi-tags text-warning"></i> Critere de tags (au moins un)
+                  </label>
+                </div>
+              </div>
+              <div class="card-body" id="critere_tags_config" style="display: none;">
+                <div id="critere_tags_liste">
+                  <!-- Tags generes dynamiquement -->
+                </div>
+              </div>
+            </div>
+
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderCriteres()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SweetAlert2 -->
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <!-- SortableJS -->
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/gestion-tarification.js"></script>
+</body>
+</html>

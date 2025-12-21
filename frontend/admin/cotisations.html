@@ -258,10 +258,42 @@
                             <textarea class="form-control" id="notes" rows="2"></textarea>
                         </div>
 
-                        <!-- Aperçu montant -->
-                        <div id="montantPreview" class="alert alert-info" style="display:none;">
-                            <h6>Aperçu du montant:</h6>
-                            <div id="montantDetails"></div>
+                        <!-- Aperçu montant avec simulation avancée -->
+                        <div id="montantPreview" class="card border-primary" style="display:none;">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="bi bi-calculator"></i> Simulation du montant</h6>
+                                <button type="button" class="btn btn-sm btn-outline-light" onclick="simulerCotisation()" title="Recalculer">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="montantDetails"></div>
+
+                                <!-- Zone détail QF -->
+                                <div id="qfSection" style="display:none;" class="mt-3 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted"><i class="bi bi-calculator"></i> Quotient Familial:</span>
+                                        <span id="qfValue" class="fw-bold">-</span>
+                                    </div>
+                                    <div id="qfTrancheInfo" class="text-muted small"></div>
+                                    <div id="qfHeritageInfo" class="text-info small"></div>
+                                </div>
+
+                                <!-- Zone détail réductions -->
+                                <div id="reductionsSection" style="display:none;" class="mt-3 pt-3 border-top">
+                                    <h6 class="text-success mb-2"><i class="bi bi-tags"></i> Réductions appliquées</h6>
+                                    <div id="reductionsList"></div>
+                                </div>
+
+                                <!-- Zone type tarif détecté -->
+                                <div id="typeTarifSection" style="display:none;" class="mt-3 pt-3 border-top">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted"><i class="bi bi-person"></i> Type de tarif:</span>
+                                        <span id="typeTarifValue" class="badge bg-secondary">-</span>
+                                    </div>
+                                    <div id="ageInfo" class="text-muted small"></div>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -316,6 +348,11 @@
             // Set today's date for date_paiement
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('date_paiement').value = today;
+
+            // Recalculer la simulation quand la date de début change
+            document.getElementById('date_debut').addEventListener('change', () => {
+                calculerMontantTotal();
+            });
         });
 
         // Initialize year filter
@@ -960,76 +997,236 @@
             calculerMontantTotal();
         }
 
-        // Calculer le montant total avec réduction
+        // Variable pour stocker la dernière simulation
+        let lastSimulation = null;
+
+        // Calculer le montant total avec simulation avancée
         async function calculerMontantTotal() {
             const tarifSelect = document.getElementById('tarif_cotisation_id');
-            const adherentSelect = document.getElementById('adherent_id');
+            const adherentId = document.getElementById('adherent_id').value;
             const previewDiv = document.getElementById('montantPreview');
-            const detailsDiv = document.getElementById('montantDetails');
 
-            if (!tarifSelect.value || !adherentSelect.value) {
+            if (!tarifSelect.value || !adherentId) {
                 previewDiv.style.display = 'none';
                 return;
             }
 
-            const selectedOption = tarifSelect.options[tarifSelect.selectedIndex];
-            const tarif = JSON.parse(selectedOption.dataset.tarif);
-            const adherentOption = adherentSelect.options[adherentSelect.selectedIndex];
-            const isAssociation = adherentOption.dataset.adhesionAssociation === 'true';
+            await simulerCotisation();
+        }
 
+        // Simulation avancée via API tarification
+        async function simulerCotisation() {
+            const adherentId = document.getElementById('adherent_id').value;
+            const tarifId = document.getElementById('tarif_cotisation_id').value;
+            const previewDiv = document.getElementById('montantPreview');
+            const detailsDiv = document.getElementById('montantDetails');
+
+            if (!adherentId || !tarifId) {
+                previewDiv.style.display = 'none';
+                return;
+            }
+
+            // Options de simulation
+            const dateDebut = document.getElementById('date_debut').value || null;
+            const codeReductionId = document.getElementById('code_reduction_id').value || null;
+
+            try {
+                // Appel API simulation avancée
+                const simulation = await apiRequest('/tarification/simuler', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        utilisateur_id: parseInt(adherentId),
+                        tarif_cotisation_id: parseInt(tarifId),
+                        date_debut: dateDebut,
+                        code_reduction_id: codeReductionId ? parseInt(codeReductionId) : null
+                    })
+                });
+
+                lastSimulation = simulation;
+                afficherSimulation(simulation);
+                previewDiv.style.display = 'block';
+
+            } catch (error) {
+                console.warn('Simulation avancée non disponible, fallback:', error.message);
+                // Fallback vers calcul simple si API non disponible
+                await calculerMontantSimple();
+            }
+        }
+
+        // Afficher les résultats de la simulation
+        function afficherSimulation(sim) {
+            const detailsDiv = document.getElementById('montantDetails');
+            const qfSection = document.getElementById('qfSection');
+            const reductionsSection = document.getElementById('reductionsSection');
+            const typeTarifSection = document.getElementById('typeTarifSection');
+
+            // Montants principaux
+            let html = `
+                <div class="row g-2">
+                    <div class="col-7 text-end">Tarif de base:</div>
+                    <div class="col-5"><strong>${(sim.tarif_base || 0).toFixed(2)} €</strong></div>
+            `;
+
+            // Montant QF si différent
+            if (sim.montant_qf !== undefined && sim.montant_qf !== sim.tarif_base) {
+                html += `
+                    <div class="col-7 text-end text-info">Montant QF:</div>
+                    <div class="col-5 text-info">${sim.montant_qf.toFixed(2)} €</div>
+                `;
+            }
+
+            // Total réductions
+            if (sim.total_reductions > 0) {
+                html += `
+                    <div class="col-7 text-end text-success">Total réductions:</div>
+                    <div class="col-5 text-success">-${sim.total_reductions.toFixed(2)} €</div>
+                `;
+            }
+
+            // Avoir si présent
+            if (sim.avoir_genere > 0) {
+                html += `
+                    <div class="col-7 text-end text-info">Avoir généré:</div>
+                    <div class="col-5 text-info">+${sim.avoir_genere.toFixed(2)} €</div>
+                `;
+            }
+
+            // Séparateur et montant final
+            html += `
+                <div class="col-12"><hr class="my-2"></div>
+                <div class="col-7 text-end"><strong>Montant à payer:</strong></div>
+                <div class="col-5"><strong class="fs-4 text-primary">${sim.montant_final.toFixed(2)} €</strong></div>
+            </div>
+            `;
+
+            detailsDiv.innerHTML = html;
+
+            // Section QF
+            if (sim.quotient_familial !== undefined && sim.quotient_familial !== null) {
+                qfSection.style.display = 'block';
+                document.getElementById('qfValue').textContent = sim.quotient_familial;
+
+                // Info tranche
+                let trancheInfo = '';
+                if (sim.tranche_qf) {
+                    trancheInfo = `Tranche: ${sim.tranche_qf.qf_min} - ${sim.tranche_qf.qf_max || '∞'} → ${sim.tranche_qf.montant || sim.tranche_qf.pourcentage_reduction + '%'}`;
+                }
+                document.getElementById('qfTrancheInfo').textContent = trancheInfo;
+
+                // Info héritage
+                let heritageInfo = '';
+                if (sim.qf_herite) {
+                    heritageInfo = '<i class="bi bi-arrow-down-circle"></i> Hérité du parent';
+                }
+                document.getElementById('qfHeritageInfo').innerHTML = heritageInfo;
+            } else {
+                qfSection.style.display = 'none';
+            }
+
+            // Section réductions
+            if (sim.reductions && sim.reductions.length > 0) {
+                reductionsSection.style.display = 'block';
+                const reductionsList = document.getElementById('reductionsList');
+
+                const sourcesLabels = {
+                    'quotient_familial': 'Quotient familial',
+                    'commune': 'Commune',
+                    'statut_social': 'Statut social',
+                    'multi_enfants': 'Multi-enfants',
+                    'fidelite': 'Fidélité',
+                    'partenariat': 'Partenariat',
+                    'handicap': 'Handicap',
+                    'age': 'Âge',
+                    'code_reduction': 'Code promo',
+                    'manuel': 'Manuel'
+                };
+
+                reductionsList.innerHTML = sim.reductions.map(r => `
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small">
+                            <i class="bi bi-tag-fill text-success"></i>
+                            ${sourcesLabels[r.type_source] || r.type_source}
+                            ${r.libelle ? `<small>(${r.libelle})</small>` : ''}
+                        </span>
+                        <span class="text-success fw-bold">-${r.montant.toFixed(2)} €</span>
+                    </div>
+                `).join('');
+            } else {
+                reductionsSection.style.display = 'none';
+            }
+
+            // Section type tarif
+            if (sim.type_tarif) {
+                typeTarifSection.style.display = 'block';
+                document.getElementById('typeTarifValue').textContent = sim.type_tarif.libelle || sim.type_tarif.code;
+                document.getElementById('typeTarifValue').className = 'badge bg-' + (sim.type_tarif.couleur || 'secondary');
+
+                let ageInfo = '';
+                if (sim.age !== undefined) {
+                    ageInfo = `Âge calculé: ${sim.age} ans`;
+                    if (sim.type_tarif.age_min !== null || sim.type_tarif.age_max !== null) {
+                        ageInfo += ` (${sim.type_tarif.age_min || 0}-${sim.type_tarif.age_max || '∞'} ans)`;
+                    }
+                }
+                document.getElementById('ageInfo').textContent = ageInfo;
+            } else {
+                typeTarifSection.style.display = 'none';
+            }
+        }
+
+        // Fallback: calcul simple si API tarification non disponible
+        async function calculerMontantSimple() {
+            const tarifSelect = document.getElementById('tarif_cotisation_id');
+            const previewDiv = document.getElementById('montantPreview');
+            const detailsDiv = document.getElementById('montantDetails');
+
+            const selectedOption = tarifSelect.options[tarifSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.dataset.tarif) return;
+
+            const tarif = JSON.parse(selectedOption.dataset.tarif);
             let montantBase = parseFloat(tarif.montant_base);
-            let reductionTarif = 0;
             let reductionCode = 0;
             let avoir = 0;
 
-            // Réduction association du tarif
-            if (isAssociation && tarif.reduction_association_valeur > 0) {
-                if (tarif.reduction_association_type === 'pourcentage') {
-                    reductionTarif = montantBase * (tarif.reduction_association_valeur / 100);
-                } else {
-                    reductionTarif = tarif.reduction_association_valeur;
-                }
-            }
-
-            let montantApresReductionTarif = montantBase - reductionTarif;
-
-            // Réduction code
+            // Réduction code si présent
             if (currentCodeReduction) {
                 try {
                     const calcul = await apiRequest(`/parametres/codes-reduction/${currentCodeReduction.id}/calculer`, {
                         method: 'POST',
-                        body: JSON.stringify({ montant: montantApresReductionTarif })
+                        body: JSON.stringify({ montant: montantBase })
                     });
 
                     reductionCode = calcul.calcul.reduction;
                     avoir = calcul.calcul.avoir || 0;
-                    montantApresReductionTarif = calcul.calcul.montant_final;
+                    montantBase = calcul.calcul.montant_final;
                 } catch (error) {
                     console.error('Erreur calcul réduction:', error);
                 }
             }
 
-            const montantFinal = montantApresReductionTarif;
+            // Masquer les sections avancées
+            document.getElementById('qfSection').style.display = 'none';
+            document.getElementById('reductionsSection').style.display = 'none';
+            document.getElementById('typeTarifSection').style.display = 'none';
 
             detailsDiv.innerHTML = `
-                <div class="row">
-                    <div class="col-6 text-end">Montant de base:</div>
-                    <div class="col-6"><strong>${montantBase.toFixed(2)} €</strong></div>
-                    ${reductionTarif > 0 ? `
-                        <div class="col-6 text-end text-success">Réduction association:</div>
-                        <div class="col-6 text-success">-${reductionTarif.toFixed(2)} €</div>
-                    ` : ''}
+                <div class="row g-2">
+                    <div class="col-7 text-end">Montant de base:</div>
+                    <div class="col-5"><strong>${parseFloat(tarif.montant_base).toFixed(2)} €</strong></div>
                     ${reductionCode > 0 ? `
-                        <div class="col-6 text-end text-success">Réduction code "${currentCodeReduction.code}":</div>
-                        <div class="col-6 text-success">-${reductionCode.toFixed(2)} €</div>
+                        <div class="col-7 text-end text-success">Réduction code:</div>
+                        <div class="col-5 text-success">-${reductionCode.toFixed(2)} €</div>
                     ` : ''}
-                    <div class="col-12"><hr></div>
-                    <div class="col-6 text-end"><strong>Montant à payer:</strong></div>
-                    <div class="col-6"><strong class="fs-4 text-primary">${montantFinal.toFixed(2)} €</strong></div>
+                    <div class="col-12"><hr class="my-2"></div>
+                    <div class="col-7 text-end"><strong>Montant à payer:</strong></div>
+                    <div class="col-5"><strong class="fs-4 text-primary">${montantBase.toFixed(2)} €</strong></div>
                     ${avoir > 0 ? `
-                        <div class="col-6 text-end text-info">Avoir généré:</div>
-                        <div class="col-6 text-info"><strong>+${avoir.toFixed(2)} €</strong></div>
+                        <div class="col-7 text-end text-info">Avoir généré:</div>
+                        <div class="col-5 text-info">+${avoir.toFixed(2)} €</div>
                     ` : ''}
+                </div>
+                <div class="text-muted small mt-2">
+                    <i class="bi bi-info-circle"></i> Mode simplifié (tarification avancée non configurée)
                 </div>
             `;
 
@@ -1152,6 +1349,53 @@
             try {
                 const cot = await apiRequest(`/cotisations/${id}`);
 
+                // Charger les réductions si disponibles
+                let reductionsHtml = '';
+                try {
+                    const recap = await apiRequest(`/tarification/cotisation/${id}/reductions`);
+                    if (recap && recap.reductions && recap.reductions.length > 0) {
+                        const sourcesLabels = {
+                            'quotient_familial': 'Quotient familial',
+                            'commune': 'Commune',
+                            'statut_social': 'Statut social',
+                            'multi_enfants': 'Multi-enfants',
+                            'fidelite': 'Fidélité',
+                            'partenariat': 'Partenariat',
+                            'handicap': 'Handicap',
+                            'age': 'Âge',
+                            'code_reduction': 'Code promo',
+                            'manuel': 'Manuel'
+                        };
+
+                        reductionsHtml = `
+                        <tr>
+                            <th>Détail réductions:</th>
+                            <td>
+                                ${recap.reductions.map(r => `
+                                    <div class="d-flex justify-content-between text-success small">
+                                        <span>${sourcesLabels[r.type_source] || r.type_source}${r.libelle_source ? ` (${r.libelle_source})` : ''}</span>
+                                        <span>-${parseFloat(r.montant_reduction).toFixed(2)} €</span>
+                                    </div>
+                                `).join('')}
+                            </td>
+                        </tr>
+                        `;
+
+                        // Ajouter info QF si présent
+                        if (recap.quotient_familial_snapshot) {
+                            reductionsHtml += `
+                            <tr>
+                                <th>QF au moment:</th>
+                                <td>${recap.quotient_familial_snapshot}${recap.tranche_qf ? ` (tranche ${recap.tranche_qf.qf_min}-${recap.tranche_qf.qf_max || '∞'})` : ''}</td>
+                            </tr>
+                            `;
+                        }
+                    }
+                } catch (e) {
+                    // API tarification non disponible, ignorer
+                    console.log('Détail réductions non disponible');
+                }
+
                 document.getElementById('detailsContent').innerHTML = `
                     <table class="table">
                         <tr>
@@ -1171,10 +1415,17 @@
                             <th>Montant de base:</th>
                             <td>${cot.montant_base} €</td>
                         </tr>
+                        ${cot.tarif_base && cot.tarif_base !== cot.montant_base ? `
                         <tr>
-                            <th>Réduction appliquée:</th>
-                            <td class="text-success">${cot.reduction_appliquee} €</td>
+                            <th>Tarif type:</th>
+                            <td>${cot.tarif_base} €</td>
                         </tr>
+                        ` : ''}
+                        <tr>
+                            <th>Réduction totale:</th>
+                            <td class="text-success">${cot.reduction_appliquee || cot.total_reductions || 0} €</td>
+                        </tr>
+                        ${reductionsHtml}
                         ${cot.code_reduction_applique ? `
                         <tr>
                             <th>Code de réduction:</th>
@@ -1209,6 +1460,12 @@
                             <th>Statut:</th>
                             <td>${formatStatutBadge(cot.statut)}</td>
                         </tr>
+                        ${cot.age_snapshot !== null && cot.age_snapshot !== undefined ? `
+                        <tr>
+                            <th>Âge au moment:</th>
+                            <td>${cot.age_snapshot} ans</td>
+                        </tr>
+                        ` : ''}
                         ${cot.notes ? `
                         <tr>
                             <th>Notes:</th>

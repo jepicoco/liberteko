@@ -57,6 +57,12 @@ module.exports = (sequelize) => {
         isEmail: true
       }
     },
+    sexe: {
+      type: DataTypes.ENUM('M', 'F', 'A', 'N'),
+      allowNull: false,
+      defaultValue: 'N',
+      comment: 'M=Masculin, F=Feminin, A=Autre, N=Non precise'
+    },
     telephone: {
       type: DataTypes.STRING(20),
       allowNull: true,
@@ -75,6 +81,16 @@ module.exports = (sequelize) => {
     code_postal: {
       type: DataTypes.STRING(10),
       allowNull: true
+    },
+    code_postal_prise_en_charge: {
+      type: DataTypes.STRING(10),
+      allowNull: true,
+      comment: 'Code postal de prise en charge (si different de residence)'
+    },
+    ville_prise_en_charge: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      comment: 'Ville de prise en charge (si differente de residence)'
     },
     date_naissance: {
       type: DataTypes.DATEONLY,
@@ -199,6 +215,58 @@ module.exports = (sequelize) => {
       allowNull: false,
       defaultValue: false,
       comment: 'Bypass admin de la validation charte'
+    },
+    // === Champs tarification avancée ===
+    quotient_familial: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'QF actuel (mis a jour via historique)'
+    },
+    qf_herite_parent: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'QF herite du parent (pour enfants)'
+    },
+    qf_surcharge_manuelle: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'QF saisi manuellement (ignore heritage)'
+    },
+    commune_prise_en_charge_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'communes',
+        key: 'id'
+      },
+      comment: 'Commune pour calcul reductions (si != residence)'
+    },
+    commune_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'communes',
+        key: 'id'
+      },
+      comment: 'Commune de residence (deduite de code_postal/ville)'
+    },
+    statut_social: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Statuts sociaux: ["rsa", "aah", "etudiant", "chomeur", "retraite"]'
+    },
+    carte_handicap: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Possede une carte handicap/invalidite'
+    },
+    date_premiere_adhesion: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Date de premiere adhesion (pour calcul fidelite)'
     }
   }, {
     tableName: 'utilisateurs',

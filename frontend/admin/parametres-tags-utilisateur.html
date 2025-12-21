@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/admin-style.css">
+  <style>
+    .tag-card {
+      border-radius: 12px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border-left: 4px solid;
+    }
+    .tag-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .tag-card.inactive {
+      opacity: 0.6;
+      border-left-color: #6c757d !important;
+    }
+    .tag-icon-preview {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      color: white;
+    }
+    .tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.875rem;
+      color: white;
+    }
+    .color-option {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+    .color-option.selected {
+      border-color: #000;
+      box-shadow: 0 0 0 2px white, 0 0 0 4px #000;
+    }
+    .icon-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 2px solid #dee2e6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .icon-option:hover {
+      border-color: #0d6efd;
+      background: #e7f1ff;
+    }
+    .icon-option.selected {
+      border-color: #0d6efd;
+      background: #0d6efd;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 px-4">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-1">
+              <i class="bi bi-tags text-primary"></i>
+              Tags Usagers
+            </h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item"><a href="parametres.html#referentiels">Referentiels</a></li>
+                <li class="breadcrumb-item active">Tags Usagers</li>
+              </ol>
+            </nav>
+          </div>
+          <button class="btn btn-primary" onclick="ouvrirModal()">
+            <i class="bi bi-plus-lg"></i> Nouveau tag
+          </button>
+        </div>
+
+        <!-- Description -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          Les tags permettent de categoriser les usagers (salarie, benevole actif, handicap, RSA, etudiant...).
+          Ils peuvent etre utilises comme criteres dans les types de tarifs.
+        </div>
+
+        <!-- Stats -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-primary text-white">
+              <div class="card-body">
+                <h5 class="card-title" id="statTotal">0</h5>
+                <p class="card-text mb-0">Tags au total</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h5 class="card-title" id="statActifs">0</h5>
+                <p class="card-text mb-0">Tags actifs</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h5 class="card-title" id="statUtilises">0</h5>
+                <p class="card-text mb-0">Tags utilises</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste des tags -->
+        <div class="row" id="tags-container">
+          <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 mb-0 text-muted">Chargement des tags...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tag -->
+  <div class="modal fade" id="modalTag" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalTagTitle">
+            <i class="bi bi-tag"></i> Nouveau tag
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formTag">
+            <input type="hidden" id="tag_id">
+
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="tag_code" class="form-label">Code <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control text-uppercase" id="tag_code" required
+                         placeholder="Ex: SALARIE" pattern="[A-Z0-9_]+"
+                         title="Lettres majuscules, chiffres et underscores uniquement">
+                  <div class="form-text">Identifiant unique (majuscules)</div>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="tag_libelle" class="form-label">Libelle <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="tag_libelle" required
+                         placeholder="Ex: Salarie de la structure">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="tag_description" class="form-label">Description</label>
+              <textarea class="form-control" id="tag_description" rows="2"
+                        placeholder="Description optionnelle du tag"></textarea>
+            </div>
+
+            <!-- Couleur -->
+            <div class="mb-3">
+              <label class="form-label">Couleur</label>
+              <div class="d-flex gap-2 flex-wrap" id="color-options">
+                <!-- Couleurs predefinies -->
+              </div>
+              <div class="mt-2">
+                <label for="tag_couleur_custom" class="form-label small">Ou couleur personnalisee:</label>
+                <input type="color" class="form-control form-control-color" id="tag_couleur_custom" value="#6c757d">
+              </div>
+            </div>
+
+            <!-- Icone -->
+            <div class="mb-3">
+              <label class="form-label">Icone</label>
+              <div class="d-flex gap-2 flex-wrap" id="icon-options">
+                <!-- Icones predefinies -->
+              </div>
+            </div>
+
+            <!-- Apercu -->
+            <div class="mb-3">
+              <label class="form-label">Apercu</label>
+              <div class="p-3 bg-light rounded">
+                <span class="tag-badge" id="tag-preview" style="background-color: #6c757d;">
+                  <i class="bi bi-tag"></i>
+                  <span>Nouveau tag</span>
+                </span>
+              </div>
+            </div>
+
+            <hr>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="tag_ordre" class="form-label">Ordre d'affichage</label>
+                  <input type="number" class="form-control" id="tag_ordre" value="0" min="0">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3 pt-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="tag_actif" checked>
+                    <label class="form-check-label" for="tag_actif">Tag actif</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderTag()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SweetAlert2 -->
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <!-- SortableJS pour le drag & drop -->
+  <script src="/vendor/sortablejs/Sortable.min.js"></script>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-tags-utilisateur.js"></script>
+</body>
+</html>

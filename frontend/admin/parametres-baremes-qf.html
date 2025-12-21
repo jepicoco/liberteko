@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baremes Quotient Familial - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    .bareme-card {
+      border-left: 4px solid #17a2b8;
+      transition: all 0.2s;
+    }
+    .bareme-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .bareme-card.inactive {
+      opacity: 0.6;
+      border-left-color: #6c757d;
+    }
+    .bareme-card.default {
+      border-left-color: #28a745;
+    }
+    .tranche-row {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: grab;
+      transition: all 0.2s;
+    }
+    .tranche-row:hover {
+      background: #e9ecef;
+    }
+    .tranche-row.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+    .tranche-row.drag-over {
+      border: 2px dashed #0d6efd;
+      background: #e7f1ff;
+    }
+    .drag-handle {
+      cursor: grab;
+      color: #6c757d;
+    }
+    .drag-handle:hover {
+      color: #0d6efd;
+    }
+    .ordre-btn {
+      padding: 0.15rem 0.35rem;
+      font-size: 0.75rem;
+    }
+    .tranche-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .badge-defaut {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    .valeurs-type-container {
+      background: #fff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .valeur-type-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0;
+    }
+    .valeur-type-row .type-name {
+      min-width: 100px;
+      font-weight: 500;
+    }
+    .toggle-valeurs {
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #6c757d;
+    }
+    .toggle-valeurs:hover {
+      color: #0d6efd;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0"><i class="bi bi-graph-up me-2"></i>Baremes de quotient familial</h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item"><a href="parametres.html#referentiels">Referentiels</a></li>
+                <li class="breadcrumb-item active">Baremes QF</li>
+              </ol>
+            </nav>
+          </div>
+          <button class="btn btn-primary" onclick="ouvrirModalBareme()">
+            <i class="bi bi-plus-lg"></i> Nouveau bareme
+          </button>
+        </div>
+
+        <!-- Alert info -->
+        <div class="alert alert-info mb-4">
+          <i class="bi bi-info-circle"></i>
+          Definissez les baremes de quotient familial avec leurs <strong>tranches</strong> et
+          configurez des <strong>valeurs differentes par type de tarif</strong> (ex: Adulte/Enfant).
+        </div>
+
+        <!-- Liste des baremes -->
+        <div id="baremes-list" class="row g-4">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="text-center py-5" style="display: none;">
+          <i class="bi bi-graph-up text-muted" style="font-size: 4rem;"></i>
+          <h4 class="mt-3 text-muted">Aucun bareme configure</h4>
+          <p class="text-muted">Creez votre premier bareme de quotient familial</p>
+          <button class="btn btn-primary" onclick="ouvrirModalBareme()">
+            <i class="bi bi-plus-lg"></i> Creer un bareme
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bareme -->
+  <div class="modal fade" id="modalBareme" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-graph-up"></i> <span id="modalBaremeTitle">Nouveau bareme</span>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formBareme">
+            <input type="hidden" id="baremeId">
+
+            <div class="row mb-3">
+              <div class="col-md-4">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="baremeCode" required
+                       placeholder="Ex: BAREME_CAF_2024" style="text-transform: uppercase;">
+                <small class="text-muted">Identifiant unique (non modifiable apres creation)</small>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Libelle <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="baremeLibelle" required
+                       placeholder="Ex: Bareme CAF 2024">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Par defaut</label>
+                <div class="form-check form-switch mt-2">
+                  <input class="form-check-input" type="checkbox" id="baremeDefaut">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Description</label>
+              <textarea class="form-control" id="baremeDescription" rows="2"
+                        placeholder="Description optionnelle du bareme..."></textarea>
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">
+                <i class="bi bi-layers"></i> Tranches
+              </h6>
+              <button type="button" class="btn btn-outline-primary btn-sm" onclick="ajouterTranche()">
+                <i class="bi bi-plus-lg"></i> Ajouter tranche
+              </button>
+            </div>
+
+            <div class="alert alert-light small mb-3">
+              <i class="bi bi-lightbulb"></i>
+              Definissez les tranches du QF avec leurs bornes (min/max).
+              Cliquez sur <i class="bi bi-currency-euro"></i> pour configurer des <strong>valeurs differentes par type de tarif</strong>.
+            </div>
+
+            <div id="tranches-container">
+              <!-- Populated by JS -->
+            </div>
+
+            <div id="tranches-empty" class="text-center py-3 text-muted" style="display: none;">
+              Aucune tranche. Cliquez sur "Ajouter tranche" pour commencer.
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderBareme()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Duplication -->
+  <div class="modal fade" id="modalDupliquer" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-copy"></i> Dupliquer le bareme
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="dupliquerBaremeId">
+          <p class="text-muted">Creez une copie du bareme avec un nouveau code et libelle.</p>
+
+          <div class="mb-3">
+            <label class="form-label">Nouveau code <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="dupliquerCode" required
+                   style="text-transform: uppercase;">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Nouveau libelle <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="dupliquerLibelle" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="confirmerDuplication()">
+            <i class="bi bi-copy"></i> Dupliquer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Confirmation Suppression -->
+  <div class="modal fade" id="modalSupprimer" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-exclamation-triangle"></i> Confirmer la suppression
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="supprimerBaremeId">
+          <p>Etes-vous sur de vouloir supprimer ce bareme ?</p>
+          <p class="fw-bold" id="supprimerBaremeNom"></p>
+          <p class="text-muted small">
+            Le bareme sera desactive mais conserve dans la base de donnees.
+            Les cotisations existantes utilisant ce bareme ne seront pas affectees.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-danger" onclick="confirmerSuppression()">
+            <i class="bi bi-trash"></i> Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-baremes-qf.js"></script>
+</body>
+</html>

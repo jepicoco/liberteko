@@ -53,7 +53,10 @@ const PARAMETRES_CATEGORIES = {
     tabId: 'referentiels',
     pages: [
       { id: 'referentiels', label: 'Referentiels', href: 'parametres-referentiels.html', icon: 'bi-tags' },
+      { id: 'tags-utilisateur', label: 'Tags usagers', href: 'parametres-tags-utilisateur.html', icon: 'bi-tags-fill' },
       { id: 'communes', label: 'Communes', href: 'parametres-communes.html', icon: 'bi-geo' },
+      { id: 'communautes-communes', label: 'Communautes', href: 'parametres-communautes-communes.html', icon: 'bi-geo-alt-fill' },
+      { id: 'baremes-qf', label: 'Baremes QF', href: 'parametres-baremes-qf.html', icon: 'bi-graph-up' },
       { id: 'calendrier', label: 'Calendrier', href: 'parametres-calendrier.html', icon: 'bi-calendar3' }
     ]
   },
@@ -64,7 +67,7 @@ const PARAMETRES_CATEGORIES = {
     icon: 'bi-calculator',
     tabId: 'comptabilite',
     pages: [
-      { id: 'tarifs', label: 'Tarifs cotisation', href: 'tarifs-cotisation.html', icon: 'bi-currency-euro' },
+      { id: 'tarification', label: 'Cotisations et tarifs', href: 'parametres-tarification.html', icon: 'bi-currency-euro' },
       { id: 'codes-reduction', label: 'Codes reduction', href: 'parametres-codes-reduction.html', icon: 'bi-ticket-perforated' },
       { id: 'comptes-bancaires', label: 'Comptes bancaires', href: 'parametres-comptes-bancaires.html', icon: 'bi-bank' },
       { id: 'exports-comptables', label: 'Exports', href: 'parametres-exports-comptables.html', icon: 'bi-file-earmark-spreadsheet' },

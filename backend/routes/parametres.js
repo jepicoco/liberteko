@@ -16,6 +16,8 @@ const outilsController = require('../controllers/outilsController');
 const configurationsAPIController = require('../controllers/configurationsAPIController');
 const themesSiteController = require('../controllers/themesSiteController');
 const configAccesDonneesController = require('../controllers/configAccesDonneesController');
+const baremesQFController = require('../controllers/baremesQFController');
+const tagsUtilisateurController = require('../controllers/tagsUtilisateurController');
 
 // ============================================
 // Routes pour les themes du site public
@@ -438,5 +440,58 @@ router.get('/acces-donnees/role/:role', verifyToken, isGestionnaire(), configAcc
 
 // Reinitialiser aux valeurs par defaut (admin seulement)
 router.post('/acces-donnees/reset', verifyToken, isAdmin(), configAccesDonneesController.resetConfiguration);
+
+// ============================================
+// Routes pour les baremes de quotient familial
+// ============================================
+
+// Liste tous les baremes QF (gestionnaire+)
+router.get('/baremes-qf', verifyToken, isGestionnaire(), baremesQFController.getAll);
+
+// Liste les types de tarifs pour les valeurs QF (gestionnaire+)
+router.get('/baremes-qf/types-tarifs', verifyToken, isGestionnaire(), baremesQFController.getTypesTarifs);
+
+// Detail d'un bareme QF (gestionnaire+)
+router.get('/baremes-qf/:id', verifyToken, isGestionnaire(), baremesQFController.getById);
+
+// Creer un bareme QF (admin seulement)
+router.post('/baremes-qf', verifyToken, isAdmin(), baremesQFController.create);
+
+// Modifier un bareme QF (admin seulement)
+router.put('/baremes-qf/:id', verifyToken, isAdmin(), baremesQFController.update);
+
+// Supprimer un bareme QF (admin seulement)
+router.delete('/baremes-qf/:id', verifyToken, isAdmin(), baremesQFController.delete);
+
+// Dupliquer un bareme QF (admin seulement)
+router.post('/baremes-qf/:id/dupliquer', verifyToken, isAdmin(), baremesQFController.duplicate);
+
+// Definir un bareme comme par defaut (admin seulement)
+router.put('/baremes-qf/:id/defaut', verifyToken, isAdmin(), baremesQFController.setDefault);
+
+// ============================================
+// Routes pour les tags utilisateur
+// ============================================
+
+// Liste les tags actifs uniquement (pour les selects - gestionnaire+)
+router.get('/tags-utilisateur/actifs', verifyToken, isGestionnaire(), tagsUtilisateurController.getActifs);
+
+// Liste tous les tags (gestionnaire+)
+router.get('/tags-utilisateur', verifyToken, isGestionnaire(), tagsUtilisateurController.getAll);
+
+// Detail d'un tag (gestionnaire+)
+router.get('/tags-utilisateur/:id', verifyToken, isGestionnaire(), tagsUtilisateurController.getById);
+
+// Creer un tag (admin seulement)
+router.post('/tags-utilisateur', verifyToken, isAdmin(), tagsUtilisateurController.create);
+
+// Modifier un tag (admin seulement)
+router.put('/tags-utilisateur/:id', verifyToken, isAdmin(), tagsUtilisateurController.update);
+
+// Supprimer un tag (admin seulement)
+router.delete('/tags-utilisateur/:id', verifyToken, isAdmin(), tagsUtilisateurController.remove);
+
+// Reordonner les tags (admin seulement)
+router.put('/tags-utilisateur-reorder', verifyToken, isAdmin(), tagsUtilisateurController.reorder);
 
 module.exports = router;

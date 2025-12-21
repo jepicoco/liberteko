@@ -5,6 +5,22 @@
 let filteredAdherents = [];
 
 /**
+ * Affiche les tags d'un adherent sous forme de badges
+ * @param {Array} tags - Tableau des tags de l'adherent
+ * @returns {string} HTML des badges
+ */
+function renderAdherentTags(tags) {
+  if (!tags || tags.length === 0) return '';
+
+  return `<div class="mt-1">${tags.map(tag => `
+    <span class="user-tag-badge" style="background-color: ${tag.couleur || '#6c757d'};" title="${tag.libelle}">
+      <i class="bi ${tag.icone || 'bi-tag'}"></i>
+      ${tag.libelle}
+    </span>
+  `).join(' ')}</div>`;
+}
+
+/**
  * Affiche les adherents (pagination geree par pagination.js)
  */
 function renderAdherents(list) {
@@ -71,9 +87,12 @@ function renderAdherents(list) {
                 </td>
                 <td><small class="font-monospace">${adherent.code_barre || 'N/A'}</small></td>
                 <td>
-                  <strong>${adherent.prenom} ${adherent.nom}</strong>
-                  ${adherent.adhesion_association ? '<i class="bi bi-building-fill text-success ms-1" title="Membre association"></i>' : ''}
-                  ${adherent.est_compte_enfant ? '<i class="bi bi-person-heart text-info ms-1" title="Compte enfant rattache a un parent"></i>' : ''}
+                  <div>
+                    <strong>${adherent.prenom} ${adherent.nom}</strong>
+                    ${adherent.adhesion_association ? '<i class="bi bi-building-fill text-success ms-1" title="Membre association"></i>' : ''}
+                    ${adherent.est_compte_enfant ? '<i class="bi bi-person-heart text-info ms-1" title="Compte enfant rattache a un parent"></i>' : ''}
+                  </div>
+                  ${renderAdherentTags(adherent.tags)}
                 </td>
                 <td><small>${adherent.email}</small></td>
                 <td><small>${adherent.telephone || '-'}</small></td>
@@ -266,5 +285,10 @@ function resetFilters() {
   document.getElementById('statutFilter').value = '';
   document.getElementById('roleFilter').value = '';
   document.getElementById('assocFilter').value = '';
+  // Nouveaux filtres sexe et tag
+  const sexeFilter = document.getElementById('sexeFilter');
+  const tagFilter = document.getElementById('tagFilter');
+  if (sexeFilter) sexeFilter.value = '';
+  if (tagFilter) tagFilter.value = '';
   loadAdherents();
 }

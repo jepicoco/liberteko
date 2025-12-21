@@ -7,6 +7,62 @@
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    /* Style pour les tags checkbox */
+    .tag-checkbox {
+      display: none;
+    }
+    .tag-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 1rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: 2px solid var(--tag-color, #6c757d);
+      background-color: white;
+      color: #333;
+      transition: all 0.2s;
+    }
+    .tag-label:hover {
+      background-color: color-mix(in srgb, var(--tag-color, #6c757d) 15%, white);
+    }
+    .tag-checkbox:checked + .tag-label {
+      background-color: var(--tag-color, #6c757d);
+      color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .tag-label i {
+      font-size: 0.9rem;
+    }
+    /* Bouton ajout tag */
+    .add-tag-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-style: dashed;
+    }
+    .add-tag-btn:hover {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      color: white;
+    }
+    /* Badge tags dans la liste */
+    .user-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.15rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 0.75rem;
+      font-size: 0.75rem;
+      color: white;
+    }
+  </style>
 </head>
 <body>
   <!-- Navigation (généré par JS) -->
@@ -99,6 +155,26 @@
                             <i class="bi bi-x-circle"></i> Réinitialiser
                           </button>
                         </div>
+                      </div>
+                    </div>
+                    <!-- Ligne 2: Filtres supplementaires -->
+                    <div class="row g-2 mt-2">
+                      <div class="col-md-2">
+                        <label class="form-label small">Sexe</label>
+                        <select id="sexeFilter" class="form-select form-select-sm" onchange="pagination && pagination.reset(); loadAdherents()">
+                          <option value="">Tous</option>
+                          <option value="M">Masculin</option>
+                          <option value="F">Feminin</option>
+                          <option value="A">Autre</option>
+                          <option value="N">Non precise</option>
+                        </select>
+                      </div>
+                      <div class="col-md-4">
+                        <label class="form-label small">Tag</label>
+                        <select id="tagFilter" class="form-select form-select-sm" onchange="pagination && pagination.reset(); loadAdherents()">
+                          <option value="">Tous les tags</option>
+                          <!-- Options chargees dynamiquement -->
+                        </select>
                       </div>
                     </div>
                   </div>
@@ -199,11 +275,20 @@
                 </div>
 
                 <div class="row mb-3">
-                  <div class="col-md-6">
+                  <div class="col-md-2">
+                    <label for="civilite" class="form-label">Civilite</label>
+                    <select id="civilite" class="form-select">
+                      <option value="N">-</option>
+                      <option value="M">M.</option>
+                      <option value="F">Mme</option>
+                      <option value="A">Mx</option>
+                    </select>
+                  </div>
+                  <div class="col-md-5">
                     <label for="nom" class="form-label">Nom *</label>
                     <input type="text" id="nom" class="form-control" required>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-5">
                     <label for="prenom" class="form-label">Prenom *</label>
                     <input type="text" id="prenom" class="form-control" required>
                   </div>
@@ -251,18 +336,38 @@
                 <h6 class="text-muted mb-3"><i class="bi bi-geo-alt me-1"></i>Adresse postale (pour la facturation)</h6>
 
                 <div class="mb-3">
-                  <label for="adresse" class="form-label">Adresse *</label>
-                  <textarea id="adresse" class="form-control" rows="2" placeholder="Numero et rue" required></textarea>
+                  <label for="adresse" class="form-label">Adresse</label>
+                  <textarea id="adresse" class="form-control" rows="2" placeholder="Numero et rue"></textarea>
                 </div>
 
                 <div class="row mb-3">
                   <div class="col-md-4">
-                    <label for="code_postal" class="form-label">Code postal *</label>
-                    <input type="text" id="code_postal" class="form-control" placeholder="75001" maxlength="5" required>
+                    <label for="code_postal" class="form-label">Code postal</label>
+                    <input type="text" id="code_postal" class="form-control" placeholder="75001" maxlength="5">
                   </div>
                   <div class="col-md-8">
-                    <label for="ville" class="form-label">Ville *</label>
-                    <input type="text" id="ville" class="form-control" placeholder="Paris" required>
+                    <label for="ville" class="form-label">Ville</label>
+                    <input type="text" id="ville" class="form-control" placeholder="Paris">
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="commune_prise_en_charge_differente" onchange="toggleCommunePriseEnCharge()">
+                    <label class="form-check-label" for="commune_prise_en_charge_differente">
+                      <i class="bi bi-geo-alt-fill text-info"></i> Commune de prise en charge differente
+                    </label>
+                  </div>
+                </div>
+
+                <div class="row mb-3" id="communePriseEnChargeFields" style="display: none;">
+                  <div class="col-md-4">
+                    <label for="code_postal_prise_en_charge" class="form-label">CP prise en charge</label>
+                    <input type="text" id="code_postal_prise_en_charge" class="form-control" placeholder="74140" maxlength="5">
+                  </div>
+                  <div class="col-md-8">
+                    <label for="ville_prise_en_charge" class="form-label">Ville prise en charge</label>
+                    <input type="text" id="ville_prise_en_charge" class="form-control" placeholder="Sciez">
                   </div>
                 </div>
 
@@ -270,12 +375,12 @@
                 <h6 class="text-muted mb-3"><i class="bi bi-person-badge me-1"></i>Informations complementaires</h6>
 
                 <div class="row mb-3">
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label for="date_naissance" class="form-label">Date de naissance</label>
                     <input type="date" id="date_naissance" class="form-control">
                     <small id="ageDisplay" class="text-muted"></small>
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                     <label for="photo_url" class="form-label">Photo (URL)</label>
                     <input type="url" id="photo_url" class="form-control" placeholder="https://...">
                     <small class="text-muted">URL de la photo de l'usager</small>
@@ -356,6 +461,17 @@
                         </label>
                       </div>
                     </div>
+                  </div>
+                </div>
+
+                <!-- Section Tags -->
+                <div class="mb-3" id="tagsSection">
+                  <label class="form-label"><i class="bi bi-tags me-1"></i>Tags</label>
+                  <small class="text-muted d-block mb-2">
+                    Selectionnez les tags applicables (salarie, benevole actif, handicap, etc.)
+                  </small>
+                  <div class="d-flex flex-wrap gap-2" id="tagsContainer">
+                    <span class="text-muted small">Chargement des tags...</span>
                   </div>
                 </div>
 
@@ -910,7 +1026,7 @@
   </div>
 
   <!-- SweetAlert2 pour les modals améliorées -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
 
   <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/api-admin.js"></script>
@@ -941,12 +1057,16 @@
         const search = document.getElementById('searchInput')?.value || '';
         const role = document.getElementById('roleFilter')?.value || '';
         const assoc = document.getElementById('assocFilter')?.value || '';
+        const sexe = document.getElementById('sexeFilter')?.value || '';
+        const tag = document.getElementById('tagFilter')?.value || '';
 
         const params = {};
         if (statut) params.statut = statut;
         if (search) params.search = search;
         if (role) params.role = role;
         if (assoc) params.adhesion_association = assoc;
+        if (sexe) params.sexe = sexe;
+        if (tag) params.tag = tag;
 
         // Pagination params
         if (pagination) {
@@ -972,6 +1092,31 @@
             Erreur lors du chargement des adherents: ${error.message}
           </div>
         `;
+      }
+    }
+
+    // ============================================
+    // Chargement des options du filtre tag
+    // ============================================
+    async function loadTagFilterOptions() {
+      try {
+        const tags = await apiAdmin.get('/parametres/tags-utilisateur/actifs');
+        const select = document.getElementById('tagFilter');
+        if (select && tags && tags.length > 0) {
+          // Garder l'option par defaut
+          const defaultOption = select.querySelector('option[value=""]');
+          select.innerHTML = '';
+          if (defaultOption) select.appendChild(defaultOption);
+
+          tags.forEach(tag => {
+            const option = document.createElement('option');
+            option.value = tag.code;
+            option.textContent = tag.libelle;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Erreur chargement tags filtre:', error);
       }
     }
 
@@ -1327,6 +1472,9 @@
         onViewModeChange: null,
         showViewToggle: false
       });
+
+      // Charger les options du filtre tags
+      loadTagFilterOptions();
 
       // Charger les adherents apres un court delai
       setTimeout(loadAdherents, 500);

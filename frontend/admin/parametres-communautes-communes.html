@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Communautes de Communes - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    .cc-card {
+      border: 1px solid #dee2e6;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      transition: box-shadow 0.2s;
+    }
+    .cc-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .cc-card.inactive {
+      opacity: 0.6;
+      background: #f8f9fa;
+    }
+    .cc-header {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      padding: 1rem 1.25rem;
+      border-radius: 12px 12px 0 0;
+    }
+    .cc-body {
+      padding: 1rem 1.25rem;
+    }
+    .commune-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #e9ecef;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+      margin: 0.25rem;
+    }
+    .commune-badge .btn-remove {
+      padding: 0;
+      width: 16px;
+      height: 16px;
+      font-size: 10px;
+      line-height: 1;
+      border-radius: 50%;
+    }
+    .type-badge {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0"><i class="bi bi-geo-alt-fill me-2"></i>Communautes de Communes</h1>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+                <li class="breadcrumb-item"><a href="parametres.html#referentiels">Referentiels</a></li>
+                <li class="breadcrumb-item active">Communautes de Communes</li>
+              </ol>
+            </nav>
+          </div>
+          <button class="btn btn-primary" onclick="ouvrirModalCC()">
+            <i class="bi bi-plus-lg"></i> Nouvelle communaute
+          </button>
+        </div>
+
+        <div id="cc-list">
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+            <p class="mt-2 text-muted">Chargement...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Communaute -->
+  <div class="modal fade" id="modalCC" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalCCTitle">
+            <i class="bi bi-geo-alt-fill"></i> Nouvelle communaute
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formCC">
+            <input type="hidden" id="cc_id">
+
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="cc_code" class="form-label">Code <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control text-uppercase" id="cc_code" required
+                         placeholder="CC_THONON">
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="cc_nom" class="form-label">Nom <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="cc_nom" required
+                         placeholder="Communaute de Communes du Pays de Thonon">
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="cc_type" class="form-label">Type</label>
+                  <select class="form-select" id="cc_type">
+                    <option value="CC">CC - Communaute de Communes</option>
+                    <option value="CA">CA - Communaute d'Agglomeration</option>
+                    <option value="CU">CU - Communaute Urbaine</option>
+                    <option value="ME">ME - Metropole</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="cc_departement" class="form-label">Departement</label>
+                  <input type="text" class="form-control" id="cc_departement" maxlength="3"
+                         placeholder="74">
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="mb-3">
+                  <label for="cc_siren" class="form-label">Code SIREN</label>
+                  <input type="text" class="form-control" id="cc_siren" maxlength="15"
+                         placeholder="200000..."">
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="cc_description" class="form-label">Description</label>
+              <textarea class="form-control" id="cc_description" rows="2"></textarea>
+            </div>
+
+            <hr>
+            <h6 class="mb-3"><i class="bi bi-geo"></i> Communes membres</h6>
+
+            <div class="mb-3">
+              <label class="form-label">Ajouter des communes</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="cc_search_commune"
+                       placeholder="Rechercher une commune...">
+                <button type="button" class="btn btn-outline-primary" onclick="rechercherCommunes()">
+                  <i class="bi bi-search"></i>
+                </button>
+              </div>
+              <div id="cc_search_results" class="list-group mt-2" style="display: none; max-height: 200px; overflow-y: auto;"></div>
+            </div>
+
+            <div id="cc_communes_list" class="mb-3">
+              <p class="text-muted">Aucune commune selectionnee</p>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="sauvegarderCC()">
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/parametres-communautes-communes.js"></script>
+</body>
+</html>

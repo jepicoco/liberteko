@@ -187,6 +187,8 @@ const ElementEmplacementModel = require('./ElementEmplacement');
 
 // Import Frequentation (comptage visiteurs)
 const CommuneModel = require('./Commune');
+const CommunauteCommunesModel = require('./CommunauteCommunes');
+const CommunauteCommunesMembreModel = require('./CommunauteCommunesMembre');
 const QuestionnaireFrequentationModel = require('./QuestionnaireFrequentation');
 const QuestionnaireCommuneFavoriteModel = require('./QuestionnaireCommuneFavorite');
 const EnregistrementFrequentationModel = require('./EnregistrementFrequentation');
@@ -196,6 +198,20 @@ const TabletPairingTokenModel = require('./TabletPairingToken');
 // Import Charte Usager (validation signature numerique)
 const CharteUsagerModel = require('./CharteUsager');
 const ValidationCharteModel = require('./ValidationCharte');
+
+// Import Tarification avancee (Types tarifs, QF, Reductions)
+const TypeTarifModel = require('./TypeTarif');
+const ConfigurationQuotientFamilialModel = require('./ConfigurationQuotientFamilial');
+const TrancheQuotientFamilialModel = require('./TrancheQuotientFamilial');
+const RegleReductionModel = require('./RegleReduction');
+const HistoriqueQuotientFamilialModel = require('./HistoriqueQuotientFamilial');
+const CotisationReductionModel = require('./CotisationReduction');
+const TarifTypeTarifModel = require('./TarifTypeTarif');
+const TrancheQFValeurModel = require('./TrancheQFValeur');
+
+// Import Tags Utilisateur (referentiel tags usagers)
+const TagUtilisateurModel = require('./TagUtilisateur');
+const UtilisateurTagModel = require('./UtilisateurTag');
 
 // Import Structures (Multi-structures V0.9)
 const OrganisationModel = require('./Organisation');
@@ -207,7 +223,10 @@ const ParametresFrontStructureModel = require('./ParametresFrontStructure');
 const StructureConnecteurCategorieModel = require('./StructureConnecteurCategorie');
 const StructureConnecteurEvenementModel = require('./StructureConnecteurEvenement');
 
+// ============================================================
 // Initialize models
+// ============================================================
+
 const Utilisateur = UtilisateurModel(sequelize);
 const Jeu = JeuModel(sequelize);
 const Emprunt = EmpruntModel(sequelize);
@@ -391,6 +410,8 @@ const ElementEmplacement = ElementEmplacementModel(sequelize);
 
 // Initialize Frequentation (comptage visiteurs)
 const Commune = CommuneModel(sequelize);
+const CommunauteCommunes = CommunauteCommunesModel(sequelize);
+const CommunauteCommunesMembre = CommunauteCommunesMembreModel(sequelize);
 const QuestionnaireFrequentation = QuestionnaireFrequentationModel(sequelize);
 const QuestionnaireCommuneFavorite = QuestionnaireCommuneFavoriteModel(sequelize);
 const EnregistrementFrequentation = EnregistrementFrequentationModel(sequelize);
@@ -400,6 +421,20 @@ const TabletPairingToken = TabletPairingTokenModel(sequelize);
 // Initialize Charte Usager (validation signature numerique)
 const CharteUsager = CharteUsagerModel(sequelize);
 const ValidationCharte = ValidationCharteModel(sequelize);
+
+// Initialize Tarification avancee (Types tarifs, QF, Reductions)
+const TypeTarif = TypeTarifModel(sequelize);
+const ConfigurationQuotientFamilial = ConfigurationQuotientFamilialModel(sequelize);
+const TrancheQuotientFamilial = TrancheQuotientFamilialModel(sequelize);
+const RegleReduction = RegleReductionModel(sequelize);
+const HistoriqueQuotientFamilial = HistoriqueQuotientFamilialModel(sequelize);
+const CotisationReduction = CotisationReductionModel(sequelize);
+const TarifTypeTarif = TarifTypeTarifModel(sequelize);
+const TrancheQFValeur = TrancheQFValeurModel(sequelize);
+
+// Initialize Tags Utilisateur (referentiel tags usagers)
+const TagUtilisateur = TagUtilisateurModel(sequelize);
+const UtilisateurTag = UtilisateurTagModel(sequelize);
 
 // Initialize Structures (Multi-structures V0.9)
 const Organisation = OrganisationModel(sequelize);
@@ -411,2040 +446,183 @@ const ParametresFrontStructure = ParametresFrontStructureModel(sequelize);
 const StructureConnecteurCategorie = StructureConnecteurCategorieModel(sequelize);
 const StructureConnecteurEvenement = StructureConnecteurEvenementModel(sequelize);
 
-// Define associations
-
-// Utilisateur <-> Utilisateur (Self-referencing for family relationships)
-Utilisateur.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_parent_id',
-  as: 'parent'
-});
-
-Utilisateur.hasMany(Utilisateur, {
-  foreignKey: 'utilisateur_parent_id',
-  as: 'enfants'
-});
-
-// Utilisateur <-> Emprunt (One-to-Many)
-Utilisateur.hasMany(Emprunt, {
-  foreignKey: 'utilisateur_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-// Jeu <-> Emprunt (One-to-Many)
-Jeu.hasMany(Emprunt, {
-  foreignKey: 'jeu_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(Jeu, {
-  foreignKey: 'jeu_id',
-  as: 'jeu'
-});
-
-// Livre <-> Emprunt (One-to-Many)
-Livre.hasMany(Emprunt, {
-  foreignKey: 'livre_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(Livre, {
-  foreignKey: 'livre_id',
-  as: 'livre'
-});
-
-// Film <-> Emprunt (One-to-Many)
-Film.hasMany(Emprunt, {
-  foreignKey: 'film_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(Film, {
-  foreignKey: 'film_id',
-  as: 'film'
-});
-
-// Disque <-> Emprunt (One-to-Many)
-Disque.hasMany(Emprunt, {
-  foreignKey: 'disque_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(Disque, {
-  foreignKey: 'disque_id',
-  as: 'disque'
-});
-
 // ============================================================
-// EXEMPLAIRES (exemplaires multiples par article)
+// Define associations via modular files
 // ============================================================
 
-// Jeu <-> ExemplaireJeu (One-to-Many)
-Jeu.hasMany(ExemplaireJeu, {
-  foreignKey: 'jeu_id',
-  as: 'exemplaires'
-});
+const models = {
+  // Core
+  Utilisateur,
+  Commune,
+  CommunauteCommunes,
+  CommunauteCommunesMembre,
+  Emprunt,
+  Jeu,
+  Livre,
+  Film,
+  Disque,
+  Cotisation,
+  TarifCotisation,
+  CodeReduction,
+  EmailLog,
+  SmsLog,
+  CompteBancaire,
+  Site,
+  HoraireOuverture,
+  FermetureExceptionnelle,
+  ParametresCalendrier,
 
-ExemplaireJeu.belongsTo(Jeu, {
-  foreignKey: 'jeu_id',
-  as: 'jeu'
-});
+  // Exemplaires
+  JeuEan,
+  ExemplaireJeu,
+  ExemplaireLivre,
+  ExemplaireFilm,
+  ExemplaireDisque,
+  EmplacementJeu,
+  EmplacementLivre,
+  EmplacementFilm,
+  EmplacementDisque,
 
-// Jeu <-> JeuEan (One-to-Many) - EAN multiples par jeu
-Jeu.hasMany(JeuEan, {
-  foreignKey: 'jeu_id',
-  as: 'eans'
-});
+  // Jeux normalization
+  Gamme,
+  Editeur,
+  Categorie,
+  JeuCategorie,
+  Theme,
+  JeuTheme,
+  Mecanisme,
+  JeuMecanisme,
+  Langue,
+  JeuLangue,
+  JeuEditeur,
+  Auteur,
+  JeuAuteur,
+  Illustrateur,
+  JeuIllustrateur,
 
-JeuEan.belongsTo(Jeu, {
-  foreignKey: 'jeu_id',
-  as: 'jeu'
-});
+  // Livres normalization
+  FormatLivre,
+  CollectionLivre,
+  GenreLitteraire,
+  LivreAuteur,
+  LivreEditeur,
+  LivreGenre,
+  LivreTheme,
+  LivreLangue,
 
-// ExemplaireJeu <-> EmplacementJeu (Many-to-One)
-EmplacementJeu.hasMany(ExemplaireJeu, {
-  foreignKey: 'emplacement_id',
-  as: 'exemplaires'
-});
+  // Films normalization
+  SupportVideo,
+  Realisateur,
+  FilmRealisateur,
+  Acteur,
+  FilmActeur,
+  GenreFilm,
+  FilmGenre,
+  FilmTheme,
+  FilmLangue,
+  FilmSousTitre,
+  Studio,
+  FilmStudio,
 
-ExemplaireJeu.belongsTo(EmplacementJeu, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacement'
-});
+  // Disques normalization
+  FormatDisque,
+  LabelDisque,
+  Artiste,
+  DisqueArtiste,
+  GenreMusical,
+  DisqueGenre,
 
-// ExemplaireJeu <-> Emprunt (One-to-Many)
-ExemplaireJeu.hasMany(Emprunt, {
-  foreignKey: 'exemplaire_jeu_id',
-  as: 'emprunts'
-});
+  // Prolongations et Reservations
+  Prolongation,
+  Reservation,
 
-Emprunt.belongsTo(ExemplaireJeu, {
-  foreignKey: 'exemplaire_jeu_id',
-  as: 'exemplaireJeu'
-});
+  // Comptabilite
+  TauxTVA,
+  SectionAnalytique,
+  RepartitionAnalytique,
+  EcritureComptable,
+  CompteComptable,
+  ParametrageComptableOperation,
+  CompteEncaissementModePaiement,
+  ModePaiement,
+  RegroupementAnalytique,
+  RegroupementAnalytiqueDetail,
 
-// Livre <-> ExemplaireLivre (One-to-Many)
-Livre.hasMany(ExemplaireLivre, {
-  foreignKey: 'livre_id',
-  as: 'exemplaires'
-});
+  // Thematiques IA
+  Thematique,
+  ThematiqueAlias,
+  ArticleThematique,
 
-ExemplaireLivre.belongsTo(Livre, {
-  foreignKey: 'livre_id',
-  as: 'livre'
-});
+  // Codes-barres
+  LotCodesBarres,
+  CodeBarreUtilisateur,
+  CodeBarreJeu,
+  CodeBarreLivre,
+  CodeBarreFilm,
+  CodeBarreDisque,
 
-// ExemplaireLivre <-> EmplacementLivre (Many-to-One)
-EmplacementLivre.hasMany(ExemplaireLivre, {
-  foreignKey: 'emplacement_id',
-  as: 'exemplaires'
-});
+  // Caisse et Factures
+  Caisse,
+  SessionCaisse,
+  MouvementCaisse,
+  Facture,
+  LigneFacture,
+  ReglementFacture,
 
-ExemplaireLivre.belongsTo(EmplacementLivre, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacement'
-});
+  // Plans
+  Plan,
+  Etage,
+  ElementPlan,
+  ElementEmplacement,
 
-// ExemplaireLivre <-> Emprunt (One-to-Many)
-ExemplaireLivre.hasMany(Emprunt, {
-  foreignKey: 'exemplaire_livre_id',
-  as: 'emprunts'
-});
+  // Frequentation
+  QuestionnaireFrequentation,
+  QuestionnaireCommuneFavorite,
+  EnregistrementFrequentation,
+  ApiKey,
+  ApiKeyQuestionnaire,
+  TabletPairingToken,
 
-Emprunt.belongsTo(ExemplaireLivre, {
-  foreignKey: 'exemplaire_livre_id',
-  as: 'exemplaireLivre'
-});
+  // Charte Usager
+  CharteUsager,
+  ValidationCharte,
 
-// Film <-> ExemplaireFilm (One-to-Many)
-Film.hasMany(ExemplaireFilm, {
-  foreignKey: 'film_id',
-  as: 'exemplaires'
-});
+  // Structures
+  Organisation,
+  Structure,
+  UtilisateurStructure,
+  GroupeFrontend,
+  GroupeFrontendStructure,
+  ParametresFrontStructure,
+  StructureConnecteurCategorie,
+  StructureConnecteurEvenement,
+  ConfigurationEmail,
+  ConfigurationSMS,
+  EventTrigger,
 
-ExemplaireFilm.belongsTo(Film, {
-  foreignKey: 'film_id',
-  as: 'film'
-});
+  // Tarification
+  TypeTarif,
+  TarifTypeTarif,
+  ConfigurationQuotientFamilial,
+  TrancheQuotientFamilial,
+  TrancheQFValeur,
+  RegleReduction,
+  HistoriqueQuotientFamilial,
+  CotisationReduction,
 
-// ExemplaireFilm <-> EmplacementFilm (Many-to-One)
-EmplacementFilm.hasMany(ExemplaireFilm, {
-  foreignKey: 'emplacement_id',
-  as: 'exemplaires'
-});
+  // Tags Utilisateur
+  TagUtilisateur,
+  UtilisateurTag
+};
 
-ExemplaireFilm.belongsTo(EmplacementFilm, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacement'
-});
-
-// ExemplaireFilm <-> Emprunt (One-to-Many)
-ExemplaireFilm.hasMany(Emprunt, {
-  foreignKey: 'exemplaire_film_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(ExemplaireFilm, {
-  foreignKey: 'exemplaire_film_id',
-  as: 'exemplaireFilm'
-});
-
-// Disque <-> ExemplaireDisque (One-to-Many)
-Disque.hasMany(ExemplaireDisque, {
-  foreignKey: 'disque_id',
-  as: 'exemplaires'
-});
-
-ExemplaireDisque.belongsTo(Disque, {
-  foreignKey: 'disque_id',
-  as: 'disque'
-});
-
-// ExemplaireDisque <-> EmplacementDisque (Many-to-One)
-EmplacementDisque.hasMany(ExemplaireDisque, {
-  foreignKey: 'emplacement_id',
-  as: 'exemplaires'
-});
-
-ExemplaireDisque.belongsTo(EmplacementDisque, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacement'
-});
-
-// ExemplaireDisque <-> Emprunt (One-to-Many)
-ExemplaireDisque.hasMany(Emprunt, {
-  foreignKey: 'exemplaire_disque_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(ExemplaireDisque, {
-  foreignKey: 'exemplaire_disque_id',
-  as: 'exemplaireDisque'
-});
+// Setup all associations from modular files
+const setupAllAssociations = require('./associations');
+setupAllAssociations(models);
 
 // ============================================================
-
-// Utilisateur <-> Cotisation (One-to-Many)
-Utilisateur.hasMany(Cotisation, {
-  foreignKey: 'utilisateur_id',
-  as: 'cotisations'
-});
-
-Cotisation.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-// TarifCotisation <-> Cotisation (One-to-Many)
-TarifCotisation.hasMany(Cotisation, {
-  foreignKey: 'tarif_cotisation_id',
-  as: 'cotisations'
-});
-
-Cotisation.belongsTo(TarifCotisation, {
-  foreignKey: 'tarif_cotisation_id',
-  as: 'tarif'
-});
-
-// CodeReduction <-> Cotisation (One-to-Many)
-CodeReduction.hasMany(Cotisation, {
-  foreignKey: 'code_reduction_id',
-  as: 'cotisations'
-});
-
-Cotisation.belongsTo(CodeReduction, {
-  foreignKey: 'code_reduction_id',
-  as: 'codeReduction'
-});
-
-// Utilisateur <-> EmailLog (One-to-Many)
-Utilisateur.hasMany(EmailLog, {
-  foreignKey: 'utilisateur_id',
-  as: 'emailLogs'
-});
-
-EmailLog.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-// Utilisateur <-> SmsLog (One-to-Many)
-Utilisateur.hasMany(SmsLog, {
-  foreignKey: 'utilisateur_id',
-  as: 'smsLogs'
-});
-
-SmsLog.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-// CompteBancaire <-> Site (One-to-Many)
-CompteBancaire.hasMany(Site, {
-  foreignKey: 'compte_bancaire_id',
-  as: 'sites'
-});
-
-Site.belongsTo(CompteBancaire, {
-  foreignKey: 'compte_bancaire_id',
-  as: 'compteBancaire'
-});
-
-// Site <-> HoraireOuverture (One-to-Many)
-Site.hasMany(HoraireOuverture, {
-  foreignKey: 'site_id',
-  as: 'horaires'
-});
-
-HoraireOuverture.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// Site <-> FermetureExceptionnelle (One-to-Many)
-// Note: site_id peut être NULL (fermeture globale)
-Site.hasMany(FermetureExceptionnelle, {
-  foreignKey: 'site_id',
-  as: 'fermetures'
-});
-
-FermetureExceptionnelle.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// Site <-> ParametresCalendrier (One-to-One)
-// Note: site_id peut être NULL (paramètres globaux)
-Site.hasOne(ParametresCalendrier, {
-  foreignKey: 'site_id',
-  as: 'parametresCalendrier'
-});
-
-ParametresCalendrier.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// ========================================
-// Associations pour normalisation des jeux
-// ========================================
-
-// Jeu <-> Gamme (Many-to-One)
-Gamme.hasMany(Jeu, {
-  foreignKey: 'gamme_id',
-  as: 'jeux'
-});
-
-Jeu.belongsTo(Gamme, {
-  foreignKey: 'gamme_id',
-  as: 'gammeRef'
-});
-
-// Jeu <-> EmplacementJeu (Many-to-One)
-EmplacementJeu.hasMany(Jeu, {
-  foreignKey: 'emplacement_id',
-  as: 'jeux'
-});
-
-Jeu.belongsTo(EmplacementJeu, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacementRef'
-});
-
-// Gamme <-> Editeur (Many-to-One)
-Editeur.hasMany(Gamme, {
-  foreignKey: 'editeur_id',
-  as: 'gammes'
-});
-
-Gamme.belongsTo(Editeur, {
-  foreignKey: 'editeur_id',
-  as: 'editeur'
-});
-
-// EmplacementJeu <-> Site (Many-to-One)
-Site.hasMany(EmplacementJeu, {
-  foreignKey: 'site_id',
-  as: 'emplacements'
-});
-
-EmplacementJeu.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// Jeu <-> Categorie (Many-to-Many)
-Jeu.belongsToMany(Categorie, {
-  through: JeuCategorie,
-  foreignKey: 'jeu_id',
-  otherKey: 'categorie_id',
-  as: 'categoriesRef'
-});
-
-Categorie.belongsToMany(Jeu, {
-  through: JeuCategorie,
-  foreignKey: 'categorie_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// Jeu <-> Theme (Many-to-Many)
-Jeu.belongsToMany(Theme, {
-  through: JeuTheme,
-  foreignKey: 'jeu_id',
-  otherKey: 'theme_id',
-  as: 'themesRef'
-});
-
-Theme.belongsToMany(Jeu, {
-  through: JeuTheme,
-  foreignKey: 'theme_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// Jeu <-> Mecanisme (Many-to-Many)
-Jeu.belongsToMany(Mecanisme, {
-  through: JeuMecanisme,
-  foreignKey: 'jeu_id',
-  otherKey: 'mecanisme_id',
-  as: 'mecanismesRef'
-});
-
-Mecanisme.belongsToMany(Jeu, {
-  through: JeuMecanisme,
-  foreignKey: 'mecanisme_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// Jeu <-> Langue (Many-to-Many)
-Jeu.belongsToMany(Langue, {
-  through: JeuLangue,
-  foreignKey: 'jeu_id',
-  otherKey: 'langue_id',
-  as: 'languesRef'
-});
-
-Langue.belongsToMany(Jeu, {
-  through: JeuLangue,
-  foreignKey: 'langue_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// Jeu <-> Editeur (Many-to-Many)
-Jeu.belongsToMany(Editeur, {
-  through: JeuEditeur,
-  foreignKey: 'jeu_id',
-  otherKey: 'editeur_id',
-  as: 'editeursRef'
-});
-
-Editeur.belongsToMany(Jeu, {
-  through: JeuEditeur,
-  foreignKey: 'editeur_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// Jeu <-> Auteur (Many-to-Many)
-Jeu.belongsToMany(Auteur, {
-  through: JeuAuteur,
-  foreignKey: 'jeu_id',
-  otherKey: 'auteur_id',
-  as: 'auteursRef'
-});
-
-Auteur.belongsToMany(Jeu, {
-  through: JeuAuteur,
-  foreignKey: 'auteur_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// Jeu <-> Illustrateur (Many-to-Many)
-Jeu.belongsToMany(Illustrateur, {
-  through: JeuIllustrateur,
-  foreignKey: 'jeu_id',
-  otherKey: 'illustrateur_id',
-  as: 'illustrateursRef'
-});
-
-Illustrateur.belongsToMany(Jeu, {
-  through: JeuIllustrateur,
-  foreignKey: 'illustrateur_id',
-  otherKey: 'jeu_id',
-  as: 'jeux'
-});
-
-// ========================================
-// Associations pour normalisation des livres
-// ========================================
-
-// Livre <-> FormatLivre (Many-to-One)
-FormatLivre.hasMany(Livre, {
-  foreignKey: 'format_id',
-  as: 'livres'
-});
-
-Livre.belongsTo(FormatLivre, {
-  foreignKey: 'format_id',
-  as: 'formatRef'
-});
-
-// Livre <-> CollectionLivre (Many-to-One)
-CollectionLivre.hasMany(Livre, {
-  foreignKey: 'collection_id',
-  as: 'livres'
-});
-
-Livre.belongsTo(CollectionLivre, {
-  foreignKey: 'collection_id',
-  as: 'collectionRef'
-});
-
-// Livre <-> EmplacementLivre (Many-to-One)
-EmplacementLivre.hasMany(Livre, {
-  foreignKey: 'emplacement_id',
-  as: 'livres'
-});
-
-Livre.belongsTo(EmplacementLivre, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacementRef'
-});
-
-// CollectionLivre <-> Editeur (Many-to-One)
-Editeur.hasMany(CollectionLivre, {
-  foreignKey: 'editeur_id',
-  as: 'collectionsLivres'
-});
-
-CollectionLivre.belongsTo(Editeur, {
-  foreignKey: 'editeur_id',
-  as: 'editeur'
-});
-
-// EmplacementLivre <-> Site (Many-to-One)
-Site.hasMany(EmplacementLivre, {
-  foreignKey: 'site_id',
-  as: 'emplacementsLivres'
-});
-
-EmplacementLivre.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// Livre <-> Auteur (Many-to-Many)
-Livre.belongsToMany(Auteur, {
-  through: LivreAuteur,
-  foreignKey: 'livre_id',
-  otherKey: 'auteur_id',
-  as: 'auteursRef'
-});
-
-Auteur.belongsToMany(Livre, {
-  through: LivreAuteur,
-  foreignKey: 'auteur_id',
-  otherKey: 'livre_id',
-  as: 'livres'
-});
-
-// Livre <-> Editeur (Many-to-Many)
-Livre.belongsToMany(Editeur, {
-  through: LivreEditeur,
-  foreignKey: 'livre_id',
-  otherKey: 'editeur_id',
-  as: 'editeursRef'
-});
-
-Editeur.belongsToMany(Livre, {
-  through: LivreEditeur,
-  foreignKey: 'editeur_id',
-  otherKey: 'livre_id',
-  as: 'livres'
-});
-
-// Livre <-> GenreLitteraire (Many-to-Many)
-Livre.belongsToMany(GenreLitteraire, {
-  through: LivreGenre,
-  foreignKey: 'livre_id',
-  otherKey: 'genre_id',
-  as: 'genresRef'
-});
-
-GenreLitteraire.belongsToMany(Livre, {
-  through: LivreGenre,
-  foreignKey: 'genre_id',
-  otherKey: 'livre_id',
-  as: 'livres'
-});
-
-// Livre <-> Theme (Many-to-Many)
-Livre.belongsToMany(Theme, {
-  through: LivreTheme,
-  foreignKey: 'livre_id',
-  otherKey: 'theme_id',
-  as: 'themesRef'
-});
-
-Theme.belongsToMany(Livre, {
-  through: LivreTheme,
-  foreignKey: 'theme_id',
-  otherKey: 'livre_id',
-  as: 'livres'
-});
-
-// Livre <-> Langue (Many-to-Many)
-Livre.belongsToMany(Langue, {
-  through: LivreLangue,
-  foreignKey: 'livre_id',
-  otherKey: 'langue_id',
-  as: 'languesRef'
-});
-
-Langue.belongsToMany(Livre, {
-  through: LivreLangue,
-  foreignKey: 'langue_id',
-  otherKey: 'livre_id',
-  as: 'livres'
-});
-
-// ========================================
-// Associations pour normalisation des films
-// ========================================
-
-// Film <-> SupportVideo (Many-to-One)
-SupportVideo.hasMany(Film, {
-  foreignKey: 'support_id',
-  as: 'films'
-});
-
-Film.belongsTo(SupportVideo, {
-  foreignKey: 'support_id',
-  as: 'supportRef'
-});
-
-// Film <-> EmplacementFilm (Many-to-One)
-EmplacementFilm.hasMany(Film, {
-  foreignKey: 'emplacement_id',
-  as: 'films'
-});
-
-Film.belongsTo(EmplacementFilm, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacementRef'
-});
-
-// EmplacementFilm <-> Site (Many-to-One)
-Site.hasMany(EmplacementFilm, {
-  foreignKey: 'site_id',
-  as: 'emplacementsFilms'
-});
-
-EmplacementFilm.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// Film <-> Realisateur (Many-to-Many)
-Film.belongsToMany(Realisateur, {
-  through: FilmRealisateur,
-  foreignKey: 'film_id',
-  otherKey: 'realisateur_id',
-  as: 'realisateursRef'
-});
-
-Realisateur.belongsToMany(Film, {
-  through: FilmRealisateur,
-  foreignKey: 'realisateur_id',
-  otherKey: 'film_id',
-  as: 'films'
-});
-
-// Film <-> Acteur (Many-to-Many avec rôle)
-Film.belongsToMany(Acteur, {
-  through: FilmActeur,
-  foreignKey: 'film_id',
-  otherKey: 'acteur_id',
-  as: 'acteursRef'
-});
-
-Acteur.belongsToMany(Film, {
-  through: FilmActeur,
-  foreignKey: 'acteur_id',
-  otherKey: 'film_id',
-  as: 'films'
-});
-
-// Film <-> GenreFilm (Many-to-Many)
-Film.belongsToMany(GenreFilm, {
-  through: FilmGenre,
-  foreignKey: 'film_id',
-  otherKey: 'genre_id',
-  as: 'genresRef'
-});
-
-GenreFilm.belongsToMany(Film, {
-  through: FilmGenre,
-  foreignKey: 'genre_id',
-  otherKey: 'film_id',
-  as: 'films'
-});
-
-// Film <-> Theme (Many-to-Many)
-Film.belongsToMany(Theme, {
-  through: FilmTheme,
-  foreignKey: 'film_id',
-  otherKey: 'theme_id',
-  as: 'themesRef'
-});
-
-Theme.belongsToMany(Film, {
-  through: FilmTheme,
-  foreignKey: 'theme_id',
-  otherKey: 'film_id',
-  as: 'films'
-});
-
-// Film <-> Langue (Many-to-Many) - Langues audio
-Film.belongsToMany(Langue, {
-  through: FilmLangue,
-  foreignKey: 'film_id',
-  otherKey: 'langue_id',
-  as: 'languesRef'
-});
-
-Langue.belongsToMany(Film, {
-  through: FilmLangue,
-  foreignKey: 'langue_id',
-  otherKey: 'film_id',
-  as: 'films'
-});
-
-// Film <-> Langue (Many-to-Many) - Sous-titres
-Film.belongsToMany(Langue, {
-  through: FilmSousTitre,
-  foreignKey: 'film_id',
-  otherKey: 'langue_id',
-  as: 'sousTitresRef'
-});
-
-Langue.belongsToMany(Film, {
-  through: FilmSousTitre,
-  foreignKey: 'langue_id',
-  otherKey: 'film_id',
-  as: 'filmsSousTitres'
-});
-
-// Film <-> Studio (Many-to-Many)
-Film.belongsToMany(Studio, {
-  through: FilmStudio,
-  foreignKey: 'film_id',
-  otherKey: 'studio_id',
-  as: 'studiosRef'
-});
-
-Studio.belongsToMany(Film, {
-  through: FilmStudio,
-  foreignKey: 'studio_id',
-  otherKey: 'film_id',
-  as: 'films'
-});
-
-// ========================================
-// Associations pour normalisation des disques
-// ========================================
-
-// Disque <-> FormatDisque (Many-to-One)
-FormatDisque.hasMany(Disque, {
-  foreignKey: 'format_id',
-  as: 'disques'
-});
-
-Disque.belongsTo(FormatDisque, {
-  foreignKey: 'format_id',
-  as: 'formatRef'
-});
-
-// Disque <-> LabelDisque (Many-to-One)
-LabelDisque.hasMany(Disque, {
-  foreignKey: 'label_id',
-  as: 'disques'
-});
-
-Disque.belongsTo(LabelDisque, {
-  foreignKey: 'label_id',
-  as: 'labelRef'
-});
-
-// Disque <-> EmplacementDisque (Many-to-One)
-EmplacementDisque.hasMany(Disque, {
-  foreignKey: 'emplacement_id',
-  as: 'disques'
-});
-
-Disque.belongsTo(EmplacementDisque, {
-  foreignKey: 'emplacement_id',
-  as: 'emplacementRef'
-});
-
-// Disque <-> Artiste (Many-to-Many avec rôle)
-Disque.belongsToMany(Artiste, {
-  through: DisqueArtiste,
-  foreignKey: 'disque_id',
-  otherKey: 'artiste_id',
-  as: 'artistesRef'
-});
-
-Artiste.belongsToMany(Disque, {
-  through: DisqueArtiste,
-  foreignKey: 'artiste_id',
-  otherKey: 'disque_id',
-  as: 'disques'
-});
-
-// Disque <-> GenreMusical (Many-to-Many)
-Disque.belongsToMany(GenreMusical, {
-  through: DisqueGenre,
-  foreignKey: 'disque_id',
-  otherKey: 'genre_id',
-  as: 'genresRef'
-});
-
-GenreMusical.belongsToMany(Disque, {
-  through: DisqueGenre,
-  foreignKey: 'genre_id',
-  otherKey: 'disque_id',
-  as: 'disques'
-});
-
-// ========================================
-// Associations pour les prolongations
-// ========================================
-
-// Emprunt <-> Prolongation (One-to-Many)
-Emprunt.hasMany(Prolongation, {
-  foreignKey: 'emprunt_id',
-  as: 'prolongations'
-});
-
-Prolongation.belongsTo(Emprunt, {
-  foreignKey: 'emprunt_id',
-  as: 'emprunt'
-});
-
-// Utilisateur <-> Prolongation (One-to-Many) - demandeur
-Utilisateur.hasMany(Prolongation, {
-  foreignKey: 'utilisateur_id',
-  as: 'prolongationsDemandees'
-});
-
-Prolongation.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'demandeur'
-});
-
-// Utilisateur <-> Prolongation (One-to-Many) - admin qui traite
-Prolongation.belongsTo(Utilisateur, {
-  foreignKey: 'traite_par',
-  as: 'traitePar'
-});
-
-// ========================================
-// Associations pour les reservations
-// ========================================
-
-// Utilisateur <-> Reservation (One-to-Many)
-Utilisateur.hasMany(Reservation, {
-  foreignKey: 'utilisateur_id',
-  as: 'reservations'
-});
-
-Reservation.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-// Jeu <-> Reservation (One-to-Many)
-Jeu.hasMany(Reservation, {
-  foreignKey: 'jeu_id',
-  as: 'reservations'
-});
-
-Reservation.belongsTo(Jeu, {
-  foreignKey: 'jeu_id',
-  as: 'jeu'
-});
-
-// Livre <-> Reservation (One-to-Many)
-Livre.hasMany(Reservation, {
-  foreignKey: 'livre_id',
-  as: 'reservations'
-});
-
-Reservation.belongsTo(Livre, {
-  foreignKey: 'livre_id',
-  as: 'livre'
-});
-
-// Film <-> Reservation (One-to-Many)
-Film.hasMany(Reservation, {
-  foreignKey: 'film_id',
-  as: 'reservations'
-});
-
-Reservation.belongsTo(Film, {
-  foreignKey: 'film_id',
-  as: 'film'
-});
-
-// Disque <-> Reservation (One-to-Many)
-Disque.hasMany(Reservation, {
-  foreignKey: 'cd_id',
-  as: 'reservations'
-});
-
-Reservation.belongsTo(Disque, {
-  foreignKey: 'cd_id',
-  as: 'disque'
-});
-
-// Emprunt <-> Reservation (One-to-One) - apres conversion
-Reservation.belongsTo(Emprunt, {
-  foreignKey: 'emprunt_id',
-  as: 'emprunt'
-});
-
-Emprunt.hasOne(Reservation, {
-  foreignKey: 'emprunt_id',
-  as: 'reservationOrigine'
-});
-
-// ========================================
-// ASSOCIATIONS COMPTABILITE (TVA et Analytique)
-// ========================================
-
-// TarifCotisation <-> TauxTVA (Many-to-One)
-TarifCotisation.belongsTo(TauxTVA, {
-  foreignKey: 'taux_tva_id',
-  as: 'tauxTVA'
-});
-
-TauxTVA.hasMany(TarifCotisation, {
-  foreignKey: 'taux_tva_id',
-  as: 'tarifsCotisation'
-});
-
-// SectionAnalytique - auto-reference pour hierarchie
-SectionAnalytique.belongsTo(SectionAnalytique, {
-  foreignKey: 'parent_id',
-  as: 'parent'
-});
-
-SectionAnalytique.hasMany(SectionAnalytique, {
-  foreignKey: 'parent_id',
-  as: 'enfants'
-});
-
-// RepartitionAnalytique <-> SectionAnalytique (Many-to-One)
-RepartitionAnalytique.belongsTo(SectionAnalytique, {
-  foreignKey: 'section_analytique_id',
-  as: 'section'
-});
-
-SectionAnalytique.hasMany(RepartitionAnalytique, {
-  foreignKey: 'section_analytique_id',
-  as: 'repartitions'
-});
-
-// ========================================
-// ASSOCIATIONS COMPTABILITE (Phase 1 - FEC)
-// ========================================
-
-// EcritureComptable <-> Cotisation (Many-to-One)
-EcritureComptable.belongsTo(Cotisation, {
-  foreignKey: 'cotisation_id',
-  as: 'cotisation'
-});
-
-Cotisation.hasMany(EcritureComptable, {
-  foreignKey: 'cotisation_id',
-  as: 'ecritures'
-});
-
-// ========================================
-// ASSOCIATIONS COMPTABILITE (Phase 2 - Parametrage)
-// ========================================
-
-// CompteComptable - auto-reference pour hierarchie
-CompteComptable.belongsTo(CompteComptable, {
-  foreignKey: 'parent_id',
-  as: 'parent'
-});
-
-CompteComptable.hasMany(CompteComptable, {
-  foreignKey: 'parent_id',
-  as: 'enfants'
-});
-
-// ParametrageComptableOperation <-> TauxTVA (Many-to-One)
-ParametrageComptableOperation.belongsTo(TauxTVA, {
-  foreignKey: 'taux_tva_id',
-  as: 'tauxTVA'
-});
-
-TauxTVA.hasMany(ParametrageComptableOperation, {
-  foreignKey: 'taux_tva_id',
-  as: 'parametragesOperations'
-});
-
-// ParametrageComptableOperation <-> SectionAnalytique (Many-to-One)
-ParametrageComptableOperation.belongsTo(SectionAnalytique, {
-  foreignKey: 'section_analytique_id',
-  as: 'sectionAnalytique'
-});
-
-SectionAnalytique.hasMany(ParametrageComptableOperation, {
-  foreignKey: 'section_analytique_id',
-  as: 'parametragesOperations'
-});
-
-// CompteEncaissementModePaiement <-> ModePaiement (Many-to-One)
-CompteEncaissementModePaiement.belongsTo(ModePaiement, {
-  foreignKey: 'mode_paiement_id',
-  as: 'modePaiement'
-});
-
-ModePaiement.hasOne(CompteEncaissementModePaiement, {
-  foreignKey: 'mode_paiement_id',
-  as: 'compteEncaissement'
-});
-
-// ========================================
-// ASSOCIATIONS THEMATIQUES IA
-// ========================================
-
-// Thematique <-> ThematiqueAlias (One-to-Many)
-Thematique.hasMany(ThematiqueAlias, {
-  foreignKey: 'thematique_id',
-  as: 'alias'
-});
-
-ThematiqueAlias.belongsTo(Thematique, {
-  foreignKey: 'thematique_id',
-  as: 'thematique'
-});
-
-// Thematique <-> ArticleThematique (One-to-Many)
-Thematique.hasMany(ArticleThematique, {
-  foreignKey: 'thematique_id',
-  as: 'articles'
-});
-
-ArticleThematique.belongsTo(Thematique, {
-  foreignKey: 'thematique_id',
-  as: 'thematique'
-});
-
-// ========================================
-// ASSOCIATIONS CODES-BARRES RESERVES
-// ========================================
-
-// LotCodesBarres <-> Utilisateur (createur du lot)
-LotCodesBarres.belongsTo(Utilisateur, {
-  foreignKey: 'cree_par',
-  as: 'createur'
-});
-
-Utilisateur.hasMany(LotCodesBarres, {
-  foreignKey: 'cree_par',
-  as: 'lotsCodesBarres'
-});
-
-// LotCodesBarres <-> CodeBarreUtilisateur (One-to-Many)
-LotCodesBarres.hasMany(CodeBarreUtilisateur, {
-  foreignKey: 'lot_id',
-  as: 'codesUtilisateurs'
-});
-
-CodeBarreUtilisateur.belongsTo(LotCodesBarres, {
-  foreignKey: 'lot_id',
-  as: 'lot'
-});
-
-// CodeBarreUtilisateur <-> Utilisateur (association)
-CodeBarreUtilisateur.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-Utilisateur.hasOne(CodeBarreUtilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'codeBarreReserve'
-});
-
-// LotCodesBarres <-> CodeBarreJeu (One-to-Many)
-LotCodesBarres.hasMany(CodeBarreJeu, {
-  foreignKey: 'lot_id',
-  as: 'codesJeux'
-});
-
-CodeBarreJeu.belongsTo(LotCodesBarres, {
-  foreignKey: 'lot_id',
-  as: 'lot'
-});
-
-// CodeBarreJeu <-> Jeu (association)
-CodeBarreJeu.belongsTo(Jeu, {
-  foreignKey: 'jeu_id',
-  as: 'jeu'
-});
-
-Jeu.hasOne(CodeBarreJeu, {
-  foreignKey: 'jeu_id',
-  as: 'codeBarreReserve'
-});
-
-// LotCodesBarres <-> CodeBarreLivre (One-to-Many)
-LotCodesBarres.hasMany(CodeBarreLivre, {
-  foreignKey: 'lot_id',
-  as: 'codesLivres'
-});
-
-CodeBarreLivre.belongsTo(LotCodesBarres, {
-  foreignKey: 'lot_id',
-  as: 'lot'
-});
-
-// CodeBarreLivre <-> Livre (association)
-CodeBarreLivre.belongsTo(Livre, {
-  foreignKey: 'livre_id',
-  as: 'livre'
-});
-
-Livre.hasOne(CodeBarreLivre, {
-  foreignKey: 'livre_id',
-  as: 'codeBarreReserve'
-});
-
-// LotCodesBarres <-> CodeBarreFilm (One-to-Many)
-LotCodesBarres.hasMany(CodeBarreFilm, {
-  foreignKey: 'lot_id',
-  as: 'codesFilms'
-});
-
-CodeBarreFilm.belongsTo(LotCodesBarres, {
-  foreignKey: 'lot_id',
-  as: 'lot'
-});
-
-// CodeBarreFilm <-> Film (association)
-CodeBarreFilm.belongsTo(Film, {
-  foreignKey: 'film_id',
-  as: 'film'
-});
-
-Film.hasOne(CodeBarreFilm, {
-  foreignKey: 'film_id',
-  as: 'codeBarreReserve'
-});
-
-// LotCodesBarres <-> CodeBarreDisque (One-to-Many)
-LotCodesBarres.hasMany(CodeBarreDisque, {
-  foreignKey: 'lot_id',
-  as: 'codesDisques'
-});
-
-CodeBarreDisque.belongsTo(LotCodesBarres, {
-  foreignKey: 'lot_id',
-  as: 'lot'
-});
-
-// CodeBarreDisque <-> Disque (association)
-CodeBarreDisque.belongsTo(Disque, {
-  foreignKey: 'disque_id',
-  as: 'disque'
-});
-
-Disque.hasOne(CodeBarreDisque, {
-  foreignKey: 'disque_id',
-  as: 'codeBarreReserve'
-});
-
-// ========================================
-// ASSOCIATIONS CAISSE (Gestion des règlements)
-// ========================================
-
-// Caisse <-> Site (Many-to-One)
-Caisse.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-Site.hasMany(Caisse, {
-  foreignKey: 'site_id',
-  as: 'caisses'
-});
-
-// Caisse <-> Utilisateur (responsable)
-Caisse.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_responsable_id',
-  as: 'responsable'
-});
-
-Utilisateur.hasMany(Caisse, {
-  foreignKey: 'utilisateur_responsable_id',
-  as: 'caissesResponsable'
-});
-
-// Caisse <-> SessionCaisse (One-to-Many)
-Caisse.hasMany(SessionCaisse, {
-  foreignKey: 'caisse_id',
-  as: 'sessions'
-});
-
-SessionCaisse.belongsTo(Caisse, {
-  foreignKey: 'caisse_id',
-  as: 'caisse'
-});
-
-// SessionCaisse <-> Utilisateur (ouverture)
-SessionCaisse.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-Utilisateur.hasMany(SessionCaisse, {
-  foreignKey: 'utilisateur_id',
-  as: 'sessionsOuvertes'
-});
-
-// SessionCaisse <-> Utilisateur (cloture)
-SessionCaisse.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_cloture_id',
-  as: 'utilisateurCloture'
-});
-
-Utilisateur.hasMany(SessionCaisse, {
-  foreignKey: 'utilisateur_cloture_id',
-  as: 'sessionsCloturees'
-});
-
-// SessionCaisse <-> MouvementCaisse (One-to-Many)
-SessionCaisse.hasMany(MouvementCaisse, {
-  foreignKey: 'session_caisse_id',
-  as: 'mouvements'
-});
-
-MouvementCaisse.belongsTo(SessionCaisse, {
-  foreignKey: 'session_caisse_id',
-  as: 'session'
-});
-
-// MouvementCaisse <-> Utilisateur (adherent concerne)
-MouvementCaisse.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-Utilisateur.hasMany(MouvementCaisse, {
-  foreignKey: 'utilisateur_id',
-  as: 'mouvementsCaisse'
-});
-
-// MouvementCaisse <-> Utilisateur (operateur)
-MouvementCaisse.belongsTo(Utilisateur, {
-  foreignKey: 'operateur_id',
-  as: 'operateur'
-});
-
-Utilisateur.hasMany(MouvementCaisse, {
-  foreignKey: 'operateur_id',
-  as: 'mouvementsOperes'
-});
-
-// MouvementCaisse <-> Cotisation (optionnel)
-MouvementCaisse.belongsTo(Cotisation, {
-  foreignKey: 'cotisation_id',
-  as: 'cotisation'
-});
-
-Cotisation.hasMany(MouvementCaisse, {
-  foreignKey: 'cotisation_id',
-  as: 'mouvementsCaisse'
-});
-
-// MouvementCaisse <-> Emprunt (optionnel)
-MouvementCaisse.belongsTo(Emprunt, {
-  foreignKey: 'emprunt_id',
-  as: 'emprunt'
-});
-
-Emprunt.hasMany(MouvementCaisse, {
-  foreignKey: 'emprunt_id',
-  as: 'mouvementsCaisse'
-});
-
-// MouvementCaisse <-> EcritureComptable (optionnel)
-MouvementCaisse.belongsTo(EcritureComptable, {
-  foreignKey: 'ecriture_comptable_id',
-  as: 'ecritureComptable'
-});
-
-EcritureComptable.hasMany(MouvementCaisse, {
-  foreignKey: 'ecriture_comptable_id',
-  as: 'mouvementsCaisse'
-});
-
-// ========================================
-// ASSOCIATIONS FACTURES
-// ========================================
-
-// Facture <-> Utilisateur (client)
-Facture.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'client'
-});
-
-Utilisateur.hasMany(Facture, {
-  foreignKey: 'utilisateur_id',
-  as: 'factures'
-});
-
-// Facture <-> Utilisateur (créateur)
-Facture.belongsTo(Utilisateur, {
-  foreignKey: 'cree_par_id',
-  as: 'createur'
-});
-
-// Facture <-> Cotisation (optionnel)
-Facture.belongsTo(Cotisation, {
-  foreignKey: 'cotisation_id',
-  as: 'cotisation'
-});
-
-Cotisation.hasOne(Facture, {
-  foreignKey: 'cotisation_id',
-  as: 'facture'
-});
-
-// Facture <-> Facture (avoir -> facture origine)
-Facture.belongsTo(Facture, {
-  foreignKey: 'facture_avoir_reference_id',
-  as: 'factureOrigine'
-});
-
-Facture.hasMany(Facture, {
-  foreignKey: 'facture_avoir_reference_id',
-  as: 'avoirs'
-});
-
-// Facture <-> EcritureComptable (optionnel)
-Facture.belongsTo(EcritureComptable, {
-  foreignKey: 'ecriture_comptable_id',
-  as: 'ecritureComptable'
-});
-
-EcritureComptable.hasMany(Facture, {
-  foreignKey: 'ecriture_comptable_id',
-  as: 'factures'
-});
-
-// Facture <-> LigneFacture (One-to-Many)
-Facture.hasMany(LigneFacture, {
-  foreignKey: 'facture_id',
-  as: 'lignes'
-});
-
-LigneFacture.belongsTo(Facture, {
-  foreignKey: 'facture_id',
-  as: 'facture'
-});
-
-// LigneFacture <-> SectionAnalytique (optionnel)
-LigneFacture.belongsTo(SectionAnalytique, {
-  foreignKey: 'section_analytique_id',
-  as: 'sectionAnalytique'
-});
-
-SectionAnalytique.hasMany(LigneFacture, {
-  foreignKey: 'section_analytique_id',
-  as: 'lignesFacture'
-});
-
-// LigneFacture <-> Cotisation (optionnel)
-LigneFacture.belongsTo(Cotisation, {
-  foreignKey: 'cotisation_id',
-  as: 'cotisation'
-});
-
-// Facture <-> ReglementFacture (One-to-Many)
-Facture.hasMany(ReglementFacture, {
-  foreignKey: 'facture_id',
-  as: 'reglements'
-});
-
-ReglementFacture.belongsTo(Facture, {
-  foreignKey: 'facture_id',
-  as: 'facture'
-});
-
-// ReglementFacture <-> ModePaiement (optionnel)
-ReglementFacture.belongsTo(ModePaiement, {
-  foreignKey: 'mode_paiement_id',
-  as: 'modePaiement'
-});
-
-// ReglementFacture <-> MouvementCaisse (optionnel)
-ReglementFacture.belongsTo(MouvementCaisse, {
-  foreignKey: 'mouvement_caisse_id',
-  as: 'mouvementCaisse'
-});
-
-MouvementCaisse.hasOne(ReglementFacture, {
-  foreignKey: 'mouvement_caisse_id',
-  as: 'reglementFacture'
-});
-
-// ReglementFacture <-> CompteBancaire (optionnel)
-ReglementFacture.belongsTo(CompteBancaire, {
-  foreignKey: 'compte_bancaire_id',
-  as: 'compteBancaire'
-});
-
-// ReglementFacture <-> Utilisateur (enregistreur)
-ReglementFacture.belongsTo(Utilisateur, {
-  foreignKey: 'enregistre_par_id',
-  as: 'enregistrePar'
-});
-
-// ========================================
-// ASSOCIATIONS REGROUPEMENTS ANALYTIQUES
-// ========================================
-
-// RegroupementAnalytique <-> RegroupementAnalytiqueDetail (One-to-Many)
-RegroupementAnalytique.hasMany(RegroupementAnalytiqueDetail, {
-  foreignKey: 'regroupement_id',
-  as: 'details'
-});
-
-RegroupementAnalytiqueDetail.belongsTo(RegroupementAnalytique, {
-  foreignKey: 'regroupement_id',
-  as: 'regroupement'
-});
-
-// RegroupementAnalytiqueDetail <-> SectionAnalytique (Many-to-One)
-RegroupementAnalytiqueDetail.belongsTo(SectionAnalytique, {
-  foreignKey: 'section_analytique_id',
-  as: 'section'
-});
-
-SectionAnalytique.hasMany(RegroupementAnalytiqueDetail, {
-  foreignKey: 'section_analytique_id',
-  as: 'regroupementsDetails'
-});
-
-// ParametrageComptableOperation <-> RegroupementAnalytique (Many-to-One, optionnel)
-ParametrageComptableOperation.belongsTo(RegroupementAnalytique, {
-  foreignKey: 'regroupement_analytique_id',
-  as: 'regroupementAnalytique'
-});
-
-RegroupementAnalytique.hasMany(ParametrageComptableOperation, {
-  foreignKey: 'regroupement_analytique_id',
-  as: 'parametragesOperations'
-});
-
-// ============================================
-// Plans (Editeur de plans interactifs)
-// ============================================
-
-// Site <-> Plan (One-to-One)
-Site.hasOne(Plan, {
-  foreignKey: 'site_id',
-  as: 'plan'
-});
-
-Plan.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// Plan <-> Etage (One-to-Many)
-Plan.hasMany(Etage, {
-  foreignKey: 'plan_id',
-  as: 'etages'
-});
-
-Etage.belongsTo(Plan, {
-  foreignKey: 'plan_id',
-  as: 'plan'
-});
-
-// Etage <-> ElementPlan (One-to-Many)
-Etage.hasMany(ElementPlan, {
-  foreignKey: 'etage_id',
-  as: 'elements'
-});
-
-ElementPlan.belongsTo(Etage, {
-  foreignKey: 'etage_id',
-  as: 'etage'
-});
-
-// ElementPlan <-> ElementEmplacement (One-to-Many)
-ElementPlan.hasMany(ElementEmplacement, {
-  foreignKey: 'element_plan_id',
-  as: 'emplacements'
-});
-
-ElementEmplacement.belongsTo(ElementPlan, {
-  foreignKey: 'element_plan_id',
-  as: 'elementPlan'
-});
-
-// ElementEmplacement <-> Emplacements (Many-to-One pour chaque type)
-ElementEmplacement.belongsTo(EmplacementJeu, {
-  foreignKey: 'emplacement_jeu_id',
-  as: 'emplacementJeu'
-});
-
-EmplacementJeu.hasMany(ElementEmplacement, {
-  foreignKey: 'emplacement_jeu_id',
-  as: 'elementsPlan'
-});
-
-ElementEmplacement.belongsTo(EmplacementLivre, {
-  foreignKey: 'emplacement_livre_id',
-  as: 'emplacementLivre'
-});
-
-EmplacementLivre.hasMany(ElementEmplacement, {
-  foreignKey: 'emplacement_livre_id',
-  as: 'elementsPlan'
-});
-
-ElementEmplacement.belongsTo(EmplacementFilm, {
-  foreignKey: 'emplacement_film_id',
-  as: 'emplacementFilm'
-});
-
-EmplacementFilm.hasMany(ElementEmplacement, {
-  foreignKey: 'emplacement_film_id',
-  as: 'elementsPlan'
-});
-
-ElementEmplacement.belongsTo(EmplacementDisque, {
-  foreignKey: 'emplacement_disque_id',
-  as: 'emplacementDisque'
-});
-
-EmplacementDisque.hasMany(ElementEmplacement, {
-  foreignKey: 'emplacement_disque_id',
-  as: 'elementsPlan'
-});
-
-// ============================================
-// Frequentation (Comptage visiteurs)
-// ============================================
-
-// QuestionnaireFrequentation <-> Site (Many-to-One, site unique)
-QuestionnaireFrequentation.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-Site.hasMany(QuestionnaireFrequentation, {
-  foreignKey: 'site_id',
-  as: 'questionnairesFrequentation'
-});
-
-// QuestionnaireFrequentation <-> Utilisateur (createur)
-QuestionnaireFrequentation.belongsTo(Utilisateur, {
-  foreignKey: 'cree_par',
-  as: 'createur'
-});
-
-Utilisateur.hasMany(QuestionnaireFrequentation, {
-  foreignKey: 'cree_par',
-  as: 'questionnairesCreees'
-});
-
-// QuestionnaireCommuneFavorite <-> QuestionnaireFrequentation
-QuestionnaireCommuneFavorite.belongsTo(QuestionnaireFrequentation, {
-  foreignKey: 'questionnaire_id',
-  as: 'questionnaire'
-});
-
-QuestionnaireFrequentation.hasMany(QuestionnaireCommuneFavorite, {
-  foreignKey: 'questionnaire_id',
-  as: 'communesFavorites'
-});
-
-// QuestionnaireCommuneFavorite <-> Commune
-QuestionnaireCommuneFavorite.belongsTo(Commune, {
-  foreignKey: 'commune_id',
-  as: 'commune'
-});
-
-Commune.hasMany(QuestionnaireCommuneFavorite, {
-  foreignKey: 'commune_id',
-  as: 'favoritesDans'
-});
-
-// EnregistrementFrequentation <-> QuestionnaireFrequentation
-EnregistrementFrequentation.belongsTo(QuestionnaireFrequentation, {
-  foreignKey: 'questionnaire_id',
-  as: 'questionnaire'
-});
-
-QuestionnaireFrequentation.hasMany(EnregistrementFrequentation, {
-  foreignKey: 'questionnaire_id',
-  as: 'enregistrements'
-});
-
-// EnregistrementFrequentation <-> Site
-EnregistrementFrequentation.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-Site.hasMany(EnregistrementFrequentation, {
-  foreignKey: 'site_id',
-  as: 'enregistrementsFrequentation'
-});
-
-// EnregistrementFrequentation <-> ApiKey (tablette)
-EnregistrementFrequentation.belongsTo(ApiKey, {
-  foreignKey: 'api_key_id',
-  as: 'tablette'
-});
-
-ApiKey.hasMany(EnregistrementFrequentation, {
-  foreignKey: 'api_key_id',
-  as: 'enregistrementsFrequentation'
-});
-
-// EnregistrementFrequentation <-> Commune
-EnregistrementFrequentation.belongsTo(Commune, {
-  foreignKey: 'commune_id',
-  as: 'commune'
-});
-
-Commune.hasMany(EnregistrementFrequentation, {
-  foreignKey: 'commune_id',
-  as: 'enregistrements'
-});
-
-// ApiKeyQuestionnaire <-> ApiKey
-ApiKeyQuestionnaire.belongsTo(ApiKey, {
-  foreignKey: 'api_key_id',
-  as: 'apiKey'
-});
-
-ApiKey.hasMany(ApiKeyQuestionnaire, {
-  foreignKey: 'api_key_id',
-  as: 'questionnairesLies'
-});
-
-// ApiKeyQuestionnaire <-> QuestionnaireFrequentation
-ApiKeyQuestionnaire.belongsTo(QuestionnaireFrequentation, {
-  foreignKey: 'questionnaire_id',
-  as: 'questionnaire'
-});
-
-QuestionnaireFrequentation.hasMany(ApiKeyQuestionnaire, {
-  foreignKey: 'questionnaire_id',
-  as: 'tablettesLiees'
-});
-
-// ApiKeyQuestionnaire <-> Site
-ApiKeyQuestionnaire.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-Site.hasMany(ApiKeyQuestionnaire, {
-  foreignKey: 'site_id',
-  as: 'tablettesFrequentation'
-});
-
-// TabletPairingToken <-> QuestionnaireFrequentation
-TabletPairingToken.belongsTo(QuestionnaireFrequentation, {
-  foreignKey: 'questionnaire_id',
-  as: 'questionnaire'
-});
-
-QuestionnaireFrequentation.hasMany(TabletPairingToken, {
-  foreignKey: 'questionnaire_id',
-  as: 'pairingTokens'
-});
-
-// TabletPairingToken <-> Site
-TabletPairingToken.belongsTo(Site, {
-  foreignKey: 'site_id',
-  as: 'site'
-});
-
-// TabletPairingToken <-> ApiKey
-TabletPairingToken.belongsTo(ApiKey, {
-  foreignKey: 'api_key_id',
-  as: 'apiKey'
-});
-
-// ============================================
-// Charte Usager (Validation signature numerique)
-// ============================================
-
-// CharteUsager <-> ValidationCharte (One-to-Many)
-CharteUsager.hasMany(ValidationCharte, {
-  foreignKey: 'charte_id',
-  as: 'validations'
-});
-
-ValidationCharte.belongsTo(CharteUsager, {
-  foreignKey: 'charte_id',
-  as: 'charte'
-});
-
-// Utilisateur <-> ValidationCharte (One-to-Many)
-Utilisateur.hasMany(ValidationCharte, {
-  foreignKey: 'utilisateur_id',
-  as: 'validationsCharte'
-});
-
-ValidationCharte.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-// Cotisation <-> ValidationCharte (One-to-One)
-Cotisation.hasOne(ValidationCharte, {
-  foreignKey: 'cotisation_id',
-  as: 'validationCharte'
-});
-
-ValidationCharte.belongsTo(Cotisation, {
-  foreignKey: 'cotisation_id',
-  as: 'cotisation'
-});
-
-// ============================================
-// Organisations et Structures (Multi-structures V0.9)
-// ============================================
-
-// Organisation <-> Structure (One-to-Many)
-Organisation.hasMany(Structure, {
-  foreignKey: 'organisation_id',
-  as: 'structures'
-});
-
-Structure.belongsTo(Organisation, {
-  foreignKey: 'organisation_id',
-  as: 'organisation'
-});
-
-// Organisation <-> ConfigurationEmail (Many-to-One)
-Organisation.belongsTo(ConfigurationEmail, {
-  foreignKey: 'configuration_email_id',
-  as: 'configurationEmail'
-});
-
-ConfigurationEmail.hasMany(Organisation, {
-  foreignKey: 'configuration_email_id',
-  as: 'organisations'
-});
-
-// Organisation <-> ConfigurationSMS (Many-to-One)
-Organisation.belongsTo(ConfigurationSMS, {
-  foreignKey: 'configuration_sms_id',
-  as: 'configurationSms'
-});
-
-ConfigurationSMS.hasMany(Organisation, {
-  foreignKey: 'configuration_sms_id',
-  as: 'organisations'
-});
-
-// Structure <-> Site (One-to-Many)
-Structure.hasMany(Site, {
-  foreignKey: 'structure_id',
-  as: 'sites'
-});
-
-Site.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> ParametresFrontStructure (One-to-One)
-Structure.hasOne(ParametresFrontStructure, {
-  foreignKey: 'structure_id',
-  as: 'parametresFront'
-});
-
-ParametresFrontStructure.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> SectionAnalytique (Many-to-One)
-Structure.belongsTo(SectionAnalytique, {
-  foreignKey: 'section_analytique_id',
-  as: 'sectionAnalytique'
-});
-
-SectionAnalytique.hasMany(Structure, {
-  foreignKey: 'section_analytique_id',
-  as: 'structures'
-});
-
-// Structure <-> Utilisateur (Many-to-Many via UtilisateurStructure)
-Structure.belongsToMany(Utilisateur, {
-  through: UtilisateurStructure,
-  foreignKey: 'structure_id',
-  otherKey: 'utilisateur_id',
-  as: 'utilisateurs'
-});
-
-Utilisateur.belongsToMany(Structure, {
-  through: UtilisateurStructure,
-  foreignKey: 'utilisateur_id',
-  otherKey: 'structure_id',
-  as: 'structures'
-});
-
-// UtilisateurStructure direct associations pour acces aux champs pivot
-UtilisateurStructure.belongsTo(Utilisateur, {
-  foreignKey: 'utilisateur_id',
-  as: 'utilisateur'
-});
-
-Utilisateur.hasMany(UtilisateurStructure, {
-  foreignKey: 'utilisateur_id',
-  as: 'accesStructures'
-});
-
-UtilisateurStructure.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(UtilisateurStructure, {
-  foreignKey: 'structure_id',
-  as: 'accesUtilisateurs'
-});
-
-// GroupeFrontend <-> Structure (Many-to-Many via GroupeFrontendStructure)
-GroupeFrontend.belongsToMany(Structure, {
-  through: GroupeFrontendStructure,
-  foreignKey: 'groupe_frontend_id',
-  otherKey: 'structure_id',
-  as: 'structures'
-});
-
-Structure.belongsToMany(GroupeFrontend, {
-  through: GroupeFrontendStructure,
-  foreignKey: 'structure_id',
-  otherKey: 'groupe_frontend_id',
-  as: 'groupesFrontend'
-});
-
-// GroupeFrontendStructure direct associations
-GroupeFrontendStructure.belongsTo(GroupeFrontend, {
-  foreignKey: 'groupe_frontend_id',
-  as: 'groupe'
-});
-
-GroupeFrontend.hasMany(GroupeFrontendStructure, {
-  foreignKey: 'groupe_frontend_id',
-  as: 'liensStructures'
-});
-
-GroupeFrontendStructure.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(GroupeFrontendStructure, {
-  foreignKey: 'structure_id',
-  as: 'liensGroupes'
-});
-
-// Structure <-> Collections (One-to-Many - optionnel si structure_id existe)
-Structure.hasMany(Jeu, {
-  foreignKey: 'structure_id',
-  as: 'jeux'
-});
-
-Jeu.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(Livre, {
-  foreignKey: 'structure_id',
-  as: 'livres'
-});
-
-Livre.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(Film, {
-  foreignKey: 'structure_id',
-  as: 'films'
-});
-
-Film.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(Disque, {
-  foreignKey: 'structure_id',
-  as: 'disques'
-});
-
-Disque.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> Cotisation (One-to-Many)
-Structure.hasMany(Cotisation, {
-  foreignKey: 'structure_id',
-  as: 'cotisations'
-});
-
-Cotisation.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> TarifCotisation (One-to-Many)
-Structure.hasMany(TarifCotisation, {
-  foreignKey: 'structure_id',
-  as: 'tarifsCotisation'
-});
-
-TarifCotisation.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> Emprunt (One-to-Many)
-Structure.hasMany(Emprunt, {
-  foreignKey: 'structure_id',
-  as: 'emprunts'
-});
-
-Emprunt.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> EcritureComptable (One-to-Many)
-Structure.hasMany(EcritureComptable, {
-  foreignKey: 'structure_id',
-  as: 'ecrituresComptables'
-});
-
-EcritureComptable.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> Caisse (One-to-Many)
-Structure.hasMany(Caisse, {
-  foreignKey: 'structure_id',
-  as: 'caisses'
-});
-
-Caisse.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-// Structure <-> ConfigurationEmail (connecteur par defaut)
-Structure.belongsTo(ConfigurationEmail, {
-  foreignKey: 'configuration_email_id',
-  as: 'configurationEmailDefaut'
-});
-
-ConfigurationEmail.hasMany(Structure, {
-  foreignKey: 'configuration_email_id',
-  as: 'structuresDefaut'
-});
-
-// Structure <-> ConfigurationSMS (connecteur par defaut)
-Structure.belongsTo(ConfigurationSMS, {
-  foreignKey: 'configuration_sms_id',
-  as: 'configurationSMSDefaut'
-});
-
-ConfigurationSMS.hasMany(Structure, {
-  foreignKey: 'configuration_sms_id',
-  as: 'structuresDefaut'
-});
-
-// StructureConnecteurCategorie associations
-StructureConnecteurCategorie.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(StructureConnecteurCategorie, {
-  foreignKey: 'structure_id',
-  as: 'connecteursCategories'
-});
-
-StructureConnecteurCategorie.belongsTo(ConfigurationEmail, {
-  foreignKey: 'configuration_email_id',
-  as: 'configurationEmail'
-});
-
-StructureConnecteurCategorie.belongsTo(ConfigurationSMS, {
-  foreignKey: 'configuration_sms_id',
-  as: 'configurationSMS'
-});
-
-// StructureConnecteurEvenement associations
-StructureConnecteurEvenement.belongsTo(Structure, {
-  foreignKey: 'structure_id',
-  as: 'structure'
-});
-
-Structure.hasMany(StructureConnecteurEvenement, {
-  foreignKey: 'structure_id',
-  as: 'connecteursEvenements'
-});
-
-StructureConnecteurEvenement.belongsTo(ConfigurationEmail, {
-  foreignKey: 'configuration_email_id',
-  as: 'configurationEmail'
-});
-
-StructureConnecteurEvenement.belongsTo(ConfigurationSMS, {
-  foreignKey: 'configuration_sms_id',
-  as: 'configurationSMS'
-});
-
-StructureConnecteurEvenement.belongsTo(EventTrigger, {
-  foreignKey: 'event_trigger_code',
-  targetKey: 'code',
-  as: 'eventTrigger'
-});
-
 // Export models and sequelize instance
+// ============================================================
+
 module.exports = {
   sequelize,
   Utilisateur,
@@ -2603,6 +781,8 @@ module.exports = {
   ElementEmplacement,
   // Frequentation (comptage visiteurs)
   Commune,
+  CommunauteCommunes,
+  CommunauteCommunesMembre,
   QuestionnaireFrequentation,
   QuestionnaireCommuneFavorite,
   EnregistrementFrequentation,
@@ -2611,6 +791,15 @@ module.exports = {
   // Charte Usager (validation signature numerique)
   CharteUsager,
   ValidationCharte,
+  // Tarification avancee (Types tarifs, QF, Reductions)
+  TypeTarif,
+  ConfigurationQuotientFamilial,
+  TrancheQuotientFamilial,
+  RegleReduction,
+  HistoriqueQuotientFamilial,
+  CotisationReduction,
+  TarifTypeTarif,
+  TrancheQFValeur,
   // Structures (Multi-structures V0.9)
   Organisation,
   Structure,
@@ -2619,5 +808,8 @@ module.exports = {
   GroupeFrontendStructure,
   ParametresFrontStructure,
   StructureConnecteurCategorie,
-  StructureConnecteurEvenement
+  StructureConnecteurEvenement,
+  // Tags Utilisateur
+  TagUtilisateur,
+  UtilisateurTag
 };

@@ -352,6 +352,7 @@
   <script src="js/auth-admin.js"></script>
   <script src="js/admin-navigation.js"></script>
   <script src="js/admin-template.js"></script>
+  <script src="js/parametres-nav.js"></script>
   <script>
     let allFormats = [];
     let allStructures = [];
@@ -362,6 +363,10 @@
 
     document.addEventListener('DOMContentLoaded', async () => {
       initTemplate('parametres');
+      // Sub-navigation comptabilite
+      if (typeof renderSubNav === 'function') {
+        renderSubNav('comptabilite', 'exports-comptables');
+      }
       modalFormat = new bootstrap.Modal(document.getElementById('modalFormat'));
       modalExport = new bootstrap.Modal(document.getElementById('modalExport'));
       await loadStructures();

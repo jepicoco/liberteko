@@ -137,6 +137,77 @@ module.exports = (sequelize) => {
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL',
       comment: 'Structure a laquelle cette cotisation appartient'
+    },
+    // === Champs tarification avancée ===
+    type_tarif_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'types_tarifs',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Type de tarif appliqué (adulte, enfant, etc.)'
+    },
+    tarif_base: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: 'Tarif de base avant réductions (peut différer de montant_base si calcul QF)'
+    },
+    total_reductions: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Total des réductions appliquées (détail dans cotisation_reductions)'
+    },
+    historique_qf_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'historique_quotient_familial',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Historique QF utilisé pour le calcul'
+    },
+    quotient_familial_snapshot: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Valeur du QF au moment de la cotisation'
+    },
+    tranche_qf_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'tranches_quotient_familial',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Tranche QF appliquée'
+    },
+    commune_id_snapshot: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'communes',
+        key: 'id'
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'SET NULL',
+      comment: 'Commune de prise en charge au moment de la cotisation'
+    },
+    age_snapshot: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Âge de l\'utilisateur au moment de la cotisation'
+    },
+    detail_calcul_json: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      comment: 'Détail complet du calcul pour audit'
     }
   }, {
     tableName: 'cotisations',

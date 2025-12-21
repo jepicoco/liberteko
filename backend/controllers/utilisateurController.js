@@ -1,4 +1,4 @@
-const { Utilisateur, Emprunt, Jeu, Cotisation, UtilisateurArchive, ArchiveAccessLog, sequelize } = require('../models');
+const { Utilisateur, Emprunt, Jeu, Cotisation, UtilisateurArchive, ArchiveAccessLog, TagUtilisateur, UtilisateurTag, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
 const eventTriggerService = require('../services/eventTriggerService');
@@ -6,11 +6,11 @@ const familleService = require('../services/familleService');
 
 /**
  * Get all utilisateurs with optional filters
- * GET /api/utilisateurs?statut=actif&search=dupont
+ * GET /api/utilisateurs?statut=actif&search=dupont&sexe=M&tag=SALARIE
  */
 const getAllUtilisateurs = async (req, res) => {
   try {
-    const { statut, search, role, date_fin_adhesion_association, page = 1, limit = 50 } = req.query;
+    const { statut, search, role, date_fin_adhesion_association, sexe, tag, page = 1, limit = 50 } = req.query;
     const offset = (page - 1) * limit;
 
     const where = {};
@@ -21,6 +21,11 @@ const getAllUtilisateurs = async (req, res) => {
 
     if (role) {
       where.role = role;
+    }
+
+    // Filtrer par sexe
+    if (sexe) {
+      where.sexe = sexe;
     }
 
     // Filtrer par statut d'adhesion a l'association
@@ -39,13 +44,28 @@ const getAllUtilisateurs = async (req, res) => {
       ];
     }
 
-    const { count, rows } = await Utilisateur.findAndCountAll({
+    // Options de la requete
+    const queryOptions = {
       where,
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [['nom', 'ASC'], ['prenom', 'ASC']],
-      attributes: { exclude: ['password'] }
-    });
+      attributes: { exclude: ['password'] },
+      include: [{
+        model: TagUtilisateur,
+        as: 'tags',
+        through: { attributes: ['date_attribution'] },
+        attributes: ['id', 'code', 'libelle', 'couleur', 'icone']
+      }]
+    };
+
+    // Filtrer par tag si specifie
+    if (tag) {
+      queryOptions.include[0].where = { code: tag };
+      queryOptions.include[0].required = true;
+    }
+
+    const { count, rows } = await Utilisateur.findAndCountAll(queryOptions);
 
     res.json({
       utilisateurs: rows,
@@ -68,7 +88,7 @@ const getAllUtilisateurs = async (req, res) => {
 };
 
 /**
- * Get utilisateur by ID with emprunts
+ * Get utilisateur by ID with emprunts and tags
  * GET /api/utilisateurs/:id
  */
 const getUtilisateurById = async (req, res) => {
@@ -77,15 +97,23 @@ const getUtilisateurById = async (req, res) => {
 
     const utilisateur = await Utilisateur.findByPk(id, {
       attributes: { exclude: ['password'] },
-      include: [{
-        model: Emprunt,
-        as: 'emprunts',
-        include: [{
-          model: Jeu,
-          as: 'jeu'
-        }],
-        order: [['date_emprunt', 'DESC']]
-      }]
+      include: [
+        {
+          model: Emprunt,
+          as: 'emprunts',
+          include: [{
+            model: Jeu,
+            as: 'jeu'
+          }],
+          order: [['date_emprunt', 'DESC']]
+        },
+        {
+          model: TagUtilisateur,
+          as: 'tags',
+          through: { attributes: ['date_attribution'] },
+          attributes: ['id', 'code', 'libelle', 'couleur', 'icone']
+        }
+      ]
     });
 
     if (!utilisateur) {
@@ -117,9 +145,12 @@ const createUtilisateur = async (req, res) => {
   try {
     const {
       nom, prenom, email, password, telephone,
-      adresse, ville, code_postal, date_naissance,
+      adresse, ville, code_postal,
+      code_postal_prise_en_charge, ville_prise_en_charge,
+      date_naissance,
       date_inscription, date_fin_cotisation, statut,
-      role, photo, date_fin_adhesion_association, notes
+      role, photo, date_fin_adhesion_association, notes,
+      sexe, tags
     } = req.body;
 
     // Validate required fields
@@ -139,6 +170,8 @@ const createUtilisateur = async (req, res) => {
       adresse,
       ville,
       code_postal,
+      code_postal_prise_en_charge,
+      ville_prise_en_charge,
       date_naissance,
       date_inscription: date_inscription || new Date(),
       date_fin_cotisation,
@@ -146,8 +179,19 @@ const createUtilisateur = async (req, res) => {
       role: role || 'usager',
       photo: photo || null,
       date_fin_adhesion_association: date_fin_adhesion_association || null,
-      notes
+      notes,
+      sexe: sexe || 'N'
     });
+
+    // Gerer les tags
+    if (tags && Array.isArray(tags) && tags.length > 0) {
+      const tagRecords = await TagUtilisateur.findAll({
+        where: { id: { [Op.in]: tags }, actif: true }
+      });
+      if (tagRecords.length > 0) {
+        await utilisateur.setTags(tagRecords);
+      }
+    }
 
     // Declencher l'evenement de creation d'utilisateur
     try {
@@ -156,14 +200,22 @@ const createUtilisateur = async (req, res) => {
       console.error('Erreur declenchement evenement:', eventError);
     }
 
-    const utilisateurResponse = utilisateur.toJSON();
-    delete utilisateurResponse.password;
+    // Recharger avec les tags
+    const utilisateurWithTags = await Utilisateur.findByPk(utilisateur.id, {
+      attributes: { exclude: ['password'] },
+      include: [{
+        model: TagUtilisateur,
+        as: 'tags',
+        through: { attributes: ['date_attribution'] },
+        attributes: ['id', 'code', 'libelle', 'couleur', 'icone']
+      }]
+    });
 
     res.status(201).json({
       message: 'Usager cree avec succes',
-      utilisateur: utilisateurResponse,
+      utilisateur: utilisateurWithTags,
       // Alias pour compatibilite
-      adherent: utilisateurResponse
+      adherent: utilisateurWithTags
     });
   } catch (error) {
     console.error('Create utilisateur error:', error);
@@ -198,8 +250,10 @@ const updateUtilisateur = async (req, res) => {
     const { id } = req.params;
     const {
       nom, prenom, email, password, telephone, adresse, ville,
-      code_postal, date_naissance, date_inscription, date_fin_cotisation,
-      statut, role, photo, date_fin_adhesion_association, notes
+      code_postal, code_postal_prise_en_charge, ville_prise_en_charge,
+      date_naissance, date_inscription, date_fin_cotisation,
+      statut, role, photo, date_fin_adhesion_association, notes,
+      sexe, tags
     } = req.body;
 
     const utilisateur = await Utilisateur.findByPk(id);
@@ -230,6 +284,8 @@ const updateUtilisateur = async (req, res) => {
     if (adresse !== undefined) utilisateur.adresse = adresse;
     if (ville !== undefined) utilisateur.ville = ville;
     if (code_postal !== undefined) utilisateur.code_postal = code_postal;
+    if (code_postal_prise_en_charge !== undefined) utilisateur.code_postal_prise_en_charge = code_postal_prise_en_charge;
+    if (ville_prise_en_charge !== undefined) utilisateur.ville_prise_en_charge = ville_prise_en_charge;
     if (date_naissance !== undefined) utilisateur.date_naissance = date_naissance;
     if (date_inscription !== undefined) utilisateur.date_inscription = date_inscription;
     if (date_fin_cotisation !== undefined) utilisateur.date_fin_cotisation = date_fin_cotisation;
@@ -238,9 +294,23 @@ const updateUtilisateur = async (req, res) => {
     if (photo !== undefined) utilisateur.photo = photo;
     if (date_fin_adhesion_association !== undefined) utilisateur.date_fin_adhesion_association = date_fin_adhesion_association;
     if (notes !== undefined) utilisateur.notes = notes;
+    if (sexe !== undefined) utilisateur.sexe = sexe;
 
     // Si mot de passe hashé manuellement, sauvegarder sans hook pour éviter double hashage
     await utilisateur.save({ hooks: !passwordHashed });
+
+    // Gerer les tags (si fournis dans la requete)
+    if (tags !== undefined) {
+      if (Array.isArray(tags) && tags.length > 0) {
+        const tagRecords = await TagUtilisateur.findAll({
+          where: { id: { [Op.in]: tags }, actif: true }
+        });
+        await utilisateur.setTags(tagRecords);
+      } else {
+        // Si tags est un tableau vide, supprimer tous les tags
+        await utilisateur.setTags([]);
+      }
+    }
 
     // Declencher les evenements appropries
     try {
@@ -253,14 +323,22 @@ const updateUtilisateur = async (req, res) => {
       console.error('Erreur declenchement evenement:', eventError);
     }
 
-    const utilisateurResponse = utilisateur.toJSON();
-    delete utilisateurResponse.password;
+    // Recharger avec les tags
+    const utilisateurWithTags = await Utilisateur.findByPk(utilisateur.id, {
+      attributes: { exclude: ['password'] },
+      include: [{
+        model: TagUtilisateur,
+        as: 'tags',
+        through: { attributes: ['date_attribution'] },
+        attributes: ['id', 'code', 'libelle', 'couleur', 'icone']
+      }]
+    });
 
     res.json({
       message: 'Usager mis a jour avec succes',
-      utilisateur: utilisateurResponse,
+      utilisateur: utilisateurWithTags,
       // Alias pour compatibilite
-      adherent: utilisateurResponse
+      adherent: utilisateurWithTags
     });
   } catch (error) {
     console.error('Update utilisateur error:', error);
