@@ -8,6 +8,21 @@ let organisations = [];
 let utilisateursDisponibles = [];
 let availableConnectors = { email: [], sms: [] };
 
+// Helper pour parser modules_actifs (peut etre string JSON ou array)
+function parseModulesActifs(modules) {
+  if (!modules) return [];
+  if (Array.isArray(modules)) return modules;
+  if (typeof modules === 'string') {
+    try {
+      const parsed = JSON.parse(modules);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+  return [];
+}
+
 // ==================== INITIALISATION ====================
 
 async function initStructuresPage() {
@@ -137,7 +152,7 @@ function renderStructures() {
   }
 
   container.innerHTML = structures.map(structure => {
-    const modules = structure.modules_actifs || [];
+    const modules = parseModulesActifs(structure.modules_actifs);
     const moduleBadges = modules.map(m => {
       const icons = { jeux: 'dice-6', livres: 'book', films: 'film', disques: 'disc' };
       const colors = { jeux: 'success', livres: 'primary', films: 'danger', disques: 'warning' };
@@ -238,7 +253,7 @@ function showModalStructure(id = null) {
     document.getElementById('structure_actif').checked = structure.actif !== false;
 
     // Modules
-    const modules = structure.modules_actifs || [];
+    const modules = parseModulesActifs(structure.modules_actifs);
     document.getElementById('module_jeux').checked = modules.includes('jeux');
     document.getElementById('module_livres').checked = modules.includes('livres');
     document.getElementById('module_films').checked = modules.includes('films');
