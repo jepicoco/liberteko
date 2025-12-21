@@ -34,9 +34,21 @@ const getAccessibleModules = (user, structure = null, requestedModules = null) =
   // Si une structure est specifiee, filtrer par ses modules actifs
   if (structure) {
     // Recuperer modules_actifs (methode ou propriete directe)
-    const structureModules = typeof structure.getModulesActifs === 'function'
+    let structureModules = typeof structure.getModulesActifs === 'function'
       ? structure.getModulesActifs()
       : (structure.modules_actifs || []);
+
+    // Parser si c'est une chaine JSON
+    if (typeof structureModules === 'string') {
+      try {
+        structureModules = JSON.parse(structureModules);
+      } catch (e) {
+        structureModules = [];
+      }
+    }
+    if (!Array.isArray(structureModules)) {
+      structureModules = [];
+    }
 
     // Si modules_actifs est null ou vide, tous les modules sont autorises (defaut)
     if (structureModules && structureModules.length > 0) {
