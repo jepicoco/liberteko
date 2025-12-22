@@ -592,6 +592,20 @@ class ArbreTarifEditor {
     `;
     branchRow.appendChild(label);
 
+    // Bouton d'ajout de sous-sous-condition
+    if (!this.arbre?.verrouille) {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'tree-branch-add';
+      addBtn.title = 'Ajouter sous-condition';
+      addBtn.innerHTML = '<i class="bi bi-plus"></i>';
+      addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Contexte pour sous-sous-condition : on passe l'enfant et l'index de sa branche
+        this.ouvrirModalAjoutSousEnfant(noeudId, parentBrancheId, enfant, brancheIndex);
+      });
+      branchRow.appendChild(addBtn);
+    }
+
     // Connecteur horizontal
     const connector = document.createElement('div');
     connector.className = 'tree-connector short';
@@ -820,6 +834,89 @@ class ArbreTarifEditor {
         enfantIndex
       };
       this.ouvrirModalEnfantDirect(newEnfant);
+    }, 300);
+  }
+
+  ouvrirModalAjoutSousEnfant(noeudId, parentBrancheId, enfant, brancheIndex) {
+    // Stocker le contexte pour l'ajout de sous-sous-condition
+    this.ajoutSousEnfantContext = { noeudId, parentBrancheId, enfant, brancheIndex };
+
+    // Exclure le type de l'enfant parent
+    const enfantType = enfant?.type;
+
+    // Remplir la liste des types disponibles
+    const container = document.getElementById('liste-types-enfant');
+    container.innerHTML = this.typesCondition
+      .filter(t => t.code !== enfantType)
+      .map(t => `
+        <button type="button" class="btn btn-outline-secondary text-start btn-select-type-sous-enfant" data-type="${t.code}">
+          <i class="bi ${t.icone || 'bi-question'} me-2" style="color: ${t.couleur}"></i>
+          ${t.libelle}
+        </button>
+      `).join('');
+
+    // Attacher les events
+    container.querySelectorAll('.btn-select-type-sous-enfant').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const typeCode = btn.dataset.type;
+        this.ajouterSousEnfantDepuisSchema(typeCode);
+      });
+    });
+
+    // Ouvrir le modal
+    const modalEl = document.getElementById('modal-ajout-enfant');
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+  }
+
+  ajouterSousEnfantDepuisSchema(typeCode) {
+    const { noeudId, parentBrancheId, enfant, brancheIndex } = this.ajoutSousEnfantContext || {};
+    if (!enfant || brancheIndex === undefined) return;
+
+    // Trouver la branche de l'enfant
+    const branche = enfant.branches?.[brancheIndex];
+    if (!branche) return;
+
+    // Initialiser le tableau enfants si necessaire
+    if (!branche.enfants) branche.enfants = [];
+
+    // Creer le nouvel enfant
+    const sousEnfantIndex = branche.enfants.length;
+    const newSousEnfant = {
+      id: `sous_enfant_${Date.now()}_${sousEnfantIndex}`,
+      type: typeCode,
+      branches: [
+        {
+          id: `branch_sous_enfant_${Date.now()}_0`,
+          code: 'DEFAULT',
+          libelle: 'Condition par defaut',
+          condition: this.getDefaultConditionForType(typeCode),
+          reduction: null
+        }
+      ]
+    };
+
+    // Ajouter le sous-enfant a la branche de l'enfant
+    branche.enfants.push(newSousEnfant);
+
+    // Fermer le modal de selection de type
+    const modalAjout = bootstrap.Modal.getInstance(document.getElementById('modal-ajout-enfant'));
+    if (modalAjout) modalAjout.hide();
+
+    // Marquer comme modifie et re-render
+    this.markAsChanged();
+    this.renderArbre();
+    this.updateBornes();
+
+    // Ouvrir le modal d'edition du sous-enfant
+    setTimeout(() => {
+      this.enfantEnEdition = {
+        noeudId,
+        brancheId: branche.id,
+        enfant: newSousEnfant,
+        enfantIndex: sousEnfantIndex
+      };
+      this.ouvrirModalEnfantDirect(newSousEnfant);
     }, 300);
   }
 
