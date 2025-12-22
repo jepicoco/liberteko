@@ -91,7 +91,8 @@
   flex-direction: row;
   align-items: center;
   flex-shrink: 0;
-  align-self: center;
+  align-self: flex-start;
+  margin-top: 8px; /* Aligner avec le premier tree-node-card */
 }
 
 .tree-start-node {
@@ -158,6 +159,7 @@
   overflow: hidden;
   flex-shrink: 0;
   align-self: center;
+  margin-left: 20px;
 }
 
 .tree-node-header {
@@ -333,6 +335,7 @@
   font-size: 0.9rem;
   box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
   white-space: nowrap;
+  margin-left: 20px;
 }
 
 .tree-result-node i {
