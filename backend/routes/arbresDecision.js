@@ -21,6 +21,13 @@ router.get('/types-condition',
   arbreDecisionController.getTypesCondition
 );
 
+// GET /api/arbres-decision/tags
+// Liste des tags disponibles pour les conditions
+router.get('/tags',
+  verifyToken,
+  arbreDecisionController.getTags
+);
+
 // ============================================================
 // OPERATIONS COMPTABLES
 // ============================================================

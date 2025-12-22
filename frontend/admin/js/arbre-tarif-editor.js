@@ -32,6 +32,7 @@ class ArbreTarifEditor {
         this.chargerOperationsComptables(),
         this.chargerReferentiels(),
         this.chargerBaremesQF(),
+        this.chargerTags(),
         this.chargerArbre()
       ]);
 
@@ -95,6 +96,16 @@ class ArbreTarifEditor {
     } catch (error) {
       console.error('Erreur chargement baremes QF:', error);
       this.baremesQF = [];
+    }
+  }
+
+  async chargerTags() {
+    try {
+      const response = await apiAdmin.get('/arbres-decision/tags');
+      this.tagsUtilisateur = response?.data || response || [];
+    } catch (error) {
+      console.error('Erreur chargement tags:', error);
+      this.tagsUtilisateur = [];
     }
   }
 
@@ -254,6 +265,8 @@ class ArbreTarifEditor {
 
     // Bouton tester
     document.getElementById('btn-tester').addEventListener('click', () => {
+      // Remplir le select des tags disponibles
+      this.remplirSelectTagsTest();
       const modal = new bootstrap.Modal(document.getElementById('modal-test'));
       modal.show();
     });
@@ -1341,8 +1354,9 @@ class ArbreTarifEditor {
         return this.renderFideliteConditionEditor(condition, index);
       case 'MULTI_INSCRIPTIONS':
         return this.renderMultiInscriptionsConditionEditor(condition, index);
-      case 'STATUT_SOCIAL':
-        return this.renderStatutSocialConditionEditor(condition, index);
+      case 'TAG':
+      case 'STATUT_SOCIAL':  // Retrocompatibilite
+        return this.renderTagConditionEditor(condition, index);
       default:
         return this.renderGenericConditionEditor(condition, index);
     }
@@ -1869,42 +1883,43 @@ class ArbreTarifEditor {
     `;
   }
 
-  renderStatutSocialConditionEditor(condition, index) {
-    const statuts = ['rsa', 'chomage', 'etudiant', 'retraite', 'handicap', 'autre'];
-    const selectedStatuts = condition?.statuts || (condition?.statut ? [condition.statut] : []);
+  renderTagConditionEditor(condition, index) {
+    // Charger les tags disponibles
+    const hasTags = this.tagsUtilisateur && this.tagsUtilisateur.length > 0;
+    const selectedTags = condition?.tags || [];
+    const mode = condition?.mode || 'contient';
 
-    const options = statuts.map(s =>
-      `<option value="${s}" ${selectedStatuts.includes(s) ? 'selected' : ''}>${this.formatStatutSocial(s)}</option>`
-    ).join('');
+    const tagsOptions = hasTags
+      ? this.tagsUtilisateur.map(t =>
+          `<option value="${t.id}" ${selectedTags.includes(t.id) ? 'selected' : ''} style="color: ${t.couleur || '#6c757d'}">
+            ${this.escapeHtml(t.libelle)}
+          </option>`
+        ).join('')
+      : '<option value="" disabled>Aucun tag configure</option>';
+
+    const noTagsWarning = !hasTags
+      ? '<div class="text-warning small mt-1"><i class="bi bi-exclamation-triangle"></i> Configurez des tags dans Parametres > Tags utilisateurs</div>'
+      : '';
 
     return `
       <div class="row g-2">
-        <div class="col-md-6">
-          <label class="form-label small">Statuts sociaux (Ctrl+clic pour plusieurs)</label>
-          <select class="form-select form-select-sm condition-statut-valeurs" multiple size="4">
-            ${options}
+        <div class="col-md-4">
+          <label class="form-label small">Mode</label>
+          <select class="form-select form-select-sm condition-tag-mode">
+            <option value="contient" ${mode === 'contient' ? 'selected' : ''}>Contient le tag</option>
+            <option value="ne_contient_pas" ${mode === 'ne_contient_pas' ? 'selected' : ''}>Ne contient pas le tag</option>
+            <option value="autre" ${mode === 'autre' || condition?.type === 'autre' ? 'selected' : ''}>Tous les autres (fallback)</option>
           </select>
         </div>
-        <div class="col-md-6">
-          <div class="form-check mt-4">
-            <input class="form-check-input condition-statut-inverse" type="checkbox" ${condition?.inverse ? 'checked' : ''}>
-            <label class="form-check-label small">Inverser (tous SAUF ces statuts)</label>
-          </div>
+        <div class="col-md-8">
+          <label class="form-label small">Tags (Ctrl+clic pour plusieurs)</label>
+          <select class="form-select form-select-sm condition-tag-valeurs" multiple size="4" ${mode === 'autre' ? 'disabled' : ''}>
+            ${tagsOptions}
+          </select>
+          ${noTagsWarning}
         </div>
       </div>
     `;
-  }
-
-  formatStatutSocial(code) {
-    const labels = {
-      'rsa': 'Beneficiaire RSA',
-      'chomage': 'Demandeur d\'emploi',
-      'etudiant': 'Etudiant',
-      'retraite': 'Retraite',
-      'handicap': 'Situation de handicap',
-      'autre': 'Autre statut particulier'
-    };
-    return labels[code] || code;
   }
 
   renderGenericConditionEditor(condition, index) {
@@ -1961,8 +1976,9 @@ class ArbreTarifEditor {
         return { operateur: '>=', annees: 1 };
       case 'MULTI_INSCRIPTIONS':
         return { operateur: '>=', nombre: 2 };
+      case 'TAG':
       case 'STATUT_SOCIAL':
-        return { statuts: [] };
+        return { mode: 'contient', tags: [] };
       default:
         return { type: 'default' };
     }
@@ -2108,8 +2124,9 @@ class ArbreTarifEditor {
         return this.extractFideliteCondition(conditionContainer);
       case 'MULTI_INSCRIPTIONS':
         return this.extractMultiInscriptionsCondition(conditionContainer);
+      case 'TAG':
       case 'STATUT_SOCIAL':
-        return this.extractStatutSocialCondition(conditionContainer);
+        return this.extractTagCondition(conditionContainer);
       default:
         return this.extractGenericCondition(conditionContainer);
     }
@@ -2127,9 +2144,19 @@ class ArbreTarifEditor {
     }
 
     const selectedIds = Array.from(idsSelect.selectedOptions).map(opt => parseInt(opt.value));
+
+    // Pour 'communaute', le backend attend un seul ID (la communaute)
+    // Pour 'communes', le backend attend un tableau d'IDs (les communes)
+    if (type === 'communaute') {
+      return {
+        type: type,
+        id: selectedIds[0] || null  // Un seul ID de communaute
+      };
+    }
+
     return {
       type: type,
-      ids: selectedIds
+      ids: selectedIds  // Tableau d'IDs de communes
     };
   }
 
@@ -2230,17 +2257,24 @@ class ArbreTarifEditor {
     };
   }
 
-  extractStatutSocialCondition(container) {
-    const statutsSelect = container.querySelector('.condition-statut-valeurs');
-    const inverseCheckbox = container.querySelector('.condition-statut-inverse');
+  extractTagCondition(container) {
+    const modeSelect = container.querySelector('.condition-tag-mode');
+    const tagsSelect = container.querySelector('.condition-tag-valeurs');
 
-    if (!statutsSelect) return { statuts: [] };
+    if (!modeSelect) return { type: 'autre' };
 
-    const selectedStatuts = Array.from(statutsSelect.selectedOptions).map(opt => opt.value);
+    const mode = modeSelect.value;
+    if (mode === 'autre') {
+      return { type: 'autre' };
+    }
+
+    const selectedTags = tagsSelect
+      ? Array.from(tagsSelect.selectedOptions).map(opt => parseInt(opt.value))
+      : [];
 
     return {
-      statuts: selectedStatuts,
-      inverse: inverseCheckbox?.checked || false
+      mode: mode,
+      tags: selectedTags
     };
   }
 
@@ -2336,9 +2370,14 @@ class ArbreTarifEditor {
     const age = parseInt(document.getElementById('test-age').value) || 35;
     const qf = parseInt(document.getElementById('test-qf').value) || null;
     const communeId = document.getElementById('test-commune-id').value;
-    const statut = document.getElementById('test-statut').value;
     const anciennete = parseInt(document.getElementById('test-anciennete').value) || 0;
     const nbInscrits = parseInt(document.getElementById('test-nb-inscrits').value) || 1;
+
+    // Recuperer les tags selectionnes
+    const tagsSelect = document.getElementById('test-tags');
+    const selectedTags = tagsSelect
+      ? Array.from(tagsSelect.selectedOptions).map(opt => parseInt(opt.value))
+      : [];
 
     // Calculer date de naissance a partir de l'age
     const dateNaissance = new Date();
@@ -2348,20 +2387,22 @@ class ArbreTarifEditor {
       date_naissance: dateNaissance.toISOString().split('T')[0],
       quotient_familial: qf,
       commune_id: communeId ? parseInt(communeId) : null,
-      statut_social: statut || null,
       // Ces champs sont simules cote serveur normalement
       _anciennete: anciennete,
-      _nb_inscrits: nbInscrits
+      _nb_inscrits: nbInscrits,
+      _tags: selectedTags
     };
 
     try {
-      const data = await apiAdmin.post(`/arbres-decision/${this.arbre.id}/simuler`, {
+      const response = await apiAdmin.post(`/arbres-decision/${this.arbre.id}/simuler`, {
         utilisateur_data: utilisateurData,
         montant_base: this.montantBase
       });
 
       const container = document.getElementById('test-resultat');
 
+      // Extraire data du wrapper { success, data }
+      const data = response.data || response;
       const reductions = data.reductions || [];
       const trace = data.trace || [];
       const utilisateurTeste = data.utilisateur_teste || {};
@@ -2385,13 +2426,14 @@ class ArbreTarifEditor {
       `;
 
       // Donnees utilisateur testees
+      const tagsLibelles = this.formatTagsDisplay(utilisateurTeste._tags);
       html += `
         <div class="mb-3 p-2 bg-light rounded small">
           <strong>Donnees testees:</strong><br>
           Age: ${utilisateurTeste.date_naissance ? this.calculerAgeFromDate(utilisateurTeste.date_naissance) + ' ans' : 'N/A'}
           | QF: ${utilisateurTeste.quotient_familial ?? 'N/A'}
           | Commune: ${utilisateurTeste.commune_id ?? 'N/A'}
-          | Statut: ${utilisateurTeste.statut_social || 'N/A'}
+          | Tags: ${tagsLibelles}
         </div>
       `;
 
@@ -2519,6 +2561,39 @@ class ArbreTarifEditor {
       age--;
     }
     return age;
+  }
+
+  remplirSelectTagsTest() {
+    const select = document.getElementById('test-tags');
+    if (!select) return;
+
+    select.innerHTML = '';
+    if (!this.tagsUtilisateur || this.tagsUtilisateur.length === 0) {
+      const opt = document.createElement('option');
+      opt.disabled = true;
+      opt.textContent = 'Aucun tag disponible';
+      select.appendChild(opt);
+      return;
+    }
+
+    for (const tag of this.tagsUtilisateur) {
+      const opt = document.createElement('option');
+      opt.value = tag.id;
+      opt.textContent = tag.libelle;
+      select.appendChild(opt);
+    }
+  }
+
+  formatTagsDisplay(tagIds) {
+    if (!tagIds || tagIds.length === 0) return 'Aucun';
+    if (!this.tagsUtilisateur || this.tagsUtilisateur.length === 0) {
+      return tagIds.join(', ');
+    }
+    const libelles = tagIds.map(id => {
+      const tag = this.tagsUtilisateur.find(t => t.id === id);
+      return tag ? tag.libelle : `#${id}`;
+    });
+    return libelles.join(', ');
   }
 
   // ============================================================

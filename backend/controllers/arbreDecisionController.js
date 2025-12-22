@@ -349,6 +349,29 @@ exports.getTypesCondition = async (req, res) => {
   }
 };
 
+/**
+ * Liste des tags disponibles pour les conditions
+ * GET /api/arbres-decision/tags
+ */
+exports.getTags = async (req, res) => {
+  try {
+    const tags = await arbreDecisionService.getTagsDisponibles(req.structureId);
+
+    res.json({
+      success: true,
+      data: tags
+    });
+
+  } catch (error) {
+    logger.error(`Erreur getTags: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur serveur',
+      message: error.message
+    });
+  }
+};
+
 // ============================================================
 // OPERATIONS COMPTABLES
 // ============================================================

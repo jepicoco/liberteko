@@ -16,6 +16,7 @@ const {
   Commune,
   CommunauteCommunes,
   CommunauteCommunesMembre,
+  TagUtilisateur,
   Structure,
   sequelize
 } = require('../models');
@@ -261,8 +262,9 @@ class ArbreDecisionService {
         return await this.matchFidelite(condition, utilisateur);
       case 'MULTI_INSCRIPTIONS':
         return await this.matchMultiInscriptions(condition, utilisateur, context);
-      case 'STATUT_SOCIAL':
-        return this.matchStatutSocial(condition, utilisateur);
+      case 'TAG':
+      case 'STATUT_SOCIAL':  // Retrocompatibilite
+        return await this.matchTag(condition, utilisateur);
       default:
         logger.warn(`Type de condition inconnu: ${type}`);
         return false;
@@ -293,8 +295,9 @@ class ArbreDecisionService {
         return await this.matchFideliteAvecDetails(condition, utilisateur);
       case 'MULTI_INSCRIPTIONS':
         return await this.matchMultiInscriptionsAvecDetails(condition, utilisateur, context);
-      case 'STATUT_SOCIAL':
-        return this.matchStatutSocialAvecDetails(condition, utilisateur);
+      case 'TAG':
+      case 'STATUT_SOCIAL':  // Retrocompatibilite
+        return await this.matchTagAvecDetails(condition, utilisateur);
       default:
         return { match: false, details: `Type inconnu: ${type}` };
     }
@@ -313,10 +316,12 @@ class ArbreDecisionService {
     if (!communeId) return false;
 
     // Match par communaute de communes
-    if (condition.type === 'communaute' && condition.id) {
+    // Supporte condition.id (nouveau format) ou condition.ids[0] (ancien format)
+    const communauteId = condition.id || (condition.ids && condition.ids[0]);
+    if (condition.type === 'communaute' && communauteId) {
       const membre = await CommunauteCommunesMembre.findOne({
         where: {
-          communaute_id: condition.id,
+          communaute_id: communauteId,
           commune_id: communeId
         }
       });
@@ -429,18 +434,40 @@ class ArbreDecisionService {
       return true;
     }
 
-    // Calculer l'anciennete via la premiere cotisation
-    const premiereCotisation = await Cotisation.findOne({
-      where: { utilisateur_id: utilisateur.id },
-      order: [['date_debut', 'ASC']]
-    });
+    let anneesAnciennete;
 
-    if (!premiereCotisation) return false;
+    // En mode simulation, utiliser _anciennete fourni dans les donnees de test
+    if (utilisateur._anciennete !== undefined) {
+      anneesAnciennete = utilisateur._anciennete;
+    } else {
+      // Sinon, calculer l'anciennete via la premiere cotisation
+      const premiereCotisation = await Cotisation.findOne({
+        where: { utilisateur_id: utilisateur.id },
+        order: [['date_debut', 'ASC']]
+      });
 
-    const anneesAnciennete = Math.floor(
-      (new Date() - new Date(premiereCotisation.date_debut)) / (365.25 * 24 * 60 * 60 * 1000)
-    );
+      if (!premiereCotisation) return false;
 
+      anneesAnciennete = Math.floor(
+        (new Date() - new Date(premiereCotisation.date_debut)) / (365.25 * 24 * 60 * 60 * 1000)
+      );
+    }
+
+    // Format frontend: { operateur: '>=', annees: 1 }
+    if (condition.operateur && condition.annees !== undefined) {
+      const annees = condition.annees;
+      switch (condition.operateur) {
+        case '>=': return anneesAnciennete >= annees;
+        case '>': return anneesAnciennete > annees;
+        case '=':
+        case '==': return anneesAnciennete === annees;
+        case '<=': return anneesAnciennete <= annees;
+        case '<': return anneesAnciennete < annees;
+        default: return anneesAnciennete >= annees;
+      }
+    }
+
+    // Format ancien: { min, max }
     const min = condition.annees_min !== undefined ? condition.annees_min : condition.min;
     const max = condition.annees_max !== undefined ? condition.annees_max : condition.max;
 
@@ -465,22 +492,44 @@ class ArbreDecisionService {
       return true;
     }
 
-    // Compter les inscriptions actives dans la meme famille
-    const familleId = utilisateur.famille_id;
-    if (!familleId) return false;
+    let nbInscrits;
 
-    const nbInscrits = await Cotisation.count({
-      include: [{
-        model: Utilisateur,
-        as: 'utilisateur',
-        where: { famille_id: familleId }
-      }],
-      where: {
-        statut: 'active',
-        date_fin: { [Op.gte]: new Date() }
+    // En mode simulation, utiliser _nb_inscrits fourni dans les donnees de test
+    if (utilisateur._nb_inscrits !== undefined) {
+      nbInscrits = utilisateur._nb_inscrits;
+    } else {
+      // Sinon, compter les inscriptions actives dans la meme famille
+      const familleId = utilisateur.famille_id;
+      if (!familleId) return false;
+
+      nbInscrits = await Cotisation.count({
+        include: [{
+          model: Utilisateur,
+          as: 'utilisateur',
+          where: { famille_id: familleId }
+        }],
+        where: {
+          statut: 'active',
+          date_fin: { [Op.gte]: new Date() }
+        }
+      });
+    }
+
+    // Format frontend: { operateur: '>=', nombre: 2 }
+    if (condition.operateur && condition.nombre !== undefined) {
+      const nombre = condition.nombre;
+      switch (condition.operateur) {
+        case '>=': return nbInscrits >= nombre;
+        case '>': return nbInscrits > nombre;
+        case '=':
+        case '==': return nbInscrits === nombre;
+        case '<=': return nbInscrits <= nombre;
+        case '<': return nbInscrits < nombre;
+        default: return nbInscrits >= nombre;
       }
-    });
+    }
 
+    // Format ancien: { min, max }
     const min = condition.nb_inscrits_min !== undefined ? condition.nb_inscrits_min : condition.min;
     const max = condition.nb_inscrits_max !== undefined ? condition.nb_inscrits_max : condition.max;
 
@@ -495,22 +544,43 @@ class ArbreDecisionService {
   }
 
   /**
-   * Match condition STATUT_SOCIAL
+   * Match condition TAG
+   * Verifie si l'utilisateur a (ou n'a pas) certains tags
    */
-  matchStatutSocial(condition, utilisateur) {
+  async matchTag(condition, utilisateur) {
     if (condition.type === 'autre' || condition.type === 'default') {
       return true;
     }
 
-    const statutUtilisateur = utilisateur.statut_social;
-    if (!statutUtilisateur) return false;
-
-    if (condition.statuts && Array.isArray(condition.statuts)) {
-      return condition.statuts.includes(statutUtilisateur);
+    // Recuperer les tags de l'utilisateur
+    let userTagIds = [];
+    if (utilisateur._tags !== undefined) {
+      // Mode simulation avec tags fournis
+      userTagIds = utilisateur._tags || [];
+    } else if (utilisateur.tags && Array.isArray(utilisateur.tags)) {
+      userTagIds = utilisateur.tags.map(t => t.id || t);
     }
 
-    if (condition.statut) {
-      return statutUtilisateur === condition.statut;
+    const conditionTags = condition.tags || [];
+    if (conditionTags.length === 0) {
+      return false;
+    }
+
+    const mode = condition.mode || 'contient';
+
+    if (mode === 'contient') {
+      // L'utilisateur doit avoir au moins un des tags
+      return conditionTags.some(tagId => userTagIds.includes(tagId));
+    } else if (mode === 'ne_contient_pas') {
+      // L'utilisateur ne doit avoir aucun des tags
+      return !conditionTags.some(tagId => userTagIds.includes(tagId));
+    }
+
+    // Retrocompatibilite avec ancien format statuts
+    if (condition.statuts && Array.isArray(condition.statuts)) {
+      const statutUtilisateur = utilisateur.statut_social;
+      if (!statutUtilisateur) return false;
+      return condition.statuts.includes(statutUtilisateur);
     }
 
     return false;
@@ -527,17 +597,19 @@ class ArbreDecisionService {
     }
 
     // Match par communaute de communes
-    if (condition.type === 'communaute' && condition.id) {
+    // Supporte condition.id (nouveau format) ou condition.ids[0] (ancien format)
+    const communauteId = condition.id || (condition.ids && condition.ids[0]);
+    if (condition.type === 'communaute' && communauteId) {
       const membre = await CommunauteCommunesMembre.findOne({
         where: {
-          communaute_id: condition.id,
+          communaute_id: communauteId,
           commune_id: communeId
         }
       });
       const match = !!membre;
       return {
         match,
-        details: `Commune ${communeId} ${match ? 'fait partie' : 'ne fait pas partie'} de la communaute ${condition.id}`
+        details: `Commune ${communeId} ${match ? 'fait partie' : 'ne fait pas partie'} de la communaute ${communauteId}`
       };
     }
 
@@ -649,38 +721,77 @@ class ArbreDecisionService {
   }
 
   async matchFideliteAvecDetails(condition, utilisateur) {
-    if (!utilisateur.id) {
-      return { match: false, details: `ID utilisateur non defini (simulation)` };
+    let anneesAnciennete;
+
+    // En mode simulation, utiliser _anciennete fourni dans les donnees de test
+    if (utilisateur._anciennete !== undefined) {
+      anneesAnciennete = utilisateur._anciennete;
+    } else {
+      if (!utilisateur.id) {
+        return { match: false, details: `ID utilisateur non defini (simulation)` };
+      }
+
+      const premiereCotisation = await Cotisation.findOne({
+        where: { utilisateur_id: utilisateur.id },
+        order: [['date_debut', 'ASC']]
+      });
+
+      if (!premiereCotisation) {
+        return { match: false, details: `Aucune cotisation trouvee` };
+      }
+
+      anneesAnciennete = Math.floor(
+        (new Date() - new Date(premiereCotisation.date_debut)) / (365.25 * 24 * 60 * 60 * 1000)
+      );
     }
-
-    const premiereCotisation = await Cotisation.findOne({
-      where: { utilisateur_id: utilisateur.id },
-      order: [['date_debut', 'ASC']]
-    });
-
-    if (!premiereCotisation) {
-      return { match: false, details: `Aucune cotisation trouvee` };
-    }
-
-    const anneesAnciennete = Math.floor(
-      (new Date() - new Date(premiereCotisation.date_debut)) / (365.25 * 24 * 60 * 60 * 1000)
-    );
-
-    const min = condition.annees_min !== undefined ? condition.annees_min : condition.min;
-    const max = condition.annees_max !== undefined ? condition.annees_max : condition.max;
 
     let match = false;
     let conditionStr = '';
 
-    if (min !== undefined && max !== undefined) {
-      match = anneesAnciennete >= min && anneesAnciennete <= max;
-      conditionStr = `${min} <= anciennete <= ${max}`;
-    } else if (min !== undefined) {
-      match = anneesAnciennete >= min;
-      conditionStr = `anciennete >= ${min}`;
-    } else if (max !== undefined) {
-      match = anneesAnciennete <= max;
-      conditionStr = `anciennete <= ${max}`;
+    // Format frontend: { operateur: '>=', annees: 1 }
+    if (condition.operateur && condition.annees !== undefined) {
+      const annees = condition.annees;
+      switch (condition.operateur) {
+        case '>=':
+          match = anneesAnciennete >= annees;
+          conditionStr = `anciennete >= ${annees}`;
+          break;
+        case '>':
+          match = anneesAnciennete > annees;
+          conditionStr = `anciennete > ${annees}`;
+          break;
+        case '=':
+        case '==':
+          match = anneesAnciennete === annees;
+          conditionStr = `anciennete = ${annees}`;
+          break;
+        case '<=':
+          match = anneesAnciennete <= annees;
+          conditionStr = `anciennete <= ${annees}`;
+          break;
+        case '<':
+          match = anneesAnciennete < annees;
+          conditionStr = `anciennete < ${annees}`;
+          break;
+        default:
+          match = anneesAnciennete >= annees;
+          conditionStr = `anciennete >= ${annees}`;
+      }
+    } else {
+      // Format ancien: { min, max }
+      const min = condition.annees_min !== undefined ? condition.annees_min : condition.min;
+      const max = condition.annees_max !== undefined ? condition.annees_max : condition.max;
+
+      if (min !== undefined && max !== undefined) {
+        match = anneesAnciennete >= min && anneesAnciennete <= max;
+        conditionStr = `${min} <= anciennete <= ${max}`;
+      } else if (min !== undefined) {
+        match = anneesAnciennete >= min;
+        conditionStr = `anciennete >= ${min}`;
+      } else if (max !== undefined) {
+        match = anneesAnciennete <= max;
+        conditionStr = `anciennete <= ${max}`;
+      }
     }
 
     return {
@@ -690,35 +801,75 @@ class ArbreDecisionService {
   }
 
   async matchMultiInscriptionsAvecDetails(condition, utilisateur, context) {
-    const familleId = utilisateur.famille_id;
-    if (!familleId) {
-      return { match: false, details: `Pas de famille definie (famille_id: null)` };
-    }
+    let nbInscrits;
 
-    const nbInscrits = await Cotisation.count({
-      include: [{
-        model: Utilisateur,
-        as: 'utilisateur',
-        where: { famille_id: familleId }
-      }],
-      where: {
-        statut: 'active',
-        date_fin: { [Op.gte]: new Date() }
+    // En mode simulation, utiliser _nb_inscrits fourni dans les donnees de test
+    if (utilisateur._nb_inscrits !== undefined) {
+      nbInscrits = utilisateur._nb_inscrits;
+    } else {
+      // Sinon, compter les inscriptions reelles via la famille
+      const familleId = utilisateur.famille_id;
+      if (!familleId) {
+        return { match: false, details: `Pas de famille definie (famille_id: null)` };
       }
-    });
 
-    const min = condition.nb_inscrits_min !== undefined ? condition.nb_inscrits_min : condition.min;
-    const max = condition.nb_inscrits_max !== undefined ? condition.nb_inscrits_max : condition.max;
+      nbInscrits = await Cotisation.count({
+        include: [{
+          model: Utilisateur,
+          as: 'utilisateur',
+          where: { famille_id: familleId }
+        }],
+        where: {
+          statut: 'active',
+          date_fin: { [Op.gte]: new Date() }
+        }
+      });
+    }
 
     let match = false;
     let conditionStr = '';
 
-    if (min !== undefined && max !== undefined) {
-      match = nbInscrits >= min && nbInscrits <= max;
-      conditionStr = `${min} <= nb_inscrits <= ${max}`;
-    } else if (min !== undefined) {
-      match = nbInscrits >= min;
-      conditionStr = `nb_inscrits >= ${min}`;
+    // Format frontend: { operateur: '>=', nombre: 2 }
+    if (condition.operateur && condition.nombre !== undefined) {
+      const nombre = condition.nombre;
+      switch (condition.operateur) {
+        case '>=':
+          match = nbInscrits >= nombre;
+          conditionStr = `nb_inscrits >= ${nombre}`;
+          break;
+        case '>':
+          match = nbInscrits > nombre;
+          conditionStr = `nb_inscrits > ${nombre}`;
+          break;
+        case '=':
+        case '==':
+          match = nbInscrits === nombre;
+          conditionStr = `nb_inscrits = ${nombre}`;
+          break;
+        case '<=':
+          match = nbInscrits <= nombre;
+          conditionStr = `nb_inscrits <= ${nombre}`;
+          break;
+        case '<':
+          match = nbInscrits < nombre;
+          conditionStr = `nb_inscrits < ${nombre}`;
+          break;
+        default:
+          match = nbInscrits >= nombre;
+          conditionStr = `nb_inscrits >= ${nombre}`;
+      }
+    } else {
+      // Format ancien: { min, max } ou { nb_inscrits_min, nb_inscrits_max }
+      const min = condition.nb_inscrits_min !== undefined ? condition.nb_inscrits_min : condition.min;
+      const max = condition.nb_inscrits_max !== undefined ? condition.nb_inscrits_max : condition.max;
+
+      if (min !== undefined && max !== undefined) {
+        match = nbInscrits >= min && nbInscrits <= max;
+        conditionStr = `${min} <= nb_inscrits <= ${max}`;
+      } else if (min !== undefined) {
+        match = nbInscrits >= min;
+        conditionStr = `nb_inscrits >= ${min}`;
+      }
     }
 
     return {
@@ -727,29 +878,65 @@ class ArbreDecisionService {
     };
   }
 
-  matchStatutSocialAvecDetails(condition, utilisateur) {
-    const statutUtilisateur = utilisateur.statut_social;
-    if (!statutUtilisateur) {
-      return { match: false, details: `Statut social non defini (statut_social: null)` };
+  async matchTagAvecDetails(condition, utilisateur) {
+    // Recuperer les tags de l'utilisateur
+    let userTagIds = [];
+    let userTagNames = [];
+
+    if (utilisateur._tags !== undefined) {
+      // Mode simulation avec tags fournis
+      userTagIds = utilisateur._tags || [];
+      // Charger les noms des tags pour le debug
+      if (userTagIds.length > 0) {
+        const tags = await TagUtilisateur.findAll({ where: { id: userTagIds } });
+        userTagNames = tags.map(t => t.libelle);
+      }
+    } else if (utilisateur.tags && Array.isArray(utilisateur.tags)) {
+      userTagIds = utilisateur.tags.map(t => t.id || t);
+      userTagNames = utilisateur.tags.map(t => t.libelle || t.code || t);
     }
 
-    if (condition.statuts && Array.isArray(condition.statuts)) {
-      const match = condition.statuts.includes(statutUtilisateur);
-      return {
-        match,
-        details: `Statut "${statutUtilisateur}" ${match ? 'dans' : 'hors de'} [${condition.statuts.join(', ')}]`
-      };
+    const conditionTags = condition.tags || [];
+    if (conditionTags.length === 0 && condition.type !== 'autre' && condition.type !== 'default') {
+      // Retrocompatibilite avec ancien format
+      if (condition.statuts && Array.isArray(condition.statuts)) {
+        const statutUtilisateur = utilisateur.statut_social;
+        if (!statutUtilisateur) {
+          return { match: false, details: `Statut social non defini` };
+        }
+        const match = condition.statuts.includes(statutUtilisateur);
+        return {
+          match,
+          details: `Statut "${statutUtilisateur}" ${match ? 'dans' : 'hors de'} [${condition.statuts.join(', ')}]`
+        };
+      }
+      return { match: false, details: 'Aucun tag a verifier' };
     }
 
-    if (condition.statut) {
-      const match = statutUtilisateur === condition.statut;
-      return {
-        match,
-        details: `Statut "${statutUtilisateur}" ${match ? '=' : '!='} "${condition.statut}"`
-      };
+    // Charger les noms des tags de la condition
+    let conditionTagNames = [];
+    if (conditionTags.length > 0) {
+      const tags = await TagUtilisateur.findAll({ where: { id: conditionTags } });
+      conditionTagNames = tags.map(t => t.libelle);
     }
 
-    return { match: false, details: 'Condition statut invalide' };
+    const mode = condition.mode || 'contient';
+    let match = false;
+
+    if (mode === 'contient') {
+      match = conditionTags.some(tagId => userTagIds.includes(tagId));
+    } else if (mode === 'ne_contient_pas') {
+      match = !conditionTags.some(tagId => userTagIds.includes(tagId));
+    }
+
+    const modeLabel = mode === 'contient' ? 'contient' : 'ne contient pas';
+    const userTagsStr = userTagNames.length > 0 ? userTagNames.join(', ') : 'aucun';
+    const condTagsStr = conditionTagNames.join(', ') || 'aucun';
+
+    return {
+      match,
+      details: `Tags utilisateur: [${userTagsStr}], condition: ${modeLabel} [${condTagsStr}] => ${match ? 'OK' : 'NON'}`
+    };
   }
 
   // ============================================================
@@ -904,6 +1091,13 @@ class ArbreDecisionService {
       where: { actif: true },
       order: [['ordre_affichage', 'ASC']]
     });
+  }
+
+  /**
+   * Recupere tous les tags disponibles pour les conditions
+   */
+  async getTagsDisponibles(structureId = null) {
+    return await TagUtilisateur.getActifs(structureId);
   }
 
   // ============================================================

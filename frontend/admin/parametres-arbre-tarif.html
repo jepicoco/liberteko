@@ -204,14 +204,11 @@
                 <div id="test-commune-result" class="small text-muted mt-1"></div>
               </div>
               <div class="mb-3">
-                <label class="form-label">Statut social</label>
-                <select class="form-select" id="test-statut">
-                  <option value="">Aucun</option>
-                  <option value="rsa">RSA</option>
-                  <option value="chomage">Chomage</option>
-                  <option value="etudiant">Etudiant</option>
-                  <option value="retraite">Retraite</option>
+                <label class="form-label">Tags (Ctrl+clic pour plusieurs)</label>
+                <select class="form-select" id="test-tags" multiple size="4">
+                  <!-- Rempli dynamiquement -->
                 </select>
+                <small class="text-muted">Selectionnez les tags a attribuer a l'usager test</small>
               </div>
               <div class="mb-3">
                 <label class="form-label">Annees d'anciennete</label>
