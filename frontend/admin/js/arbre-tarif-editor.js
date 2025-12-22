@@ -361,12 +361,12 @@ class ArbreTarifEditor {
     const nodeWrapper = document.createElement('div');
     nodeWrapper.className = 'tree-node';
 
+    // Carte du noeud (juste le header)
     const card = document.createElement('div');
     card.className = 'tree-node-card';
     card.dataset.noeudId = noeud.id;
     card.style.setProperty('--node-color', typeInfo.couleur || '#6c757d');
 
-    const branches = noeud.branches || [];
     const noeudsTotaux = this.arbre?.arbre_json?.noeuds?.length || 1;
 
     card.innerHTML = `
@@ -389,17 +389,19 @@ class ArbreTarifEditor {
       </div>
     `;
 
-    // Zone des branches
-    const branchesContainer = document.createElement('div');
-    branchesContainer.className = 'tree-branches';
+    nodeWrapper.appendChild(card);
 
+    // Container des branches (separe de la carte)
+    const branchesContainer = document.createElement('div');
+    branchesContainer.className = 'tree-branches-container';
+
+    const branches = noeud.branches || [];
     branches.forEach((branche, brancheIndex) => {
-      const brancheEl = this.renderTreeBranch(branche, noeud.id, brancheIndex, noeudsRestants, reductionCumulee);
-      branchesContainer.appendChild(brancheEl);
+      const brancheRow = this.renderTreeBranchRow(branche, noeud.id, brancheIndex, noeudsRestants, reductionCumulee, typeInfo.couleur);
+      branchesContainer.appendChild(brancheRow);
     });
 
-    card.appendChild(branchesContainer);
-    nodeWrapper.appendChild(card);
+    nodeWrapper.appendChild(branchesContainer);
 
     // Attacher les evenements
     card.querySelector('.btn-edit').addEventListener('click', () => {
@@ -417,9 +419,9 @@ class ArbreTarifEditor {
     return nodeWrapper;
   }
 
-  renderTreeBranch(branche, noeudId, brancheIndex, noeudsRestants = [], reductionCumulee = 0) {
-    const branchWrapper = document.createElement('div');
-    branchWrapper.className = 'tree-branch';
+  renderTreeBranchRow(branche, noeudId, brancheIndex, noeudsRestants = [], reductionCumulee = 0, nodeColor = '#6c757d') {
+    const branchRow = document.createElement('div');
+    branchRow.className = 'tree-branch-row';
 
     // Calculer la reduction de cette branche
     const reduction = branche.reduction;
@@ -437,17 +439,18 @@ class ArbreTarifEditor {
 
     const nouvelleCumulee = reductionCumulee + reductionBranche;
 
+    // Label de la branche
     const label = document.createElement('div');
     label.className = 'tree-branch-label';
     label.dataset.brancheId = branche.id;
+    label.style.setProperty('--node-color', nodeColor);
     label.innerHTML = `
       <span class="branch-name">${this.escapeHtml(branche.libelle || branche.code)}</span>
       <span class="branch-reduction ${!reduction ? 'no-reduction' : ''}">${reductionText || '(base)'}</span>
     `;
+    branchRow.appendChild(label);
 
-    branchWrapper.appendChild(label);
-
-    // Bouton d'ajout de sous-condition (hors du label pour layout horizontal)
+    // Bouton d'ajout de sous-condition
     if (!this.arbre?.verrouille) {
       const addBtn = document.createElement('button');
       addBtn.className = 'tree-branch-add';
@@ -457,43 +460,35 @@ class ArbreTarifEditor {
         e.stopPropagation();
         this.ouvrirModalAjoutEnfant(noeudId, branche.id);
       });
-      branchWrapper.appendChild(addBtn);
+      branchRow.appendChild(addBtn);
     }
 
-    // Si la branche a des enfants (sous-conditions), les afficher
-    if (branche.enfants && branche.enfants.length > 0) {
-      branche.enfants.forEach((enfant, enfantIndex) => {
-        // Connecteur court
-        const connector = document.createElement('div');
-        connector.className = 'tree-connector short';
-        branchWrapper.appendChild(connector);
+    // Connecteur horizontal
+    const connector = document.createElement('div');
+    connector.className = 'tree-connector short';
+    branchRow.appendChild(connector);
 
-        // Carte enfant
-        const enfantCard = this.renderTreeChild(enfant, noeudId, branche.id, enfantIndex, noeudsRestants, nouvelleCumulee);
-        branchWrapper.appendChild(enfantCard);
+    // Element suivant: enfants, noeud suivant, ou resultat
+    if (branche.enfants && branche.enfants.length > 0) {
+      // Afficher les sous-conditions
+      branche.enfants.forEach((enfant, enfantIndex) => {
+        const enfantNode = this.renderTreeChild(enfant, noeudId, branche.id, enfantIndex, noeudsRestants, nouvelleCumulee);
+        branchRow.appendChild(enfantNode);
       });
     } else if (noeudsRestants.length > 0) {
-      // S'il y a d'autres conditions a evaluer, les afficher
-      const connector = document.createElement('div');
-      connector.className = 'tree-connector short';
-      branchWrapper.appendChild(connector);
-
+      // Afficher le prochain noeud de condition
       const nextNoeud = noeudsRestants[0];
       const nextTypeInfo = this.typesCondition.find(t => t.code === nextNoeud.type) || {};
       const nextNodeEl = this.renderTreeNode(nextNoeud, nextTypeInfo, 1, noeudsRestants.slice(1), nouvelleCumulee);
-      branchWrapper.appendChild(nextNodeEl);
+      branchRow.appendChild(nextNodeEl);
     } else {
-      // Sinon, afficher le resultat final pour cette branche
-      const connector = document.createElement('div');
-      connector.className = 'tree-connector short';
-      branchWrapper.appendChild(connector);
-
+      // Afficher le resultat final
       const montantFinal = Math.max(0, this.montantBase - nouvelleCumulee);
       const resultNode = this.createBranchResultNode(montantFinal);
-      branchWrapper.appendChild(resultNode);
+      branchRow.appendChild(resultNode);
     }
 
-    return branchWrapper;
+    return branchRow;
   }
 
   createBranchResultNode(montant) {
@@ -518,6 +513,7 @@ class ArbreTarifEditor {
     childWrapper.dataset.noeudId = noeudId;
     childWrapper.dataset.brancheId = brancheId;
 
+    // Carte de l'enfant (juste le header)
     const card = document.createElement('div');
     card.className = 'tree-node-card';
     card.style.setProperty('--node-color', typeInfo.couleur || '#6c757d');
@@ -539,74 +535,18 @@ class ArbreTarifEditor {
       </div>
     `;
 
-    // Branches de l'enfant avec resultat par branche
+    childWrapper.appendChild(card);
+
+    // Container des branches (separe de la carte)
     const branchesContainer = document.createElement('div');
-    branchesContainer.className = 'tree-branches';
+    branchesContainer.className = 'tree-branches-container';
 
-    branches.forEach(b => {
-      const branchEl = document.createElement('div');
-      branchEl.className = 'tree-branch';
-
-      // Calculer la reduction de cette branche
-      let reductionBranche = 0;
-      let redText = '(base)';
-      if (b.reduction) {
-        if (b.reduction.type_calcul === 'pourcentage') {
-          reductionBranche = this.montantBase * b.reduction.valeur / 100;
-          redText = `-${b.reduction.valeur}%`;
-        } else {
-          reductionBranche = b.reduction.valeur;
-          redText = `-${b.reduction.valeur} EUR`;
-        }
-      }
-
-      const nouvelleCumulee = reductionCumulee + reductionBranche;
-
-      // Label de la branche
-      const label = document.createElement('div');
-      label.className = 'tree-branch-label';
-      label.innerHTML = `
-        <span class="branch-name">${this.escapeHtml(b.libelle || b.code)}</span>
-        <span class="branch-reduction ${!b.reduction ? 'no-reduction' : ''}">${redText}</span>
-      `;
-      branchEl.appendChild(label);
-
-      // Si cette branche a ses propres enfants (sous-sous-conditions)
-      if (b.enfants && b.enfants.length > 0) {
-        b.enfants.forEach((sousEnfant, sousEnfantIndex) => {
-          const connector = document.createElement('div');
-          connector.className = 'tree-connector short';
-          branchEl.appendChild(connector);
-
-          const sousEnfantCard = this.renderTreeChild(sousEnfant, noeudId, b.id, sousEnfantIndex, noeudsRestants, nouvelleCumulee);
-          branchEl.appendChild(sousEnfantCard);
-        });
-      } else if (noeudsRestants.length > 0) {
-        // S'il y a d'autres conditions a evaluer
-        const connector = document.createElement('div');
-        connector.className = 'tree-connector short';
-        branchEl.appendChild(connector);
-
-        const nextNoeud = noeudsRestants[0];
-        const nextTypeInfo = this.typesCondition.find(t => t.code === nextNoeud.type) || {};
-        const nextNodeEl = this.renderTreeNode(nextNoeud, nextTypeInfo, 1, noeudsRestants.slice(1), nouvelleCumulee);
-        branchEl.appendChild(nextNodeEl);
-      } else {
-        // Sinon, afficher le resultat final pour cette branche
-        const connector = document.createElement('div');
-        connector.className = 'tree-connector short';
-        branchEl.appendChild(connector);
-
-        const montantFinal = Math.max(0, this.montantBase - nouvelleCumulee);
-        const resultNode = this.createBranchResultNode(montantFinal);
-        branchEl.appendChild(resultNode);
-      }
-
-      branchesContainer.appendChild(branchEl);
+    branches.forEach((b, bIndex) => {
+      const branchRow = this.renderChildBranchRow(b, noeudId, brancheId, enfant, bIndex, noeudsRestants, reductionCumulee, typeInfo.couleur);
+      branchesContainer.appendChild(branchRow);
     });
 
-    card.appendChild(branchesContainer);
-    childWrapper.appendChild(card);
+    childWrapper.appendChild(branchesContainer);
 
     // Evenements
     card.querySelector('.btn-edit-enfant').addEventListener('click', (e) => {
@@ -620,6 +560,64 @@ class ArbreTarifEditor {
     });
 
     return childWrapper;
+  }
+
+  renderChildBranchRow(branche, noeudId, parentBrancheId, enfant, brancheIndex, noeudsRestants = [], reductionCumulee = 0, nodeColor = '#6c757d') {
+    const branchRow = document.createElement('div');
+    branchRow.className = 'tree-branch-row';
+
+    // Calculer la reduction de cette branche
+    let reductionBranche = 0;
+    let reductionText = '';
+    if (branche.reduction) {
+      if (branche.reduction.type_calcul === 'pourcentage') {
+        reductionBranche = this.montantBase * branche.reduction.valeur / 100;
+        reductionText = `-${branche.reduction.valeur}%`;
+      } else {
+        reductionBranche = branche.reduction.valeur;
+        reductionText = `-${branche.reduction.valeur} EUR`;
+      }
+    }
+
+    const nouvelleCumulee = reductionCumulee + reductionBranche;
+
+    // Label de la branche
+    const label = document.createElement('div');
+    label.className = 'tree-branch-label';
+    label.dataset.brancheId = branche.id;
+    label.style.setProperty('--node-color', nodeColor);
+    label.innerHTML = `
+      <span class="branch-name">${this.escapeHtml(branche.libelle || branche.code)}</span>
+      <span class="branch-reduction ${!branche.reduction ? 'no-reduction' : ''}">${reductionText || '(base)'}</span>
+    `;
+    branchRow.appendChild(label);
+
+    // Connecteur horizontal
+    const connector = document.createElement('div');
+    connector.className = 'tree-connector short';
+    branchRow.appendChild(connector);
+
+    // Element suivant: sous-enfants, noeud suivant, ou resultat
+    if (branche.enfants && branche.enfants.length > 0) {
+      // Afficher les sous-sous-conditions
+      branche.enfants.forEach((sousEnfant, sousEnfantIndex) => {
+        const sousEnfantNode = this.renderTreeChild(sousEnfant, noeudId, branche.id, sousEnfantIndex, noeudsRestants, nouvelleCumulee);
+        branchRow.appendChild(sousEnfantNode);
+      });
+    } else if (noeudsRestants.length > 0) {
+      // Afficher le prochain noeud de condition
+      const nextNoeud = noeudsRestants[0];
+      const nextTypeInfo = this.typesCondition.find(t => t.code === nextNoeud.type) || {};
+      const nextNodeEl = this.renderTreeNode(nextNoeud, nextTypeInfo, 1, noeudsRestants.slice(1), nouvelleCumulee);
+      branchRow.appendChild(nextNodeEl);
+    } else {
+      // Afficher le resultat final
+      const montantFinal = Math.max(0, this.montantBase - nouvelleCumulee);
+      const resultNode = this.createBranchResultNode(montantFinal);
+      branchRow.appendChild(resultNode);
+    }
+
+    return branchRow;
   }
 
   updateBornes() {
