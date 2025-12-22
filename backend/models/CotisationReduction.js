@@ -22,13 +22,25 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: 'Règle de réduction appliquée (null si manuelle)'
     },
+    operation_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      comment: 'Operation comptable associee (pour export)'
+    },
     type_source: {
-      type: DataTypes.ENUM(
-        'commune', 'quotient_familial', 'statut_social', 'multi_enfants',
-        'fidelite', 'partenariat', 'handicap', 'age', 'manuel', 'code_reduction'
-      ),
+      type: DataTypes.STRING(50),
       allowNull: false,
-      comment: 'Source de la réduction'
+      comment: 'Source de la réduction (COMMUNE, QF, AGE, etc.)'
+    },
+    branche_code: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+      comment: 'Code de la branche dans l arbre de decision'
+    },
+    branche_libelle: {
+      type: DataTypes.STRING(100),
+      allowNull: true,
+      comment: 'Libelle de la branche'
     },
     libelle: {
       type: DataTypes.STRING(100),

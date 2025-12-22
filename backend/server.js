@@ -246,6 +246,7 @@ app.use('/api/barcodes', require('./routes/barcodes'));
 app.use('/api/tarifs-cotisation', require('./routes/tarifsCotisation'));
 app.use('/api/cotisations', require('./routes/cotisations'));
 app.use('/api/tarification', require('./routes/tarification'));
+app.use('/api/arbres-decision', require('./routes/arbresDecision'));
 app.use('/api/parametres', require('./routes/parametres'));
 app.use('/api/email-logs', require('./routes/emailLogs'));
 app.use('/api/sms-logs', require('./routes/smsLogs'));

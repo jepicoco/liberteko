@@ -1,0 +1,501 @@
+/**
+ * Styles pour l'editeur d'arbre de decision tarifaire
+ * Structure en arbre vertical avec fleches
+ */
+
+/* ============================================
+   TOOLBAR
+   ============================================ */
+
+.toolbar-row {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e9ecef;
+}
+
+/* ============================================
+   CONTAINER PRINCIPAL
+   ============================================ */
+
+.arbre-container {
+  min-height: 400px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 2px dashed #dee2e6;
+  border-radius: 1rem;
+  padding: 2rem;
+  position: relative;
+  overflow-x: auto;
+}
+
+.arbre-vide {
+  color: #6c757d;
+}
+
+/* ============================================
+   JSON CONTAINER
+   ============================================ */
+
+.json-container {
+  background: #1e1e1e;
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.json-container small {
+  color: #adb5bd;
+}
+
+#json-editor {
+  background: #2d2d2d;
+  color: #d4d4d4;
+  border: 1px solid #444;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+#json-editor:focus {
+  background: #2d2d2d;
+  color: #d4d4d4;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+#json-validation-status.valid {
+  color: #28a745;
+}
+
+#json-validation-status.invalid {
+  color: #dc3545;
+}
+
+/* ============================================
+   ARBRE TREE STRUCTURE
+   ============================================ */
+
+.arbre-tree {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 1rem 0;
+}
+
+/* ============================================
+   NOEUD START (Depart)
+   ============================================ */
+
+.tree-start {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.tree-start-node {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.tree-start-node i {
+  margin-right: 0.5rem;
+}
+
+/* ============================================
+   CONNECTEUR VERTICAL (Fleche)
+   ============================================ */
+
+.tree-connector {
+  width: 3px;
+  height: 40px;
+  background: linear-gradient(to bottom, #6c757d, #adb5bd);
+  position: relative;
+}
+
+.tree-connector::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 10px solid #adb5bd;
+}
+
+.tree-connector.short {
+  height: 25px;
+}
+
+/* ============================================
+   NOEUD CONDITION
+   ============================================ */
+
+.tree-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tree-node-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border-left: 5px solid var(--node-color, #6c757d);
+  min-width: 300px;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.tree-node-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 1px solid #e9ecef;
+}
+
+.tree-node-type {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--node-color, #6c757d);
+}
+
+.tree-node-type i {
+  font-size: 1.25rem;
+}
+
+.tree-node-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.tree-node-actions .btn {
+  padding: 0.25rem 0.4rem;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+}
+
+.tree-node-actions .btn:hover {
+  background: #e9ecef;
+  color: #212529;
+}
+
+/* ============================================
+   BRANCHES DANS UN NOEUD
+   ============================================ */
+
+.tree-branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+
+.tree-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 180px;
+}
+
+.tree-branch-label {
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tree-branch-label:hover {
+  border-color: var(--node-color, #6c757d);
+  background: white;
+}
+
+.tree-branch-label .branch-name {
+  font-weight: 500;
+  display: block;
+}
+
+.tree-branch-label .branch-reduction {
+  font-size: 0.8rem;
+  color: #28a745;
+  font-weight: 600;
+}
+
+.tree-branch-label .branch-reduction.no-reduction {
+  color: #adb5bd;
+  font-weight: normal;
+}
+
+/* Bouton + pour ajouter sous-condition */
+.tree-branch-add {
+  position: absolute;
+  bottom: -12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #28a745;
+  color: white;
+  border: 2px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.tree-branch-label:hover .tree-branch-add {
+  opacity: 1;
+}
+
+.tree-branch-add:hover {
+  transform: scale(1.1);
+  background: #1e7e34;
+}
+
+/* ============================================
+   NOEUD RESULTAT (Fin de branche)
+   ============================================ */
+
+.tree-result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tree-result-node {
+  background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  box-shadow: 0 3px 10px rgba(0, 123, 255, 0.3);
+  white-space: nowrap;
+}
+
+.tree-result-node i {
+  margin-right: 0.35rem;
+}
+
+/* ============================================
+   SOUS-CONDITION (Enfant)
+   ============================================ */
+
+.tree-child {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tree-child .tree-node-card {
+  min-width: 250px;
+  max-width: 320px;
+  transform: scale(0.9);
+  transform-origin: top center;
+}
+
+.tree-child .tree-node-header {
+  padding: 0.5rem 0.75rem;
+}
+
+.tree-child .tree-node-type {
+  font-size: 0.9rem;
+}
+
+.tree-child .tree-node-type i {
+  font-size: 1rem;
+}
+
+.tree-child .tree-branch-label {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.tree-child .tree-result-node {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.tree-child .tree-connector {
+  height: 25px;
+}
+
+/* ============================================
+   ACTIONS SUR ENFANT
+   ============================================ */
+
+.tree-child-actions {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  display: flex;
+  gap: 0.15rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.tree-child:hover .tree-child-actions,
+.tree-node-card:hover .tree-child-actions {
+  opacity: 1;
+}
+
+.tree-child-actions .btn-xs {
+  padding: 0.15rem 0.3rem;
+  font-size: 0.7rem;
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+}
+
+.tree-child-actions .btn-xs:hover {
+  background: #f8f9fa;
+}
+
+/* ============================================
+   TYPE BADGE (Palette)
+   ============================================ */
+
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  background: #6c757d;
+  color: white;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.type-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ============================================
+   MODAL EDITION
+   ============================================ */
+
+.branche-edit-row {
+  position: relative;
+}
+
+.branche-edit-row .btn-supprimer-branche {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .arbre-tree {
+    padding: 0.5rem;
+  }
+
+  .tree-node-card {
+    min-width: 260px;
+    max-width: 100%;
+  }
+
+  .tree-branches {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .tree-branch {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  .toolbar-row .d-flex {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 0.75rem !important;
+  }
+
+  .toolbar-row .vr {
+    display: none;
+  }
+
+  .toolbar-row .btn-group {
+    justify-content: center;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+.tree-node-card.highlight {
+  animation: pulse 0.5s ease;
+  box-shadow: 0 0 0 3px var(--node-color, #6c757d), 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Branche selectionnee lors des tests */
+.tree-branch-label.selected {
+  background: #d4edda;
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+}
+
+.tree-branch-label.selected .branch-reduction {
+  color: #155724;
+}
+
+/* ============================================
+   BOUTON ADD ENFANT (sur branche)
+   ============================================ */
+
+.btn-add-child {
+  margin-top: 0.5rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  background: #e9ecef;
+  border: 1px dashed #adb5bd;
+  border-radius: 15px;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+}
+
+.tree-branch:hover .btn-add-child {
+  opacity: 1;
+}
+
+.btn-add-child:hover {
+  background: #28a745;
+  border-color: #28a745;
+  color: white;
+}

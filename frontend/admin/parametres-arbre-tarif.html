@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editeur Arbre de Decision - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="css/admin-style.css">
+  <link rel="stylesheet" href="css/arbre-tarif.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- Sidebar generee par admin-template.js -->
+  </div>
+
+  <main id="main-content" class="main-content">
+    <div class="container-fluid py-4">
+      <!-- En-tete -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-1">
+              <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
+              <li class="breadcrumb-item"><a href="parametres-tarification.html">Tarification</a></li>
+              <li class="breadcrumb-item active" id="breadcrumb-tarif">Arbre de decision</li>
+            </ol>
+          </nav>
+          <h1 class="h3 mb-0" id="page-title">Editeur d'arbre de decision</h1>
+        </div>
+        <div>
+          <button type="button" class="btn btn-outline-secondary me-2" id="btn-tester">
+            <i class="bi bi-play-circle"></i> Tester
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-enregistrer" disabled>
+            <i class="bi bi-check-lg"></i> Enregistrer
+          </button>
+        </div>
+      </div>
+
+      <!-- Alerte verrouillage -->
+      <div class="alert alert-warning d-none" id="alert-verrouille">
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <i class="bi bi-lock-fill me-2"></i>
+            <strong>Arbre verrouille</strong> - Des cotisations utilisent cet arbre.
+          </div>
+          <button type="button" class="btn btn-sm btn-warning" id="btn-deverrouiller">
+            <i class="bi bi-unlock"></i> Deverrouiller pour modification
+          </button>
+        </div>
+      </div>
+
+      <!-- Barre d'outils -->
+      <div class="toolbar-row mb-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-3">
+            <div class="dropdown">
+              <button class="btn btn-success dropdown-toggle" type="button" id="dropdown-ajouter" data-bs-toggle="dropdown">
+                <i class="bi bi-plus-lg"></i> Ajouter condition
+              </button>
+              <ul class="dropdown-menu" id="menu-types-condition">
+                <!-- Rempli dynamiquement -->
+              </ul>
+            </div>
+
+            <div class="vr"></div>
+
+            <label class="form-label mb-0 me-2">Mode d'affichage:</label>
+            <select class="form-select form-select-sm" id="select-mode-affichage" style="width: auto;">
+              <option value="minimum">A partir de X EUR</option>
+              <option value="maximum">X EUR* (reductions possibles)</option>
+            </select>
+
+            <div class="vr"></div>
+
+            <div class="text-muted">
+              <span id="label-montant-base">Montant de base: <strong>0 EUR</strong></span>
+              <span class="ms-3" id="label-bornes">Bornes: <strong>0 EUR - 0 EUR</strong></span>
+            </div>
+          </div>
+
+          <!-- Toggle Vue/JSON -->
+          <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-secondary active" id="btn-vue-visuelle">
+              <i class="bi bi-diagram-3"></i> Visuel
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="btn-vue-json">
+              <i class="bi bi-code-slash"></i> JSON
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone de l'arbre (mode visuel) -->
+      <div class="arbre-container" id="arbre-container">
+        <div class="arbre-vide text-center py-5" id="arbre-vide">
+          <i class="bi bi-diagram-3 display-1 text-muted"></i>
+          <p class="text-muted mt-3">Aucune condition definie</p>
+          <p class="text-muted">Cliquez sur "Ajouter condition" pour commencer</p>
+        </div>
+
+        <div class="arbre-tree" id="arbre-tree">
+          <!-- Arbre genere dynamiquement -->
+        </div>
+      </div>
+
+      <!-- Zone JSON (mode edition) -->
+      <div class="json-container d-none" id="json-container">
+        <div class="mb-2">
+          <small class="text-muted">Editez le JSON directement. Attention: les modifications invalides seront rejetees.</small>
+        </div>
+        <textarea class="form-control font-monospace" id="json-editor" rows="20" spellcheck="false"></textarea>
+        <div class="mt-2 d-flex justify-content-between align-items-center">
+          <div id="json-validation-status"></div>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-appliquer-json">
+            <i class="bi bi-check-lg"></i> Appliquer le JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Palette des types de condition -->
+      <div class="card mt-4">
+        <div class="card-header">
+          <h6 class="mb-0"><i class="bi bi-palette me-2"></i>Criteres disponibles</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2" id="palette-criteres">
+            <!-- Genere dynamiquement -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Edition Noeud -->
+  <div class="modal fade" id="modal-edition-noeud" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modal-noeud-titre">Editer la condition</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Type de condition</label>
+            <div class="d-flex align-items-center gap-2">
+              <span class="type-badge" id="modal-noeud-type-badge">
+                <i class="bi"></i> <span></span>
+              </span>
+            </div>
+          </div>
+
+          <h6 class="mb-3">Branches</h6>
+          <div id="modal-branches-container">
+            <!-- Branches editables -->
+          </div>
+
+          <button type="button" class="btn btn-outline-primary btn-sm mt-3" id="btn-ajouter-branche">
+            <i class="bi bi-plus"></i> Ajouter une branche
+          </button>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger me-auto" id="btn-supprimer-noeud">
+            <i class="bi bi-trash"></i> Supprimer ce critere
+          </button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" id="btn-valider-noeud">Valider</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Test -->
+  <div class="modal fade" id="modal-test" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-play-circle me-2"></i>Tester l'arbre de decision</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Donnees de test</h6>
+              <div class="mb-3">
+                <label class="form-label">Age</label>
+                <input type="number" class="form-control" id="test-age" value="35">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Quotient Familial</label>
+                <input type="number" class="form-control" id="test-qf" value="800">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Commune</label>
+                <select class="form-select" id="test-commune">
+                  <option value="">Aucune</option>
+                  <option value="agglo">Dans l'agglo</option>
+                  <option value="hors">Hors agglo</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Statut social</label>
+                <select class="form-select" id="test-statut">
+                  <option value="">Aucun</option>
+                  <option value="rsa">RSA</option>
+                  <option value="chomage">Chomage</option>
+                  <option value="etudiant">Etudiant</option>
+                  <option value="retraite">Retraite</option>
+                </select>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Annees d'anciennete</label>
+                <input type="number" class="form-control" id="test-anciennete" value="0">
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Inscrits dans la famille</label>
+                <input type="number" class="form-control" id="test-nb-inscrits" value="1">
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-lancer-test">
+                <i class="bi bi-play-fill"></i> Lancer le test
+              </button>
+            </div>
+            <div class="col-md-6">
+              <h6>Resultat</h6>
+              <div id="test-resultat" class="bg-light p-3 rounded">
+                <p class="text-muted text-center">Cliquez sur "Lancer le test" pour voir le resultat</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Ajout Sous-condition -->
+  <div class="modal fade" id="modal-ajout-enfant" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-diagram-3 me-2"></i>Ajouter une sous-condition</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3">Choisissez le type de condition a ajouter :</p>
+          <div id="liste-types-enfant" class="d-grid gap-2">
+            <!-- Rempli dynamiquement -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/leader-line/leader-line.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script src="js/arbre-tarif-renderer.js"></script>
+  <script src="js/arbre-tarif-editor.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Recuperer l'ID du tarif depuis l'URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const tarifId = urlParams.get('tarif_id');
+
+      if (!tarifId) {
+        alert('Aucun tarif specifie. Retour a la liste.');
+        window.location.href = 'parametres-tarification.html';
+        return;
+      }
+
+      // Initialiser l'editeur
+      window.arbreEditor = new ArbreTarifEditor(tarifId);
+    });
+  </script>
+</body>
+</html>

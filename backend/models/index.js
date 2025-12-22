@@ -209,6 +209,11 @@ const CotisationReductionModel = require('./CotisationReduction');
 const TarifTypeTarifModel = require('./TarifTypeTarif');
 const TrancheQFValeurModel = require('./TrancheQFValeur');
 
+// Import Arbre de Decision Tarifaire
+const TypeConditionTarifModel = require('./TypeConditionTarif');
+const OperationComptableReductionModel = require('./OperationComptableReduction');
+const ArbreDecisionModel = require('./ArbreDecision');
+
 // Import Tags Utilisateur (referentiel tags usagers)
 const TagUtilisateurModel = require('./TagUtilisateur');
 const UtilisateurTagModel = require('./UtilisateurTag');
@@ -432,6 +437,11 @@ const CotisationReduction = CotisationReductionModel(sequelize);
 const TarifTypeTarif = TarifTypeTarifModel(sequelize);
 const TrancheQFValeur = TrancheQFValeurModel(sequelize);
 
+// Initialize Arbre de Decision Tarifaire
+const TypeConditionTarif = TypeConditionTarifModel(sequelize);
+const OperationComptableReduction = OperationComptableReductionModel(sequelize);
+const ArbreDecision = ArbreDecisionModel(sequelize);
+
 // Initialize Tags Utilisateur (referentiel tags usagers)
 const TagUtilisateur = TagUtilisateurModel(sequelize);
 const UtilisateurTag = UtilisateurTagModel(sequelize);
@@ -609,6 +619,11 @@ const models = {
   RegleReduction,
   HistoriqueQuotientFamilial,
   CotisationReduction,
+
+  // Arbre de Decision Tarifaire
+  TypeConditionTarif,
+  OperationComptableReduction,
+  ArbreDecision,
 
   // Tags Utilisateur
   TagUtilisateur,
@@ -800,6 +815,10 @@ module.exports = {
   CotisationReduction,
   TarifTypeTarif,
   TrancheQFValeur,
+  // Arbre de Decision Tarifaire
+  TypeConditionTarif,
+  OperationComptableReduction,
+  ArbreDecision,
   // Structures (Multi-structures V0.9)
   Organisation,
   Structure,

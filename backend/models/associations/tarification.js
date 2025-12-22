@@ -19,7 +19,11 @@ function setupTarificationAssociations(models) {
     CotisationReduction,
     SectionAnalytique,
     RegroupementAnalytique,
-    Structure
+    Structure,
+    // Arbre de Decision
+    TypeConditionTarif,
+    OperationComptableReduction,
+    ArbreDecision
   } = models;
 
   // ========================================
@@ -212,6 +216,66 @@ function setupTarificationAssociations(models) {
     foreignKey: 'type_tarif_id',
     as: 'typeTarif'
   });
+
+  // ========================================
+  // ArbreDecision (Arbre de decision tarifaire)
+  // ========================================
+
+  if (ArbreDecision) {
+    TarifCotisation.hasOne(ArbreDecision, {
+      foreignKey: 'tarif_cotisation_id',
+      as: 'arbreDecision'
+    });
+
+    ArbreDecision.belongsTo(TarifCotisation, {
+      foreignKey: 'tarif_cotisation_id',
+      as: 'tarifCotisation'
+    });
+
+    ArbreDecision.belongsTo(Structure, {
+      foreignKey: 'structure_id',
+      as: 'structure'
+    });
+  }
+
+  // ========================================
+  // OperationComptableReduction
+  // ========================================
+
+  if (OperationComptableReduction) {
+    OperationComptableReduction.belongsTo(SectionAnalytique, {
+      foreignKey: 'section_analytique_id',
+      as: 'sectionAnalytique'
+    });
+
+    OperationComptableReduction.belongsTo(Structure, {
+      foreignKey: 'structure_id',
+      as: 'structure'
+    });
+
+    // CotisationReduction -> OperationComptableReduction
+    CotisationReduction.belongsTo(OperationComptableReduction, {
+      foreignKey: 'operation_id',
+      as: 'operationComptable'
+    });
+
+    OperationComptableReduction.hasMany(CotisationReduction, {
+      foreignKey: 'operation_id',
+      as: 'reductionsAppliquees'
+    });
+  }
+
+  // ========================================
+  // Cotisation -> ArbreDecision (trace)
+  // ========================================
+
+  if (ArbreDecision) {
+    Cotisation.belongsTo(ArbreDecision, {
+      foreignKey: 'arbre_decision_id',
+      as: 'arbreDecisionUtilise',
+      constraints: false // Optionnel, pas de FK stricte
+    });
+  }
 }
 
 module.exports = setupTarificationAssociations;
