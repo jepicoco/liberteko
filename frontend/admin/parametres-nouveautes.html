@@ -480,6 +480,8 @@
 
     // Schedule auto save (debounce 800ms)
     function scheduleAutoSave() {
+      // Ne pas sauvegarder pendant le chargement initial
+      if (isLoading) return;
       if (saveTimeout) clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveConfig, 800);
     }
