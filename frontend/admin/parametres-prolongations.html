@@ -12,7 +12,7 @@
     }
   </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Emprunts & Prolongations - Parametres - Admin</title>
+  <title>Prolongations - Parametres - Admin</title>
   <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
@@ -88,13 +88,6 @@
       background: #f8d7da;
       color: #842029;
     }
-    .demandes-card {
-      border: none;
-      transition: box-shadow 0.2s;
-    }
-    .demandes-card:hover {
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
     .module-header {
       display: flex;
       align-items: center;
@@ -144,30 +137,29 @@
             <nav aria-label="breadcrumb">
               <ol class="breadcrumb mb-1">
                 <li class="breadcrumb-item"><a href="parametres.html">Parametres</a></li>
-                <li class="breadcrumb-item active">Emprunts & Prolongations</li>
+                <li class="breadcrumb-item active">Prolongations</li>
               </ol>
             </nav>
-            <h1 class="h3 mb-0"><i class="bi bi-arrow-repeat me-2"></i>Emprunts & Prolongations</h1>
+            <h1 class="h3 mb-0"><i class="bi bi-arrow-repeat me-2"></i>Prolongations</h1>
           </div>
         </div>
 
-        <!-- Onglets -->
-        <ul class="nav nav-tabs mb-4">
-          <li class="nav-item">
-            <a class="nav-link active" href="#" data-tab="config">
-              <i class="bi bi-sliders me-1"></i>Configuration
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-tab="demandes">
-              <i class="bi bi-hourglass-split me-1"></i>Demandes en attente
-              <span class="badge bg-warning text-dark ms-1" id="countDemandes">0</span>
-            </a>
-          </li>
-        </ul>
+        <!-- Message si aucune structure selectionnee -->
+        <div class="alert alert-warning d-none" id="noStructureAlert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Structure requise</strong> - Veuillez selectionner une structure dans le menu pour configurer les parametres de prolongation.
+        </div>
+
+        <!-- Loading -->
+        <div class="text-center py-5 d-none" id="loadingContainer">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2 text-muted">Chargement des parametres...</p>
+        </div>
 
         <!-- Configuration -->
-        <div id="configSection">
+        <div id="configSection" class="d-none">
           <div class="alert alert-info mb-4">
             <i class="bi bi-info-circle me-2"></i>
             Configurez les regles de prolongation pour chaque module. Les modifications sont enregistrees automatiquement.
@@ -175,23 +167,6 @@
 
           <div class="row g-4" id="modulesContainer">
             <!-- Modules generes par JS -->
-          </div>
-        </div>
-
-        <!-- Demandes en attente -->
-        <div id="demandesSection" class="d-none">
-          <div class="card">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-              <h5 class="mb-0"><i class="bi bi-hourglass-split me-2"></i>Demandes de prolongation en attente</h5>
-              <button class="btn btn-sm btn-outline-secondary" onclick="loadDemandes()">
-                <i class="bi bi-arrow-clockwise"></i> Actualiser
-              </button>
-            </div>
-            <div class="card-body" id="demandesContainer">
-              <div class="text-center py-4">
-                <div class="spinner-border text-primary"></div>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -206,36 +181,6 @@
     <span id="saveText">Enregistrement...</span>
   </div>
 
-  <!-- Modal validation -->
-  <div class="modal fade" id="validationModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Traiter la demande</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body">
-          <p><strong>Usager :</strong> <span id="modal-adherent"></span></p>
-          <p><strong>Article :</strong> <span id="modal-article"></span></p>
-          <p><strong>Prolongation demandee :</strong> <span id="modal-jours"></span> jours</p>
-          <p><strong>Nouvelle date de retour :</strong> <span id="modal-date"></span></p>
-          <div class="mb-3">
-            <label class="form-label">Commentaire (optionnel)</label>
-            <textarea class="form-control" id="modal-commentaire" rows="2"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-danger" id="btnRefuser">
-            <i class="bi bi-x-lg me-1"></i>Refuser
-          </button>
-          <button type="button" class="btn btn-success" id="btnValider">
-            <i class="bi bi-check-lg me-1"></i>Valider
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
@@ -244,39 +189,124 @@
   <script src="js/parametres-nav.js"></script>
   <script>
     const API_URL = '/api';
-    let currentProlongationId = null;
     let saveTimeout = null;
     let currentParams = {};
+    let isLoading = false;
 
     const MODULES = [
-      { id: 'ludotheque', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', defaultJours: 14 },
-      { id: 'bibliotheque', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', defaultJours: 14 },
-      { id: 'filmotheque', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', defaultJours: 7 },
-      { id: 'discotheque', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', defaultJours: 7 }
+      { id: 'ludotheque', code: 'jeux', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', defaultJours: 14 },
+      { id: 'bibliotheque', code: 'livres', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', defaultJours: 14 },
+      { id: 'filmotheque', code: 'films', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', defaultJours: 7 },
+      { id: 'discotheque', code: 'disques', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', defaultJours: 7 }
     ];
 
-    // Init template et navigation
-    initTemplate('parametres');
+    // Parse modules_actifs (peut etre JSON string ou array)
+    function parseModulesActifs(modules) {
+      if (!modules) return [];
+      if (Array.isArray(modules)) return modules;
+      if (typeof modules === 'string') {
+        try {
+          return JSON.parse(modules);
+        } catch (e) {
+          return [];
+        }
+      }
+      return [];
+    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      renderSubNav('configuration', 'emprunts');
-      renderModules();
-      loadConfig();
-      setupEventListeners();
+    // Get structure modules from current structure
+    function getStructureModules() {
+      if (!window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+        return ['jeux', 'livres', 'films', 'disques']; // Default all
+      }
+
+      const currentStructureId = localStorage.getItem('currentStructureId');
+      if (!currentStructureId) {
+        return ['jeux', 'livres', 'films', 'disques'];
+      }
+
+      const structure = window.USER_STRUCTURES.find(s => s.id == currentStructureId);
+      if (!structure || !structure.modules_actifs) {
+        return ['jeux', 'livres', 'films', 'disques'];
+      }
+
+      return parseModulesActifs(structure.modules_actifs);
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('parametres');
+      renderSubNav('configuration', 'prolongations');
+      checkStructureAndLoad();
     });
 
-    // Auth
+    // Ecouter les changements de structure
+    window.addEventListener('structureChanged', () => {
+      checkStructureAndLoad();
+    });
+
+    // Verifier structure et charger
+    async function checkStructureAndLoad() {
+      const noStructureAlert = document.getElementById('noStructureAlert');
+      const loadingContainer = document.getElementById('loadingContainer');
+      const configSection = document.getElementById('configSection');
+
+      // Si multi-structure et aucune structure selectionnee
+      if (window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1) {
+        const currentStructureId = localStorage.getItem('currentStructureId');
+        if (!currentStructureId) {
+          noStructureAlert.classList.remove('d-none');
+          loadingContainer.classList.add('d-none');
+          configSection.classList.add('d-none');
+          return;
+        }
+      }
+
+      noStructureAlert.classList.add('d-none');
+      loadingContainer.classList.remove('d-none');
+      configSection.classList.add('d-none');
+
+      renderModules();
+      await loadConfig();
+
+      loadingContainer.classList.add('d-none');
+      configSection.classList.remove('d-none');
+    }
+
+    // Auth avec structure
     function getHeaders() {
-      return {
+      const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       };
+      const structureId = localStorage.getItem('currentStructureId');
+      if (structureId) {
+        headers['X-Structure-Id'] = structureId;
+      }
+      return headers;
     }
 
-    // Render modules cards
+    // Render modules cards - seulement les modules actifs de la structure
     function renderModules() {
       const container = document.getElementById('modulesContainer');
-      container.innerHTML = MODULES.map(mod => `
+      const structureModules = getStructureModules();
+
+      // Filtrer les modules par ceux actifs dans la structure
+      const activeModules = MODULES.filter(mod => structureModules.includes(mod.code));
+
+      if (activeModules.length === 0) {
+        container.innerHTML = `
+          <div class="col-12">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Aucun module actif pour cette structure.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = activeModules.map(mod => `
         <div class="col-lg-6">
           <div class="module-card p-3" id="card-${mod.id}">
             <div class="module-header">
@@ -289,13 +319,11 @@
                   <small class="text-muted">${mod.sublabel}</small>
                 </div>
               </div>
-              <div class="module-controls">
-                <span class="badge bg-secondary me-2" id="badge-module-${mod.id}">Module inactif</span>
-                <div class="form-check form-switch mb-0">
-                  <input class="form-check-input" type="checkbox" id="active-${mod.id}"
-                         onchange="toggleModule('${mod.id}', this.checked)"
-                         style="width: 2.5em; height: 1.25em;">
-                </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="active-${mod.id}"
+                       onchange="toggleModule('${mod.id}', this.checked)"
+                       style="width: 2.5em; height: 1.25em;">
+                <label class="form-check-label small" for="active-${mod.id}">Actif</label>
               </div>
             </div>
 
@@ -342,13 +370,19 @@
       `).join('');
 
       // Bind range input events
-      MODULES.forEach(mod => {
-        document.getElementById(`jours-${mod.id}`).addEventListener('input', (e) => {
-          document.getElementById(`jours-${mod.id}-value`).textContent = `${e.target.value}j`;
-        });
-        document.getElementById(`auto-${mod.id}`).addEventListener('input', (e) => {
-          document.getElementById(`auto-${mod.id}-value`).textContent = e.target.value;
-        });
+      activeModules.forEach(mod => {
+        const joursInput = document.getElementById(`jours-${mod.id}`);
+        const autoInput = document.getElementById(`auto-${mod.id}`);
+        if (joursInput) {
+          joursInput.addEventListener('input', (e) => {
+            document.getElementById(`jours-${mod.id}-value`).textContent = `${e.target.value}j`;
+          });
+        }
+        if (autoInput) {
+          autoInput.addEventListener('input', (e) => {
+            document.getElementById(`auto-${mod.id}-value`).textContent = e.target.value;
+          });
+        }
       });
     }
 
@@ -361,12 +395,16 @@
         card.classList.add('active');
         card.classList.remove('inactive');
         config.style.opacity = '1';
-        config.querySelectorAll('input').forEach(input => input.disabled = false);
+        config.querySelectorAll('input').forEach(input => {
+          if (input.id !== `active-${modId}`) input.disabled = false;
+        });
       } else {
         card.classList.remove('active');
         card.classList.add('inactive');
         config.style.opacity = '0.5';
-        config.querySelectorAll('input').forEach(input => input.disabled = true);
+        config.querySelectorAll('input').forEach(input => {
+          if (input.id !== `active-${modId}`) input.disabled = true;
+        });
       }
 
       scheduleAutoSave();
@@ -374,6 +412,7 @@
 
     // Load config
     async function loadConfig() {
+      isLoading = true;
       try {
         const response = await fetch(`${API_URL}/parametres/front`, {
           headers: getHeaders()
@@ -382,26 +421,18 @@
         if (!response.ok) throw new Error('Erreur chargement');
 
         currentParams = await response.json();
+        const structureModules = getStructureModules();
 
         MODULES.forEach(mod => {
-          const moduleActif = currentParams[`module_${mod.id}`];
-          const card = document.getElementById(`card-${mod.id}`);
-          const badge = document.getElementById(`badge-module-${mod.id}`);
+          // Skip si module pas actif dans la structure
+          if (!structureModules.includes(mod.code)) return;
 
-          // Module actif/inactif dans le systeme
-          if (!moduleActif) {
-            card.classList.add('disabled');
-            badge.className = 'badge bg-secondary me-2';
-            badge.textContent = 'Module inactif';
-            return;
-          }
-
-          badge.className = 'badge bg-success me-2';
-          badge.textContent = 'Module actif';
+          const activeCheckbox = document.getElementById(`active-${mod.id}`);
+          if (!activeCheckbox) return;
 
           // Prolongations activees pour ce module
           const prolongActive = currentParams[`prolongation_active_${mod.id}`] !== false;
-          document.getElementById(`active-${mod.id}`).checked = prolongActive;
+          activeCheckbox.checked = prolongActive;
           toggleModule(mod.id, prolongActive);
 
           // Valeurs
@@ -410,22 +441,32 @@
           const manuelle = currentParams[`prolongation_manuelle_${mod.id}`] !== false;
           const msg = currentParams[`prolongation_msg_reservation_${mod.id}`] !== false;
 
-          document.getElementById(`jours-${mod.id}`).value = jours;
-          document.getElementById(`jours-${mod.id}-value`).textContent = `${jours}j`;
-          document.getElementById(`auto-${mod.id}`).value = autoMax;
-          document.getElementById(`auto-${mod.id}-value`).textContent = autoMax;
-          document.getElementById(`manuelle-${mod.id}`).checked = manuelle;
-          document.getElementById(`msg-${mod.id}`).checked = msg;
+          const joursEl = document.getElementById(`jours-${mod.id}`);
+          const joursValueEl = document.getElementById(`jours-${mod.id}-value`);
+          const autoEl = document.getElementById(`auto-${mod.id}`);
+          const autoValueEl = document.getElementById(`auto-${mod.id}-value`);
+          const manuelleEl = document.getElementById(`manuelle-${mod.id}`);
+          const msgEl = document.getElementById(`msg-${mod.id}`);
+
+          if (joursEl) joursEl.value = jours;
+          if (joursValueEl) joursValueEl.textContent = `${jours}j`;
+          if (autoEl) autoEl.value = autoMax;
+          if (autoValueEl) autoValueEl.textContent = autoMax;
+          if (manuelleEl) manuelleEl.checked = manuelle;
+          if (msgEl) msgEl.checked = msg;
         });
 
       } catch (error) {
         console.error('Erreur:', error);
         showSaveIndicator('error', 'Erreur de chargement');
+      } finally {
+        isLoading = false;
       }
     }
 
     // Schedule auto save (debounce 800ms)
     function scheduleAutoSave() {
+      if (isLoading) return;
       if (saveTimeout) clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveConfig, 800);
     }
@@ -435,16 +476,23 @@
       showSaveIndicator('saving');
 
       const data = {};
+      const structureModules = getStructureModules();
 
       MODULES.forEach(mod => {
-        // Skip si module non actif dans le systeme
-        if (!currentParams[`module_${mod.id}`]) return;
+        // Skip si module pas actif dans la structure
+        if (!structureModules.includes(mod.code)) return;
 
-        data[`prolongation_active_${mod.id}`] = document.getElementById(`active-${mod.id}`).checked;
-        data[`prolongation_jours_${mod.id}`] = parseInt(document.getElementById(`jours-${mod.id}`).value);
-        data[`prolongation_auto_max_${mod.id}`] = parseInt(document.getElementById(`auto-${mod.id}`).value);
-        data[`prolongation_manuelle_${mod.id}`] = document.getElementById(`manuelle-${mod.id}`).checked;
-        data[`prolongation_msg_reservation_${mod.id}`] = document.getElementById(`msg-${mod.id}`).checked;
+        const activeEl = document.getElementById(`active-${mod.id}`);
+        const joursEl = document.getElementById(`jours-${mod.id}`);
+        const autoEl = document.getElementById(`auto-${mod.id}`);
+        const manuelleEl = document.getElementById(`manuelle-${mod.id}`);
+        const msgEl = document.getElementById(`msg-${mod.id}`);
+
+        if (activeEl) data[`prolongation_active_${mod.id}`] = activeEl.checked;
+        if (joursEl) data[`prolongation_jours_${mod.id}`] = parseInt(joursEl.value);
+        if (autoEl) data[`prolongation_auto_max_${mod.id}`] = parseInt(autoEl.value);
+        if (manuelleEl) data[`prolongation_manuelle_${mod.id}`] = manuelleEl.checked;
+        if (msgEl) data[`prolongation_msg_reservation_${mod.id}`] = msgEl.checked;
       });
 
       try {
@@ -488,117 +536,6 @@
         setTimeout(() => {
           indicator.className = 'save-indicator';
         }, 4000);
-      }
-    }
-
-    // Setup event listeners
-    function setupEventListeners() {
-      // Tabs
-      document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => {
-        tab.addEventListener('click', (e) => {
-          e.preventDefault();
-          document.querySelectorAll('.nav-tabs .nav-link').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-
-          if (tab.dataset.tab === 'config') {
-            document.getElementById('configSection').classList.remove('d-none');
-            document.getElementById('demandesSection').classList.add('d-none');
-          } else {
-            document.getElementById('configSection').classList.add('d-none');
-            document.getElementById('demandesSection').classList.remove('d-none');
-            loadDemandes();
-          }
-        });
-      });
-
-      // Modal buttons
-      document.getElementById('btnValider').addEventListener('click', () => traiterDemande('valider'));
-      document.getElementById('btnRefuser').addEventListener('click', () => traiterDemande('refuser'));
-    }
-
-    // Load demandes en attente
-    async function loadDemandes() {
-      const container = document.getElementById('demandesContainer');
-
-      try {
-        const response = await fetch(`${API_URL}/prolongations?statut=en_attente`, {
-          headers: getHeaders()
-        });
-
-        if (!response.ok) throw new Error('Erreur chargement');
-
-        const data = await response.json();
-        const demandes = data.prolongations || [];
-
-        document.getElementById('countDemandes').textContent = demandes.length;
-
-        if (demandes.length === 0) {
-          container.innerHTML = `
-            <div class="text-center py-4 text-muted">
-              <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
-              <p class="mt-2">Aucune demande en attente</p>
-            </div>
-          `;
-          return;
-        }
-
-        container.innerHTML = demandes.map(d => `
-          <div class="card demandes-card mb-3">
-            <div class="card-body d-flex align-items-center">
-              <div class="flex-grow-1">
-                <h6 class="mb-1">${d.emprunt?.adherent?.prenom || ''} ${d.emprunt?.adherent?.nom || 'Usager'}</h6>
-                <p class="mb-1 text-muted">
-                  ${d.emprunt?.jeu?.titre || d.emprunt?.livre?.titre || d.emprunt?.film?.titre || d.emprunt?.disque?.titre || 'Article'}
-                </p>
-                <small class="text-muted">
-                  <i class="bi bi-calendar me-1"></i>Demande le ${new Date(d.date_demande).toLocaleDateString('fr-FR')}
-                  - ${d.jours_ajoutes} jours demandes
-                </small>
-              </div>
-              <div>
-                <button class="btn btn-sm btn-outline-primary" onclick="openValidation(${d.id}, '${(d.emprunt?.adherent?.prenom || '')} ${d.emprunt?.adherent?.nom || ''}', '${d.emprunt?.jeu?.titre || d.emprunt?.livre?.titre || d.emprunt?.film?.titre || d.emprunt?.disque?.titre || ''}', ${d.jours_ajoutes}, '${d.nouvelle_date_retour}')">
-                  <i class="bi bi-check-lg me-1"></i>Traiter
-                </button>
-              </div>
-            </div>
-          </div>
-        `).join('');
-      } catch (error) {
-        console.error('Erreur:', error);
-        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
-      }
-    }
-
-    // Open validation modal
-    function openValidation(id, adherent, article, jours, date) {
-      currentProlongationId = id;
-      document.getElementById('modal-adherent').textContent = adherent;
-      document.getElementById('modal-article').textContent = article;
-      document.getElementById('modal-jours').textContent = jours;
-      document.getElementById('modal-date').textContent = new Date(date).toLocaleDateString('fr-FR');
-      document.getElementById('modal-commentaire').value = '';
-      new bootstrap.Modal(document.getElementById('validationModal')).show();
-    }
-
-    // Valider/Refuser
-    async function traiterDemande(action) {
-      const commentaire = document.getElementById('modal-commentaire').value;
-
-      try {
-        const response = await fetch(`${API_URL}/prolongations/${currentProlongationId}/${action}`, {
-          method: 'POST',
-          headers: getHeaders(),
-          body: JSON.stringify({ commentaire })
-        });
-
-        if (!response.ok) throw new Error('Erreur traitement');
-
-        bootstrap.Modal.getInstance(document.getElementById('validationModal')).hide();
-        loadDemandes();
-        showSaveIndicator('saved', action === 'valider' ? 'Prolongation validee' : 'Prolongation refusee');
-      } catch (error) {
-        console.error('Erreur:', error);
-        showSaveIndicator('error', 'Erreur lors du traitement');
       }
     }
   </script>

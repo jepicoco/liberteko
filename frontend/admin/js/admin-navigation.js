@@ -186,6 +186,12 @@ const MENU_ITEMS = [
         module: 'reservations'
     },
     {
+        id: 'demandes-prolongations',
+        label: 'Prolongations',
+        icon: 'hourglass-split',
+        href: 'demandes-prolongations.html'
+    },
+    {
         id: 'usagers',
         label: 'Usagers',
         icon: 'people',

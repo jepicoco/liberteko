@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="fr" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demandes de prolongation - Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    .demandes-card {
+      border: none;
+      transition: box-shadow 0.2s;
+    }
+    .demandes-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .status-badge {
+      font-size: 0.75rem;
+    }
+    .save-indicator {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      z-index: 1050;
+      display: none;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .save-indicator.saving {
+      display: flex;
+      background: #fff3cd;
+      color: #856404;
+    }
+    .save-indicator.saved {
+      display: flex;
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+    .save-indicator.error {
+      display: flex;
+      background: #f8d7da;
+      color: #842029;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation (genere par JS) -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar (genere par JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb mb-1">
+                <li class="breadcrumb-item"><a href="index.html">Tableau de bord</a></li>
+                <li class="breadcrumb-item active">Demandes de prolongation</li>
+              </ol>
+            </nav>
+            <h1 class="h3 mb-0"><i class="bi bi-hourglass-split me-2"></i>Demandes de prolongation</h1>
+          </div>
+          <button class="btn btn-outline-secondary" onclick="loadDemandes()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualiser
+          </button>
+        </div>
+
+        <!-- Filtres -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-3">
+                <label class="form-label small text-muted">Statut</label>
+                <select class="form-select" id="filterStatut" onchange="loadDemandes()">
+                  <option value="en_attente">En attente</option>
+                  <option value="validee">Validees</option>
+                  <option value="refusee">Refusees</option>
+                  <option value="">Toutes</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label small text-muted">Module</label>
+                <select class="form-select" id="filterModule" onchange="loadDemandes()">
+                  <option value="">Tous</option>
+                  <option value="ludotheque">Ludotheque</option>
+                  <option value="bibliotheque">Bibliotheque</option>
+                  <option value="filmotheque">Filmotheque</option>
+                  <option value="discotheque">Discotheque</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small text-muted">Recherche</label>
+                <input type="text" class="form-control" id="filterSearch" placeholder="Nom, article..."
+                       onkeyup="filterLocal()">
+              </div>
+              <div class="col-md-2 text-end">
+                <span class="badge bg-primary" id="countBadge">0 demandes</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste des demandes -->
+        <div class="card">
+          <div class="card-body" id="demandesContainer">
+            <div class="text-center py-4">
+              <div class="spinner-border text-primary"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicateur de sauvegarde -->
+  <div class="save-indicator" id="saveIndicator">
+    <span class="spinner-border spinner-border-sm" id="saveSpinner"></span>
+    <i class="bi bi-check-circle d-none" id="saveCheck"></i>
+    <i class="bi bi-exclamation-circle d-none" id="saveError"></i>
+    <span id="saveText">Traitement...</span>
+  </div>
+
+  <!-- Modal validation -->
+  <div class="modal fade" id="validationModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Traiter la demande</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Usager :</strong> <span id="modal-adherent"></span></p>
+          <p><strong>Article :</strong> <span id="modal-article"></span></p>
+          <p><strong>Prolongation demandee :</strong> <span id="modal-jours"></span> jours</p>
+          <p><strong>Nouvelle date de retour :</strong> <span id="modal-date"></span></p>
+          <div class="mb-3">
+            <label class="form-label">Commentaire (optionnel)</label>
+            <textarea class="form-control" id="modal-commentaire" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" id="btnRefuser">
+            <i class="bi bi-x-lg me-1"></i>Refuser
+          </button>
+          <button type="button" class="btn btn-success" id="btnValider">
+            <i class="bi bi-check-lg me-1"></i>Valider
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    const API_URL = '/api';
+    let currentProlongationId = null;
+    let allDemandes = [];
+
+    // Init
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('usagers');
+      loadDemandes();
+      setupEventListeners();
+    });
+
+    // Auth
+    function getHeaders() {
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      };
+      const structureId = localStorage.getItem('currentStructureId');
+      if (structureId) {
+        headers['X-Structure-Id'] = structureId;
+      }
+      return headers;
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      document.getElementById('btnValider').addEventListener('click', () => traiterDemande('valider'));
+      document.getElementById('btnRefuser').addEventListener('click', () => traiterDemande('refuser'));
+    }
+
+    // Load demandes
+    async function loadDemandes() {
+      const container = document.getElementById('demandesContainer');
+      const statut = document.getElementById('filterStatut').value;
+
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+        </div>
+      `;
+
+      try {
+        let url = `${API_URL}/prolongations`;
+        if (statut) {
+          url += `?statut=${statut}`;
+        }
+
+        const response = await fetch(url, {
+          headers: getHeaders()
+        });
+
+        if (!response.ok) throw new Error('Erreur chargement');
+
+        const data = await response.json();
+        allDemandes = data.prolongations || [];
+
+        filterLocal();
+      } catch (error) {
+        console.error('Erreur:', error);
+        container.innerHTML = '<div class="alert alert-danger">Erreur lors du chargement</div>';
+      }
+    }
+
+    // Filter locally
+    function filterLocal() {
+      const container = document.getElementById('demandesContainer');
+      const moduleFilter = document.getElementById('filterModule').value;
+      const searchFilter = document.getElementById('filterSearch').value.toLowerCase();
+
+      let demandes = allDemandes;
+
+      // Filter by module
+      if (moduleFilter) {
+        demandes = demandes.filter(d => {
+          if (d.emprunt?.jeu) return moduleFilter === 'ludotheque';
+          if (d.emprunt?.livre) return moduleFilter === 'bibliotheque';
+          if (d.emprunt?.film) return moduleFilter === 'filmotheque';
+          if (d.emprunt?.disque) return moduleFilter === 'discotheque';
+          return false;
+        });
+      }
+
+      // Filter by search
+      if (searchFilter) {
+        demandes = demandes.filter(d => {
+          const nom = `${d.emprunt?.adherent?.prenom || ''} ${d.emprunt?.adherent?.nom || ''}`.toLowerCase();
+          const article = (d.emprunt?.jeu?.titre || d.emprunt?.livre?.titre || d.emprunt?.film?.titre || d.emprunt?.disque?.titre || '').toLowerCase();
+          return nom.includes(searchFilter) || article.includes(searchFilter);
+        });
+      }
+
+      document.getElementById('countBadge').textContent = `${demandes.length} demande${demandes.length > 1 ? 's' : ''}`;
+
+      if (demandes.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+            <p class="mt-2">Aucune demande</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = demandes.map(d => {
+        const adherentNom = `${d.emprunt?.adherent?.prenom || ''} ${d.emprunt?.adherent?.nom || 'Usager'}`;
+        const articleTitre = d.emprunt?.jeu?.titre || d.emprunt?.livre?.titre || d.emprunt?.film?.titre || d.emprunt?.disque?.titre || 'Article';
+        const module = d.emprunt?.jeu ? 'Jeu' : d.emprunt?.livre ? 'Livre' : d.emprunt?.film ? 'Film' : d.emprunt?.disque ? 'Disque' : '';
+
+        let statusBadge = '';
+        let actionBtn = '';
+
+        if (d.statut === 'en_attente') {
+          statusBadge = '<span class="badge bg-warning text-dark status-badge">En attente</span>';
+          actionBtn = `
+            <button class="btn btn-sm btn-outline-primary" onclick="openValidation(${d.id}, '${adherentNom.replace(/'/g, "\\'")}', '${articleTitre.replace(/'/g, "\\'")}', ${d.jours_ajoutes}, '${d.nouvelle_date_retour}')">
+              <i class="bi bi-check-lg me-1"></i>Traiter
+            </button>
+          `;
+        } else if (d.statut === 'validee') {
+          statusBadge = '<span class="badge bg-success status-badge">Validee</span>';
+        } else if (d.statut === 'refusee') {
+          statusBadge = '<span class="badge bg-danger status-badge">Refusee</span>';
+        }
+
+        return `
+          <div class="card demandes-card mb-3">
+            <div class="card-body d-flex align-items-center">
+              <div class="flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <h6 class="mb-0">${adherentNom}</h6>
+                  ${statusBadge}
+                </div>
+                <p class="mb-1 text-muted">
+                  <span class="badge bg-light text-dark me-1">${module}</span>
+                  ${articleTitre}
+                </p>
+                <small class="text-muted">
+                  <i class="bi bi-calendar me-1"></i>Demande le ${new Date(d.date_demande).toLocaleDateString('fr-FR')}
+                  - ${d.jours_ajoutes} jours demandes
+                  ${d.commentaire_gestionnaire ? `<br><i class="bi bi-chat-text me-1"></i>${d.commentaire_gestionnaire}` : ''}
+                </small>
+              </div>
+              <div>
+                ${actionBtn}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Open validation modal
+    function openValidation(id, adherent, article, jours, date) {
+      currentProlongationId = id;
+      document.getElementById('modal-adherent').textContent = adherent;
+      document.getElementById('modal-article').textContent = article;
+      document.getElementById('modal-jours').textContent = jours;
+      document.getElementById('modal-date').textContent = new Date(date).toLocaleDateString('fr-FR');
+      document.getElementById('modal-commentaire').value = '';
+      new bootstrap.Modal(document.getElementById('validationModal')).show();
+    }
+
+    // Valider/Refuser
+    async function traiterDemande(action) {
+      const commentaire = document.getElementById('modal-commentaire').value;
+      showSaveIndicator('saving', 'Traitement...');
+
+      try {
+        const response = await fetch(`${API_URL}/prolongations/${currentProlongationId}/${action}`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify({ commentaire })
+        });
+
+        if (!response.ok) throw new Error('Erreur traitement');
+
+        bootstrap.Modal.getInstance(document.getElementById('validationModal')).hide();
+        loadDemandes();
+        showSaveIndicator('saved', action === 'valider' ? 'Prolongation validee' : 'Prolongation refusee');
+      } catch (error) {
+        console.error('Erreur:', error);
+        showSaveIndicator('error', 'Erreur lors du traitement');
+      }
+    }
+
+    // Show save indicator
+    function showSaveIndicator(state, customMessage = null) {
+      const indicator = document.getElementById('saveIndicator');
+      const spinner = document.getElementById('saveSpinner');
+      const check = document.getElementById('saveCheck');
+      const errorIcon = document.getElementById('saveError');
+      const text = document.getElementById('saveText');
+
+      indicator.className = 'save-indicator ' + state;
+      spinner.classList.toggle('d-none', state !== 'saving');
+      check.classList.toggle('d-none', state !== 'saved');
+      errorIcon.classList.toggle('d-none', state !== 'error');
+
+      text.textContent = customMessage || (state === 'saving' ? 'Traitement...' : state === 'saved' ? 'Termine' : 'Erreur');
+
+      if (state !== 'saving') {
+        setTimeout(() => {
+          indicator.className = 'save-indicator';
+        }, state === 'error' ? 4000 : 2000);
+      }
+    }
+  </script>
+</body>
+</html>

@@ -39,9 +39,9 @@ const PARAMETRES_CATEGORIES = {
       { id: 'confidentialite', label: 'Confidentialite', href: 'parametres-confidentialite.html', icon: 'bi-shield-lock', adminOnly: true },
       { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
       { id: 'codes-barres', label: 'Codes-Barres', href: 'parametres-codes-barres.html', icon: 'bi-upc-scan' },
-      { id: 'emprunts', label: 'Emprunts', href: 'parametres-emprunts.html', icon: 'bi-arrow-repeat' },
       { id: 'limites', label: 'Limites emprunts', href: 'parametres-limites-emprunts.html', icon: 'bi-speedometer2' },
       { id: 'reservations', label: 'Reservations', href: 'parametres-reservations.html', icon: 'bi-bookmark' },
+      { id: 'prolongations', label: 'Prolongations', href: 'parametres-prolongations.html', icon: 'bi-arrow-repeat' },
       { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' },
       { id: 'holodeck', label: 'Holodeck', href: 'parametres-holodeck.html', icon: 'bi-grid-3x3-gap', adminOnly: true }
     ]
@@ -130,7 +130,7 @@ const PARAMETRES_CATEGORIES = {
     tabId: 'services-externes',
     pages: [] // Redirige vers services
   },
-  emprunts: {
+  prolongations: {
     label: 'Configuration',
     icon: 'bi-gear',
     tabId: 'configuration',
@@ -264,7 +264,7 @@ function getParametresLink(category) {
     outils: 'outils',
     // Aliases
     general: 'organisation',
-    emprunts: 'configuration',
+    prolongations: 'configuration',
     catalogue: 'configuration',
     systeme: 'outils',
     'site-web': 'organisation'
