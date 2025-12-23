@@ -40,7 +40,7 @@ exports.getAll = async (req, res) => {
 
     // Includes communs
     const commonIncludes = [
-      { model: Organisation, as: 'organisation', attributes: ['id', 'nom', 'nom_court', 'type_organisation'] },
+      { model: Organisation, as: 'organisation', attributes: ['id', 'nom', 'nom_court', 'type_organisation', 'gestion_codes_barres'] },
       { model: ParametresFrontStructure, as: 'parametresFront' },
       { model: Site, as: 'sites', attributes: ['id', 'nom', 'code'] },
       { model: ConfigurationEmail, as: 'configurationEmailDefaut', attributes: ['id', 'libelle', 'email_expediteur'] },
@@ -110,6 +110,7 @@ exports.getById = async (req, res) => {
 
     const structure = await Structure.findByPk(id, {
       include: [
+        { model: Organisation, as: 'organisation' },
         { model: ParametresFrontStructure, as: 'parametresFront' },
         { model: Site, as: 'sites' },
         { model: ConfigurationEmail, as: 'configurationEmailDefaut', attributes: ['id', 'libelle', 'email_expediteur'] },
@@ -136,12 +137,12 @@ exports.getById = async (req, res) => {
       }
     }
 
-    // Stats
+    // Stats - Les collections utilisent 'statut' pas 'actif'
     const [jeuxCount, livresCount, filmsCount, disquesCount, empruntsActifs, cotisationsActives] = await Promise.all([
-      Jeu.count({ where: { structure_id: id, actif: true } }),
-      Livre.count({ where: { structure_id: id, actif: true } }),
-      Film.count({ where: { structure_id: id, actif: true } }),
-      Disque.count({ where: { structure_id: id, actif: true } }),
+      Jeu.count({ where: { structure_id: id, statut: { [Op.ne]: 'supprime' } } }),
+      Livre.count({ where: { structure_id: id, statut: { [Op.ne]: 'supprime' } } }),
+      Film.count({ where: { structure_id: id, statut: { [Op.ne]: 'supprime' } } }),
+      Disque.count({ where: { structure_id: id, statut: { [Op.ne]: 'supprime' } } }),
       Emprunt.count({ where: { structure_id: id, statut: 'en_cours' } }),
       Cotisation.count({ where: { structure_id: id, statut: 'active' } })
     ]);

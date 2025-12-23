@@ -306,6 +306,9 @@ function showModalOrganisation(id = null) {
     // Connecteurs
     document.getElementById('organisation_email_connector').value = org.configuration_email_id || '';
     document.getElementById('organisation_sms_connector').value = org.configuration_sms_id || '';
+
+    // Codes-barres (JSON par module)
+    setGestionCodesBarres(org.gestion_codes_barres);
   } else {
     document.getElementById('modalOrganisationTitle').textContent = 'Nouvelle organisation';
     document.getElementById('organisation_id').value = '';
@@ -313,7 +316,13 @@ function showModalOrganisation(id = null) {
     document.getElementById('organisation_type').value = 'association';
     document.getElementById('organisation_pays').value = 'FR';
     document.getElementById('organisation_regime_tva').value = 'non_assujetti';
+
+    // Codes-barres: par defaut "organisation" pour tous les modules
+    setGestionCodesBarres({});
   }
+
+  // Charger les groupes existants pour l'auto-completion
+  loadGroupesExistants();
 
   // Adapter les champs selon le type
   adaptFieldsToType();
@@ -370,7 +379,10 @@ async function handleOrganisationSubmit(e) {
 
     // Connecteurs
     configuration_email_id: emailConnectorValue ? parseInt(emailConnectorValue) : null,
-    configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null
+    configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null,
+
+    // Codes-barres (JSON par module)
+    gestion_codes_barres: getGestionCodesBarres()
   };
 
   try {
@@ -483,6 +495,127 @@ async function toggleOrganisation(id) {
   }
 }
 
+// ==================== GESTION CODES-BARRES ====================
+
+const MODULES_CODES_BARRES = ['utilisateur', 'jeu', 'livre', 'film', 'disque'];
+
+/**
+ * Applique une valeur a tous les modules
+ */
+function applyToAllModules(value) {
+  MODULES_CODES_BARRES.forEach(module => {
+    if (value === 'organisation') {
+      document.getElementById(`gestion_${module}_org`).checked = true;
+      document.getElementById(`groupe_${module}`).value = '';
+    } else if (value === 'structure') {
+      document.getElementById(`gestion_${module}_str`).checked = true;
+      document.getElementById(`groupe_${module}`).value = '';
+    }
+  });
+}
+
+/**
+ * Recupere la configuration des codes-barres depuis le formulaire
+ */
+function getGestionCodesBarres() {
+  const config = {};
+
+  MODULES_CODES_BARRES.forEach(module => {
+    const orgRadio = document.getElementById(`gestion_${module}_org`);
+    const strRadio = document.getElementById(`gestion_${module}_str`);
+    const grpRadio = document.getElementById(`gestion_${module}_grp`);
+    const grpInput = document.getElementById(`groupe_${module}`);
+
+    if (orgRadio && orgRadio.checked) {
+      config[module] = 'organisation';
+    } else if (strRadio && strRadio.checked) {
+      config[module] = 'structure';
+    } else if (grpRadio && grpRadio.checked && grpInput) {
+      const groupeName = grpInput.value.trim().toUpperCase();
+      // Valider que le nom de groupe n'est pas un mot reserve
+      if (groupeName && groupeName !== 'ORGANISATION' && groupeName !== 'STRUCTURE') {
+        config[module] = groupeName;
+      } else {
+        config[module] = 'organisation'; // Fallback
+      }
+    } else {
+      config[module] = 'organisation'; // Default
+    }
+  });
+
+  return config;
+}
+
+/**
+ * Remplit le formulaire avec la configuration des codes-barres
+ */
+function setGestionCodesBarres(config) {
+  if (!config || typeof config !== 'object') {
+    config = {};
+  }
+
+  MODULES_CODES_BARRES.forEach(module => {
+    const value = config[module] || 'organisation';
+    const orgRadio = document.getElementById(`gestion_${module}_org`);
+    const strRadio = document.getElementById(`gestion_${module}_str`);
+    const grpRadio = document.getElementById(`gestion_${module}_grp`);
+    const grpInput = document.getElementById(`groupe_${module}`);
+
+    if (!orgRadio || !strRadio || !grpRadio || !grpInput) return;
+
+    if (value === 'organisation') {
+      orgRadio.checked = true;
+      grpInput.value = '';
+    } else if (value === 'structure') {
+      strRadio.checked = true;
+      grpInput.value = '';
+    } else {
+      // C'est un nom de groupe
+      grpRadio.checked = true;
+      grpInput.value = value;
+    }
+  });
+}
+
+/**
+ * Charge les noms de groupes existants pour l'auto-completion
+ */
+async function loadGroupesExistants() {
+  try {
+    const token = getAuthToken();
+    const response = await fetch('/api/organisations', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!response.ok) return;
+
+    const orgs = await response.json();
+    const groupes = new Set();
+
+    // Extraire tous les noms de groupes uniques
+    orgs.forEach(org => {
+      if (org.gestion_codes_barres && typeof org.gestion_codes_barres === 'object') {
+        Object.values(org.gestion_codes_barres).forEach(value => {
+          if (value && value !== 'organisation' && value !== 'structure') {
+            groupes.add(value.toUpperCase());
+          }
+        });
+      }
+    });
+
+    // Remplir le datalist
+    const datalist = document.getElementById('groupes-existants');
+    if (datalist) {
+      datalist.innerHTML = Array.from(groupes)
+        .sort()
+        .map(g => `<option value="${escapeHtml(g)}">`)
+        .join('');
+    }
+  } catch (error) {
+    console.error('Erreur chargement groupes:', error);
+  }
+}
+
 // ==================== UTILITAIRES ====================
 
 function formatSiret(siret) {
@@ -503,3 +636,7 @@ window.initOrganisationsPage = initOrganisationsPage;
 window.showModalOrganisation = showModalOrganisation;
 window.deleteOrganisation = deleteOrganisation;
 window.toggleOrganisation = toggleOrganisation;
+window.applyToAllModules = applyToAllModules;
+window.getGestionCodesBarres = getGestionCodesBarres;
+window.setGestionCodesBarres = setGestionCodesBarres;
+window.loadGroupesExistants = loadGroupesExistants;

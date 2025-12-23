@@ -189,6 +189,35 @@ module.exports = (sequelize) => {
       allowNull: true
     },
 
+    // Gestion des codes-barres par module
+    // Valeurs possibles par module: 'organisation', 'structure', ou nom de groupe (ex: 'SISAM')
+    gestion_codes_barres: {
+      type: DataTypes.JSON,
+      allowNull: true,
+      defaultValue: {
+        utilisateur: 'organisation',
+        jeu: 'organisation',
+        livre: 'organisation',
+        film: 'organisation',
+        disque: 'organisation'
+      },
+      comment: 'Per-module barcode management: organisation, structure, or group name',
+      get() {
+        const value = this.getDataValue('gestion_codes_barres');
+        // Ensure we always return a complete object with all modules
+        const defaultValue = {
+          utilisateur: 'organisation',
+          jeu: 'organisation',
+          livre: 'organisation',
+          film: 'organisation',
+          disque: 'organisation'
+        };
+        if (!value) return defaultValue;
+        // Merge with defaults to ensure all modules are present
+        return { ...defaultValue, ...value };
+      }
+    },
+
     // Statut
     actif: {
       type: DataTypes.BOOLEAN,

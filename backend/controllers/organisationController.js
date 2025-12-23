@@ -127,6 +127,7 @@ exports.create = async (req, res) => {
       couleur_primaire,
       configuration_email_id,
       configuration_sms_id,
+      gestion_codes_barres,
       actif
     } = req.body;
 
@@ -174,6 +175,13 @@ exports.create = async (req, res) => {
       couleur_primaire: couleur_primaire || '#007bff',
       configuration_email_id: configuration_email_id || null,
       configuration_sms_id: configuration_sms_id || null,
+      gestion_codes_barres: gestion_codes_barres || {
+        utilisateur: 'organisation',
+        jeu: 'organisation',
+        livre: 'organisation',
+        film: 'organisation',
+        disque: 'organisation'
+      },
       actif: actif !== false
     });
 
@@ -237,6 +245,7 @@ exports.update = async (req, res) => {
       couleur_primaire,
       configuration_email_id,
       configuration_sms_id,
+      gestion_codes_barres,
       actif
     } = req.body;
 
@@ -282,6 +291,7 @@ exports.update = async (req, res) => {
       couleur_primaire: couleur_primaire || organisation.couleur_primaire,
       configuration_email_id: configuration_email_id !== undefined ? (configuration_email_id || null) : organisation.configuration_email_id,
       configuration_sms_id: configuration_sms_id !== undefined ? (configuration_sms_id || null) : organisation.configuration_sms_id,
+      gestion_codes_barres: gestion_codes_barres || organisation.gestion_codes_barres,
       actif: actif !== undefined ? actif : organisation.actif
     });
 

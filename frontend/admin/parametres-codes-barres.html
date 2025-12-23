@@ -210,7 +210,43 @@
           </a>
         </div>
 
-        <!-- Onglets -->
+        <!-- Message si aucune structure selectionnee (mode structure uniquement) -->
+        <div class="alert alert-warning d-none" id="noStructureAlert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Structure requise</strong> - Veuillez selectionner une structure dans le menu en haut de page pour configurer les codes-barres.
+          <br><small class="text-muted">En mode "gestion par structure", les parametres sont specifiques a chaque structure.</small>
+        </div>
+
+        <!-- Mode de gestion des codes-barres par module (toujours visible une fois charge) -->
+        <div id="gestion-mode-banner" class="card mb-4" style="display: none;">
+          <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-upc-scan me-2"></i>
+              <strong>Configuration des codes-barres</strong>
+              <span class="text-muted ms-2 small" id="gestion-org-name"></span>
+            </div>
+            <a href="#" id="gestion-mode-link" class="btn btn-sm btn-outline-secondary" style="display: none;">
+              <i class="bi bi-pencil me-1"></i>Modifier
+            </a>
+          </div>
+          <div class="card-body py-2">
+            <div class="row g-2" id="gestion-modules-list">
+              <!-- Genere par JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div class="text-center py-5" id="loadingContainer">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2 text-muted">Chargement des parametres...</p>
+        </div>
+
+        <!-- Contenu principal (cache pendant le chargement) -->
+        <div id="mainContent" style="display: none;">
+          <!-- Onglets -->
         <ul class="nav nav-tabs mb-4">
           <li class="nav-item">
             <a class="nav-link active" href="#" data-tab="config">
@@ -284,6 +320,7 @@
             </div>
           </div>
         </div>
+        </div><!-- Fin mainContent -->
       </div>
     </div>
   </div>
@@ -299,9 +336,6 @@
   <script src="js/admin-template.js"></script>
   <script src="js/parametres-nav.js"></script>
   <script>
-    // Initialiser le template (navbar + sidebar)
-    initTemplate('parametres');
-
     const API_BASE = '/api/codes-barres-reserves';
 
     // Helper pour les appels API authentifies
@@ -347,17 +381,193 @@
     let stats = {};
     let tokens = [];
     let originalValues = {}; // Pour tracker les changements
+    let organisationInfo = null;
 
     // Initialisation
     document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('parametres');
       renderSubNav('configuration', 'codes-barres');
-      await loadTokens();
-      await loadParametres();
-      await loadStats();
-      initTabs();
-      initModuleCards();
-      initDragAndDrop();
+      await checkStructureAndLoad();
     });
+
+    // Ecouter les changements de structure
+    window.addEventListener('structureChanged', () => {
+      checkStructureAndLoad();
+    });
+
+    /**
+     * Verifie si une structure est selectionnee et charge les donnees
+     */
+    async function checkStructureAndLoad() {
+      const loadingContainer = document.getElementById('loadingContainer');
+      const mainContent = document.getElementById('mainContent');
+      const noStructureAlert = document.getElementById('noStructureAlert');
+
+      // Afficher le loader
+      loadingContainer.style.display = 'block';
+      mainContent.style.display = 'none';
+      noStructureAlert.classList.add('d-none');
+
+      try {
+        // D'abord charger le mode de gestion
+        await loadGestionMode();
+
+        // Verifier si on a besoin d'une structure selectionnee
+        // (si au moins un module est en mode "structure")
+        const gestionConfig = organisationInfo?.gestion_codes_barres || {};
+        const hasStructureMode = Object.values(gestionConfig).includes('structure');
+
+        if (hasStructureMode) {
+          const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
+          const structureId = window.CURRENT_STRUCTURE_ID;
+
+          if (hasMultipleStructures && !structureId) {
+            loadingContainer.style.display = 'none';
+            noStructureAlert.classList.remove('d-none');
+            // La banniere est deja affichee par loadGestionMode()
+            return;
+          }
+        }
+
+        // Charger les donnees
+        await loadTokens();
+        await loadParametres();
+        await loadStats();
+        initTabs();
+        initModuleCards();
+        initDragAndDrop();
+
+        // Afficher le contenu
+        loadingContainer.style.display = 'none';
+        mainContent.style.display = 'block';
+      } catch (error) {
+        console.error('Erreur chargement:', error);
+        loadingContainer.style.display = 'none';
+        mainContent.style.display = 'block';
+      }
+    }
+
+    // Charger le mode de gestion des codes-barres depuis l'organisation
+    async function loadGestionMode() {
+      try {
+        // Recuperer l'organisation courante (via la structure courante)
+        const structureId = window.CURRENT_STRUCTURE_ID;
+        console.log('loadGestionMode - structureId:', structureId, 'USER_STRUCTURES:', window.USER_STRUCTURES);
+
+        if (structureId) {
+          // Charger la structure pour obtenir l'organisation (incluse dans la reponse)
+          const structure = await apiGet(`/api/structures/${structureId}`);
+          console.log('loadGestionMode - structure loaded:', structure);
+          if (structure && structure.organisation) {
+            organisationInfo = structure.organisation;
+          }
+        } else {
+          // Pas de structure selectionnee, utiliser la premiere structure disponible
+          const structures = window.USER_STRUCTURES;
+          if (structures && structures.length > 0) {
+            console.log('loadGestionMode - using first structure:', structures[0]);
+            // Utiliser l'organisation de la premiere structure
+            if (structures[0].organisation) {
+              organisationInfo = structures[0].organisation;
+            } else if (structures[0].organisation_id) {
+              // Charger la structure complete pour avoir l'organisation
+              const structure = await apiGet(`/api/structures/${structures[0].id}`);
+              console.log('loadGestionMode - loaded full structure:', structure);
+              if (structure && structure.organisation) {
+                organisationInfo = structure.organisation;
+              }
+            }
+          }
+        }
+        console.log('loadGestionMode - final organisationInfo:', organisationInfo);
+      } catch (error) {
+        console.error('Erreur chargement mode gestion:', error);
+      }
+
+      // Toujours afficher la banniere (meme en cas d'erreur)
+      renderGestionModeBanner();
+    }
+
+    // Configuration des modules pour l'affichage
+    const MODULES_CONFIG = {
+      utilisateur: { label: 'Usagers', icon: 'bi-person-badge', color: '#0d6efd' },
+      jeu: { label: 'Jeux', icon: 'bi-dice-5', color: '#6f42c1' },
+      livre: { label: 'Livres', icon: 'bi-book', color: '#20c997' },
+      film: { label: 'Films', icon: 'bi-film', color: '#fd7e14' },
+      disque: { label: 'Disques', icon: 'bi-disc', color: '#e83e8c' }
+    };
+
+    // Afficher la banniere du mode de gestion par module
+    function renderGestionModeBanner() {
+      const banner = document.getElementById('gestion-mode-banner');
+      if (!organisationInfo) {
+        // Pas d'organisation trouvee - afficher un message
+        banner.style.display = 'block';
+        document.getElementById('gestion-org-name').textContent = '';
+        document.getElementById('gestion-modules-list').innerHTML = `
+          <div class="col-12">
+            <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>Aucune organisation configuree</span>
+          </div>
+        `;
+        document.getElementById('gestion-mode-link').style.display = 'none';
+        return;
+      }
+
+      const userRole = localStorage.getItem('userRole') || 'usager';
+      const isAdmin = userRole === 'administrateur';
+
+      // Afficher le nom de l'organisation
+      const orgName = document.getElementById('gestion-org-name');
+      orgName.textContent = `(${organisationInfo.nom})`;
+
+      // Configurer la banniere
+      banner.style.display = 'block';
+
+      // Generer la liste des modules
+      const gestionConfig = organisationInfo.gestion_codes_barres || {};
+      const modulesList = document.getElementById('gestion-modules-list');
+
+      modulesList.innerHTML = Object.entries(MODULES_CONFIG).map(([moduleId, config]) => {
+        const value = gestionConfig[moduleId] || 'organisation';
+        let badgeClass, badgeIcon, badgeText;
+
+        if (value === 'organisation') {
+          badgeClass = 'bg-primary';
+          badgeIcon = 'bi-building-gear';
+          badgeText = 'Organisation';
+        } else if (value === 'structure') {
+          badgeClass = 'bg-secondary';
+          badgeIcon = 'bi-diagram-3';
+          badgeText = 'Structure';
+        } else {
+          // Groupe
+          badgeClass = 'bg-success';
+          badgeIcon = 'bi-link-45deg';
+          badgeText = `Groupe : ${value}`;
+        }
+
+        return `
+          <div class="col-auto">
+            <div class="d-flex align-items-center gap-2 px-2 py-1 rounded" style="background: rgba(0,0,0,0.03);">
+              <i class="bi ${config.icon}" style="color: ${config.color};"></i>
+              <span class="small">${config.label}:</span>
+              <span class="badge ${badgeClass} small">
+                <i class="bi ${badgeIcon} me-1"></i>${badgeText}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Lien de modification (admin uniquement)
+      const link = document.getElementById('gestion-mode-link');
+      if (isAdmin && organisationInfo.id) {
+        link.href = `organisations.html?edit=${organisationInfo.id}`;
+        link.style.display = 'inline-flex';
+      } else {
+        link.style.display = 'none';
+      }
+    }
 
     // Charger les tokens
     async function loadTokens() {
