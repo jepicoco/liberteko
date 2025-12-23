@@ -162,6 +162,13 @@
           Les modifications sont enregistrees automatiquement.
         </div>
 
+        <!-- Message si aucune structure selectionnee -->
+        <div class="alert alert-warning d-none" id="noStructureAlert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Structure requise</strong> - Veuillez selectionner une structure dans le menu en haut de page pour configurer les nouveautes.
+          <br><small class="text-muted">Les parametres de nouveautes sont specifiques a chaque structure.</small>
+        </div>
+
         <div class="row g-4" id="modulesContainer">
           <!-- Modules generes par JS -->
         </div>
@@ -200,16 +207,45 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       renderSubNav('configuration', 'nouveautes');
-      renderModules();
-      loadConfig();
+      checkStructureAndLoad();
     });
 
-    // Auth
+    // Ecouter les changements de structure
+    window.addEventListener('structureChanged', () => {
+      checkStructureAndLoad();
+    });
+
+    /**
+     * Verifie si une structure est selectionnee et charge les donnees
+     */
+    function checkStructureAndLoad() {
+      const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
+      const structureId = window.CURRENT_STRUCTURE_ID;
+
+      // Si plusieurs structures et aucune selectionnee, afficher l'alerte
+      if (hasMultipleStructures && !structureId) {
+        document.getElementById('noStructureAlert').classList.remove('d-none');
+        document.getElementById('modulesContainer').innerHTML = '';
+        return;
+      }
+
+      // Structure selectionnee ou mono-structure
+      document.getElementById('noStructureAlert').classList.add('d-none');
+      renderModules();
+      loadConfig();
+    }
+
+    // Auth - avec header structure si selectionnee
     function getHeaders() {
-      return {
+      const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       };
+      // Ajouter le header structure si une structure est selectionnee
+      if (window.CURRENT_STRUCTURE_ID) {
+        headers['X-Structure-Id'] = window.CURRENT_STRUCTURE_ID;
+      }
+      return headers;
     }
 
     // Render modules cards
@@ -289,19 +325,34 @@
       scheduleAutoSave();
     }
 
-    // Load config
+    // Load config - depuis la structure selectionnee ou globale
     async function loadConfig() {
       try {
-        const response = await fetch(`${API_URL}/parametres/front`, {
+        const structureId = window.CURRENT_STRUCTURE_ID;
+
+        // Charger les parametres globaux pour les modules actifs
+        const globalResponse = await fetch(`${API_URL}/parametres/front`, {
           headers: getHeaders()
         });
+        if (!globalResponse.ok) throw new Error('Erreur chargement parametres globaux');
+        const globalParams = await globalResponse.json();
 
-        if (!response.ok) throw new Error('Erreur chargement');
+        // Charger les parametres de la structure si une structure est selectionnee
+        let structureParams = {};
+        if (structureId) {
+          const structResponse = await fetch(`${API_URL}/structures/${structureId}/parametres-front`, {
+            headers: getHeaders()
+          });
+          if (structResponse.ok) {
+            structureParams = await structResponse.json();
+          }
+        }
 
-        currentParams = await response.json();
+        // Stocker pour la sauvegarde
+        currentParams = { global: globalParams, structure: structureParams };
 
         MODULES.forEach(mod => {
-          const moduleActif = currentParams[`module_${mod.id}`];
+          const moduleActif = globalParams[`module_${mod.id}`];
           const card = document.getElementById(`card-${mod.id}`);
           const badge = document.getElementById(`badge-module-${mod.id}`);
 
@@ -316,13 +367,17 @@
           badge.className = 'badge bg-success me-2';
           badge.textContent = 'Module actif';
 
-          // Nouveautes activees pour ce module
-          const nouveauteActive = currentParams[`nouveaute_active_${mod.id}`] !== false;
+          // Utiliser les parametres structure si disponibles, sinon les globaux
+          const nouveauteActive = structureParams[`nouveaute_active_${mod.id}`] !== undefined
+            ? structureParams[`nouveaute_active_${mod.id}`]
+            : (globalParams[`nouveaute_active_${mod.id}`] !== false);
+          const duree = structureParams[`nouveaute_duree_${mod.id}`]
+            || globalParams[`nouveaute_duree_${mod.id}`]
+            || mod.defaultDuree;
+
           document.getElementById(`active-${mod.id}`).checked = nouveauteActive;
           toggleModule(mod.id, nouveauteActive);
 
-          // Valeurs
-          const duree = currentParams[`nouveaute_duree_${mod.id}`] || mod.defaultDuree;
           document.getElementById(`duree-${mod.id}`).value = duree;
           document.getElementById(`duree-${mod.id}-value`).textContent = `${duree}j`;
           document.getElementById(`duree-${mod.id}-text`).textContent = duree;
@@ -340,22 +395,35 @@
       saveTimeout = setTimeout(saveConfig, 800);
     }
 
-    // Save config
+    // Save config - vers la structure selectionnee
     async function saveConfig() {
+      const structureId = window.CURRENT_STRUCTURE_ID;
+
+      // Si pas de structure selectionnee et multi-structure, ne pas sauvegarder
+      if (!structureId && window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1) {
+        showSaveIndicator('error', 'Selectionnez une structure');
+        return;
+      }
+
       showSaveIndicator('saving');
 
       const data = {};
 
       MODULES.forEach(mod => {
         // Skip si module non actif dans le systeme
-        if (!currentParams[`module_${mod.id}`]) return;
+        if (!currentParams.global[`module_${mod.id}`]) return;
 
         data[`nouveaute_active_${mod.id}`] = document.getElementById(`active-${mod.id}`).checked;
         data[`nouveaute_duree_${mod.id}`] = parseInt(document.getElementById(`duree-${mod.id}`).value);
       });
 
       try {
-        const response = await fetch(`${API_URL}/parametres/front`, {
+        // Sauvegarder dans les parametres de la structure
+        const url = structureId
+          ? `${API_URL}/structures/${structureId}/parametres-front`
+          : `${API_URL}/parametres/front`;
+
+        const response = await fetch(url, {
           method: 'PUT',
           headers: getHeaders(),
           body: JSON.stringify(data)

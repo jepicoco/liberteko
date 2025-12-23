@@ -93,6 +93,55 @@ module.exports = (sequelize) => {
       allowNull: true,
       comment: 'Conditions d\'utilisation / reglement'
     },
+    // Parametres nouveautes par module
+    nouveaute_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Nouveautes activees pour la ludotheque'
+    },
+    nouveaute_duree_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 60,
+      comment: 'Duree en jours pour ludotheque'
+    },
+    nouveaute_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Nouveautes activees pour la bibliotheque'
+    },
+    nouveaute_duree_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 30,
+      comment: 'Duree en jours pour bibliotheque'
+    },
+    nouveaute_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Nouveautes activees pour la filmotheque'
+    },
+    nouveaute_duree_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 45,
+      comment: 'Duree en jours pour filmotheque'
+    },
+    nouveaute_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Nouveautes activees pour la discotheque'
+    },
+    nouveaute_duree_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 10,
+      comment: 'Duree en jours pour discotheque'
+    },
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,
