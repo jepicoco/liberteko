@@ -142,6 +142,203 @@ module.exports = (sequelize) => {
       defaultValue: 10,
       comment: 'Duree en jours pour discotheque'
     },
+
+    // === Limites d'emprunt par module ===
+    limite_emprunt_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite emprunts simultanes (ludotheque)'
+    },
+    limite_emprunt_nouveaute_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (ludotheque)'
+    },
+    limite_emprunt_bloquante_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (ludotheque)'
+    },
+    limite_emprunt_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (ludotheque)'
+    },
+    limite_emprunt_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite emprunts simultanes (bibliotheque)'
+    },
+    limite_emprunt_nouveaute_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (bibliotheque)'
+    },
+    limite_emprunt_bloquante_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (bibliotheque)'
+    },
+    limite_emprunt_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (bibliotheque)'
+    },
+    limite_emprunt_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite emprunts simultanes (filmotheque)'
+    },
+    limite_emprunt_nouveaute_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (filmotheque)'
+    },
+    limite_emprunt_bloquante_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (filmotheque)'
+    },
+    limite_emprunt_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (filmotheque)'
+    },
+    limite_emprunt_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 5,
+      comment: 'Limite emprunts simultanes (discotheque)'
+    },
+    limite_emprunt_nouveaute_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      comment: 'Limite emprunts nouveautes (discotheque)'
+    },
+    limite_emprunt_bloquante_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limite bloquante (discotheque)'
+    },
+    limite_emprunt_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (discotheque)'
+    },
+
+    // === Limites de reservation par module ===
+    limite_reservation_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite reservations actives (ludotheque)'
+    },
+    limite_reservation_nouveaute_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (ludotheque)'
+    },
+    reservation_expiration_jours_ludotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer (ludotheque)'
+    },
+    reservation_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (ludotheque)'
+    },
+    limite_reservation_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite reservations actives (bibliotheque)'
+    },
+    limite_reservation_nouveaute_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (bibliotheque)'
+    },
+    reservation_expiration_jours_bibliotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer (bibliotheque)'
+    },
+    reservation_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (bibliotheque)'
+    },
+    limite_reservation_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite reservations actives (filmotheque)'
+    },
+    limite_reservation_nouveaute_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (filmotheque)'
+    },
+    reservation_expiration_jours_filmotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer (filmotheque)'
+    },
+    reservation_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (filmotheque)'
+    },
+    limite_reservation_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 2,
+      comment: 'Limite reservations actives (discotheque)'
+    },
+    limite_reservation_nouveaute_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+      comment: 'Limite reservations nouveautes (discotheque)'
+    },
+    reservation_expiration_jours_discotheque: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 15,
+      comment: 'Jours pour recuperer (discotheque)'
+    },
+    reservation_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Reservations actives (discotheque)'
+    },
+
     created_at: {
       type: DataTypes.DATE,
       allowNull: false,

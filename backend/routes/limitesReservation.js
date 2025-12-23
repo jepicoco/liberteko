@@ -15,9 +15,30 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/checkRole');
 const {
-  LimiteReservationGenre, ParametresFront,
+  LimiteReservationGenre, ParametresFront, ParametresFrontStructure,
   Categorie, GenreLitteraire, GenreFilm, GenreMusical
 } = require('../models');
+
+/**
+ * Helper: Get or create ParametresFrontStructure for a given structure_id
+ */
+async function getOrCreateStructureParams(structureId) {
+  if (!structureId) {
+    return null;
+  }
+
+  let params = await ParametresFrontStructure.findOne({
+    where: { structure_id: structureId }
+  });
+
+  if (!params) {
+    params = await ParametresFrontStructure.create({
+      structure_id: structureId
+    });
+  }
+
+  return params;
+}
 
 // Mapping module -> modele de genres
 const GENRE_MODELS = {
@@ -30,10 +51,20 @@ const GENRE_MODELS = {
 /**
  * GET /api/parametres/limites-reservation
  * Recupere tous les parametres de limites (generaux + par genre)
+ * Si X-Structure-Id est fourni, utilise les parametres de la structure
  */
 router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), async (req, res) => {
   try {
-    const params = await ParametresFront.getParametres();
+    const structureId = req.headers['x-structure-id'];
+    let params;
+
+    if (structureId) {
+      // Parametres specifiques a la structure
+      params = await getOrCreateStructureParams(parseInt(structureId));
+    } else {
+      // Fallback sur les parametres globaux
+      params = await ParametresFront.getParametres();
+    }
 
     // Extraire les parametres de limites
     const modules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
@@ -48,18 +79,22 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
       };
     }
 
-    // Module reservations global
-    const moduleReservationsActif = params.module_reservations !== false;
+    // Module reservations global (from global params)
+    const globalParams = await ParametresFront.getParametres();
+    const moduleReservationsActif = globalParams.module_reservations !== false;
 
-    // Recuperer toutes les limites par genre
+    // Recuperer toutes les limites par genre (filtrer par structure si fournie)
+    const whereClause = structureId ? { structure_id: parseInt(structureId) } : {};
     const limitesGenre = await LimiteReservationGenre.findAll({
+      where: whereClause,
       order: [['module', 'ASC'], ['genre_nom', 'ASC']]
     });
 
     res.json({
       moduleReservationsActif,
       limitesGenerales,
-      limitesGenre
+      limitesGenre,
+      structureId: structureId ? parseInt(structureId) : null
     });
   } catch (error) {
     console.error('Get limites reservation error:', error);
@@ -73,16 +108,26 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
 /**
  * PUT /api/parametres/limites-reservation
  * Met a jour les parametres generaux de limites
+ * Si X-Structure-Id est fourni, met a jour les parametres de la structure
  */
 router.put('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), async (req, res) => {
   try {
     const { limitesGenerales, moduleReservationsActif } = req.body;
+    const structureId = req.headers['x-structure-id'];
 
-    const params = await ParametresFront.getParametres();
+    let params;
+    if (structureId) {
+      // Parametres specifiques a la structure
+      params = await getOrCreateStructureParams(parseInt(structureId));
+    } else {
+      // Fallback sur les parametres globaux
+      params = await ParametresFront.getParametres();
+    }
+
     const modules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
 
-    // Module reservations global
-    if (moduleReservationsActif !== undefined) {
+    // Module reservations global (only update global params, not structure params)
+    if (moduleReservationsActif !== undefined && !structureId) {
       params.module_reservations = moduleReservationsActif;
     }
 
@@ -108,10 +153,14 @@ router.put('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
 
     await params.save();
 
+    // Get global moduleReservationsActif for response
+    const globalParams = structureId ? await ParametresFront.getParametres() : params;
+
     res.json({
       message: 'Parametres de limites de reservation mis a jour',
       limitesGenerales,
-      moduleReservationsActif: params.module_reservations
+      moduleReservationsActif: globalParams.module_reservations,
+      structureId: structureId ? parseInt(structureId) : null
     });
   } catch (error) {
     console.error('Update limites reservation error:', error);

@@ -14,9 +14,30 @@ const router = express.Router();
 const { verifyToken } = require('../middleware/auth');
 const { checkRole } = require('../middleware/checkRole');
 const {
-  LimiteEmpruntGenre, ParametresFront,
+  LimiteEmpruntGenre, ParametresFront, ParametresFrontStructure,
   Categorie, GenreLitteraire, GenreFilm, GenreMusical
 } = require('../models');
+
+/**
+ * Helper: Get or create ParametresFrontStructure for a given structure_id
+ */
+async function getOrCreateStructureParams(structureId) {
+  if (!structureId) {
+    return null;
+  }
+
+  let params = await ParametresFrontStructure.findOne({
+    where: { structure_id: structureId }
+  });
+
+  if (!params) {
+    params = await ParametresFrontStructure.create({
+      structure_id: structureId
+    });
+  }
+
+  return params;
+}
 
 // Mapping module -> modèle de genres
 const GENRE_MODELS = {
@@ -29,10 +50,20 @@ const GENRE_MODELS = {
 /**
  * GET /api/parametres/limites-emprunt
  * Récupère tous les paramètres de limites (généraux + par genre)
+ * Si X-Structure-Id est fourni, utilise les paramètres de la structure
  */
 router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), async (req, res) => {
   try {
-    const params = await ParametresFront.getParametres();
+    const structureId = req.headers['x-structure-id'];
+    let params;
+
+    if (structureId) {
+      // Paramètres spécifiques à la structure
+      params = await getOrCreateStructureParams(parseInt(structureId));
+    } else {
+      // Fallback sur les paramètres globaux
+      params = await ParametresFront.getParametres();
+    }
 
     // Extraire les paramètres de limites
     const modules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
@@ -47,14 +78,17 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
       };
     }
 
-    // Récupérer toutes les limites par genre
+    // Récupérer toutes les limites par genre (filtrer par structure si fournie)
+    const whereClause = structureId ? { structure_id: parseInt(structureId) } : {};
     const limitesGenre = await LimiteEmpruntGenre.findAll({
+      where: whereClause,
       order: [['module', 'ASC'], ['genre_nom', 'ASC']]
     });
 
     res.json({
       limitesGenerales,
-      limitesGenre
+      limitesGenre,
+      structureId: structureId ? parseInt(structureId) : null
     });
   } catch (error) {
     console.error('Get limites emprunt error:', error);
@@ -68,10 +102,12 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
 /**
  * PUT /api/parametres/limites-emprunt
  * Met à jour les paramètres généraux de limites
+ * Si X-Structure-Id est fourni, met à jour les paramètres de la structure
  */
 router.put('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), async (req, res) => {
   try {
     const { limitesGenerales } = req.body;
+    const structureId = req.headers['x-structure-id'];
 
     if (!limitesGenerales) {
       return res.status(400).json({
@@ -80,7 +116,15 @@ router.put('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
       });
     }
 
-    const params = await ParametresFront.getParametres();
+    let params;
+    if (structureId) {
+      // Paramètres spécifiques à la structure
+      params = await getOrCreateStructureParams(parseInt(structureId));
+    } else {
+      // Fallback sur les paramètres globaux
+      params = await ParametresFront.getParametres();
+    }
+
     const modules = ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'];
 
     for (const mod of modules) {
@@ -104,7 +148,8 @@ router.put('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
 
     res.json({
       message: 'Paramètres de limites mis à jour',
-      limitesGenerales
+      limitesGenerales,
+      structureId: structureId ? parseInt(structureId) : null
     });
   } catch (error) {
     console.error('Update limites emprunt error:', error);
