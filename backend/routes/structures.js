@@ -79,9 +79,9 @@ router.get('/:id/parametres-front', isGestionnaire(), structureController.getPar
 /**
  * @route   PUT /api/structures/:id/parametres-front
  * @desc    Met a jour les parametres frontend d'une structure
- * @access  Private (admin uniquement)
+ * @access  Private (gestionnaire+)
  */
-router.put('/:id/parametres-front', isAdmin(), structureController.updateParametresFront);
+router.put('/:id/parametres-front', isGestionnaire(), structureController.updateParametresFront);
 
 // ============================================
 // Gestion des acces utilisateurs
