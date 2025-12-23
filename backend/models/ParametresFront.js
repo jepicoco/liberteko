@@ -703,6 +703,32 @@ module.exports = (sequelize) => {
       comment: 'Limite bloquante (disques) - si false, affiche un warning'
     },
 
+    // === Activation des limites d'emprunt par module ===
+    limite_emprunt_active_ludotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (ludotheque)'
+    },
+    limite_emprunt_active_bibliotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (bibliotheque)'
+    },
+    limite_emprunt_active_filmotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (filmotheque)'
+    },
+    limite_emprunt_active_discotheque: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Limites emprunt actives (discotheque)'
+    },
+
     // === Parametres validation charte usager ===
     charte_active: {
       type: DataTypes.BOOLEAN,

@@ -42,7 +42,8 @@ router.get('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
       limitesGenerales[mod] = {
         limite: params[`limite_emprunt_${mod}`] || 5,
         limiteNouveaute: params[`limite_emprunt_nouveaute_${mod}`] || 1,
-        bloquante: params[`limite_emprunt_bloquante_${mod}`] !== false
+        bloquante: params[`limite_emprunt_bloquante_${mod}`] !== false,
+        actif: params[`limite_emprunt_active_${mod}`] !== false
       };
     }
 
@@ -92,6 +93,9 @@ router.put('/', verifyToken, checkRole(['administrateur', 'gestionnaire']), asyn
         }
         if (limitesGenerales[mod].bloquante !== undefined) {
           params[`limite_emprunt_bloquante_${mod}`] = limitesGenerales[mod].bloquante;
+        }
+        if (limitesGenerales[mod].actif !== undefined) {
+          params[`limite_emprunt_active_${mod}`] = limitesGenerales[mod].actif;
         }
       }
     }

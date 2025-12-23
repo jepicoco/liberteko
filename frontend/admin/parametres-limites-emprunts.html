@@ -372,6 +372,25 @@
       return headers;
     }
 
+    // Toggle module active state (visual feedback)
+    function toggleModuleActive(modId) {
+      const card = document.getElementById(`card-${modId}`);
+      const config = document.getElementById(`config-${modId}`);
+      const checkbox = document.getElementById(`actif-${modId}`);
+
+      if (checkbox.checked) {
+        card.classList.remove('inactive');
+        card.classList.add('active');
+        config.style.opacity = '1';
+        config.style.pointerEvents = 'auto';
+      } else {
+        card.classList.remove('active');
+        card.classList.add('inactive');
+        config.style.opacity = '0.5';
+        config.style.pointerEvents = 'none';
+      }
+    }
+
     // Render modules cards - seulement les modules actifs de la structure
     function renderModules() {
       const container = document.getElementById('modulesContainer');
@@ -404,6 +423,11 @@
                   <h5 class="mb-0">${mod.label}</h5>
                   <small class="text-muted">${mod.sublabel}</small>
                 </div>
+              </div>
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="actif-${mod.id}"
+                       onchange="toggleModuleActive('${mod.id}'); scheduleAutoSave()">
+                <label class="form-check-label small" for="actif-${mod.id}">Actif</label>
               </div>
             </div>
 
@@ -514,6 +538,10 @@
           document.getElementById(`nouveaute-${mod.id}`).value = limites.limiteNouveaute || 1;
           document.getElementById(`nouveaute-${mod.id}-value`).textContent = limites.limiteNouveaute || 1;
           document.getElementById(`bloquante-${mod.id}`).checked = limites.bloquante !== false;
+          document.getElementById(`actif-${mod.id}`).checked = limites.actif !== false;
+
+          // Appliquer l'etat visuel
+          toggleModuleActive(mod.id);
 
           // Limites par genre
           renderGenresForModule(mod.id);
@@ -666,7 +694,8 @@
         limitesGenerales[mod.id] = {
           limite: parseInt(document.getElementById(`limite-${mod.id}`).value),
           limiteNouveaute: parseInt(document.getElementById(`nouveaute-${mod.id}`).value),
-          bloquante: document.getElementById(`bloquante-${mod.id}`).checked
+          bloquante: document.getElementById(`bloquante-${mod.id}`).checked,
+          actif: document.getElementById(`actif-${mod.id}`).checked
         };
       });
 
