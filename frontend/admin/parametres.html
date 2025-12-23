@@ -233,8 +233,8 @@
                 </a>
               </div>
 
-              <!-- Charte usager - visible si module actif -->
-              <div class="col-md-6 col-lg-4" id="card-charte" style="display: none;">
+              <!-- Charte usager -->
+              <div class="col-md-6 col-lg-4" id="card-charte">
                 <a href="parametres-charte.html" class="text-decoration-none">
                   <div class="card param-card border-info">
                     <div class="card-body">
@@ -1074,10 +1074,10 @@
         if (cardCommunes) cardCommunes.style.display = 'none';
       }
 
-      // Afficher la carte Charte usager si le module est actif
-      if (isModuleActive('charte')) {
+      // Masquer la carte Charte usager si le module n'est pas actif
+      if (!isModuleActive('charte')) {
         const cardCharte = document.getElementById('card-charte');
-        if (cardCharte) cardCharte.style.display = 'block';
+        if (cardCharte) cardCharte.style.display = 'none';
       }
 
       // Masquer la carte Cles API si l'utilisateur n'est pas admin
