@@ -292,10 +292,27 @@
       return headers;
     }
 
-    // Render modules cards
+    // Render modules cards - seulement les modules actifs de la structure
     function renderModules() {
       const container = document.getElementById('modulesContainer');
-      container.innerHTML = MODULES.map(mod => `
+      const structureModules = getStructureModules();
+
+      // Filtrer les modules actifs
+      const activeModules = MODULES.filter(mod => structureModules.includes(mod.code));
+
+      if (activeModules.length === 0) {
+        container.innerHTML = `
+          <div class="col-12">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Aucun module de collection n'est actif pour cette structure.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = activeModules.map(mod => `
         <div class="col-lg-6">
           <div class="module-card p-3" id="card-${mod.id}">
             <div class="module-header">
@@ -309,7 +326,6 @@
                 </div>
               </div>
               <div class="module-controls">
-                <span class="badge bg-secondary me-2" id="badge-module-${mod.id}">Module inactif</span>
                 <div class="form-check form-switch mb-0">
                   <input class="form-check-input" type="checkbox" id="active-${mod.id}"
                          onchange="toggleModule('${mod.id}', this.checked)"
@@ -339,13 +355,16 @@
         </div>
       `).join('');
 
-      // Bind range input events
-      MODULES.forEach(mod => {
-        document.getElementById(`duree-${mod.id}`).addEventListener('input', (e) => {
-          const val = e.target.value;
-          document.getElementById(`duree-${mod.id}-value`).textContent = `${val}j`;
-          document.getElementById(`duree-${mod.id}-text`).textContent = val;
-        });
+      // Bind range input events pour les modules rendus
+      activeModules.forEach(mod => {
+        const rangeEl = document.getElementById(`duree-${mod.id}`);
+        if (rangeEl) {
+          rangeEl.addEventListener('input', (e) => {
+            const val = e.target.value;
+            document.getElementById(`duree-${mod.id}-value`).textContent = `${val}j`;
+            document.getElementById(`duree-${mod.id}-text`).textContent = val;
+          });
+        }
       });
     }
 
@@ -378,20 +397,12 @@
       try {
         const structureId = window.CURRENT_STRUCTURE_ID;
 
-        // Charger les parametres globaux pour les modules actifs
-        console.log('Fetching global params...');
+        // Charger les parametres globaux (pour compatibilite)
         const globalResponse = await fetch(`${API_URL}/parametres/front`, {
           headers: getHeaders()
         });
-        console.log('Global response status:', globalResponse.status);
-        if (!globalResponse.ok) {
-          const errText = await globalResponse.text();
-          console.error('Global params error:', errText);
-          throw new Error('Erreur chargement parametres globaux');
-        }
+        if (!globalResponse.ok) throw new Error('Erreur chargement parametres globaux');
         const globalParams = await globalResponse.json();
-        console.log('Global params received:', globalParams);
-        console.log('module_ludotheque:', globalParams.module_ludotheque);
 
         // Charger les parametres de la structure si une structure est selectionnee
         let structureParams = {};
@@ -409,24 +420,14 @@
 
         // Obtenir les modules actifs de la structure
         const structureModules = getStructureModules();
-        console.log('Structure modules:', structureModules);
 
+        // Appliquer les valeurs aux modules rendus
         MODULES.forEach(mod => {
-          // Verifier si le module est actif dans la structure (par code de collection)
-          const moduleActif = structureModules.includes(mod.code);
+          // Skip si le module n'est pas actif (pas rendu)
+          if (!structureModules.includes(mod.code)) return;
+
           const card = document.getElementById(`card-${mod.id}`);
-          const badge = document.getElementById(`badge-module-${mod.id}`);
-
-          // Module actif/inactif dans la structure
-          if (!moduleActif) {
-            card.classList.add('disabled');
-            badge.className = 'badge bg-secondary me-2';
-            badge.textContent = 'Module inactif';
-            return;
-          }
-
-          badge.className = 'badge bg-success me-2';
-          badge.textContent = 'Module actif';
+          if (!card) return; // Element non rendu
 
           // Utiliser les parametres structure si disponibles, sinon valeurs par defaut
           const nouveauteActive = structureParams[`nouveaute_active_${mod.id}`] !== undefined
@@ -499,12 +500,7 @@
           ? `${API_URL}/structures/${structureId}/parametres-front`
           : `${API_URL}/parametres/front`;
 
-        console.log('Saving to:', url);
-        console.log('Data:', data);
-        console.log('Headers:', getHeaders());
-
         if (Object.keys(data).length === 0) {
-          console.warn('No data to save!');
           showSaveIndicator('error', 'Aucune donnee a sauvegarder');
           return;
         }
@@ -515,11 +511,10 @@
           body: JSON.stringify(data)
         });
 
-        console.log('Response status:', response.status);
-        const responseData = await response.json();
-        console.log('Response data:', responseData);
-
-        if (!response.ok) throw new Error(responseData.error || 'Erreur sauvegarde');
+        if (!response.ok) {
+          const responseData = await response.json();
+          throw new Error(responseData.error || 'Erreur sauvegarde');
+        }
 
         showSaveIndicator('saved');
       } catch (error) {
