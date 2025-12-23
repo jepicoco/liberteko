@@ -3,13 +3,13 @@
  * Affiche une barre de navigation rapide entre les pages d'un meme onglet
  *
  * Organisation des onglets parametres.html:
- * - Organisation: Structures, Portails publics, Sites, Site web, Utilisateurs
- * - Configuration: Listes, Emprunts, Codes-barres, Holodeck
- * - Referentiels: Referentiels, Communes, Calendrier
- * - Comptabilite: Tarifs, Codes reduction, Comptes bancaires, Exports, Parametrage
+ * - Organisation: Organisations, Structures, Portails publics, Site web, Sites, Utilisateurs
+ * - Configuration: Themes, Charte, Confidentialite, Codes-barres, Limites, Reservations, Prolongations, Nouveautes
+ * - Referentiels: Referentiels, Tags usagers, Communes, Communautes, Baremes QF, Calendrier
+ * - Comptabilite: Modes reglements, Tarifs, Codes reduction, Comptes bancaires, Provenances, Exports, Parametrage
  * - Communication: Templates, Declencheurs, Historique
  * - Services: Email, SMS, IA, APIs, Cles API
- * - Outils: Import, Archives, Thematiques, Migrations
+ * - Outils: Import jeux, Import listes, Archives, Thematiques, Migrations, Holodeck
  */
 
 const PARAMETRES_CATEGORIES = {
@@ -37,13 +37,11 @@ const PARAMETRES_CATEGORIES = {
       { id: 'themes', label: 'Themes', href: 'parametres-themes.html', icon: 'bi-palette' },
       { id: 'charte', label: 'Charte usager', href: 'parametres-charte.html', icon: 'bi-file-earmark-check' },
       { id: 'confidentialite', label: 'Confidentialite', href: 'parametres-confidentialite.html', icon: 'bi-shield-lock', adminOnly: true },
-      { id: 'listes', label: 'Listes', href: 'parametres-listes.html', icon: 'bi-list-ul' },
       { id: 'codes-barres', label: 'Codes-Barres', href: 'parametres-codes-barres.html', icon: 'bi-upc-scan' },
       { id: 'limites', label: 'Limites emprunts', href: 'parametres-limites-emprunts.html', icon: 'bi-speedometer2' },
       { id: 'reservations', label: 'Reservations', href: 'parametres-reservations.html', icon: 'bi-bookmark' },
       { id: 'prolongations', label: 'Prolongations', href: 'parametres-prolongations.html', icon: 'bi-arrow-repeat' },
-      { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' },
-      { id: 'holodeck', label: 'Holodeck', href: 'parametres-holodeck.html', icon: 'bi-grid-3x3-gap', adminOnly: true }
+      { id: 'nouveautes', label: 'Nouveautes', href: 'parametres-nouveautes.html', icon: 'bi-stars' }
     ]
   },
 
@@ -113,7 +111,8 @@ const PARAMETRES_CATEGORIES = {
       { id: 'import-listes', label: 'Import par listes', href: 'import-listes.html', icon: 'bi-tags' },
       { id: 'archives', label: 'Archives RGPD', href: 'parametres-archives.html', icon: 'bi-archive' },
       { id: 'thematiques', label: 'Thematiques IA', href: 'parametres-thematiques.html', icon: 'bi-tags', module: 'recherche_ia' },
-      { id: 'migrations', label: 'Migrations', href: 'parametres-migrations.html', icon: 'bi-database-gear', adminOnly: true }
+      { id: 'migrations', label: 'Migrations', href: 'parametres-migrations.html', icon: 'bi-database-gear', adminOnly: true },
+      { id: 'holodeck', label: 'Holodeck', href: 'parametres-holodeck.html', icon: 'bi-grid-3x3-gap', adminOnly: true }
     ]
   },
 

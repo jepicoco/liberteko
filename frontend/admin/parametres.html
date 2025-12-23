@@ -263,15 +263,15 @@
                 </a>
               </div>
 
-              <!-- Emprunts & Prolongations -->
+              <!-- Prolongations -->
               <div class="col-md-6 col-lg-4">
-                <a href="parametres-emprunts.html" class="text-decoration-none">
+                <a href="parametres-prolongations.html" class="text-decoration-none">
                   <div class="card param-card border-secondary">
                     <div class="card-body">
                       <div class="icon-container bg-secondary bg-opacity-10">
                         <i class="bi bi-arrow-repeat text-secondary"></i>
                       </div>
-                      <h5 class="card-title text-dark">Emprunts & Prolongations</h5>
+                      <h5 class="card-title text-dark">Prolongations</h5>
                       <p class="text-muted mb-0">Durees, prolongations auto/manuelles par module</p>
                     </div>
                   </div>
@@ -338,20 +338,6 @@
                 </a>
               </div>
 
-              <!-- Holodeck (Modules) - Admin uniquement -->
-              <div class="col-md-6 col-lg-4" id="holodeck-card">
-                <a href="parametres-holodeck.html" class="text-decoration-none">
-                  <div class="card param-card" style="border-color: #1a1a2e;">
-                    <div class="card-body">
-                      <div class="icon-container" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
-                        <i class="bi bi-grid-3x3-gap text-white"></i>
-                      </div>
-                      <h5 class="card-title text-dark">Holodeck</h5>
-                      <p class="text-muted mb-0">Activer/desactiver les modules de l'application</p>
-                    </div>
-                  </div>
-                </a>
-              </div>
             </div>
           </div>
 
@@ -790,6 +776,36 @@
                   </div>
                 </a>
               </div>
+
+              <!-- Migrations - Admin uniquement -->
+              <div class="col-md-6 col-lg-4" id="card-migrations">
+                <a href="parametres-migrations.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #6c757d;">
+                    <div class="card-body">
+                      <div class="icon-container bg-secondary bg-opacity-10">
+                        <i class="bi bi-database-gear text-secondary"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Migrations</h5>
+                      <p class="text-muted mb-0">Gestion des migrations de base de donnees</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
+
+              <!-- Holodeck (Modules) - Admin uniquement -->
+              <div class="col-md-6 col-lg-4" id="holodeck-card">
+                <a href="parametres-holodeck.html" class="text-decoration-none">
+                  <div class="card param-card" style="border-color: #1a1a2e;">
+                    <div class="card-body">
+                      <div class="icon-container" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+                        <i class="bi bi-grid-3x3-gap text-white"></i>
+                      </div>
+                      <h5 class="card-title text-dark">Holodeck</h5>
+                      <p class="text-muted mb-0">Activer/desactiver les modules de l'application</p>
+                    </div>
+                  </div>
+                </a>
+              </div>
             </div>
           </div>
 
@@ -1071,10 +1087,13 @@
         if (cardApiKeys) cardApiKeys.style.display = 'none';
       }
 
-      // Masquer la carte Holodeck si l'utilisateur n'est pas admin
+      // Masquer les cartes admin-only si l'utilisateur n'est pas admin
       if (userRoleForApiKeys !== 'administrateur') {
         const holodeckCard = document.getElementById('holodeck-card');
         if (holodeckCard) holodeckCard.style.display = 'none';
+
+        const migrationsCard = document.getElementById('card-migrations');
+        if (migrationsCard) migrationsCard.style.display = 'none';
       }
     }
 
