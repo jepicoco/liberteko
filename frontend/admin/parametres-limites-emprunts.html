@@ -199,6 +199,21 @@
           </small>
         </div>
 
+        <!-- Message si aucune structure selectionnee -->
+        <div class="alert alert-warning d-none" id="noStructureAlert">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <strong>Structure requise</strong> - Veuillez selectionner une structure dans le menu en haut de page pour configurer les limites d'emprunts.
+          <br><small class="text-muted">Les parametres de limites sont specifiques a chaque structure.</small>
+        </div>
+
+        <!-- Loading -->
+        <div class="text-center py-5 d-none" id="loadingContainer">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2 text-muted">Chargement des parametres...</p>
+        </div>
+
         <!-- Modules -->
         <div class="row g-4" id="modulesContainer">
           <!-- Genere par JS -->
@@ -258,35 +273,126 @@
     let saveTimeout = null;
     let currentParams = {};
     let limitesGenre = {};
+    let isLoading = false;
 
     const MODULES = [
-      { id: 'ludotheque', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', genreLabel: 'Categories' },
-      { id: 'bibliotheque', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', genreLabel: 'Genres litteraires' },
-      { id: 'filmotheque', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', genreLabel: 'Genres de films' },
-      { id: 'discotheque', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', genreLabel: 'Genres musicaux' }
+      { id: 'ludotheque', code: 'jeux', label: 'Ludotheque', sublabel: 'Jeux de societe', icon: 'bi-dice-5', genreLabel: 'Categories' },
+      { id: 'bibliotheque', code: 'livres', label: 'Bibliotheque', sublabel: 'Livres', icon: 'bi-book', genreLabel: 'Genres litteraires' },
+      { id: 'filmotheque', code: 'films', label: 'Filmotheque', sublabel: 'Films', icon: 'bi-film', genreLabel: 'Genres de films' },
+      { id: 'discotheque', code: 'disques', label: 'Discotheque', sublabel: 'Disques & Vinyles', icon: 'bi-disc', genreLabel: 'Genres musicaux' }
     ];
 
-    // Init template et navigation
-    initTemplate('parametres');
+    // Helper pour parser modules_actifs (peut etre string JSON ou array)
+    function parseModulesActifs(modules) {
+      if (!modules) return [];
+      if (Array.isArray(modules)) return modules;
+      if (typeof modules === 'string') {
+        try {
+          const parsed = JSON.parse(modules);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (e) {
+          return [];
+        }
+      }
+      return [];
+    }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    /**
+     * Obtenir les modules actifs pour la structure courante
+     */
+    function getStructureModules() {
+      const structureId = window.CURRENT_STRUCTURE_ID;
+      if (!structureId) {
+        if (!window.USER_STRUCTURES || window.USER_STRUCTURES.length === 0) {
+          return ['jeux', 'livres', 'films', 'disques'];
+        }
+        if (window.USER_STRUCTURES.length === 1) {
+          return parseModulesActifs(window.USER_STRUCTURES[0].modules_actifs);
+        }
+        const allModules = new Set();
+        window.USER_STRUCTURES.forEach(s => {
+          parseModulesActifs(s.modules_actifs).forEach(m => allModules.add(m));
+        });
+        return Array.from(allModules);
+      }
+      const currentStructure = window.USER_STRUCTURES?.find(s => s.id === structureId);
+      return parseModulesActifs(currentStructure?.modules_actifs);
+    }
+
+    // Init template et navigation
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('parametres');
       renderSubNav('configuration', 'limites');
-      renderModules();
-      loadConfig();
+      checkStructureAndLoad();
     });
 
-    // Auth
+    // Ecouter les changements de structure
+    window.addEventListener('structureChanged', () => {
+      checkStructureAndLoad();
+    });
+
+    /**
+     * Verifie si une structure est selectionnee et charge les donnees
+     */
+    async function checkStructureAndLoad() {
+      const hasMultipleStructures = window.USER_STRUCTURES && window.USER_STRUCTURES.length > 1;
+      const structureId = window.CURRENT_STRUCTURE_ID;
+
+      const loadingContainer = document.getElementById('loadingContainer');
+      const modulesContainer = document.getElementById('modulesContainer');
+      const noStructureAlert = document.getElementById('noStructureAlert');
+
+      if (hasMultipleStructures && !structureId) {
+        noStructureAlert.classList.remove('d-none');
+        loadingContainer.classList.add('d-none');
+        modulesContainer.innerHTML = '';
+        return;
+      }
+
+      noStructureAlert.classList.add('d-none');
+      loadingContainer.classList.remove('d-none');
+      modulesContainer.classList.add('d-none');
+
+      renderModules();
+      await loadConfig();
+
+      loadingContainer.classList.add('d-none');
+      modulesContainer.classList.remove('d-none');
+    }
+
+    // Auth - avec header structure si selectionnee
     function getHeaders() {
-      return {
+      const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       };
+      if (window.CURRENT_STRUCTURE_ID) {
+        headers['X-Structure-Id'] = window.CURRENT_STRUCTURE_ID;
+      }
+      return headers;
     }
 
-    // Render modules cards
+    // Render modules cards - seulement les modules actifs de la structure
     function renderModules() {
       const container = document.getElementById('modulesContainer');
-      container.innerHTML = MODULES.map(mod => `
+      const structureModules = getStructureModules();
+
+      // Filtrer les modules actifs
+      const activeModules = MODULES.filter(mod => structureModules.includes(mod.code));
+
+      if (activeModules.length === 0) {
+        container.innerHTML = `
+          <div class="col-12">
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Aucun module de collection n'est actif pour cette structure.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = activeModules.map(mod => `
         <div class="col-lg-6">
           <div class="module-card p-3" id="card-${mod.id}">
             <div class="module-header">
@@ -299,7 +405,6 @@
                   <small class="text-muted">${mod.sublabel}</small>
                 </div>
               </div>
-              <span class="badge bg-secondary" id="badge-module-${mod.id}">Module inactif</span>
             </div>
 
             <div class="config-section" id="config-${mod.id}">
@@ -361,8 +466,8 @@
         </div>
       `).join('');
 
-      // Bind range input events
-      MODULES.forEach(mod => {
+      // Bind range input events pour les modules rendus
+      activeModules.forEach(mod => {
         document.getElementById(`limite-${mod.id}`).addEventListener('input', (e) => {
           document.getElementById(`limite-${mod.id}-value`).textContent = e.target.value;
         });
@@ -374,6 +479,7 @@
 
     // Load config
     async function loadConfig() {
+      isLoading = true;
       try {
         const response = await fetch(`${API_URL}/parametres/limites-emprunt`, {
           headers: getHeaders()
@@ -391,28 +497,15 @@
           limitesGenre[l.module].push(l);
         });
 
-        // Charger aussi les parametres front pour savoir quels modules sont actifs
-        const frontResponse = await fetch(`${API_URL}/parametres/front`, {
-          headers: getHeaders()
-        });
-        const frontParams = await frontResponse.json();
+        // Obtenir les modules actifs de la structure
+        const structureModules = getStructureModules();
 
         MODULES.forEach(mod => {
-          const moduleActif = frontParams[`module_${mod.id}`];
+          // Skip si le module n'est pas actif dans la structure (pas rendu)
+          if (!structureModules.includes(mod.code)) return;
+
           const card = document.getElementById(`card-${mod.id}`);
-          const badge = document.getElementById(`badge-module-${mod.id}`);
-
-          // Module actif/inactif dans le systeme
-          if (!moduleActif) {
-            card.classList.add('disabled');
-            badge.className = 'badge bg-secondary';
-            badge.textContent = 'Module inactif';
-            return;
-          }
-
-          card.classList.remove('disabled');
-          badge.className = 'badge bg-success';
-          badge.textContent = 'Module actif';
+          if (!card) return;
 
           // Valeurs
           const limites = currentParams[mod.id] || {};
@@ -429,6 +522,8 @@
       } catch (error) {
         console.error('Erreur:', error);
         showSaveIndicator('error', 'Erreur de chargement');
+      } finally {
+        isLoading = false;
       }
     }
 
@@ -546,6 +641,8 @@
 
     // Schedule auto save (debounce 800ms)
     function scheduleAutoSave() {
+      // Ne pas sauvegarder pendant le chargement initial
+      if (isLoading) return;
       if (saveTimeout) clearTimeout(saveTimeout);
       saveTimeout = setTimeout(saveConfig, 800);
     }
@@ -556,9 +653,15 @@
 
       const limitesGenerales = {};
 
+      // Obtenir les modules actifs de la structure
+      const structureModules = getStructureModules();
+
       MODULES.forEach(mod => {
+        // Skip si module non actif dans la structure
+        if (!structureModules.includes(mod.code)) return;
+
         const card = document.getElementById(`card-${mod.id}`);
-        if (card.classList.contains('disabled')) return;
+        if (!card) return;
 
         limitesGenerales[mod.id] = {
           limite: parseInt(document.getElementById(`limite-${mod.id}`).value),
