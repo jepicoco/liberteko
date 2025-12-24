@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuration Scanner Unitech MS836 - Clavier Français</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+    }
+    .warning {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .warning h3 {
+      margin-top: 0;
+      color: #856404;
+    }
+    .step {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .step h2 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .barcode-container {
+      text-align: center;
+      padding: 30px;
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin: 15px 0;
+    }
+    .barcode {
+      font-family: 'Libre Barcode 128', 'Code 128', monospace;
+      font-size: 80px;
+      letter-spacing: 0;
+    }
+    .code-text {
+      font-family: monospace;
+      font-size: 24px;
+      margin-top: 10px;
+      color: #333;
+    }
+    .instructions {
+      background: #d4edda;
+      border: 1px solid #28a745;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 20px;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #155724;
+    }
+    .instructions ol {
+      margin-bottom: 0;
+    }
+    .print-btn {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 15px 30px;
+      font-size: 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .print-btn:hover {
+      background: #0056b3;
+    }
+    @media print {
+      .print-btn, .warning, .test-section { display: none; }
+      body { background: white; }
+    }
+    .test-section {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 4px solid #007bff;
+    }
+    .test-section h2 {
+      margin-top: 0;
+      color: #007bff;
+    }
+    .test-input {
+      width: 100%;
+      padding: 15px;
+      font-size: 24px;
+      font-family: monospace;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      text-align: center;
+      margin: 15px 0;
+    }
+    .test-input:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+    .test-result {
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 15px;
+      display: none;
+    }
+    .test-result.success {
+      display: block;
+      background: #d4edda;
+      border: 2px solid #28a745;
+    }
+    .test-result.error {
+      display: block;
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+    }
+    .test-result h4 {
+      margin-top: 0;
+    }
+    .test-result.success h4 {
+      color: #155724;
+    }
+    .test-result.error h4 {
+      color: #721c24;
+    }
+    .conversion-table {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    .char-box {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 5px 8px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .char-box .from {
+      color: #dc3545;
+      font-size: 18px;
+    }
+    .char-box .arrow {
+      color: #6c757d;
+      font-size: 12px;
+    }
+    .char-box .to {
+      color: #28a745;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .converted-value {
+      font-size: 28px;
+      font-family: monospace;
+      font-weight: bold;
+      color: #28a745;
+      text-align: center;
+      margin: 10px 0;
+    }
+    .clear-btn {
+      background: #6c757d;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .clear-btn:hover {
+      background: #5a6268;
+    }
+    /* Barcode font via SVG fallback */
+    .barcode-svg {
+      max-width: 100%;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Configuration Scanner Unitech MS836</h1>
+  <h2 style="text-align: center; color: #666;">Passage en clavier français AZERTY</h2>
+
+  <div class="warning">
+    <h3>⚠️ Important</h3>
+    <p>Scannez ces codes-barres <strong>dans l'ordre</strong> (1, 2, puis 3).</p>
+    <p>Si les codes-barres ci-dessous ne sont pas reconnus par votre scanner,
+       générez-les sur <a href="https://barcode.tec-it.com/fr/Code128" target="_blank">barcode.tec-it.com</a>
+       en choisissant le type <strong>Code 128</strong>.</p>
+  </div>
+
+  <div class="step">
+    <h2>Étape 1 : Entrer en mode configuration</h2>
+    <div class="barcode-container">
+      <svg class="barcode-svg" id="barcode1"></svg>
+      <div class="code-text">W010F01</div>
+    </div>
+    <p>Le scanner émet un bip pour confirmer l'entrée en mode programmation.</p>
+  </div>
+
+  <div class="step">
+    <h2>Étape 2 : Sélectionner le clavier français</h2>
+    <div class="barcode-container">
+      <svg class="barcode-svg" id="barcode2"></svg>
+      <div class="code-text">WFF1907</div>
+    </div>
+    <p>Ce code configure le scanner pour émuler un clavier AZERTY français.</p>
+  </div>
+
+  <div class="step">
+    <h2>Étape 3 : Quitter le mode configuration</h2>
+    <div class="barcode-container">
+      <svg class="barcode-svg" id="barcode3"></svg>
+      <div class="code-text">W010F00</div>
+    </div>
+    <p>Le scanner émet un bip pour confirmer la sortie du mode programmation.</p>
+  </div>
+
+  <div class="test-section">
+    <h2>🧪 Zone de test</h2>
+    <p>Cliquez dans le champ ci-dessous puis scannez n'importe quel code-barres pour vérifier la configuration :</p>
+
+    <input type="text" id="testInput" class="test-input" placeholder="Scannez un code-barres ici..." autofocus>
+
+    <div id="testResult" class="test-result">
+      <!-- Résultat dynamique -->
+    </div>
+
+    <div style="text-align: center;">
+      <button class="clear-btn" onclick="clearTest()">Effacer et retester</button>
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h3>💡 Comment ça marche ?</h3>
+    <ul style="margin-bottom: 0;">
+      <li><strong>Chiffres détectés</strong> → Le scanner est bien configuré en AZERTY</li>
+      <li><strong>Caractères spéciaux</strong> (à, é, è, etc.) → Le scanner est en QWERTY, scannez les codes de configuration ci-dessus</li>
+      <li>La zone de test convertit automatiquement et affiche le code réel</li>
+    </ul>
+  </div>
+
+  <button class="print-btn" onclick="window.print()">🖨️ Imprimer cette page</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script>
+    // Generate barcodes when library loads
+    if (typeof JsBarcode !== 'undefined') {
+      JsBarcode("#barcode1", "W010F01", { format: "CODE128", width: 3, height: 80, displayValue: false });
+      JsBarcode("#barcode2", "WFF1907", { format: "CODE128", width: 3, height: 80, displayValue: false });
+      JsBarcode("#barcode3", "W010F00", { format: "CODE128", width: 3, height: 80, displayValue: false });
+    } else {
+      // Fallback: show text codes if library fails to load
+      document.querySelectorAll('.barcode-svg').forEach(svg => {
+        svg.parentElement.innerHTML = '<p style="font-size: 48px; font-weight: bold; font-family: monospace;">' +
+          svg.nextElementSibling.textContent + '</p>' + svg.parentElement.innerHTML;
+      });
+    }
+
+    // Mapping AZERTY (French) -> QWERTY (US) pour les caractères problématiques
+    // Quand un scanner QWERTY envoie sur un clavier AZERTY, voici ce qui se passe:
+    const AZERTY_TO_DIGIT = {
+      'à': '0', 'À': '0',
+      '&': '1',
+      'é': '2', 'É': '2',
+      '"': '3',
+      "'": '4',
+      '(': '5',
+      '-': '6', '§': '6',
+      'è': '7', 'È': '7',
+      '_': '8',
+      'ç': '9', 'Ç': '9',
+      // Caractères supplémentaires possibles
+      ')': '0', '°': '0'
+    };
+
+    // Vérifie si une chaîne contient principalement des chiffres
+    function isNumeric(str) {
+      return /^[0-9]+$/.test(str);
+    }
+
+    // Vérifie si une chaîne contient des caractères AZERTY typiques
+    function containsAzertyChars(str) {
+      return /[àéè"'(\-_çÀÉÈÇ§°)&]/.test(str);
+    }
+
+    // Convertit une chaîne AZERTY en chiffres
+    function convertAzertyToDigits(str) {
+      let result = '';
+      let conversions = [];
+
+      for (const char of str) {
+        if (AZERTY_TO_DIGIT[char]) {
+          conversions.push({ from: char, to: AZERTY_TO_DIGIT[char] });
+          result += AZERTY_TO_DIGIT[char];
+        } else if (/[0-9]/.test(char)) {
+          result += char;
+        } else {
+          // Caractère inconnu, on le garde tel quel
+          result += char;
+        }
+      }
+
+      return { converted: result, conversions };
+    }
+
+    // Génère l'affichage de la table de conversion
+    function renderConversionTable(conversions) {
+      if (conversions.length === 0) return '';
+
+      return `
+        <div class="conversion-table">
+          ${conversions.map(c => `
+            <div class="char-box">
+              <span class="from">${c.from}</span>
+              <span class="arrow">↓</span>
+              <span class="to">${c.to}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // Analyse et affiche le résultat du test
+    function analyzeInput(value) {
+      const resultDiv = document.getElementById('testResult');
+
+      if (!value || value.trim() === '') {
+        resultDiv.className = 'test-result';
+        resultDiv.innerHTML = '';
+        return;
+      }
+
+      const trimmed = value.trim();
+
+      if (isNumeric(trimmed)) {
+        // Tout est OK - que des chiffres
+        resultDiv.className = 'test-result success';
+        resultDiv.innerHTML = `
+          <h4>✅ Scanner correctement configuré !</h4>
+          <p>Le code scanné contient uniquement des chiffres :</p>
+          <div class="converted-value">${trimmed}</div>
+          <p style="margin-bottom: 0;">Votre scanner est bien configuré en clavier français AZERTY.</p>
+        `;
+      } else if (containsAzertyChars(trimmed)) {
+        // Problème détecté - conversion nécessaire
+        const { converted, conversions } = convertAzertyToDigits(trimmed);
+
+        resultDiv.className = 'test-result error';
+        resultDiv.innerHTML = `
+          <h4>⚠️ Scanner en mode QWERTY détecté</h4>
+          <p>Le code scanné contient des caractères AZERTY au lieu de chiffres :</p>
+          <div style="text-align: center; font-family: monospace; font-size: 20px; margin: 10px 0;">
+            <span style="color: #dc3545;">${trimmed}</span>
+          </div>
+          ${renderConversionTable(conversions)}
+          <p><strong>Code réel après conversion :</strong></p>
+          <div class="converted-value">${converted}</div>
+          <p style="margin-bottom: 0; color: #721c24;">
+            <strong>Action requise :</strong> Scannez les 3 codes de configuration ci-dessus (Étapes 1, 2, 3) pour passer en clavier français.
+          </p>
+        `;
+      } else {
+        // Mix ou caractères inconnus
+        const { converted, conversions } = convertAzertyToDigits(trimmed);
+
+        if (conversions.length > 0) {
+          resultDiv.className = 'test-result error';
+          resultDiv.innerHTML = `
+            <h4>⚠️ Configuration partielle détectée</h4>
+            <p>Certains caractères ont été convertis :</p>
+            ${renderConversionTable(conversions)}
+            <p><strong>Résultat :</strong></p>
+            <div class="converted-value">${converted}</div>
+            <p style="margin-bottom: 0;">Vérifiez la configuration du scanner.</p>
+          `;
+        } else {
+          resultDiv.className = 'test-result success';
+          resultDiv.innerHTML = `
+            <h4>ℹ️ Code scanné</h4>
+            <div class="converted-value">${trimmed}</div>
+            <p style="margin-bottom: 0;">Ce code ne contient pas de chiffres à vérifier.</p>
+          `;
+        }
+      }
+    }
+
+    // Effacer le test
+    function clearTest() {
+      const input = document.getElementById('testInput');
+      const resultDiv = document.getElementById('testResult');
+      input.value = '';
+      resultDiv.className = 'test-result';
+      resultDiv.innerHTML = '';
+      input.focus();
+    }
+
+    // Écouteurs d'événements
+    document.addEventListener('DOMContentLoaded', function() {
+      const input = document.getElementById('testInput');
+
+      // Analyser après chaque changement (avec petit délai pour les scanners)
+      let timeout;
+      input.addEventListener('input', function() {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          analyzeInput(this.value);
+        }, 100);
+      });
+
+      // Analyser aussi sur Enter (certains scanners envoient Enter à la fin)
+      input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          analyzeInput(this.value);
+        }
+      });
+
+      // Focus automatique au chargement
+      input.focus();
+    });
+  </script>
+</body>
+</html>

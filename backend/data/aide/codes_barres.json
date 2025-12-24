@@ -298,6 +298,71 @@
         }
       ],
       "mots_cles": ["emprunt", "scan", "workflow", "prêt", "lecteur", "douchette", "rapidité"]
+    },
+    {
+      "id": "cb_config_scanner",
+      "titre": "Configuration des scanners de codes-barres",
+      "description": "Configurer les douchettes et scanners pour les adapter au clavier français AZERTY. Inclut les procédures pour les marques courantes (Unitech, Zebra, Honeywell).",
+      "role_min": "administrateur",
+      "procedure": [
+        "Identifier le problème: si un scan de '0123456789' affiche 'à&é\"'(-è_çà' → le scanner est en QWERTY",
+        "Noter le modèle exact du scanner (étiquette sous l'appareil)",
+        "Accéder à Aide > Scanners dans l'administration",
+        "Télécharger ou afficher la page de configuration pour votre modèle",
+        "Scanner les codes de configuration dans l'ordre indiqué: 1. Enter Setup, 2. French Keyboard, 3. Exit Setup",
+        "Vérifier la configuration en scannant un code-barres de test"
+      ],
+      "faq": [
+        {
+          "question": "Pourquoi mes codes s'affichent avec des caractères bizarres?",
+          "reponse": "Le scanner émule un clavier QWERTY américain mais Windows attend un clavier AZERTY français. Les touches sont au même endroit physique mais produisent des caractères différents. Exemple: la touche '0' sur un clavier US est à l'emplacement de 'à' sur un clavier FR."
+        },
+        {
+          "question": "Où trouver les codes de configuration de mon scanner?",
+          "reponse": "Dans le manuel utilisateur du scanner (section 'Keyboard Language' ou 'Country Code'). Vous pouvez aussi générer des codes-barres Code 128 sur barcode.tec-it.com avec les codes de configuration."
+        },
+        {
+          "question": "Quels scanners sont documentés?",
+          "reponse": "Unitech MS836 (page dédiée disponible). Pour d'autres modèles, consultez le manuel ou contactez le support."
+        },
+        {
+          "question": "Le scanner ne lit pas les codes de configuration",
+          "reponse": "Assurez-vous que les codes sont en format Code 128 (pas EAN-13). Agrandissez l'écran ou imprimez la page. Certains scanners nécessitent d'être à 10-15cm de l'écran."
+        },
+        {
+          "question": "Comment tester si la configuration est correcte?",
+          "reponse": "Ouvrez un éditeur de texte (Bloc-notes), scannez un code-barres connu et vérifiez que les chiffres s'affichent correctement."
+        }
+      ],
+      "mots_cles": ["scanner", "douchette", "configuration", "AZERTY", "QWERTY", "clavier", "français", "Unitech", "MS836", "Zebra", "Honeywell", "caractères", "setup"]
+    },
+    {
+      "id": "cb_config_unitech_ms836",
+      "titre": "Configuration Unitech MS836 (clavier français)",
+      "description": "Procédure détaillée pour configurer le scanner Unitech MS836 en mode clavier français AZERTY.",
+      "role_min": "administrateur",
+      "procedure": [
+        "Ouvrir la page de configuration: /admin/aide-scanners/scanner-config-unitech-ms836.html",
+        "Scanner le code W010F01 (Enter Setup Mode) - un bip confirme l'entrée en mode programmation",
+        "Scanner le code WFF1907 (French Keyboard) - configure le clavier AZERTY",
+        "Scanner le code W010F00 (Exit Setup Mode) - un bip confirme la sortie du mode programmation",
+        "Tester en scannant un code-barres: les chiffres doivent s'afficher correctement"
+      ],
+      "faq": [
+        {
+          "question": "Où trouver la page de configuration avec les codes-barres?",
+          "reponse": "Menu Aide > Centre d'aide > Codes-barres > Configuration Unitech MS836. Ou accès direct: /admin/aide-scanners/scanner-config-unitech-ms836.html"
+        },
+        {
+          "question": "Le scanner ne réagit pas aux codes de configuration",
+          "reponse": "Essayez d'imprimer la page ou d'agrandir les codes-barres. L'écran doit être propre et lumineux. Maintenez le scanner à 10-15cm perpendiculairement à l'écran."
+        },
+        {
+          "question": "Comment revenir en clavier US si nécessaire?",
+          "reponse": "Scannez: W010F01 (enter setup), puis WFF0000 (US keyboard), puis W010F00 (exit setup)."
+        }
+      ],
+      "mots_cles": ["Unitech", "MS836", "configuration", "AZERTY", "français", "W010F01", "WFF1907", "W010F00"]
     }
   ]
 }
