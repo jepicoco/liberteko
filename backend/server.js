@@ -303,6 +303,9 @@ app.use('/api/organisations', require('./routes/organisations'));
 app.use('/api/structures', require('./routes/structures'));
 app.use('/api/groupes-frontend', require('./routes/groupesFrontend'));
 
+// Routes scanner (validation emprunts avec limites)
+app.use('/api/scanner', require('./routes/scanner'));
+
 // ============================================
 // ROUTES PORTAILS PUBLICS (/:slug/*)
 // Routes dynamiques basées sur les groupes frontend

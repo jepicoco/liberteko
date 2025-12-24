@@ -368,7 +368,14 @@ async function handleAdherentScan(response) {
 
   // Selectionner l'adherent
   currentAdherent = adherent;
-  displayAdherent(adherent);
+
+  // Afficher l'adherent avec ses limites et statuts (version enrichie)
+  if (typeof displayAdherentWithStatus === 'function') {
+    displayAdherentWithStatus(adherent, currentStructureId);
+  } else {
+    displayAdherent(adherent);
+  }
+
   playSound('success');
   flashZone('success');
   updateStatus(`Adherent: ${adherent.prenom} ${adherent.nom}`, 'success');
@@ -599,6 +606,17 @@ async function flushPendingItems() {
  * @param {string} articleType - Le type d'article ('jeu', 'livre', 'film', 'disque')
  */
 async function createEmpruntSilent(article, articleType = 'jeu') {
+  // Valider silencieusement (sans modal) - on verifie juste les blocages
+  if (typeof validateLoan === 'function') {
+    const validation = await validateLoan(currentAdherent.id, article.id, articleType, currentStructureId);
+
+    // Verifier s'il y a des blocages reels (pas les avertissements)
+    if (validation.blocking && validation.blocking.length > 0) {
+      const blocage = validation.blocking[0];
+      throw new Error(blocage.message || 'Emprunt bloque');
+    }
+  }
+
   const dateRetour = new Date();
   dateRetour.setDate(dateRetour.getDate() + DEFAULT_LOAN_DAYS);
 
@@ -724,6 +742,44 @@ async function createEmprunt(article, articleType = 'jeu') {
   }
 
   try {
+    // Valider l'emprunt avant creation (si fonction disponible)
+    if (typeof createEmpruntWithValidation === 'function') {
+      const validationResult = await createEmpruntWithValidation(
+        article,
+        articleType,
+        currentAdherent,
+        currentStructureId
+      );
+
+      if (!validationResult.proceed) {
+        // Validation refusee ou annulee par l'utilisateur
+        updateStatus('Emprunt annule', 'error');
+        addToHistory('info', 'Emprunt annule', `${article.titre} - Validation refusee`, article.code_barre);
+        return;
+      }
+
+      // Si outrepassement de reservation demande, annuler la reservation
+      if (validationResult.overrideReservation && validationResult.reservationId) {
+        try {
+          const token = localStorage.getItem('token');
+          await fetch('/api/scanner/override-reservation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              reservation_id: validationResult.reservationId,
+              notify_user: true
+            })
+          });
+          addToHistory('info', 'Reservation outrepassee', `Reservation annulee pour ${article.titre}`, article.code_barre);
+        } catch (e) {
+          console.error('[Scanner] Erreur outrepassement reservation:', e);
+        }
+      }
+    }
+
     // Calculer la date de retour prevue
     const dateRetour = new Date();
     dateRetour.setDate(dateRetour.getDate() + DEFAULT_LOAN_DAYS);
@@ -743,6 +799,11 @@ async function createEmprunt(article, articleType = 'jeu') {
     flashZone('success');
     updateStatus(`Emprunt cree: ${article.titre}`, 'success');
     addToHistory('success', 'Emprunt', `${typeLabel}: ${article.titre} → ${currentAdherent.prenom} ${currentAdherent.nom}`, article.code_barre);
+
+    // Rafraichir les limites de l'adherent (si affichage disponible)
+    if (typeof displayAdherentWithStatus === 'function') {
+      displayAdherentWithStatus(currentAdherent, currentStructureId);
+    }
 
   } catch (error) {
     console.error('Erreur creation emprunt:', error);
@@ -1215,7 +1276,14 @@ function selectAdherentFromSearch(id, prenom, nom, email, statut, code_barre) {
 
   // Selectionner l'adherent
   currentAdherent = { id, prenom, nom, email, statut, code_barre };
-  displayAdherent(currentAdherent);
+
+  // Afficher l'adherent avec ses limites et statuts (version enrichie)
+  if (typeof displayAdherentWithStatus === 'function') {
+    displayAdherentWithStatus(currentAdherent, currentStructureId);
+  } else {
+    displayAdherent(currentAdherent);
+  }
+
   playSound('success');
   flashZone('success');
   updateStatus(`Adherent: ${prenom} ${nom}`, 'success');

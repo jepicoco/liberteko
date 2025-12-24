@@ -324,6 +324,35 @@
               </div>
             </div>
 
+            <!-- Conditions d'emprunt -->
+            <div class="mt-4">
+              <h6 class="border-bottom pb-2"><i class="bi bi-shield-check"></i> Conditions d'emprunt</h6>
+              <div class="row g-3">
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input" id="structure_cotisation_obligatoire" checked>
+                    <label class="form-check-label" for="structure_cotisation_obligatoire">
+                      <i class="bi bi-credit-card text-primary"></i> Cotisation obligatoire pour emprunter
+                    </label>
+                  </div>
+                  <small class="text-muted ms-4">Si active, l'usager doit avoir une cotisation valide pour cette structure</small>
+                </div>
+                <div class="col-12">
+                  <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input" id="structure_adhesion_organisation_obligatoire">
+                    <label class="form-check-label" for="structure_adhesion_organisation_obligatoire">
+                      <i class="bi bi-building text-warning"></i> Adhesion a l'organisation obligatoire
+                    </label>
+                  </div>
+                  <small class="text-muted ms-4">Si active, l'usager doit avoir une adhesion valide a l'organisation parente</small>
+                </div>
+              </div>
+              <div class="alert alert-info mt-3 py-2" style="font-size: 0.85rem;">
+                <i class="bi bi-info-circle"></i>
+                Ces conditions sont verifiees lors du scan d'un article. Si non respectees, un avertissement s'affiche avec possibilite d'outrepasser.
+              </div>
+            </div>
+
             <div class="form-check mt-3">
               <input type="checkbox" class="form-check-input" id="structure_actif" checked>
               <label class="form-check-label" for="structure_actif">Structure active</label>

@@ -151,6 +151,18 @@ module.exports = (sequelize) => {
       },
       comment: 'Connecteur SMS par defaut pour cette structure'
     },
+    cotisation_obligatoire: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
+      comment: 'Si TRUE, cotisation valide requise pour emprunter'
+    },
+    adhesion_organisation_obligatoire: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false,
+      comment: 'Si TRUE, adhesion a l\'organisation parente requise pour emprunter'
+    },
     actif: {
       type: DataTypes.BOOLEAN,
       allowNull: false,

@@ -265,6 +265,10 @@ function showModalStructure(id = null) {
     document.getElementById('structure_email_connector').value = emailConnectorId;
     document.getElementById('structure_sms_connector').value = smsConnectorId;
 
+    // Conditions d'emprunt
+    document.getElementById('structure_cotisation_obligatoire').checked = structure.cotisation_obligatoire !== false;
+    document.getElementById('structure_adhesion_organisation_obligatoire').checked = structure.adhesion_organisation_obligatoire === true;
+
     // Afficher le lien vers config fine
     if (linkConfig) {
       linkConfig.href = `parametres-structure-connecteurs.html?id=${structure.id}`;
@@ -280,6 +284,10 @@ function showModalStructure(id = null) {
     document.getElementById('module_jeux').checked = true;
     document.getElementById('structure_email_connector').value = '';
     document.getElementById('structure_sms_connector').value = '';
+
+    // Conditions d'emprunt (valeurs par defaut)
+    document.getElementById('structure_cotisation_obligatoire').checked = true;
+    document.getElementById('structure_adhesion_organisation_obligatoire').checked = false;
 
     // Masquer le lien vers config fine (on ne peut pas y acceder avant sauvegarde)
     if (linkConfig) {
@@ -321,7 +329,9 @@ async function handleStructureSubmit(e) {
     modules_actifs: modules,
     actif: document.getElementById('structure_actif').checked,
     configuration_email_id: emailConnectorValue ? parseInt(emailConnectorValue) : null,
-    configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null
+    configuration_sms_id: smsConnectorValue ? parseInt(smsConnectorValue) : null,
+    cotisation_obligatoire: document.getElementById('structure_cotisation_obligatoire').checked,
+    adhesion_organisation_obligatoire: document.getElementById('structure_adhesion_organisation_obligatoire').checked
   };
 
   try {

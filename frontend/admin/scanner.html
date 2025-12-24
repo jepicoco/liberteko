@@ -490,6 +490,85 @@
       }
     }
 
+    /* Limits Panel */
+    .limits-panel .card {
+      background: transparent !important;
+    }
+
+    .limits-panel .progress {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .limit-gauge .progress-bar.bg-success {
+      background: linear-gradient(90deg, #00d26a, #00b85c) !important;
+    }
+
+    .limit-gauge .progress-bar.bg-warning {
+      background: linear-gradient(90deg, #ffc107, #e5ac00) !important;
+    }
+
+    .limit-gauge .progress-bar.bg-danger {
+      background: linear-gradient(90deg, #ff6b6b, #e55555) !important;
+    }
+
+    .limit-gauge .progress-bar.bg-info {
+      background: linear-gradient(90deg, #17a2b8, #138496) !important;
+    }
+
+    /* Status badges in adherent zone */
+    #adherent-status-badges .badge {
+      font-size: 0.75rem;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    /* Validation Modal */
+    #validationModal .modal-content {
+      background-color: var(--scanner-card);
+      color: var(--scanner-text);
+      border: none;
+      border-radius: 16px;
+    }
+
+    #validationModal .modal-header {
+      border-bottom: 1px solid var(--scanner-accent);
+      border-radius: 16px 16px 0 0;
+    }
+
+    #validationModal .modal-header.bg-danger,
+    #validationModal .modal-header.bg-warning,
+    #validationModal .modal-header.bg-info {
+      border-bottom: none;
+    }
+
+    #validationModal .modal-footer {
+      border-top: 1px solid var(--scanner-accent);
+    }
+
+    #validationModal .alert {
+      background-color: var(--scanner-accent);
+      border: none;
+    }
+
+    #validationModal .alert-secondary {
+      background-color: rgba(108, 117, 125, 0.2);
+    }
+
+    #validationModal .alert-info {
+      background-color: rgba(23, 162, 184, 0.2);
+      color: #7dd3e1;
+    }
+
+    #validationModal .form-check-input {
+      background-color: var(--scanner-accent);
+      border-color: #555;
+    }
+
+    #validationModal .form-check-input:checked {
+      background-color: var(--scanner-success);
+      border-color: var(--scanner-success);
+    }
+
     /* Fullscreen mode */
     body.fullscreen-mode {
       padding: 0;
@@ -903,6 +982,7 @@
   <script src="/vendor/html5-qrcode/html5-qrcode.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
+  <script src="js/scanner-validation.js"></script>
   <script src="js/scanner.js"></script>
 </body>
 </html>
