@@ -862,6 +862,257 @@ class PDFService {
   }
 
   /**
+   * Génère un rapport PDF de clôture de session de caisse
+   * @param {Object} session - Session avec mouvements chargés
+   * @param {Object} caisse - Caisse associée
+   * @param {Object} structure - Paramètres de la structure
+   * @returns {Promise<{filepath: string, filename: string}>}
+   */
+  async genererRapportSession(session, caisse, structure) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Générer un nom de fichier unique
+        const timestamp = Date.now();
+        const filename = `rapport_session_${session.id}_${timestamp}.pdf`;
+        const filepath = path.join(this.recusDir, filename);
+
+        // Créer le document PDF
+        const doc = new PDFDocument({
+          size: 'A4',
+          margins: { top: 50, bottom: 50, left: 50, right: 50 }
+        });
+
+        const stream = fs.createWriteStream(filepath);
+        doc.pipe(stream);
+
+        let yPos = 50;
+
+        // ===== EN-TÊTE =====
+        doc.fontSize(18)
+           .font('Helvetica-Bold')
+           .text(structure.nom_structure || 'Ludothèque', 50, yPos);
+
+        yPos += 22;
+        doc.fontSize(10).font('Helvetica');
+        if (structure.adresse) { doc.text(structure.adresse, 50, yPos); yPos += 14; }
+        if (structure.code_postal && structure.ville) { doc.text(`${structure.code_postal} ${structure.ville}`, 50, yPos); yPos += 14; }
+        if (structure.telephone) { doc.text(`Tél: ${structure.telephone}`, 50, yPos); yPos += 14; }
+
+        // Date d'impression à droite
+        doc.text(`Imprimé le: ${this.formatDate(new Date())}`, 400, 50);
+
+        yPos += 5;
+        doc.moveTo(50, yPos).lineTo(545, yPos).stroke();
+        yPos += 25;
+
+        // ===== TITRE =====
+        doc.fontSize(16)
+           .font('Helvetica-Bold')
+           .text('RAPPORT DE SESSION DE CAISSE', 50, yPos, { align: 'center' });
+        yPos += 30;
+
+        // ===== INFOS CAISSE =====
+        doc.fontSize(11).font('Helvetica-Bold').text('Caisse:', 50, yPos);
+        doc.font('Helvetica').text(`${caisse.nom} (${caisse.code})`, 100, yPos);
+        yPos += 20;
+
+        // ===== INFOS SESSION =====
+        const dateOuv = new Date(session.date_ouverture);
+        const dateClo = session.date_cloture ? new Date(session.date_cloture) : null;
+
+        doc.font('Helvetica-Bold').text('Ouverture:', 50, yPos);
+        doc.font('Helvetica').text(dateOuv.toLocaleString('fr-FR'), 120, yPos);
+        doc.font('Helvetica-Bold').text('Par:', 280, yPos);
+        const operateurOuv = session.utilisateur ? `${session.utilisateur.prenom} ${session.utilisateur.nom}` : '-';
+        doc.font('Helvetica').text(operateurOuv, 310, yPos);
+        yPos += 16;
+
+        doc.font('Helvetica-Bold').text('Clôture:', 50, yPos);
+        doc.font('Helvetica').text(dateClo ? dateClo.toLocaleString('fr-FR') : '-', 120, yPos);
+        doc.font('Helvetica-Bold').text('Par:', 280, yPos);
+        const operateurClo = session.utilisateurCloture ? `${session.utilisateurCloture.prenom} ${session.utilisateurCloture.nom}` : '-';
+        doc.font('Helvetica').text(operateurClo, 310, yPos);
+        yPos += 25;
+
+        // ===== SOLDES =====
+        doc.moveTo(50, yPos).lineTo(545, yPos).stroke();
+        yPos += 15;
+
+        doc.fontSize(11).font('Helvetica-Bold');
+        doc.text('Solde ouverture:', 50, yPos);
+        doc.font('Helvetica').text(this.formatMontant(session.solde_ouverture), 160, yPos);
+
+        const totalEntrees = parseFloat(session.total_entrees) || 0;
+        const totalSorties = parseFloat(session.total_sorties) || 0;
+        const soldeTheorique = parseFloat(session.solde_ouverture) + totalEntrees - totalSorties;
+
+        doc.font('Helvetica-Bold').text('Total entrées:', 260, yPos);
+        doc.font('Helvetica').fillColor('green').text(`+${this.formatMontant(totalEntrees)}`, 360, yPos);
+        doc.fillColor('black');
+        yPos += 16;
+
+        doc.font('Helvetica-Bold').text('Solde théorique:', 50, yPos);
+        doc.font('Helvetica').text(this.formatMontant(soldeTheorique), 160, yPos);
+
+        doc.font('Helvetica-Bold').text('Total sorties:', 260, yPos);
+        doc.font('Helvetica').fillColor('red').text(`-${this.formatMontant(totalSorties)}`, 360, yPos);
+        doc.fillColor('black');
+        yPos += 16;
+
+        if (session.solde_cloture_reel !== null) {
+          doc.font('Helvetica-Bold').text('Solde réel:', 50, yPos);
+          doc.font('Helvetica').text(this.formatMontant(session.solde_cloture_reel), 160, yPos);
+
+          const ecart = parseFloat(session.ecart) || 0;
+          doc.font('Helvetica-Bold').text('Écart:', 260, yPos);
+          const ecartColor = ecart === 0 ? 'black' : ecart > 0 ? 'green' : 'red';
+          doc.font('Helvetica').fillColor(ecartColor).text(this.formatMontant(ecart), 360, yPos);
+          doc.fillColor('black');
+        }
+        yPos += 25;
+
+        // ===== TABLEAU DES MOUVEMENTS =====
+        doc.moveTo(50, yPos).lineTo(545, yPos).stroke();
+        yPos += 15;
+
+        doc.fontSize(12).font('Helvetica-Bold').text('Détail des mouvements', 50, yPos);
+        yPos += 20;
+
+        const mouvements = session.mouvements || [];
+
+        if (mouvements.length === 0) {
+          doc.fontSize(10).font('Helvetica-Oblique').text('Aucun mouvement enregistré', 50, yPos);
+          yPos += 20;
+        } else {
+          // En-têtes du tableau
+          const colDate = 50;
+          const colType = 120;
+          const colCateg = 170;
+          const colLibelle = 250;
+          const colMode = 380;
+          const colMontant = 480;
+
+          doc.fontSize(9).font('Helvetica-Bold');
+          doc.text('Date', colDate, yPos);
+          doc.text('Type', colType, yPos);
+          doc.text('Catégorie', colCateg, yPos);
+          doc.text('Libellé', colLibelle, yPos);
+          doc.text('Mode', colMode, yPos);
+          doc.text('Montant', colMontant, yPos, { width: 60, align: 'right' });
+          yPos += 12;
+
+          doc.moveTo(50, yPos).lineTo(545, yPos).stroke();
+          yPos += 8;
+
+          doc.font('Helvetica').fontSize(8);
+
+          for (const m of mouvements) {
+            // Vérifier si on doit ajouter une nouvelle page
+            if (yPos > 750) {
+              doc.addPage();
+              yPos = 50;
+            }
+
+            const dateMvt = new Date(m.date_mouvement).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+            const typeLabel = m.type_mouvement === 'entree' ? 'Entrée' : 'Sortie';
+            const sign = m.type_mouvement === 'entree' ? '+' : '-';
+            const montantColor = m.type_mouvement === 'entree' ? 'green' : 'red';
+
+            doc.fillColor('black');
+            doc.text(dateMvt, colDate, yPos, { width: 65 });
+            doc.text(typeLabel, colType, yPos, { width: 45 });
+            doc.text(m.categorie || '-', colCateg, yPos, { width: 75 });
+            doc.text(m.libelle || '-', colLibelle, yPos, { width: 120 });
+            doc.text(this.formatModePaiement(m.mode_paiement), colMode, yPos, { width: 90 });
+            doc.fillColor(montantColor).text(`${sign}${this.formatMontant(m.montant)}`, colMontant, yPos, { width: 60, align: 'right' });
+            doc.fillColor('black');
+
+            yPos += 12;
+          }
+        }
+
+        yPos += 15;
+
+        // ===== RÉCAPITULATIF PAR MODE DE PAIEMENT =====
+        if (mouvements.length > 0) {
+          doc.moveTo(50, yPos).lineTo(545, yPos).stroke();
+          yPos += 15;
+
+          doc.fontSize(11).font('Helvetica-Bold').text('Récapitulatif par mode de paiement', 50, yPos);
+          yPos += 18;
+
+          // Calculer les totaux par mode
+          const parMode = {};
+          for (const m of mouvements) {
+            const mode = m.mode_paiement || 'autre';
+            if (!parMode[mode]) {
+              parMode[mode] = { entrees: 0, sorties: 0 };
+            }
+            if (m.type_mouvement === 'entree') {
+              parMode[mode].entrees += parseFloat(m.montant) || 0;
+            } else {
+              parMode[mode].sorties += parseFloat(m.montant) || 0;
+            }
+          }
+
+          doc.fontSize(9).font('Helvetica-Bold');
+          doc.text('Mode', 50, yPos);
+          doc.text('Entrées', 200, yPos, { width: 80, align: 'right' });
+          doc.text('Sorties', 290, yPos, { width: 80, align: 'right' });
+          doc.text('Solde', 380, yPos, { width: 80, align: 'right' });
+          yPos += 12;
+
+          doc.moveTo(50, yPos).lineTo(470, yPos).stroke();
+          yPos += 8;
+
+          doc.font('Helvetica');
+          for (const [mode, totaux] of Object.entries(parMode)) {
+            const solde = totaux.entrees - totaux.sorties;
+            doc.text(this.formatModePaiement(mode), 50, yPos);
+            doc.fillColor('green').text(`+${this.formatMontant(totaux.entrees)}`, 200, yPos, { width: 80, align: 'right' });
+            doc.fillColor('red').text(`-${this.formatMontant(totaux.sorties)}`, 290, yPos, { width: 80, align: 'right' });
+            doc.fillColor(solde >= 0 ? 'green' : 'red').text(this.formatMontant(solde), 380, yPos, { width: 80, align: 'right' });
+            doc.fillColor('black');
+            yPos += 12;
+          }
+        }
+
+        // ===== SIGNATURE =====
+        yPos += 30;
+        if (yPos > 700) {
+          doc.addPage();
+          yPos = 50;
+        }
+
+        doc.moveTo(50, yPos).lineTo(545, yPos).stroke();
+        yPos += 20;
+
+        doc.fontSize(10).font('Helvetica');
+        doc.text('Signature de l\'opérateur:', 50, yPos);
+        doc.text('Signature du responsable:', 300, yPos);
+
+        yPos += 60;
+        doc.moveTo(50, yPos).lineTo(200, yPos).stroke();
+        doc.moveTo(300, yPos).lineTo(450, yPos).stroke();
+
+        // Finaliser le document
+        doc.end();
+
+        stream.on('finish', () => {
+          resolve({ filepath, filename });
+        });
+
+        stream.on('error', (err) => {
+          reject(err);
+        });
+
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
    * Génère un PDF d'étiquettes codes-barres personnalisées
    * @param {Array} codes - Liste des codes à imprimer
    * @param {Object} options - Options (module, format, etc.)

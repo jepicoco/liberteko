@@ -198,6 +198,162 @@ const unauthorizedAccess = (data) => {
   });
 };
 
+// ============================================
+// CAISSE - Sessions et Mouvements
+// ============================================
+
+/**
+ * Log l'ouverture d'une session de caisse
+ * @param {Object} data - { caisseId, sessionId, userId, soldeOuverture, ip }
+ */
+const sessionOuverte = (data) => {
+  const { caisseId, sessionId, userId, soldeOuverture, ip } = data;
+
+  logger.info('[CAISSE_SESSION_OUVERTE] Cash register session opened', {
+    tag: 'CAISSE_SESSION_OUVERTE',
+    caisseId,
+    sessionId,
+    userId,
+    soldeOuverture,
+    ip,
+    action: 'session_ouverte'
+  });
+};
+
+/**
+ * Log la clôture d'une session de caisse
+ * @param {Object} data - { caisseId, sessionId, userId, soldeTheorique, soldeReel, ecart, ip }
+ */
+const sessionCloturee = (data) => {
+  const { caisseId, sessionId, userId, soldeTheorique, soldeReel, ecart, ip } = data;
+
+  logger.info('[CAISSE_SESSION_CLOTUREE] Cash register session closed', {
+    tag: 'CAISSE_SESSION_CLOTUREE',
+    caisseId,
+    sessionId,
+    userId,
+    soldeTheorique,
+    soldeReel,
+    ecart,
+    ip,
+    action: 'session_cloturee'
+  });
+};
+
+/**
+ * Log un mouvement de caisse
+ * @param {Object} data - { sessionId, mouvementId, type, categorie, montant, modePaiement, operateurId, ip }
+ */
+const mouvementEnregistre = (data) => {
+  const { sessionId, mouvementId, type, categorie, montant, modePaiement, operateurId, ip } = data;
+
+  logger.info(`[CAISSE_MOUVEMENT] Cash movement registered: ${type}`, {
+    tag: 'CAISSE_MOUVEMENT',
+    sessionId,
+    mouvementId,
+    type,
+    categorie,
+    montant,
+    modePaiement,
+    operateurId,
+    ip,
+    action: 'mouvement_enregistre'
+  });
+};
+
+/**
+ * Log l'annulation d'un mouvement de caisse
+ * @param {Object} data - { mouvementId, operateurId, motif, ip }
+ */
+const mouvementAnnule = (data) => {
+  const { mouvementId, operateurId, motif, ip } = data;
+
+  logger.info('[CAISSE_MOUVEMENT_ANNULE] Cash movement cancelled', {
+    tag: 'CAISSE_MOUVEMENT_ANNULE',
+    mouvementId,
+    operateurId,
+    motif,
+    ip,
+    action: 'mouvement_annule'
+  });
+};
+
+// ============================================
+// CAISSE - Remises en banque
+// ============================================
+
+/**
+ * Log la création d'une remise en banque
+ * @param {Object} data - { remiseId, numeroRemise, montant, nbMouvements, operateurId, ip }
+ */
+const remiseCreee = (data) => {
+  const { remiseId, numeroRemise, montant, nbMouvements, operateurId, ip } = data;
+
+  logger.info(`[CAISSE_REMISE_CREEE] Bank deposit created: ${numeroRemise}`, {
+    tag: 'CAISSE_REMISE_CREEE',
+    remiseId,
+    numeroRemise,
+    montant,
+    nbMouvements,
+    operateurId,
+    ip,
+    action: 'remise_creee'
+  });
+};
+
+/**
+ * Log le dépôt d'une remise en banque
+ * @param {Object} data - { remiseId, numeroRemise, operateurId, ip }
+ */
+const remiseDeposee = (data) => {
+  const { remiseId, numeroRemise, operateurId, ip } = data;
+
+  logger.info(`[CAISSE_REMISE_DEPOSEE] Bank deposit marked as deposited: ${numeroRemise}`, {
+    tag: 'CAISSE_REMISE_DEPOSEE',
+    remiseId,
+    numeroRemise,
+    operateurId,
+    ip,
+    action: 'remise_deposee'
+  });
+};
+
+/**
+ * Log la validation d'une remise en banque
+ * @param {Object} data - { remiseId, numeroRemise, valideurId, bordereauRef, ip }
+ */
+const remiseValidee = (data) => {
+  const { remiseId, numeroRemise, valideurId, bordereauRef, ip } = data;
+
+  logger.info(`[CAISSE_REMISE_VALIDEE] Bank deposit validated: ${numeroRemise}`, {
+    tag: 'CAISSE_REMISE_VALIDEE',
+    remiseId,
+    numeroRemise,
+    valideurId,
+    bordereauRef,
+    ip,
+    action: 'remise_validee'
+  });
+};
+
+/**
+ * Log l'annulation d'une remise en banque
+ * @param {Object} data - { remiseId, numeroRemise, operateurId, motif, ip }
+ */
+const remiseAnnulee = (data) => {
+  const { remiseId, numeroRemise, operateurId, motif, ip } = data;
+
+  logger.info(`[CAISSE_REMISE_ANNULEE] Bank deposit cancelled: ${numeroRemise}`, {
+    tag: 'CAISSE_REMISE_ANNULEE',
+    remiseId,
+    numeroRemise,
+    operateurId,
+    motif,
+    ip,
+    action: 'remise_annulee'
+  });
+};
+
 module.exports = {
   login,
   logout,
@@ -209,5 +365,14 @@ module.exports = {
   empruntCreated,
   empruntReturned,
   empruntProlonged,
-  unauthorizedAccess
+  unauthorizedAccess,
+  // Caisse
+  sessionOuverte,
+  sessionCloturee,
+  mouvementEnregistre,
+  mouvementAnnule,
+  remiseCreee,
+  remiseDeposee,
+  remiseValidee,
+  remiseAnnulee
 };

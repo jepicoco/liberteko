@@ -3,7 +3,10 @@
  */
 
 const CaisseService = require('../services/caisseService');
+const pdfService = require('../services/pdfService');
 const logger = require('../utils/logger');
+const path = require('path');
+const fs = require('fs');
 
 const caisseController = {
   // ============================================
@@ -349,20 +352,22 @@ const caisseController = {
     try {
       const { ModePaiement, Site, Utilisateur } = require('../models');
 
-      const [modesPaiement, sites, utilisateurs] = await Promise.all([
+      const [modesPaiement, sites, utilisateurs, comptesBancaires] = await Promise.all([
         ModePaiement.findAll({ where: { actif: true }, order: [['nom', 'ASC']] }),
         Site.findAll({ where: { actif: true }, order: [['nom', 'ASC']] }),
         Utilisateur.findAll({
           where: { actif: true, role: ['administrateur', 'gestionnaire', 'benevole'] },
           attributes: ['id', 'nom', 'prenom'],
           order: [['nom', 'ASC']]
-        })
+        }),
+        CaisseService.getComptesBancaires()
       ]);
 
       res.json({
         modesPaiement,
         sites,
         utilisateurs,
+        comptesBancaires,
         categories: [
           { code: 'cotisation', libelle: 'Cotisation' },
           { code: 'location', libelle: 'Location' },
@@ -380,6 +385,219 @@ const caisseController = {
       });
     } catch (error) {
       logger.error('Erreur getReferences:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  // ============================================
+  // REMISE EN BANQUE
+  // ============================================
+
+  /**
+   * Liste les mouvements disponibles pour une remise
+   */
+  async getMouvementsDisponiblesPourRemise(req, res) {
+    try {
+      const { id } = req.params;
+      const { dateDebut, dateFin } = req.query;
+
+      const mouvements = await CaisseService.getMouvementsDisponiblesPourRemise(id, {
+        dateDebut: dateDebut ? new Date(dateDebut) : undefined,
+        dateFin: dateFin ? new Date(dateFin) : undefined
+      });
+
+      res.json(mouvements);
+    } catch (error) {
+      logger.error('Erreur getMouvementsDisponiblesPourRemise:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Crée une remise en banque
+   */
+  async creerRemise(req, res) {
+    try {
+      const { id } = req.params;
+      const { mouvementIds, compteBancaireId, commentaire } = req.body;
+
+      const remise = await CaisseService.creerRemise(id, mouvementIds, req.user.id, {
+        compteBancaireId,
+        commentaire,
+        structureId: req.structureId
+      });
+
+      logger.info(`Remise créée: ${remise.numero_remise}`, {
+        userId: req.user.id,
+        montant: remise.montant_total,
+        nbMouvements: remise.nb_mouvements
+      });
+
+      res.status(201).json(remise);
+    } catch (error) {
+      logger.error('Erreur creerRemise:', error);
+      res.status(400).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Liste les remises d'une caisse
+   */
+  async getRemises(req, res) {
+    try {
+      const { id } = req.params;
+      const { limit = 30, offset = 0, statut } = req.query;
+
+      const remises = await CaisseService.getHistoriqueRemises(id, {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        statut
+      });
+
+      res.json(remises);
+    } catch (error) {
+      logger.error('Erreur getRemises:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Récupère une remise par son ID
+   */
+  async getRemiseById(req, res) {
+    try {
+      const { remiseId } = req.params;
+      const remise = await CaisseService.getRemiseById(remiseId);
+
+      if (!remise) {
+        return res.status(404).json({ error: 'Remise non trouvée' });
+      }
+
+      res.json(remise);
+    } catch (error) {
+      logger.error('Erreur getRemiseById:', error);
+      res.status(500).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Marque une remise comme déposée
+   */
+  async deposerRemise(req, res) {
+    try {
+      const { remiseId } = req.params;
+      const { date_depot, compte_bancaire_id, commentaire } = req.body;
+
+      const remise = await CaisseService.deposerRemise(remiseId, {
+        date_depot: date_depot ? new Date(date_depot) : undefined,
+        compte_bancaire_id,
+        commentaire
+      });
+
+      logger.info(`Remise déposée: ${remise.numero_remise}`, { userId: req.user.id });
+      res.json(remise);
+    } catch (error) {
+      logger.error('Erreur deposerRemise:', error);
+      res.status(400).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Valide une remise
+   */
+  async validerRemise(req, res) {
+    try {
+      const { remiseId } = req.params;
+      const { bordereau_reference } = req.body;
+
+      const remise = await CaisseService.validerRemise(remiseId, req.user.id, bordereau_reference);
+
+      logger.info(`Remise validée: ${remise.numero_remise}`, {
+        userId: req.user.id,
+        bordereauRef: bordereau_reference
+      });
+      res.json(remise);
+    } catch (error) {
+      logger.error('Erreur validerRemise:', error);
+      res.status(400).json({ error: error.message });
+    }
+  },
+
+  /**
+   * Annule une remise
+   */
+  async annulerRemise(req, res) {
+    try {
+      const { remiseId } = req.params;
+      const { motif } = req.body;
+
+      const remise = await CaisseService.annulerRemise(remiseId, req.user.id, motif);
+
+      logger.info(`Remise annulée: ${remise.numero_remise}`, { userId: req.user.id, motif });
+      res.json({ message: 'Remise annulée', remise });
+    } catch (error) {
+      logger.error('Erreur annulerRemise:', error);
+      res.status(400).json({ error: error.message });
+    }
+  },
+
+  // ============================================
+  // RAPPORTS PDF
+  // ============================================
+
+  /**
+   * Génère un rapport PDF de session
+   */
+  async genererRapportSession(req, res) {
+    try {
+      const { sessionId } = req.params;
+      const { SessionCaisse, Caisse, Utilisateur, MouvementCaisse, ParametresStructure } = require('../models');
+
+      // Charger la session avec ses relations
+      const session = await SessionCaisse.findByPk(sessionId, {
+        include: [
+          { model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenom'] },
+          { model: Utilisateur, as: 'utilisateurCloture', attributes: ['id', 'nom', 'prenom'] },
+          { model: Caisse, as: 'caisse' }
+        ]
+      });
+
+      if (!session) {
+        return res.status(404).json({ error: 'Session non trouvée' });
+      }
+
+      // Charger les mouvements
+      const mouvements = await MouvementCaisse.findAll({
+        where: { session_caisse_id: sessionId, annule: false },
+        order: [['date_mouvement', 'ASC']]
+      });
+
+      // Charger les paramètres structure
+      const structure = await ParametresStructure.findOne() || {};
+
+      // Générer le PDF
+      const sessionData = {
+        ...session.toJSON(),
+        mouvements
+      };
+
+      const { filepath, filename } = await pdfService.genererRapportSession(
+        sessionData,
+        session.caisse,
+        structure
+      );
+
+      // Envoyer le fichier
+      res.download(filepath, filename, (err) => {
+        if (err) {
+          logger.error('Erreur envoi PDF session:', err);
+        }
+        // Supprimer le fichier temporaire après envoi
+        fs.unlink(filepath, () => {});
+      });
+
+    } catch (error) {
+      logger.error('Erreur genererRapportSession:', error);
       res.status(500).json({ error: error.message });
     }
   }

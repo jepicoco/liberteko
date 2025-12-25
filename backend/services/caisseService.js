@@ -3,9 +3,10 @@
  * Gère les sessions, mouvements et calculs de solde
  */
 
-const { Caisse, SessionCaisse, MouvementCaisse, Utilisateur, Cotisation, Emprunt, Site } = require('../models');
+const { Caisse, SessionCaisse, MouvementCaisse, RemiseBanque, Utilisateur, Cotisation, Emprunt, Site, CompteBancaire, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const comptabiliteService = require('./comptabiliteService');
+const auditLogger = require('../utils/auditLogger');
 
 class CaisseService {
   /**
@@ -146,6 +147,15 @@ class CaisseService {
       statut: 'ouverte'
     });
 
+    // Audit log
+    auditLogger.sessionOuverte({
+      caisseId,
+      sessionId: session.id,
+      userId: utilisateurId,
+      soldeOuverture: caisse.solde_actuel,
+      ip: options.ip
+    });
+
     return await SessionCaisse.findByPk(session.id, {
       include: [
         { model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenom'] },
@@ -197,6 +207,17 @@ class CaisseService {
     // Mettre à jour le solde de la caisse
     await session.caisse.update({
       solde_actuel: soldeReel
+    });
+
+    // Audit log
+    auditLogger.sessionCloturee({
+      caisseId: session.caisse_id,
+      sessionId,
+      userId: utilisateurClotureId,
+      soldeTheorique,
+      soldeReel,
+      ecart,
+      ip: data.ip
     });
 
     return await SessionCaisse.findByPk(sessionId, {
@@ -274,6 +295,18 @@ class CaisseService {
     // Mettre à jour les stats de la session
     await session.mettreAJourStats();
 
+    // Audit log
+    auditLogger.mouvementEnregistre({
+      sessionId,
+      mouvementId: mouvement.id,
+      type: data.type_mouvement,
+      categorie: data.categorie,
+      montant: data.montant,
+      modePaiement: data.mode_paiement,
+      operateurId,
+      ip: data.ip
+    });
+
     return await MouvementCaisse.findByPk(mouvement.id, {
       include: [
         { model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenom'] },
@@ -329,6 +362,13 @@ class CaisseService {
 
     // Mettre à jour les stats de la session
     await mouvement.session.mettreAJourStats();
+
+    // Audit log
+    auditLogger.mouvementAnnule({
+      mouvementId,
+      operateurId,
+      motif
+    });
 
     return mouvement;
   }
@@ -464,6 +504,298 @@ class CaisseService {
       emprunt_id: emprunt.id,
       utilisateur_id: emprunt.utilisateur_id,
       libelle: `Pénalité retard emprunt ${emprunt.id}`
+    });
+  }
+
+  // ========================================
+  // REMISE EN BANQUE
+  // ========================================
+
+  /**
+   * Récupère les mouvements disponibles pour une remise en banque
+   * (espèces + chèques non encore remis en banque)
+   */
+  static async getMouvementsDisponiblesPourRemise(caisseId, options = {}) {
+    const { dateDebut, dateFin } = options;
+
+    const whereClause = {
+      remise_banque_id: null,
+      statut: 'valide',
+      type_mouvement: 'entree',
+      mode_paiement: { [Op.in]: RemiseBanque.MODES_ELIGIBLES }
+    };
+
+    // Filtrer par date si spécifié
+    if (dateDebut || dateFin) {
+      whereClause.date_mouvement = {};
+      if (dateDebut) whereClause.date_mouvement[Op.gte] = dateDebut;
+      if (dateFin) whereClause.date_mouvement[Op.lte] = dateFin;
+    }
+
+    // Récupérer les sessions de cette caisse
+    const sessions = await SessionCaisse.findAll({
+      where: { caisse_id: caisseId },
+      attributes: ['id']
+    });
+    const sessionIds = sessions.map(s => s.id);
+
+    if (sessionIds.length === 0) {
+      return [];
+    }
+
+    whereClause.session_caisse_id = { [Op.in]: sessionIds };
+
+    return await MouvementCaisse.findAll({
+      where: whereClause,
+      include: [
+        { model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenom'] },
+        { model: Utilisateur, as: 'operateur', attributes: ['id', 'nom', 'prenom'] },
+        { model: SessionCaisse, as: 'session', attributes: ['id', 'date_ouverture'] }
+      ],
+      order: [['date_mouvement', 'ASC']]
+    });
+  }
+
+  /**
+   * Crée une remise en banque à partir de mouvements sélectionnés
+   */
+  static async creerRemise(caisseId, mouvementIds, operateurId, options = {}) {
+    const { compteBancaireId, commentaire, structureId } = options;
+
+    if (!mouvementIds || mouvementIds.length === 0) {
+      throw new Error('Aucun mouvement sélectionné');
+    }
+
+    // Vérifier que tous les mouvements sont éligibles
+    const mouvements = await MouvementCaisse.findAll({
+      where: {
+        id: { [Op.in]: mouvementIds },
+        remise_banque_id: null,
+        statut: 'valide'
+      }
+    });
+
+    if (mouvements.length !== mouvementIds.length) {
+      throw new Error('Certains mouvements ne sont pas éligibles (déjà remis ou annulés)');
+    }
+
+    // Calculer les totaux par mode
+    const detailParMode = {};
+    let montantTotal = 0;
+
+    for (const mvt of mouvements) {
+      const mode = mvt.mode_paiement;
+      const montant = parseFloat(mvt.montant) || 0;
+
+      if (!detailParMode[mode]) {
+        detailParMode[mode] = 0;
+      }
+      detailParMode[mode] += montant;
+      montantTotal += montant;
+    }
+
+    // Créer la remise dans une transaction
+    const remise = await sequelize.transaction(async (t) => {
+      const newRemise = await RemiseBanque.create({
+        caisse_id: caisseId,
+        compte_bancaire_id: compteBancaireId || null,
+        date_remise: new Date(),
+        montant_total: montantTotal,
+        nb_mouvements: mouvements.length,
+        detail_par_mode: detailParMode,
+        statut: 'en_preparation',
+        commentaire: commentaire || null,
+        operateur_id: operateurId,
+        structure_id: structureId || null
+      }, { transaction: t });
+
+      // Lier les mouvements à la remise
+      await MouvementCaisse.update(
+        { remise_banque_id: newRemise.id },
+        {
+          where: { id: { [Op.in]: mouvementIds } },
+          transaction: t
+        }
+      );
+
+      return newRemise;
+    });
+
+    // Audit log
+    auditLogger.remiseCreee({
+      remiseId: remise.id,
+      numeroRemise: remise.numero_remise,
+      montant: montantTotal,
+      nbMouvements: mouvements.length,
+      operateurId,
+      ip: options.ip
+    });
+
+    return await this.getRemiseById(remise.id);
+  }
+
+  /**
+   * Récupère une remise par son ID avec associations
+   */
+  static async getRemiseById(remiseId) {
+    return await RemiseBanque.findByPk(remiseId, {
+      include: [
+        { model: Caisse, as: 'caisse', attributes: ['id', 'nom', 'code'] },
+        { model: CompteBancaire, as: 'compteBancaire', attributes: ['id', 'libelle', 'banque'] },
+        { model: Utilisateur, as: 'operateur', attributes: ['id', 'nom', 'prenom'] },
+        { model: Utilisateur, as: 'valideur', attributes: ['id', 'nom', 'prenom'] },
+        {
+          model: MouvementCaisse,
+          as: 'mouvements',
+          include: [
+            { model: Utilisateur, as: 'utilisateur', attributes: ['id', 'nom', 'prenom'] }
+          ]
+        }
+      ]
+    });
+  }
+
+  /**
+   * Marque une remise comme déposée en banque
+   */
+  static async deposerRemise(remiseId, data = {}) {
+    const remise = await RemiseBanque.findByPk(remiseId);
+    if (!remise) {
+      throw new Error('Remise non trouvée');
+    }
+
+    if (remise.statut !== 'en_preparation') {
+      throw new Error('Seule une remise en préparation peut être marquée comme déposée');
+    }
+
+    await remise.update({
+      statut: 'deposee',
+      date_depot_effectif: data.date_depot || new Date(),
+      compte_bancaire_id: data.compte_bancaire_id || remise.compte_bancaire_id,
+      commentaire: data.commentaire || remise.commentaire
+    });
+
+    // Audit log
+    auditLogger.remiseDeposee({
+      remiseId,
+      numeroRemise: remise.numero_remise,
+      operateurId: data.operateurId,
+      ip: data.ip
+    });
+
+    return await this.getRemiseById(remiseId);
+  }
+
+  /**
+   * Valide une remise après confirmation bancaire
+   */
+  static async validerRemise(remiseId, valideurId, bordereauRef = null) {
+    const remise = await RemiseBanque.findByPk(remiseId);
+    if (!remise) {
+      throw new Error('Remise non trouvée');
+    }
+
+    if (remise.statut !== 'deposee') {
+      throw new Error('Seule une remise déposée peut être validée');
+    }
+
+    await remise.update({
+      statut: 'validee',
+      validee_par_id: valideurId,
+      date_validation: new Date(),
+      bordereau_reference: bordereauRef || remise.bordereau_reference
+    });
+
+    // Audit log
+    auditLogger.remiseValidee({
+      remiseId,
+      numeroRemise: remise.numero_remise,
+      valideurId,
+      bordereauRef
+    });
+
+    return await this.getRemiseById(remiseId);
+  }
+
+  /**
+   * Annule une remise (libère les mouvements)
+   */
+  static async annulerRemise(remiseId, operateurId, motif) {
+    const remise = await RemiseBanque.findByPk(remiseId);
+    if (!remise) {
+      throw new Error('Remise non trouvée');
+    }
+
+    if (remise.statut === 'validee') {
+      throw new Error('Une remise validée ne peut pas être annulée');
+    }
+
+    await sequelize.transaction(async (t) => {
+      // Libérer les mouvements
+      await MouvementCaisse.update(
+        { remise_banque_id: null },
+        {
+          where: { remise_banque_id: remiseId },
+          transaction: t
+        }
+      );
+
+      // Annuler la remise
+      await remise.update({
+        statut: 'annulee',
+        commentaire: `${remise.commentaire || ''}\n[Annulée par ${operateurId}]: ${motif || 'Aucun motif'}`
+      }, { transaction: t });
+    });
+
+    // Audit log
+    auditLogger.remiseAnnulee({
+      remiseId,
+      numeroRemise: remise.numero_remise,
+      operateurId,
+      motif
+    });
+
+    return await this.getRemiseById(remiseId);
+  }
+
+  /**
+   * Récupère l'historique des remises d'une caisse
+   */
+  static async getHistoriqueRemises(caisseId, options = {}) {
+    const { limit = 30, offset = 0, statut } = options;
+
+    const whereClause = { caisse_id: caisseId };
+    if (statut) {
+      whereClause.statut = statut;
+    }
+
+    return await RemiseBanque.findAll({
+      where: whereClause,
+      include: [
+        { model: CompteBancaire, as: 'compteBancaire', attributes: ['id', 'libelle', 'banque'] },
+        { model: Utilisateur, as: 'operateur', attributes: ['id', 'nom', 'prenom'] },
+        { model: Utilisateur, as: 'valideur', attributes: ['id', 'nom', 'prenom'] }
+      ],
+      order: [['date_remise', 'DESC']],
+      limit,
+      offset
+    });
+  }
+
+  /**
+   * Récupère les remises en préparation d'une caisse
+   */
+  static async getRemisesEnPreparation(caisseId) {
+    return await this.getHistoriqueRemises(caisseId, { statut: 'en_preparation' });
+  }
+
+  /**
+   * Récupère les comptes bancaires actifs
+   */
+  static async getComptesBancaires() {
+    return await CompteBancaire.findAll({
+      where: { actif: true },
+      order: [['par_defaut', 'DESC'], ['libelle', 'ASC']]
     });
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Associations Caisse et Factures
- * Caisse, Sessions, Mouvements, Factures, Lignes, Reglements
+ * Caisse, Sessions, Mouvements, RemiseBanque, Factures, Lignes, Reglements
  */
 
 function setupCaisseFacturesAssociations(models) {
@@ -16,6 +16,7 @@ function setupCaisseFacturesAssociations(models) {
     Caisse,
     SessionCaisse,
     MouvementCaisse,
+    RemiseBanque,
     Facture,
     LigneFacture,
     ReglementFacture
@@ -144,6 +145,65 @@ function setupCaisseFacturesAssociations(models) {
   EcritureComptable.hasMany(MouvementCaisse, {
     foreignKey: 'ecriture_comptable_id',
     as: 'mouvementsCaisse'
+  });
+
+  // ========================================
+  // REMISE BANQUE
+  // ========================================
+
+  // RemiseBanque <-> Caisse
+  RemiseBanque.belongsTo(Caisse, {
+    foreignKey: 'caisse_id',
+    as: 'caisse'
+  });
+
+  Caisse.hasMany(RemiseBanque, {
+    foreignKey: 'caisse_id',
+    as: 'remises'
+  });
+
+  // RemiseBanque <-> CompteBancaire
+  RemiseBanque.belongsTo(CompteBancaire, {
+    foreignKey: 'compte_bancaire_id',
+    as: 'compteBancaire'
+  });
+
+  CompteBancaire.hasMany(RemiseBanque, {
+    foreignKey: 'compte_bancaire_id',
+    as: 'remises'
+  });
+
+  // RemiseBanque <-> Utilisateur (operateur)
+  RemiseBanque.belongsTo(Utilisateur, {
+    foreignKey: 'operateur_id',
+    as: 'operateur'
+  });
+
+  Utilisateur.hasMany(RemiseBanque, {
+    foreignKey: 'operateur_id',
+    as: 'remisesCreees'
+  });
+
+  // RemiseBanque <-> Utilisateur (valideur)
+  RemiseBanque.belongsTo(Utilisateur, {
+    foreignKey: 'validee_par_id',
+    as: 'valideur'
+  });
+
+  Utilisateur.hasMany(RemiseBanque, {
+    foreignKey: 'validee_par_id',
+    as: 'remisesValidees'
+  });
+
+  // RemiseBanque <-> MouvementCaisse
+  RemiseBanque.hasMany(MouvementCaisse, {
+    foreignKey: 'remise_banque_id',
+    as: 'mouvements'
+  });
+
+  MouvementCaisse.belongsTo(RemiseBanque, {
+    foreignKey: 'remise_banque_id',
+    as: 'remiseBanque'
   });
 
   // ========================================

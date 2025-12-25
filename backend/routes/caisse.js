@@ -78,6 +78,9 @@ router.get('/:id/sessions', checkRole(ROLES_CAISSE), caisseController.getHistori
 // GET /api/caisses/sessions/:sessionId - Détail d'une session
 router.get('/sessions/:sessionId', checkRole(ROLES_CAISSE), caisseController.getSessionById);
 
+// GET /api/caisses/sessions/:sessionId/pdf - Rapport PDF de la session
+router.get('/sessions/:sessionId/pdf', checkRole(ROLES_CAISSE), caisseController.genererRapportSession);
+
 // POST /api/caisses/sessions/:sessionId/cloturer - Clôturer une session
 router.post('/sessions/:sessionId/cloturer',
   checkRole(['administrateur', 'gestionnaire', 'benevole']),
@@ -107,6 +110,52 @@ router.post('/sessions/:sessionId/mouvements',
 router.post('/mouvements/:mouvementId/annuler',
   checkRole(['administrateur', 'gestionnaire']),
   caisseController.annulerMouvement
+);
+
+// ============================================
+// REMISE EN BANQUE
+// ============================================
+
+// GET /api/caisses/:id/remises/disponibles - Mouvements disponibles pour remise
+router.get('/:id/remises/disponibles',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.getMouvementsDisponiblesPourRemise
+);
+
+// GET /api/caisses/:id/remises - Liste des remises d'une caisse
+router.get('/:id/remises',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.getRemises
+);
+
+// POST /api/caisses/:id/remises - Créer une remise
+router.post('/:id/remises',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.creerRemise
+);
+
+// GET /api/caisses/remises/:remiseId - Détail d'une remise
+router.get('/remises/:remiseId',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.getRemiseById
+);
+
+// POST /api/caisses/remises/:remiseId/deposer - Marquer comme déposée
+router.post('/remises/:remiseId/deposer',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.deposerRemise
+);
+
+// POST /api/caisses/remises/:remiseId/valider - Valider après confirmation banque
+router.post('/remises/:remiseId/valider',
+  checkRole(['administrateur', 'comptable']),
+  caisseController.validerRemise
+);
+
+// POST /api/caisses/remises/:remiseId/annuler - Annuler une remise
+router.post('/remises/:remiseId/annuler',
+  checkRole(['administrateur', 'comptable', 'gestionnaire']),
+  caisseController.annulerRemise
 );
 
 module.exports = router;

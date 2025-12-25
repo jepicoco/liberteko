@@ -168,6 +168,7 @@ const LimiteReservationGenreModel = require('./LimiteReservationGenre');
 const CaisseModel = require('./Caisse');
 const SessionCaisseModel = require('./SessionCaisse');
 const MouvementCaisseModel = require('./MouvementCaisse');
+const RemiseBanqueModel = require('./RemiseBanque');
 
 // Import Factures (facturation)
 const FactureModel = require('./Facture');
@@ -415,6 +416,7 @@ const LimiteReservationGenre = LimiteReservationGenreModel(sequelize);
 const Caisse = CaisseModel(sequelize);
 const SessionCaisse = SessionCaisseModel(sequelize);
 const MouvementCaisse = MouvementCaisseModel(sequelize);
+const RemiseBanque = RemiseBanqueModel(sequelize);
 
 // Initialize Factures (facturation)
 const Facture = FactureModel(sequelize);
@@ -611,6 +613,7 @@ const models = {
   Caisse,
   SessionCaisse,
   MouvementCaisse,
+  RemiseBanque,
   Facture,
   LigneFacture,
   ReglementFacture,
@@ -833,6 +836,7 @@ module.exports = {
   Caisse,
   SessionCaisse,
   MouvementCaisse,
+  RemiseBanque,
   // Factures
   Facture,
   LigneFacture,

@@ -43,6 +43,15 @@
     .comptage-item input {
       width: 80px;
     }
+    /* Remises en banque */
+    .remise-en-preparation { border-left: 4px solid #ffc107; }
+    .remise-deposee { border-left: 4px solid #0dcaf0; }
+    .remise-validee { border-left: 4px solid #198754; }
+    .remise-annulee { border-left: 4px solid #dc3545; opacity: 0.7; }
+    .mouvement-selectionnable { cursor: pointer; }
+    .mouvement-selectionnable:hover { background-color: #f8f9fa; }
+    .mouvement-selectionne { background-color: #d1e7dd !important; }
+    .recap-remise { background-color: #f8f9fa; border-radius: 8px; padding: 15px; }
   </style>
 </head>
 <body>
@@ -58,6 +67,9 @@
           <div class="btn-toolbar">
             <button class="btn btn-outline-secondary me-2" onclick="afficherHistorique()">
               <i class="bi bi-clock-history"></i> Historique
+            </button>
+            <button class="btn btn-outline-info me-2" onclick="afficherRemises()">
+              <i class="bi bi-bank"></i> Remises banque
             </button>
             <button class="btn btn-outline-primary me-2" onclick="afficherStatistiques()">
               <i class="bi bi-graph-up"></i> Statistiques
@@ -179,6 +191,96 @@
                   <tbody id="listeHistorique">
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Remises en banque -->
+        <div id="zoneRemises" style="display: none;">
+          <div class="row">
+            <!-- Mouvements disponibles pour remise -->
+            <div class="col-lg-7 mb-4">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-cash-coin me-2"></i>Mouvements à remettre</span>
+                  <button class="btn btn-sm btn-success" onclick="creerRemise()" id="btnCreerRemise" disabled>
+                    <i class="bi bi-plus-circle"></i> Créer une remise
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="filtreEspeces" checked onchange="chargerMouvementsDisponibles()">
+                      <label class="form-check-label" for="filtreEspeces">Espèces</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="checkbox" id="filtreCheques" checked onchange="chargerMouvementsDisponibles()">
+                      <label class="form-check-label" for="filtreCheques">Chèques</label>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary ms-3" onclick="toggleTousLesMouvements()">
+                      <i class="bi bi-check-all"></i> Tout sélectionner
+                    </button>
+                  </div>
+                  <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-sm table-hover" id="tableMouvementsRemise">
+                      <thead class="sticky-top bg-white">
+                        <tr>
+                          <th width="30"><input type="checkbox" id="checkAllMouvements" onchange="toggleTousLesMouvements()"></th>
+                          <th>Date</th>
+                          <th>Mode</th>
+                          <th>Libellé</th>
+                          <th>Référence</th>
+                          <th class="text-end">Montant</th>
+                        </tr>
+                      </thead>
+                      <tbody id="listeMouvementsRemise">
+                      </tbody>
+                    </table>
+                  </div>
+                  <!-- Récapitulatif sélection -->
+                  <div class="recap-remise mt-3" id="recapSelection" style="display: none;">
+                    <div class="row align-items-center">
+                      <div class="col">
+                        <strong id="nbMouvementsSelectionnes">0</strong> mouvement(s) sélectionné(s)
+                      </div>
+                      <div class="col text-center">
+                        <small class="text-muted">Espèces:</small> <strong id="totalEspecesSelection">0,00 €</strong>
+                        <span class="mx-2">|</span>
+                        <small class="text-muted">Chèques:</small> <strong id="totalChequesSelection">0,00 €</strong>
+                      </div>
+                      <div class="col text-end">
+                        <strong>Total: <span id="totalSelection" class="fs-5 text-primary">0,00 €</span></strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Historique des remises -->
+            <div class="col-lg-5 mb-4">
+              <div class="card">
+                <div class="card-header">
+                  <i class="bi bi-bank me-2"></i>Historique des remises
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+                    <table class="table table-sm table-hover">
+                      <thead class="sticky-top bg-white">
+                        <tr>
+                          <th>N° Remise</th>
+                          <th>Date</th>
+                          <th class="text-end">Montant</th>
+                          <th>Statut</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="listeRemises">
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -392,13 +494,109 @@
     </div>
   </div>
 
+  <!-- Modal Créer Remise -->
+  <div class="modal fade" id="modalCreerRemise" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bank me-2"></i>Créer une remise en banque</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info mb-3">
+            <div class="row">
+              <div class="col-6">
+                <strong>Mouvements:</strong> <span id="remiseNbMouvements">0</span>
+              </div>
+              <div class="col-6 text-end">
+                <strong>Total:</strong> <span id="remiseMontantTotal" class="fs-5">0,00 €</span>
+              </div>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="remiseCompteBancaire" class="form-label">Compte bancaire de destination</label>
+            <select class="form-select" id="remiseCompteBancaire">
+              <option value="">-- Non spécifié --</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="remiseDateRemise" class="form-label">Date de remise</label>
+            <input type="date" class="form-control" id="remiseDateRemise">
+          </div>
+          <div class="mb-3">
+            <label for="remiseCommentaire" class="form-label">Commentaire</label>
+            <textarea class="form-control" id="remiseCommentaire" rows="2"></textarea>
+          </div>
+          <div id="detailParModeRemise">
+            <!-- Généré dynamiquement -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" onclick="confirmerCreerRemise()">
+            <i class="bi bi-check-circle"></i> Créer la remise
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Détail Remise -->
+  <div class="modal fade" id="modalDetailRemise" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-bank me-2"></i>Détail de la remise</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="detailRemiseContent">
+            <!-- Contenu dynamique -->
+          </div>
+        </div>
+        <div class="modal-footer" id="actionsRemise">
+          <!-- Boutons dynamiques selon statut -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Valider Remise -->
+  <div class="modal fade" id="modalValiderRemise" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Valider la remise</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="validerRemiseId">
+          <p>Confirmez que le dépôt bancaire a été effectué et rapproché.</p>
+          <div class="mb-3">
+            <label for="bordereauReference" class="form-label">Référence du bordereau bancaire</label>
+            <input type="text" class="form-control" id="bordereauReference" placeholder="Ex: BOR-2024-001234">
+            <div class="form-text">Optionnel - Référence du bordereau de remise de la banque</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-success" onclick="confirmerValiderRemise()">
+            <i class="bi bi-check-circle"></i> Valider définitivement
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
   <script src="js/admin-template.js"></script>
   <script src="js/api-admin.js"></script>
   <script>
     let caisseActuelle = null;
     let sessionActuelle = null;
-    let references = { modesPaiement: [], sites: [], categories: [] };
+    let references = { modesPaiement: [], sites: [], categories: [], comptesBancaires: [] };
+    let mouvementsSelectionnes = new Set();
+    let mouvementsDisponibles = [];
 
     document.addEventListener('DOMContentLoaded', async () => {
       await chargerReferences();
@@ -411,9 +609,18 @@
         populateSelectModesPaiement();
         populateSelectCategories();
         populateSelectSites();
+        populateSelectComptesBancaires();
       } catch (error) {
         console.error('Erreur chargement références:', error);
       }
+    }
+
+    function populateSelectComptesBancaires() {
+      const select = document.getElementById('remiseCompteBancaire');
+      select.innerHTML = '<option value="">-- Non spécifié --</option>';
+      (references.comptesBancaires || []).forEach(cb => {
+        select.innerHTML += `<option value="${cb.id}">${cb.nom} - ${cb.banque}</option>`;
+      });
     }
 
     function populateSelectModesPaiement() {
@@ -810,9 +1017,14 @@
                 <td>${s.nb_mouvements}</td>
                 <td>${statutBadge}</td>
                 <td>
-                  <button class="btn btn-sm btn-outline-primary" onclick="voirDetailSession(${s.id})">
+                  <button class="btn btn-sm btn-outline-primary me-1" onclick="voirDetailSession(${s.id})" title="Détails">
                     <i class="bi bi-eye"></i>
                   </button>
+                  ${s.statut === 'cloturee' ? `
+                  <button class="btn btn-sm btn-outline-secondary" onclick="telechargerRapportSession(${s.id})" title="Télécharger PDF">
+                    <i class="bi bi-file-pdf"></i>
+                  </button>
+                  ` : ''}
                 </td>
               </tr>
             `;
@@ -873,11 +1085,58 @@
         });
 
         html += '</tbody></table></div>';
+
+        // Bouton télécharger PDF si session clôturée
+        if (session.statut === 'cloturee') {
+          html += `
+            <div class="mt-3 text-end">
+              <button class="btn btn-outline-secondary" onclick="telechargerRapportSession(${sessionId})">
+                <i class="bi bi-file-pdf me-1"></i> Télécharger PDF
+              </button>
+            </div>
+          `;
+        }
+
         document.getElementById('detailSessionContent').innerHTML = html;
         new bootstrap.Modal(document.getElementById('modalDetailSession')).show();
       } catch (error) {
         console.error('Erreur chargement détail session:', error);
         showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function telechargerRapportSession(sessionId) {
+      try {
+        // Télécharger le PDF via une fenêtre
+        const token = localStorage.getItem('authToken');
+        const url = `/api/caisses/sessions/${sessionId}/pdf`;
+
+        // Utiliser fetch pour récupérer le fichier avec le token
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du téléchargement');
+        }
+
+        // Créer un blob et le télécharger
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = `rapport_session_${sessionId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(downloadUrl);
+        a.remove();
+
+        showAlert('Rapport téléchargé', 'success');
+      } catch (error) {
+        console.error('Erreur téléchargement rapport:', error);
+        showAlert('Erreur lors du téléchargement', 'danger');
       }
     }
 
@@ -913,6 +1172,437 @@
       alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
       document.body.appendChild(alertDiv);
       setTimeout(() => alertDiv.remove(), 5000);
+    }
+
+    // ============================================
+    // REMISES EN BANQUE
+    // ============================================
+
+    async function afficherRemises() {
+      if (!caisseActuelle) {
+        showAlert('Sélectionnez d\'abord une caisse', 'warning');
+        return;
+      }
+
+      document.getElementById('zoneHistorique').style.display = 'none';
+      document.getElementById('zoneRemises').style.display = 'block';
+
+      mouvementsSelectionnes.clear();
+      await Promise.all([
+        chargerMouvementsDisponibles(),
+        chargerHistoriqueRemises()
+      ]);
+    }
+
+    async function chargerMouvementsDisponibles() {
+      try {
+        const filtreEspeces = document.getElementById('filtreEspeces').checked;
+        const filtreCheques = document.getElementById('filtreCheques').checked;
+
+        const params = new URLSearchParams();
+        if (filtreEspeces) params.append('modes', 'especes');
+        if (filtreCheques) params.append('modes', 'cheque');
+
+        const response = await apiAdmin.get(`/api/caisses/${caisseActuelle.id}/remises/disponibles?${params}`);
+        mouvementsDisponibles = response.mouvements || [];
+
+        const tbody = document.getElementById('listeMouvementsRemise');
+        tbody.innerHTML = '';
+
+        if (mouvementsDisponibles.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Aucun mouvement disponible</td></tr>';
+          document.getElementById('btnCreerRemise').disabled = true;
+          document.getElementById('recapSelection').style.display = 'none';
+          return;
+        }
+
+        mouvementsDisponibles.forEach(m => {
+          const date = new Date(m.date_mouvement).toLocaleDateString('fr-FR');
+          const montantNet = parseFloat(m.type_mouvement === 'entree' ? m.montant : -m.montant);
+          const montantClass = montantNet >= 0 ? 'text-success' : 'text-danger';
+          const modeLabel = m.mode_paiement === 'especes' ? 'Espèces' : 'Chèque';
+          const isSelected = mouvementsSelectionnes.has(m.id);
+
+          tbody.innerHTML += `
+            <tr class="mouvement-selectionnable ${isSelected ? 'mouvement-selectionne' : ''}"
+                onclick="toggleMouvementSelection(${m.id})">
+              <td><input type="checkbox" class="form-check-input" ${isSelected ? 'checked' : ''}
+                         onclick="event.stopPropagation(); toggleMouvementSelection(${m.id})"></td>
+              <td>${date}</td>
+              <td><span class="badge ${m.mode_paiement === 'especes' ? 'bg-success' : 'bg-primary'}">${modeLabel}</span></td>
+              <td>${m.libelle}</td>
+              <td>${m.reference || '-'}</td>
+              <td class="text-end ${montantClass}">${formatMontant(montantNet)}</td>
+            </tr>
+          `;
+        });
+
+        mettreAJourRecapSelection();
+      } catch (error) {
+        console.error('Erreur chargement mouvements disponibles:', error);
+        showAlert('Erreur lors du chargement des mouvements', 'danger');
+      }
+    }
+
+    function toggleMouvementSelection(mouvementId) {
+      if (mouvementsSelectionnes.has(mouvementId)) {
+        mouvementsSelectionnes.delete(mouvementId);
+      } else {
+        mouvementsSelectionnes.add(mouvementId);
+      }
+
+      // Mettre à jour l'affichage de la ligne
+      const rows = document.querySelectorAll('#listeMouvementsRemise tr');
+      rows.forEach(row => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const id = parseInt(row.getAttribute('onclick')?.match(/\d+/)?.[0]);
+          if (id === mouvementId) {
+            row.classList.toggle('mouvement-selectionne', mouvementsSelectionnes.has(id));
+            checkbox.checked = mouvementsSelectionnes.has(id);
+          }
+        }
+      });
+
+      mettreAJourRecapSelection();
+    }
+
+    function toggleTousLesMouvements() {
+      const tousSelectionnes = mouvementsDisponibles.length === mouvementsSelectionnes.size;
+
+      if (tousSelectionnes) {
+        mouvementsSelectionnes.clear();
+      } else {
+        mouvementsDisponibles.forEach(m => mouvementsSelectionnes.add(m.id));
+      }
+
+      // Mettre à jour l'affichage
+      const rows = document.querySelectorAll('#listeMouvementsRemise tr.mouvement-selectionnable');
+      rows.forEach(row => {
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          const isSelected = !tousSelectionnes;
+          row.classList.toggle('mouvement-selectionne', isSelected);
+          checkbox.checked = isSelected;
+        }
+      });
+
+      document.getElementById('checkAllMouvements').checked = !tousSelectionnes;
+      mettreAJourRecapSelection();
+    }
+
+    function mettreAJourRecapSelection() {
+      const nb = mouvementsSelectionnes.size;
+      let totalEspeces = 0;
+      let totalCheques = 0;
+
+      mouvementsDisponibles.forEach(m => {
+        if (mouvementsSelectionnes.has(m.id)) {
+          const montant = parseFloat(m.type_mouvement === 'entree' ? m.montant : -m.montant);
+          if (m.mode_paiement === 'especes') {
+            totalEspeces += montant;
+          } else {
+            totalCheques += montant;
+          }
+        }
+      });
+
+      const total = totalEspeces + totalCheques;
+
+      document.getElementById('nbMouvementsSelectionnes').textContent = nb;
+      document.getElementById('totalEspecesSelection').textContent = formatMontant(totalEspeces);
+      document.getElementById('totalChequesSelection').textContent = formatMontant(totalCheques);
+      document.getElementById('totalSelection').textContent = formatMontant(total);
+
+      document.getElementById('recapSelection').style.display = nb > 0 ? 'block' : 'none';
+      document.getElementById('btnCreerRemise').disabled = nb === 0;
+    }
+
+    async function chargerHistoriqueRemises() {
+      try {
+        const remises = await apiAdmin.get(`/api/caisses/${caisseActuelle.id}/remises`);
+        const tbody = document.getElementById('listeRemises');
+        tbody.innerHTML = '';
+
+        if (remises.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Aucune remise</td></tr>';
+          return;
+        }
+
+        remises.forEach(r => {
+          const date = new Date(r.date_remise).toLocaleDateString('fr-FR');
+          const statutBadge = getStatutRemiseBadge(r.statut);
+
+          tbody.innerHTML += `
+            <tr class="remise-${r.statut}">
+              <td><small>${r.numero_remise}</small></td>
+              <td>${date}</td>
+              <td class="text-end">${formatMontant(r.montant_total)}</td>
+              <td>${statutBadge}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="voirDetailRemise(${r.id})" title="Détails">
+                  <i class="bi bi-eye"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        });
+      } catch (error) {
+        console.error('Erreur chargement historique remises:', error);
+      }
+    }
+
+    function getStatutRemiseBadge(statut) {
+      const badges = {
+        'en_preparation': '<span class="badge bg-warning text-dark">En préparation</span>',
+        'deposee': '<span class="badge bg-info">Déposée</span>',
+        'validee': '<span class="badge bg-success">Validée</span>',
+        'annulee': '<span class="badge bg-danger">Annulée</span>'
+      };
+      return badges[statut] || statut;
+    }
+
+    function creerRemise() {
+      if (mouvementsSelectionnes.size === 0) {
+        showAlert('Sélectionnez au moins un mouvement', 'warning');
+        return;
+      }
+
+      // Calculer les totaux
+      let totalEspeces = 0;
+      let totalCheques = 0;
+
+      mouvementsDisponibles.forEach(m => {
+        if (mouvementsSelectionnes.has(m.id)) {
+          const montant = parseFloat(m.type_mouvement === 'entree' ? m.montant : -m.montant);
+          if (m.mode_paiement === 'especes') {
+            totalEspeces += montant;
+          } else {
+            totalCheques += montant;
+          }
+        }
+      });
+
+      const total = totalEspeces + totalCheques;
+
+      // Remplir le modal
+      document.getElementById('remiseNbMouvements').textContent = mouvementsSelectionnes.size;
+      document.getElementById('remiseMontantTotal').textContent = formatMontant(total);
+      document.getElementById('remiseDateRemise').value = new Date().toISOString().split('T')[0];
+      document.getElementById('remiseCommentaire').value = '';
+
+      // Détail par mode
+      const detailDiv = document.getElementById('detailParModeRemise');
+      detailDiv.innerHTML = `
+        <div class="row text-muted small">
+          <div class="col-6">Espèces: ${formatMontant(totalEspeces)}</div>
+          <div class="col-6">Chèques: ${formatMontant(totalCheques)}</div>
+        </div>
+      `;
+
+      new bootstrap.Modal(document.getElementById('modalCreerRemise')).show();
+    }
+
+    async function confirmerCreerRemise() {
+      try {
+        const data = {
+          mouvement_ids: Array.from(mouvementsSelectionnes),
+          compte_bancaire_id: document.getElementById('remiseCompteBancaire').value || null,
+          date_remise: document.getElementById('remiseDateRemise').value,
+          commentaire: document.getElementById('remiseCommentaire').value || null
+        };
+
+        const remise = await apiAdmin.post(`/api/caisses/${caisseActuelle.id}/remises`, data);
+        bootstrap.Modal.getInstance(document.getElementById('modalCreerRemise')).hide();
+        showAlert(`Remise ${remise.numero_remise} créée avec succès`, 'success');
+
+        mouvementsSelectionnes.clear();
+        await Promise.all([
+          chargerMouvementsDisponibles(),
+          chargerHistoriqueRemises()
+        ]);
+      } catch (error) {
+        console.error('Erreur création remise:', error);
+        showAlert(error.message || 'Erreur lors de la création', 'danger');
+      }
+    }
+
+    async function voirDetailRemise(remiseId) {
+      try {
+        const remise = await apiAdmin.get(`/api/caisses/remises/${remiseId}`);
+        const dateRemise = new Date(remise.date_remise).toLocaleDateString('fr-FR');
+        const dateDepot = remise.date_depot_effectif
+          ? new Date(remise.date_depot_effectif).toLocaleDateString('fr-FR')
+          : '-';
+
+        let detailParMode = '';
+        if (remise.detail_par_mode) {
+          Object.entries(remise.detail_par_mode).forEach(([mode, montant]) => {
+            detailParMode += `<span class="me-3">${mode}: ${formatMontant(montant)}</span>`;
+          });
+        }
+
+        let html = `
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>N° Remise:</strong><br>
+              <span class="fs-5">${remise.numero_remise}</span>
+            </div>
+            <div class="col-md-4">
+              <strong>Statut:</strong><br>
+              ${getStatutRemiseBadge(remise.statut)}
+            </div>
+            <div class="col-md-4">
+              <strong>Montant total:</strong><br>
+              <span class="fs-4 fw-bold text-primary">${formatMontant(remise.montant_total)}</span>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <strong>Date remise:</strong><br>${dateRemise}
+            </div>
+            <div class="col-md-4">
+              <strong>Date dépôt:</strong><br>${dateDepot}
+            </div>
+            <div class="col-md-4">
+              <strong>Bordereau:</strong><br>${remise.bordereau_reference || '-'}
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <strong>Compte bancaire:</strong><br>${remise.compteBancaire?.nom || '-'}
+            </div>
+            <div class="col-md-6">
+              <strong>Détail par mode:</strong><br>${detailParMode || '-'}
+            </div>
+          </div>
+          ${remise.commentaire ? `<div class="mb-3"><strong>Commentaire:</strong><br>${remise.commentaire}</div>` : ''}
+          <hr>
+          <h6>Mouvements (${remise.nb_mouvements})</h6>
+          <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mode</th>
+                  <th>Libellé</th>
+                  <th>Référence</th>
+                  <th class="text-end">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        (remise.mouvements || []).forEach(m => {
+          const date = new Date(m.date_mouvement).toLocaleDateString('fr-FR');
+          const montantNet = parseFloat(m.type_mouvement === 'entree' ? m.montant : -m.montant);
+          const montantClass = montantNet >= 0 ? 'text-success' : 'text-danger';
+          html += `
+            <tr>
+              <td>${date}</td>
+              <td>${m.mode_paiement}</td>
+              <td>${m.libelle}</td>
+              <td>${m.reference || '-'}</td>
+              <td class="text-end ${montantClass}">${formatMontant(montantNet)}</td>
+            </tr>
+          `;
+        });
+
+        html += '</tbody></table></div>';
+        document.getElementById('detailRemiseContent').innerHTML = html;
+
+        // Boutons d'action selon statut
+        const actionsDiv = document.getElementById('actionsRemise');
+        actionsDiv.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>';
+
+        if (remise.statut === 'en_preparation') {
+          actionsDiv.innerHTML = `
+            <button type="button" class="btn btn-danger" onclick="annulerRemise(${remise.id})">
+              <i class="bi bi-x-circle"></i> Annuler
+            </button>
+            <button type="button" class="btn btn-info" onclick="deposerRemise(${remise.id})">
+              <i class="bi bi-bank"></i> Marquer comme déposée
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          `;
+        } else if (remise.statut === 'deposee') {
+          actionsDiv.innerHTML = `
+            <button type="button" class="btn btn-danger" onclick="annulerRemise(${remise.id})">
+              <i class="bi bi-x-circle"></i> Annuler
+            </button>
+            <button type="button" class="btn btn-success" onclick="showModalValiderRemise(${remise.id})">
+              <i class="bi bi-check-circle"></i> Valider
+            </button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+          `;
+        }
+
+        new bootstrap.Modal(document.getElementById('modalDetailRemise')).show();
+      } catch (error) {
+        console.error('Erreur chargement détail remise:', error);
+        showAlert('Erreur lors du chargement', 'danger');
+      }
+    }
+
+    async function deposerRemise(remiseId) {
+      if (!confirm('Confirmer que cette remise a été déposée à la banque ?')) return;
+
+      try {
+        await apiAdmin.post(`/api/caisses/remises/${remiseId}/deposer`, {
+          date_depot_effectif: new Date().toISOString().split('T')[0]
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('modalDetailRemise'))?.hide();
+        showAlert('Remise marquée comme déposée', 'success');
+        await chargerHistoriqueRemises();
+      } catch (error) {
+        console.error('Erreur dépôt remise:', error);
+        showAlert(error.message || 'Erreur lors du dépôt', 'danger');
+      }
+    }
+
+    function showModalValiderRemise(remiseId) {
+      document.getElementById('validerRemiseId').value = remiseId;
+      document.getElementById('bordereauReference').value = '';
+      bootstrap.Modal.getInstance(document.getElementById('modalDetailRemise'))?.hide();
+      new bootstrap.Modal(document.getElementById('modalValiderRemise')).show();
+    }
+
+    async function confirmerValiderRemise() {
+      const remiseId = document.getElementById('validerRemiseId').value;
+      const bordereau = document.getElementById('bordereauReference').value || null;
+
+      try {
+        await apiAdmin.post(`/api/caisses/remises/${remiseId}/valider`, {
+          bordereau_reference: bordereau
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('modalValiderRemise')).hide();
+        showAlert('Remise validée avec succès', 'success');
+        await chargerHistoriqueRemises();
+      } catch (error) {
+        console.error('Erreur validation remise:', error);
+        showAlert(error.message || 'Erreur lors de la validation', 'danger');
+      }
+    }
+
+    async function annulerRemise(remiseId) {
+      const motif = prompt('Motif de l\'annulation:');
+      if (motif === null) return;
+
+      try {
+        await apiAdmin.post(`/api/caisses/remises/${remiseId}/annuler`, { motif });
+
+        bootstrap.Modal.getInstance(document.getElementById('modalDetailRemise'))?.hide();
+        showAlert('Remise annulée', 'success');
+        await Promise.all([
+          chargerMouvementsDisponibles(),
+          chargerHistoriqueRemises()
+        ]);
+      } catch (error) {
+        console.error('Erreur annulation remise:', error);
+        showAlert(error.message || 'Erreur lors de l\'annulation', 'danger');
+      }
     }
   </script>
 </body>
