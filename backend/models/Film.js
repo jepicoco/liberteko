@@ -82,7 +82,7 @@ module.exports = (sequelize) => {
       defaultValue: 'bon'
     },
     statut: {
-      type: DataTypes.ENUM('disponible', 'emprunte', 'reserve', 'en_controle', 'maintenance', 'perdu', 'archive'),
+      type: DataTypes.ENUM('disponible', 'emprunte', 'reserve', 'en_controle', 'en_reparation', 'indisponible', 'maintenance', 'perdu', 'archive', 'sorti'),
       allowNull: false,
       defaultValue: 'disponible'
     },
@@ -114,6 +114,21 @@ module.exports = (sequelize) => {
         key: 'id'
       },
       comment: 'FK vers la structure proprietaire (NULL = toutes structures)'
+    },
+    // Desherbage (sortie de stock)
+    lot_sortie_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'lots_sortie',
+        key: 'id'
+      },
+      comment: 'FK vers le lot de sortie si article sorti'
+    },
+    date_sortie: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+      comment: 'Date de sortie du stock'
     }
   }, {
     tableName: 'films',

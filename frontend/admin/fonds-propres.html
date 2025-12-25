@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <!-- Anti-flash: masquer le contenu jusqu'à vérification auth -->
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fonds Propres - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --color-ludotheque: #6f42c1;
+      --color-bibliotheque: #20c997;
+      --color-filmotheque: #fd7e14;
+      --color-discotheque: #e83e8c;
+    }
+
+    .value-card {
+      border-radius: 1rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .value-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .value-card .card-body {
+      padding: 1.5rem;
+    }
+    .value-card .value-amount {
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .value-card .value-count {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    .value-card .card-icon {
+      font-size: 2.5rem;
+      opacity: 0.3;
+      position: absolute;
+      right: 1.5rem;
+      top: 1.5rem;
+    }
+
+    .module-card {
+      border-left: 4px solid;
+      border-radius: 0.5rem;
+    }
+    .module-card.ludotheque { border-left-color: var(--color-ludotheque); }
+    .module-card.bibliotheque { border-left-color: var(--color-bibliotheque); }
+    .module-card.filmotheque { border-left-color: var(--color-filmotheque); }
+    .module-card.discotheque { border-left-color: var(--color-discotheque); }
+
+    .module-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+    .module-icon.ludotheque { background: color-mix(in srgb, var(--color-ludotheque) 15%, white); color: var(--color-ludotheque); }
+    .module-icon.bibliotheque { background: color-mix(in srgb, var(--color-bibliotheque) 15%, white); color: var(--color-bibliotheque); }
+    .module-icon.filmotheque { background: color-mix(in srgb, var(--color-filmotheque) 15%, white); color: var(--color-filmotheque); }
+    .module-icon.discotheque { background: color-mix(in srgb, var(--color-discotheque) 15%, white); color: var(--color-discotheque); }
+
+    .stats-table th {
+      font-weight: 500;
+      color: #6c757d;
+      border-bottom: 2px solid #dee2e6;
+    }
+    .stats-table td {
+      vertical-align: middle;
+    }
+
+    .evolution-chart {
+      height: 300px;
+      background: #f8f9fa;
+      border-radius: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .history-item {
+      border-left: 3px solid;
+      padding-left: 1rem;
+      margin-bottom: 1rem;
+    }
+    .history-item.rebus { border-left-color: #dc3545; }
+    .history-item.don { border-left-color: #0d6efd; }
+    .history-item.vente { border-left-color: #198754; }
+
+    .loading-spinner {
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .progress-bar-module {
+      height: 8px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <!-- Main Content -->
+      <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2><i class="bi bi-piggy-bank"></i> Fonds Propres</h2>
+            <p class="text-muted mb-0">Valeur totale des collections</p>
+          </div>
+          <div class="d-flex gap-2">
+            <select class="form-select" id="filterStructure" style="width: auto;">
+              <option value="">Toutes les structures</option>
+            </select>
+            <div class="btn-group">
+              <button class="btn btn-outline-primary" onclick="exportPDF()" title="Exporter PDF">
+                <i class="bi bi-file-pdf"></i>
+              </button>
+              <button class="btn btn-outline-success" onclick="exportExcel()" title="Exporter Excel">
+                <i class="bi bi-file-excel"></i>
+              </button>
+            </div>
+            <button class="btn btn-outline-secondary" onclick="loadData()">
+              <i class="bi bi-arrow-clockwise"></i> Actualiser
+            </button>
+          </div>
+        </div>
+
+        <!-- Alerts -->
+        <div id="alertContainer"></div>
+
+        <!-- Loading -->
+        <div id="loadingState" class="text-center py-5">
+          <div class="loading-spinner"></div>
+          <p class="mt-2 text-muted">Chargement des donnees...</p>
+        </div>
+
+        <!-- Content (hidden initially) -->
+        <div id="mainContent" style="display: none;">
+          <!-- Total Value Card -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card value-card bg-primary text-white position-relative">
+                <div class="card-body">
+                  <i class="bi bi-bank2 card-icon"></i>
+                  <h5 class="card-title mb-1">Valeur Totale des Collections</h5>
+                  <div class="value-amount" id="totalValue">0,00 €</div>
+                  <div class="value-count" id="totalCount">0 articles en stock</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Module Breakdown -->
+          <div class="row mb-4" id="moduleCards">
+            <!-- Cards generated dynamically -->
+          </div>
+
+          <!-- Stats and History Row -->
+          <div class="row">
+            <!-- Left: Detailed Stats -->
+            <div class="col-lg-7 mb-4">
+              <div class="card h-100">
+                <div class="card-header bg-white">
+                  <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Repartition detaillee</h5>
+                </div>
+                <div class="card-body">
+                  <table class="table stats-table">
+                    <thead>
+                      <tr>
+                        <th>Module</th>
+                        <th class="text-end">Articles</th>
+                        <th class="text-end">Valeur</th>
+                        <th style="width: 30%">Repartition</th>
+                      </tr>
+                    </thead>
+                    <tbody id="statsTableBody">
+                      <!-- Rows generated dynamically -->
+                    </tbody>
+                  </table>
+
+                  <hr class="my-4">
+
+                  <h6 class="text-muted mb-3">Sorties recentes</h6>
+                  <table class="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th class="text-end">Articles</th>
+                        <th class="text-end">Valeur</th>
+                      </tr>
+                    </thead>
+                    <tbody id="recentExitsTable">
+                      <!-- Rows generated dynamically -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: History & Actions -->
+            <div class="col-lg-5 mb-4">
+              <div class="card h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                  <h5 class="mb-0"><i class="bi bi-clock-history"></i> Derniers lots exportes</h5>
+                  <a href="desherbage-lots.html" class="btn btn-sm btn-outline-primary">
+                    Voir tous <i class="bi bi-arrow-right"></i>
+                  </a>
+                </div>
+                <div class="card-body">
+                  <div id="recentLotsHistory">
+                    <!-- History items generated dynamically -->
+                  </div>
+                  <div id="noLotsMessage" class="text-center text-muted py-4" style="display: none;">
+                    <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                    <p class="mt-2 mb-0">Aucun lot exporte</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="card mt-4">
+                <div class="card-header bg-white">
+                  <h5 class="mb-0"><i class="bi bi-lightning"></i> Actions rapides</h5>
+                </div>
+                <div class="card-body">
+                  <div class="d-grid gap-2">
+                    <a href="desherbage.html" class="btn btn-outline-primary">
+                      <i class="bi bi-trash3"></i> Desherbage des collections
+                    </a>
+                    <a href="desherbage-lots.html" class="btn btn-outline-secondary">
+                      <i class="bi bi-box-seam"></i> Gerer les lots de sortie
+                    </a>
+                    <a href="parametres-comptabilite.html" class="btn btn-outline-info">
+                      <i class="bi bi-gear"></i> Parametres comptables
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Valuation Methods Info -->
+          <div class="row">
+            <div class="col-12">
+              <div class="alert alert-info d-flex align-items-start">
+                <i class="bi bi-info-circle me-3" style="font-size: 1.5rem;"></i>
+                <div>
+                  <strong>Methode de valorisation</strong>
+                  <p class="mb-0">
+                    La valeur est calculee par <strong>exemplaire</strong> selon l'ordre de priorite suivant :
+                    <strong>Prix d'achat de l'exemplaire</strong> (si renseigne sur la copie physique),
+                    sinon <strong>Prix indicatif de la fiche article</strong>,
+                    sinon <strong>0 €</strong>.
+                    Seuls les exemplaires en stock sont comptabilises (exclus : sorti, perdu, archive).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    // Data
+    let fondsPropresData = null;
+    let statistiquesData = null;
+    let structures = [];
+
+    // Module config
+    const MODULES = {
+      jeux: { label: 'Jeux', icon: 'bi-puzzle', color: 'ludotheque' },
+      livres: { label: 'Livres', icon: 'bi-book', color: 'bibliotheque' },
+      films: { label: 'Films', icon: 'bi-film', color: 'filmotheque' },
+      disques: { label: 'Disques', icon: 'bi-disc', color: 'discotheque' }
+    };
+
+    // Types de sortie
+    const TYPE_COLORS = {
+      rebus: { bg: 'danger', icon: 'trash' },
+      don: { bg: 'primary', icon: 'gift' },
+      vente: { bg: 'success', icon: 'currency-euro' }
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('statistiques');
+      await loadStructures();
+      await loadData();
+
+      // Filter change handler
+      document.getElementById('filterStructure').addEventListener('change', loadData);
+    });
+
+    async function loadStructures() {
+      try {
+        const response = await apiAdmin.get('/structures');
+        if (response.ok) {
+          structures = await response.json();
+          const select = document.getElementById('filterStructure');
+          structures.forEach(s => {
+            const option = document.createElement('option');
+            option.value = s.id;
+            option.textContent = s.nom;
+            select.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('Erreur chargement structures:', error);
+      }
+    }
+
+    async function loadData() {
+      const loading = document.getElementById('loadingState');
+      const content = document.getElementById('mainContent');
+      loading.style.display = 'block';
+      content.style.display = 'none';
+
+      try {
+        const structureId = document.getElementById('filterStructure').value;
+        const params = structureId ? `?structure_id=${structureId}` : '';
+
+        // Load fonds propres and statistiques in parallel
+        // apiAdmin.get() returns parsed JSON directly, throws on error
+        const [fpData, statsData] = await Promise.all([
+          apiAdmin.get(`/desherbage/fonds-propres${params}`),
+          apiAdmin.get(`/desherbage/statistiques${params}`)
+        ]);
+
+        fondsPropresData = fpData;
+        statistiquesData = statsData;
+        renderData();
+      } catch (error) {
+        console.error('Erreur:', error);
+        showAlert('Erreur: ' + error.message, 'danger');
+      } finally {
+        loading.style.display = 'none';
+        content.style.display = 'block';
+      }
+    }
+
+    function renderData() {
+      if (!fondsPropresData) return;
+
+      // Calculate totals
+      let totalValue = 0;
+      let totalCount = 0;
+
+      const modules = fondsPropresData.modules || {};
+      Object.values(modules).forEach(m => {
+        totalValue += parseFloat(m.valeur || 0);
+        totalCount += parseInt(m.nb_articles || 0);
+      });
+
+      // Update total card
+      document.getElementById('totalValue').textContent = formatCurrency(totalValue);
+      document.getElementById('totalCount').textContent = `${totalCount.toLocaleString('fr-FR')} articles en stock`;
+
+      // Render module cards
+      renderModuleCards(modules, totalValue);
+
+      // Render stats table
+      renderStatsTable(modules, totalValue);
+
+      // Render recent exits
+      renderRecentExits();
+
+      // Render recent lots
+      renderRecentLots();
+    }
+
+    function renderModuleCards(modules, totalValue) {
+      const container = document.getElementById('moduleCards');
+      container.innerHTML = '';
+
+      Object.entries(MODULES).forEach(([code, config]) => {
+        const moduleData = modules[code] || { valeur: 0, nb_articles: 0 };
+        const percentage = totalValue > 0 ? (moduleData.valeur / totalValue * 100).toFixed(1) : 0;
+
+        const col = document.createElement('div');
+        col.className = 'col-md-6 col-lg-3 mb-3';
+        col.innerHTML = `
+          <div class="card module-card ${config.color} h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="module-icon ${config.color}">
+                  <i class="bi ${config.icon}"></i>
+                </div>
+                <span class="badge bg-light text-dark">${percentage}%</span>
+              </div>
+              <h6 class="text-muted mb-1">${config.label}</h6>
+              <div class="h4 mb-1">${formatCurrency(moduleData.valeur)}</div>
+              <small class="text-muted">${(moduleData.nb_articles || 0).toLocaleString('fr-FR')} articles</small>
+            </div>
+          </div>
+        `;
+        container.appendChild(col);
+      });
+    }
+
+    function renderStatsTable(modules, totalValue) {
+      const tbody = document.getElementById('statsTableBody');
+      tbody.innerHTML = '';
+
+      Object.entries(MODULES).forEach(([code, config]) => {
+        const moduleData = modules[code] || { valeur: 0, nb_articles: 0 };
+        const percentage = totalValue > 0 ? (moduleData.valeur / totalValue * 100) : 0;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>
+            <div class="d-flex align-items-center">
+              <div class="module-icon ${config.color} me-2" style="width: 32px; height: 32px; font-size: 0.9rem;">
+                <i class="bi ${config.icon}"></i>
+              </div>
+              ${config.label}
+            </div>
+          </td>
+          <td class="text-end">${(moduleData.nb_articles || 0).toLocaleString('fr-FR')}</td>
+          <td class="text-end fw-semibold">${formatCurrency(moduleData.valeur)}</td>
+          <td>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar progress-bar-module bg-${getModuleBgClass(config.color)}"
+                   style="width: ${percentage}%"></div>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Total row
+      const totalCount = Object.values(modules).reduce((sum, m) => sum + (m.nb_articles || 0), 0);
+      const trTotal = document.createElement('tr');
+      trTotal.className = 'table-light fw-bold';
+      trTotal.innerHTML = `
+        <td>Total</td>
+        <td class="text-end">${totalCount.toLocaleString('fr-FR')}</td>
+        <td class="text-end">${formatCurrency(totalValue)}</td>
+        <td></td>
+      `;
+      tbody.appendChild(trTotal);
+    }
+
+    function renderRecentExits() {
+      const tbody = document.getElementById('recentExitsTable');
+      tbody.innerHTML = '';
+
+      const sorties = statistiquesData?.sorties_recentes || [];
+
+      if (sorties.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="text-center text-muted py-3">
+              Aucune sortie recente
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      sorties.slice(0, 5).forEach(sortie => {
+        const typeConfig = TYPE_COLORS[sortie.type_code] || { bg: 'secondary', icon: 'box' };
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formatDate(sortie.date_sortie)}</td>
+          <td>
+            <span class="badge bg-${typeConfig.bg}">
+              <i class="bi bi-${typeConfig.icon}"></i> ${sortie.type_libelle || sortie.type_code}
+            </span>
+          </td>
+          <td class="text-end">${sortie.nb_articles}</td>
+          <td class="text-end">${formatCurrency(sortie.valeur_totale)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderRecentLots() {
+      const container = document.getElementById('recentLotsHistory');
+      const noLotsMsg = document.getElementById('noLotsMessage');
+      container.innerHTML = '';
+
+      const lots = statistiquesData?.lots_exportes || [];
+
+      if (lots.length === 0) {
+        noLotsMsg.style.display = 'block';
+        return;
+      }
+
+      noLotsMsg.style.display = 'none';
+
+      lots.slice(0, 5).forEach(lot => {
+        const typeClass = lot.type_code || 'rebus';
+        const div = document.createElement('div');
+        div.className = `history-item ${typeClass}`;
+        div.innerHTML = `
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <strong>${lot.numero}</strong>
+              <span class="badge bg-secondary ms-2">${lot.type_libelle || lot.type_code}</span>
+            </div>
+            <small class="text-muted">${formatDate(lot.date_export_comptable || lot.date_sortie)}</small>
+          </div>
+          <div class="mt-1">
+            <span class="text-muted">${lot.nb_articles} articles</span>
+            <span class="ms-2 fw-semibold">${formatCurrency(lot.valeur_totale)}</span>
+          </div>
+          ${lot.destination ? `<small class="text-muted d-block">${lot.destination}</small>` : ''}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function getModuleBgClass(color) {
+      const mapping = {
+        ludotheque: 'primary',
+        bibliotheque: 'success',
+        filmotheque: 'warning',
+        discotheque: 'danger'
+      };
+      return mapping[color] || 'secondary';
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: 'EUR'
+      }).format(value || 0);
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '-';
+      return new Date(dateStr).toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      });
+    }
+
+    function showAlert(message, type = 'info') {
+      const container = document.getElementById('alertContainer');
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type} alert-dismissible fade show`;
+      alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      `;
+      container.appendChild(alert);
+      setTimeout(() => alert.remove(), 5000);
+    }
+
+    async function exportPDF() {
+      showAlert('Export PDF en cours de developpement...', 'info');
+      // TODO: Implement PDF export
+    }
+
+    async function exportExcel() {
+      try {
+        const structureId = document.getElementById('filterStructure').value;
+        const params = structureId ? `?structure_id=${structureId}` : '';
+
+        const response = await apiAdmin.get(`/desherbage/fonds-propres/export${params}`);
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `fonds-propres-${new Date().toISOString().slice(0,10)}.xlsx`;
+          a.click();
+          URL.revokeObjectURL(url);
+        } else {
+          showAlert('Erreur lors de l\'export', 'danger');
+        }
+      } catch (error) {
+        console.error('Erreur export:', error);
+        showAlert('Erreur lors de l\'export Excel', 'danger');
+      }
+    }
+  </script>
+</body>
+</html>

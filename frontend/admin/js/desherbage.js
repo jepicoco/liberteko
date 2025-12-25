@@ -491,13 +491,23 @@ async function loadItems(moduleCode) {
  */
 function renderItemsList(moduleCode, items) {
     const listContainer = document.getElementById(`${moduleCode}-list`);
+    const config = MODULE_CONFIG[moduleCode];
 
-    listContainer.innerHTML = items.map(item => `
+    listContainer.innerHTML = items.map(item => {
+        const key = `${config.type}-${item.id}`;
+        const isSelected = selectedItems.has(key);
+
+        return `
         <div class="item-row p-3 border-bottom ${selectedItem?.id === item.id ? 'selected' : ''}"
-             onclick="selectItem('${moduleCode}', ${item.id})"
              data-id="${item.id}">
-            <div class="d-flex justify-content-between align-items-start">
-                <div class="flex-grow-1">
+            <div class="d-flex align-items-start gap-2">
+                <div class="form-check mt-1">
+                    <input class="form-check-input item-checkbox" type="checkbox"
+                           data-id="${item.id}"
+                           ${isSelected ? 'checked' : ''}
+                           onclick="toggleItemSelection('${moduleCode}', ${item.id}, event)">
+                </div>
+                <div class="flex-grow-1" onclick="selectItem('${moduleCode}', ${item.id})">
                     <h6 class="mb-1">${escapeHtml(item.titre || 'Sans titre')}</h6>
                     <small class="text-muted">
                         ${item.date_acquisition
@@ -505,10 +515,10 @@ function renderItemsList(moduleCode, items) {
                             : '<i class="bi bi-calendar-x"></i> Date inconnue'}
                     </small>
                 </div>
-                <i class="bi bi-chevron-right text-muted"></i>
+                <i class="bi bi-chevron-right text-muted" onclick="selectItem('${moduleCode}', ${item.id})"></i>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 /**
@@ -855,4 +865,208 @@ function showAlert(message, type = 'info') {
     `;
     alertContainer.appendChild(alert);
     setTimeout(() => alert.remove(), 3000);
+}
+
+// ============================================
+// GESTION DE LA SELECTION MULTIPLE
+// ============================================
+
+let selectedItems = new Map(); // Map<itemId, {type_article, id, titre}>
+let typesSortieCache = [];
+let lotsEnCoursCache = [];
+
+/**
+ * Toggle la selection d'un item
+ */
+function toggleItemSelection(moduleCode, itemId, event) {
+    event.stopPropagation();
+
+    const config = MODULE_CONFIG[moduleCode];
+    const item = currentItems.find(i => i.id === parseInt(itemId));
+
+    if (!item) return;
+
+    const key = `${config.type}-${itemId}`;
+
+    if (selectedItems.has(key)) {
+        selectedItems.delete(key);
+    } else {
+        selectedItems.set(key, {
+            type_article: config.type,
+            article_id: parseInt(itemId),
+            titre: item.titre
+        });
+    }
+
+    updateSelectionUI(moduleCode);
+}
+
+/**
+ * Met a jour l'affichage de la selection
+ */
+function updateSelectionUI(moduleCode) {
+    // Mettre a jour les checkboxes
+    document.querySelectorAll(`#${moduleCode}-list .item-checkbox`).forEach(cb => {
+        const itemId = cb.dataset.id;
+        const key = `${MODULE_CONFIG[moduleCode].type}-${itemId}`;
+        cb.checked = selectedItems.has(key);
+    });
+
+    // Mettre a jour la barre d'action
+    const selectionBar = document.getElementById('selectionBar');
+    const selectionCount = document.getElementById('selectionCount');
+
+    if (selectedItems.size > 0) {
+        selectionBar.style.display = 'block';
+        selectionCount.textContent = selectedItems.size;
+    } else {
+        selectionBar.style.display = 'none';
+    }
+}
+
+/**
+ * Vide la selection
+ */
+function clearSelection() {
+    selectedItems.clear();
+
+    // Decocher tous les checkboxes
+    document.querySelectorAll('.item-checkbox').forEach(cb => {
+        cb.checked = false;
+    });
+
+    updateSelectionUI(currentModule);
+}
+
+/**
+ * Ouvre le modal pour ajouter la selection a un lot
+ */
+async function addSelectionToLot() {
+    if (selectedItems.size === 0) {
+        showAlert('Selectionnez au moins un article', 'warning');
+        return;
+    }
+
+    // Charger les types de sortie
+    await loadTypesSortie();
+
+    // Charger les lots en cours (brouillon)
+    await loadLotsEnCours();
+
+    // Preparer le modal
+    const selectLot = document.getElementById('selectLot');
+    selectLot.innerHTML = '<option value="">-- Creer un nouveau lot --</option>';
+    lotsEnCoursCache.forEach(lot => {
+        selectLot.innerHTML += `<option value="${lot.id}">${lot.numero} - ${lot.typeSortie?.libelle || 'N/A'} (${lot.nb_articles} articles)</option>`;
+    });
+
+    // Remplir les types de sortie
+    const typeSortieSelect = document.getElementById('typeSortie');
+    typeSortieSelect.innerHTML = '<option value="">Choisir...</option>';
+    typesSortieCache.forEach(type => {
+        typeSortieSelect.innerHTML += `<option value="${type.id}" style="color: ${type.couleur}">${type.libelle}</option>`;
+    });
+
+    // Date par defaut = aujourd'hui
+    document.getElementById('dateSortie').value = new Date().toISOString().split('T')[0];
+
+    // Toggle des champs nouveau lot
+    selectLot.addEventListener('change', function() {
+        document.getElementById('newLotFields').style.display = this.value ? 'none' : 'block';
+    });
+
+    // Ouvrir le modal
+    const modal = new bootstrap.Modal(document.getElementById('lotModal'));
+    modal.show();
+}
+
+/**
+ * Charge les types de sortie
+ */
+async function loadTypesSortie() {
+    try {
+        const data = await apiRequest('/desherbage/types-sortie');
+        typesSortieCache = Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error('Erreur chargement types sortie:', error);
+        typesSortieCache = [];
+    }
+}
+
+/**
+ * Charge les lots en cours (brouillon)
+ */
+async function loadLotsEnCours() {
+    try {
+        const data = await apiRequest('/desherbage/lots?statut=brouillon&limit=50');
+        lotsEnCoursCache = data.lots || [];
+    } catch (error) {
+        console.error('Erreur chargement lots:', error);
+        lotsEnCoursCache = [];
+    }
+}
+
+/**
+ * Confirme l'ajout au lot
+ */
+async function confirmAddToLot() {
+    const selectLotValue = document.getElementById('selectLot').value;
+
+    let lotId = selectLotValue;
+
+    // Si pas de lot selectionne, en creer un nouveau
+    if (!lotId) {
+        const typeSortieId = document.getElementById('typeSortie').value;
+        if (!typeSortieId) {
+            showAlert('Veuillez selectionner un type de sortie', 'warning');
+            return;
+        }
+
+        try {
+            const newLot = await apiRequest('/desherbage/lots', {
+                method: 'POST',
+                body: JSON.stringify({
+                    type_sortie_id: parseInt(typeSortieId),
+                    date_sortie: document.getElementById('dateSortie').value,
+                    destination: document.getElementById('destination').value,
+                    commentaire: document.getElementById('commentaireLot').value
+                })
+            });
+            lotId = newLot.id;
+            showAlert(`Lot ${newLot.numero} cree`, 'success');
+        } catch (error) {
+            showAlert('Erreur creation lot: ' + error.message, 'danger');
+            return;
+        }
+    }
+
+    // Ajouter les exemplaires au lot (V2)
+    // Le format envoye est compatible avec les deux approches:
+    // - type_article + article_id (legacy, le backend trouve l'exemplaire)
+    // - type_exemplaire + exemplaire_id (V2, reference directe)
+    const exemplaires = Array.from(selectedItems.values());
+
+    try {
+        const result = await apiRequest(`/desherbage/lots/${lotId}/exemplaires`, {
+            method: 'POST',
+            body: JSON.stringify({ exemplaires })
+        });
+
+        // Fermer le modal
+        bootstrap.Modal.getInstance(document.getElementById('lotModal')).hide();
+
+        // Message de succes
+        if (result.erreurs && result.erreurs.length > 0) {
+            showAlert(`${result.exemplaires_ajoutes} exemplaire(s) ajoute(s), ${result.erreurs.length} erreur(s)`, 'warning');
+        } else {
+            showAlert(`${result.exemplaires_ajoutes} exemplaire(s) ajoute(s) au lot`, 'success');
+        }
+
+        // Vider la selection et rafraichir
+        clearSelection();
+        loadItems(currentModule);
+
+    } catch (error) {
+        showAlert('Erreur ajout articles: ' + error.message, 'danger');
+    }
 }

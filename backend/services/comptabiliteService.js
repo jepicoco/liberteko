@@ -412,6 +412,188 @@ class ComptabiliteService {
 
     return resultats;
   }
+
+  /**
+   * Genere les ecritures comptables pour un lot de sortie
+   * @param {Object} lot - Lot de sortie avec typeSortie charge
+   * @param {Object} options - Options (transaction)
+   * @returns {Promise<Object>} Informations sur les ecritures generees
+   */
+  static async genererEcrituresSortieLot(lot, options = {}) {
+    const { transaction } = options;
+    const { TypeSortie, LotSortie, ArticleSortie } = require('../models');
+
+    // Charger le type de sortie si pas deja charge
+    const typeSortie = lot.typeSortie || await TypeSortie.findByPk(lot.type_sortie_id);
+
+    if (!typeSortie) {
+      throw new Error('Type de sortie non trouve');
+    }
+
+    if (!typeSortie.compte_sortie) {
+      // Pas de compte configure, on ne genere pas d'ecritures
+      return null;
+    }
+
+    const dateSortie = new Date(lot.date_sortie);
+    const exercice = dateSortie.getFullYear();
+    const journalCode = typeSortie.journal_code || 'OD';
+    const prefixePiece = typeSortie.prefixe_piece || 'SOR';
+
+    // Generer le numero de piece
+    const numeroPiece = await CompteurPiece.genererNumero(prefixePiece, exercice, transaction);
+    const numeroEcriture = `${journalCode}${exercice}-${numeroPiece}`;
+
+    const libelle = `Sortie ${typeSortie.libelle} - Lot ${lot.numero}`;
+
+    // Recuperer les libelles
+    const journalLibelle = await this.getJournalLibelleAsync(journalCode);
+    const compteSortieLibelle = await this.getCompteLibelleAsync(typeSortie.compte_sortie);
+    const compteStockLibelle = await this.getCompteLibelleAsync('2184'); // Mobilier - par defaut
+
+    const ecritures = [];
+
+    // Compte de charge ou produit selon le type de sortie
+    // - Rebus (6571): Charge exceptionnelle sur operations de gestion
+    // - Don (6713): Dons et liberalites
+    // - Vente (7542): Produits des activites annexes
+
+    // 1. Ecriture de debit (Charge ou Credit Stock)
+    const ecritureDebit = await EcritureComptable.create({
+      journal_code: journalCode,
+      journal_libelle: journalLibelle,
+      exercice: exercice,
+      numero_ecriture: numeroEcriture,
+      date_ecriture: dateSortie,
+      compte_numero: typeSortie.compte_sortie,
+      compte_libelle: compteSortieLibelle,
+      compte_auxiliaire: null,
+      piece_reference: numeroPiece,
+      piece_date: dateSortie,
+      libelle: libelle,
+      debit: parseFloat(lot.valeur_totale),
+      credit: 0,
+      date_validation: new Date()
+    }, { transaction });
+
+    ecritures.push(ecritureDebit);
+
+    // 2. Ecriture de credit (Diminution stock/immobilisations)
+    const ecritureCredit = await EcritureComptable.create({
+      journal_code: journalCode,
+      journal_libelle: journalLibelle,
+      exercice: exercice,
+      numero_ecriture: numeroEcriture,
+      date_ecriture: dateSortie,
+      compte_numero: '2184', // Mobilier (a adapter selon config)
+      compte_libelle: compteStockLibelle,
+      compte_auxiliaire: null,
+      piece_reference: numeroPiece,
+      piece_date: dateSortie,
+      libelle: libelle,
+      debit: 0,
+      credit: parseFloat(lot.valeur_totale),
+      date_validation: new Date()
+    }, { transaction });
+
+    ecritures.push(ecritureCredit);
+
+    return {
+      numero_piece: numeroPiece,
+      nb_ecritures: ecritures.length,
+      montant_total: parseFloat(lot.valeur_totale),
+      ecritures
+    };
+  }
+
+  /**
+   * Genere les ecritures de contrepassation pour une reintegration
+   * @param {Object} articleSortie - Article sortie reintegre
+   * @param {Object} options - Options (transaction)
+   * @returns {Promise<Object>} Informations sur les ecritures generees
+   */
+  static async genererEcrituresReintegration(articleSortie, options = {}) {
+    const { transaction } = options;
+    const { LotSortie, TypeSortie } = require('../models');
+
+    // Charger le lot et le type
+    const lot = await LotSortie.findByPk(articleSortie.lot_sortie_id, {
+      include: [{ model: TypeSortie, as: 'typeSortie' }],
+      transaction
+    });
+
+    if (!lot || !lot.typeSortie?.compte_sortie) {
+      return null;
+    }
+
+    const dateReintegration = new Date();
+    const exercice = dateReintegration.getFullYear();
+    const journalCode = lot.typeSortie.journal_code || 'OD';
+    const prefixePiece = 'REI'; // Reintegration
+
+    // Generer le numero de piece
+    const numeroPiece = await CompteurPiece.genererNumero(prefixePiece, exercice, transaction);
+    const numeroEcriture = `${journalCode}${exercice}-${numeroPiece}`;
+
+    const libelle = `Reintegration ${articleSortie.type_article} #${articleSortie.article_id} - Lot ${lot.numero}`;
+
+    // Recuperer les libelles
+    const journalLibelle = await this.getJournalLibelleAsync(journalCode);
+    const compteSortieLibelle = await this.getCompteLibelleAsync(lot.typeSortie.compte_sortie);
+    const compteStockLibelle = await this.getCompteLibelleAsync('2184');
+
+    const ecritures = [];
+    const valeur = parseFloat(articleSortie.valeur);
+
+    // Contrepassation: inverse des ecritures de sortie
+
+    // 1. Debit Stock (reintegration)
+    const ecritureDebit = await EcritureComptable.create({
+      journal_code: journalCode,
+      journal_libelle: journalLibelle,
+      exercice: exercice,
+      numero_ecriture: numeroEcriture,
+      date_ecriture: dateReintegration,
+      compte_numero: '2184',
+      compte_libelle: compteStockLibelle,
+      compte_auxiliaire: null,
+      piece_reference: numeroPiece,
+      piece_date: dateReintegration,
+      libelle: libelle,
+      debit: valeur,
+      credit: 0,
+      date_validation: new Date()
+    }, { transaction });
+
+    ecritures.push(ecritureDebit);
+
+    // 2. Credit Charge/Produit (annulation)
+    const ecritureCredit = await EcritureComptable.create({
+      journal_code: journalCode,
+      journal_libelle: journalLibelle,
+      exercice: exercice,
+      numero_ecriture: numeroEcriture,
+      date_ecriture: dateReintegration,
+      compte_numero: lot.typeSortie.compte_sortie,
+      compte_libelle: compteSortieLibelle,
+      compte_auxiliaire: null,
+      piece_reference: numeroPiece,
+      piece_date: dateReintegration,
+      libelle: libelle,
+      debit: 0,
+      credit: valeur,
+      date_validation: new Date()
+    }, { transaction });
+
+    ecritures.push(ecritureCredit);
+
+    return {
+      numero_piece: numeroPiece,
+      nb_ecritures: ecritures.length,
+      montant: valeur,
+      ecritures
+    };
+  }
 }
 
 module.exports = ComptabiliteService;

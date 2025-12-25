@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr" class="auth-pending">
+<head>
+  <meta charset="UTF-8">
+  <style>.auth-pending body { visibility: hidden; }</style>
+  <script>
+    if (!localStorage.getItem('authToken')) {
+      window.location.replace('/admin/login.html');
+    } else {
+      document.documentElement.classList.remove('auth-pending');
+    }
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lots de sortie - Liberteko Admin</title>
+  <link rel="icon" href="/public/logo_ludo_transparent_100x100.png" type="image/x-icon" />
+  <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
+  <style>
+    .lot-card {
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .lot-card:hover {
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .lot-card.selected {
+      border-color: var(--bs-primary) !important;
+      background-color: rgba(var(--bs-primary-rgb), 0.05);
+    }
+    .status-badge {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+    .article-list {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .type-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <nav id="admin-navbar"></nav>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <div id="admin-sidebar" class="col-md-2 bg-light"></div>
+
+      <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2><i class="bi bi-box-seam"></i> Lots de sortie</h2>
+          <div class="d-flex gap-2">
+            <a href="desherbage.html" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left"></i> Retour desherbage
+            </a>
+            <button class="btn btn-primary" onclick="createNewLot()">
+              <i class="bi bi-plus-lg"></i> Nouveau lot
+            </button>
+          </div>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <!-- Filtres -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select class="form-select" id="filterStatut" onchange="loadLots()">
+                  <option value="">Tous</option>
+                  <option value="brouillon" selected>Brouillon</option>
+                  <option value="valide">Valide</option>
+                  <option value="exporte">Exporte</option>
+                  <option value="annule">Annule</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Type de sortie</label>
+                <select class="form-select" id="filterType" onchange="loadLots()">
+                  <option value="">Tous</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date debut</label>
+                <input type="date" class="form-control" id="filterDateDebut" onchange="loadLots()">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Date fin</label>
+                <input type="date" class="form-control" id="filterDateFin" onchange="loadLots()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liste et Detail -->
+        <div class="row">
+          <!-- Liste des lots -->
+          <div class="col-md-5">
+            <div class="card">
+              <div class="card-header">
+                <h5 class="card-title mb-0">
+                  <i class="bi bi-list"></i> Lots
+                  <span class="badge bg-secondary" id="lotsCount">0</span>
+                </h5>
+              </div>
+              <div class="card-body p-0" id="lotsList">
+                <div class="text-center p-4">
+                  <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Chargement...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Detail du lot -->
+          <div class="col-md-7">
+            <div id="lotDetail">
+              <div class="card">
+                <div class="card-body text-center text-muted py-5">
+                  <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+                  <p>Selectionnez un lot pour voir ses details</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal nouveau lot -->
+  <div class="modal fade" id="newLotModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-plus-lg"></i> Nouveau lot de sortie</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Type de sortie <span class="text-danger">*</span></label>
+            <select class="form-select" id="newTypeSortie" required>
+              <option value="">Choisir...</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Date de sortie</label>
+            <input type="date" class="form-control" id="newDateSortie">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Destination</label>
+            <input type="text" class="form-control" id="newDestination" placeholder="Beneficiaire, lieu...">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Commentaire</label>
+            <textarea class="form-control" id="newCommentaire" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="button" class="btn btn-primary" onclick="saveNewLot()">
+            <i class="bi bi-check"></i> Creer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/bootstrap.bundle.min.js"></script>
+  <script src="js/api-admin.js"></script>
+  <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
+  <script>
+    let typesSortie = [];
+    let lots = [];
+    let selectedLot = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await initTemplate('desherbage');
+      await loadTypesSortie();
+      await loadLots();
+    });
+
+    async function loadTypesSortie() {
+      try {
+        typesSortie = await apiRequest('/desherbage/types-sortie');
+        const select = document.getElementById('filterType');
+        const newSelect = document.getElementById('newTypeSortie');
+
+        typesSortie.forEach(type => {
+          select.innerHTML += `<option value="${type.id}">${type.libelle}</option>`;
+          newSelect.innerHTML += `<option value="${type.id}">${type.libelle}</option>`;
+        });
+      } catch (error) {
+        console.error('Erreur chargement types:', error);
+      }
+    }
+
+    async function loadLots() {
+      const container = document.getElementById('lotsList');
+      container.innerHTML = '<div class="text-center p-4"><div class="spinner-border"></div></div>';
+
+      try {
+        const params = new URLSearchParams();
+        const statut = document.getElementById('filterStatut').value;
+        const type = document.getElementById('filterType').value;
+        const dateDebut = document.getElementById('filterDateDebut').value;
+        const dateFin = document.getElementById('filterDateFin').value;
+
+        if (statut) params.append('statut', statut);
+        if (type) params.append('type_sortie_id', type);
+        if (dateDebut) params.append('date_debut', dateDebut);
+        if (dateFin) params.append('date_fin', dateFin);
+
+        const data = await apiRequest(`/desherbage/lots?${params.toString()}`);
+        lots = data.lots || [];
+        document.getElementById('lotsCount').textContent = data.total || lots.length;
+
+        if (lots.length === 0) {
+          container.innerHTML = '<div class="text-center p-4 text-muted">Aucun lot trouve</div>';
+          return;
+        }
+
+        container.innerHTML = lots.map(lot => renderLotCard(lot)).join('');
+      } catch (error) {
+        container.innerHTML = `<div class="text-center p-4 text-danger">${error.message}</div>`;
+      }
+    }
+
+    function renderLotCard(lot) {
+      const statusColors = {
+        brouillon: 'warning',
+        valide: 'success',
+        exporte: 'info',
+        annule: 'secondary'
+      };
+
+      const type = lot.typeSortie || {};
+
+      return `
+        <div class="lot-card p-3 border-bottom ${selectedLot?.id === lot.id ? 'selected' : ''}"
+             onclick="selectLot(${lot.id})">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+              <div class="type-icon" style="background: ${type.couleur || '#6c757d'}">
+                <i class="bi bi-${type.icone || 'box'}"></i>
+              </div>
+              <div>
+                <h6 class="mb-0">${lot.numero}</h6>
+                <small class="text-muted">${type.libelle || 'N/A'} - ${formatDate(lot.date_sortie)}</small>
+              </div>
+            </div>
+            <div class="text-end">
+              <span class="badge bg-${statusColors[lot.statut] || 'secondary'} status-badge">${lot.statut}</span>
+              <div class="small text-muted mt-1">${lot.nb_articles} article(s)</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function selectLot(lotId) {
+      try {
+        const lot = await apiRequest(`/desherbage/lots/${lotId}`);
+        selectedLot = lot;
+
+        // Mettre a jour la selection visuelle
+        document.querySelectorAll('.lot-card').forEach(card => card.classList.remove('selected'));
+        event.currentTarget?.classList.add('selected');
+
+        renderLotDetail(lot);
+      } catch (error) {
+        showAlert('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    function renderLotDetail(lot) {
+      const container = document.getElementById('lotDetail');
+      const type = lot.typeSortie || {};
+      const statusColors = { brouillon: 'warning', valide: 'success', exporte: 'info', annule: 'secondary' };
+
+      container.innerHTML = `
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center" style="background: ${type.couleur || '#6c757d'}20">
+            <div>
+              <h5 class="mb-0">${lot.numero}</h5>
+              <small>${type.libelle || 'N/A'}</small>
+            </div>
+            <span class="badge bg-${statusColors[lot.statut]} status-badge">${lot.statut}</span>
+          </div>
+          <div class="card-body">
+            <div class="row mb-3">
+              <div class="col-6">
+                <small class="text-muted">Date de sortie</small>
+                <div>${formatDate(lot.date_sortie)}</div>
+              </div>
+              <div class="col-6">
+                <small class="text-muted">Valeur totale</small>
+                <div class="fw-bold">${parseFloat(lot.valeur_totale || 0).toFixed(2)} EUR</div>
+              </div>
+            </div>
+            ${lot.destination ? `<div class="mb-3"><small class="text-muted">Destination</small><div>${escapeHtml(lot.destination)}</div></div>` : ''}
+            ${lot.commentaire ? `<div class="mb-3"><small class="text-muted">Commentaire</small><div>${escapeHtml(lot.commentaire)}</div></div>` : ''}
+
+            <hr>
+
+            <h6><i class="bi bi-list-check"></i> Articles (${lot.articles?.length || 0})</h6>
+            <div class="article-list">
+              ${(lot.articles || []).map(art => `
+                <div class="d-flex justify-content-between align-items-center p-2 border-bottom ${art.annule ? 'text-muted text-decoration-line-through' : ''}">
+                  <div>
+                    <strong>${art.type_article}</strong> #${art.article_id}
+                    ${art.article ? ` - ${escapeHtml(art.article.titre)}` : ''}
+                  </div>
+                  <div>
+                    <span class="badge bg-light text-dark">${parseFloat(art.valeur).toFixed(2)} EUR</span>
+                    ${!art.annule && lot.statut !== 'exporte' ? `
+                      <button class="btn btn-sm btn-outline-danger ms-2" onclick="removeArticle(${lot.id}, ${art.id})" title="Retirer">
+                        <i class="bi bi-x"></i>
+                      </button>
+                    ` : ''}
+                    ${art.annule ? '<span class="badge bg-secondary ms-2">Reintegre</span>' : ''}
+                  </div>
+                </div>
+              `).join('') || '<div class="text-center text-muted p-3">Aucun article</div>'}
+            </div>
+
+            <hr>
+
+            <!-- Actions -->
+            <div class="d-flex gap-2 flex-wrap">
+              ${lot.statut === 'brouillon' ? `
+                <button class="btn btn-success" onclick="validerLot(${lot.id})">
+                  <i class="bi bi-check-lg"></i> Valider
+                </button>
+                <button class="btn btn-outline-danger" onclick="deleteLot(${lot.id})">
+                  <i class="bi bi-trash"></i> Supprimer
+                </button>
+              ` : ''}
+              ${lot.statut === 'valide' ? `
+                <button class="btn btn-primary" onclick="exporterLot(${lot.id})">
+                  <i class="bi bi-download"></i> Exporter comptabilite
+                </button>
+              ` : ''}
+              ${lot.statut === 'exporte' ? `
+                <span class="text-success"><i class="bi bi-check-circle"></i> Exporte le ${formatDate(lot.date_export_comptable)}</span>
+                ${lot.numero_piece_comptable ? `<span class="badge bg-light text-dark">Piece: ${lot.numero_piece_comptable}</span>` : ''}
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function removeArticle(lotId, articleSortieId) {
+      if (!confirm('Retirer cet article du lot ?')) return;
+
+      try {
+        await apiRequest(`/desherbage/lots/${lotId}/articles/${articleSortieId}`, { method: 'DELETE' });
+        showAlert('Article retire', 'success');
+        selectLot(lotId);
+      } catch (error) {
+        showAlert('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    async function validerLot(lotId) {
+      if (!confirm('Valider ce lot ? Les articles passeront en statut "sorti".')) return;
+
+      try {
+        await apiRequest(`/desherbage/lots/${lotId}/valider`, { method: 'POST' });
+        showAlert('Lot valide', 'success');
+        loadLots();
+        selectLot(lotId);
+      } catch (error) {
+        showAlert('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    async function exporterLot(lotId) {
+      if (!confirm('Exporter ce lot vers la comptabilite ?')) return;
+
+      try {
+        const result = await apiRequest(`/desherbage/lots/${lotId}/exporter`, { method: 'POST' });
+        showAlert(`Lot exporte. ${result.ecritures ? `${result.ecritures.nb_ecritures} ecritures creees.` : ''}`, 'success');
+        loadLots();
+        selectLot(lotId);
+      } catch (error) {
+        showAlert('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    async function deleteLot(lotId) {
+      if (!confirm('Supprimer ce lot ?')) return;
+
+      try {
+        await apiRequest(`/desherbage/lots/${lotId}`, { method: 'DELETE' });
+        showAlert('Lot supprime', 'success');
+        selectedLot = null;
+        document.getElementById('lotDetail').innerHTML = `
+          <div class="card">
+            <div class="card-body text-center text-muted py-5">
+              <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+              <p>Selectionnez un lot pour voir ses details</p>
+            </div>
+          </div>
+        `;
+        loadLots();
+      } catch (error) {
+        showAlert('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    function createNewLot() {
+      document.getElementById('newDateSortie').value = new Date().toISOString().split('T')[0];
+      document.getElementById('newDestination').value = '';
+      document.getElementById('newCommentaire').value = '';
+      new bootstrap.Modal(document.getElementById('newLotModal')).show();
+    }
+
+    async function saveNewLot() {
+      const typeSortieId = document.getElementById('newTypeSortie').value;
+      if (!typeSortieId) {
+        showAlert('Veuillez selectionner un type de sortie', 'warning');
+        return;
+      }
+
+      try {
+        const lot = await apiRequest('/desherbage/lots', {
+          method: 'POST',
+          body: JSON.stringify({
+            type_sortie_id: parseInt(typeSortieId),
+            date_sortie: document.getElementById('newDateSortie').value,
+            destination: document.getElementById('newDestination').value,
+            commentaire: document.getElementById('newCommentaire').value
+          })
+        });
+
+        bootstrap.Modal.getInstance(document.getElementById('newLotModal')).hide();
+        showAlert(`Lot ${lot.numero} cree`, 'success');
+        loadLots();
+        selectLot(lot.id);
+      } catch (error) {
+        showAlert('Erreur: ' + error.message, 'danger');
+      }
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return 'N/A';
+      return new Date(dateStr).toLocaleDateString('fr-FR');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function showAlert(message, type = 'info') {
+      const container = document.getElementById('alertContainer');
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type} alert-dismissible fade show`;
+      alert.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+      container.appendChild(alert);
+      setTimeout(() => alert.remove(), 3000);
+    }
+  </script>
+</body>
+</html>

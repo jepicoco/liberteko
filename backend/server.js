@@ -306,6 +306,9 @@ app.use('/api/groupes-frontend', require('./routes/groupesFrontend'));
 // Routes scanner (validation emprunts avec limites)
 app.use('/api/scanner', require('./routes/scanner'));
 
+// Routes desherbage (lots de sortie, fonds propres)
+app.use('/api/desherbage', require('./routes/desherbage'));
+
 // ============================================
 // ROUTES PORTAILS PUBLICS (/:slug/*)
 // Routes dynamiques basées sur les groupes frontend

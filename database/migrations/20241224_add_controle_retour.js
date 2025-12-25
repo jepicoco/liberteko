@@ -21,7 +21,8 @@ async function up() {
 
     // Tables d'articles à modifier
     const tables = ['jeux', 'livres', 'films', 'disques'];
-    const newEnum = "'disponible', 'emprunte', 'reserve', 'en_controle', 'maintenance', 'perdu', 'archive'";
+    // Conserver toutes les valeurs existantes + ajouter 'en_controle'
+    const newEnum = "'disponible', 'emprunte', 'reserve', 'en_controle', 'en_reparation', 'indisponible', 'maintenance', 'perdu', 'archive'";
 
     for (const table of tables) {
       // Vérifier si la colonne statut existe
@@ -76,15 +77,15 @@ async function down() {
   try {
     console.log('Reverting en_controle status from article tables...');
 
-    // Remettre l'ancien enum (sans 'reserve' et 'en_controle')
+    // Remettre l'ancien enum (sans 'en_controle')
     const tables = ['jeux', 'livres', 'films', 'disques'];
-    const oldEnum = "'disponible', 'emprunte', 'maintenance', 'perdu', 'archive'";
+    const oldEnum = "'disponible', 'emprunte', 'reserve', 'en_reparation', 'indisponible', 'maintenance', 'perdu', 'archive'";
 
-    // D'abord, convertir les articles en_controle ou reserve vers disponible
+    // D'abord, convertir les articles en_controle vers disponible
     for (const table of tables) {
       await connection.query(`
         UPDATE ${table} SET statut = 'disponible'
-        WHERE statut IN ('en_controle', 'reserve')
+        WHERE statut = 'en_controle'
       `);
     }
 

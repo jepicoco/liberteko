@@ -232,6 +232,11 @@ const StructureConnecteurEvenementModel = require('./StructureConnecteurEvenemen
 const OrganisationBarcodeGroupModel = require('./OrganisationBarcodeGroup');
 const OrganisationBarcodeConfigModel = require('./OrganisationBarcodeConfig');
 
+// Import Desherbage (lots de sortie)
+const TypeSortieModel = require('./TypeSortie');
+const LotSortieModel = require('./LotSortie');
+const ArticleSortieModel = require('./ArticleSortie');
+
 // ============================================================
 // Initialize models
 // ============================================================
@@ -464,6 +469,11 @@ const StructureConnecteurEvenement = StructureConnecteurEvenementModel(sequelize
 const OrganisationBarcodeGroup = OrganisationBarcodeGroupModel(sequelize);
 const OrganisationBarcodeConfig = OrganisationBarcodeConfigModel(sequelize);
 
+// Initialize Desherbage (lots de sortie)
+const TypeSortie = TypeSortieModel(sequelize);
+const LotSortie = LotSortieModel(sequelize);
+const ArticleSortie = ArticleSortieModel(sequelize);
+
 // ============================================================
 // Define associations via modular files
 // ============================================================
@@ -639,7 +649,12 @@ const models = {
 
   // Tags Utilisateur
   TagUtilisateur,
-  UtilisateurTag
+  UtilisateurTag,
+
+  // Desherbage (lots de sortie)
+  TypeSortie,
+  LotSortie,
+  ArticleSortie
 };
 
 // Setup all associations from modular files
@@ -846,5 +861,9 @@ module.exports = {
   OrganisationBarcodeConfig,
   // Tags Utilisateur
   TagUtilisateur,
-  UtilisateurTag
+  UtilisateurTag,
+  // Desherbage (lots de sortie)
+  TypeSortie,
+  LotSortie,
+  ArticleSortie
 };

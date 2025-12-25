@@ -271,6 +271,13 @@ const MENU_ITEMS = [
         minRole: 'benevole'  // Accessible aux benevoles et au-dessus
     },
     {
+        id: 'fonds-propres',
+        label: 'Fonds propres',
+        icon: 'piggy-bank',
+        href: 'fonds-propres.html',
+        minRole: 'gestionnaire'  // Accessible aux gestionnaires et au-dessus
+    },
+    {
         id: 'plans',
         label: 'Plans',
         icon: 'map',

@@ -21,6 +21,7 @@ const setupStructuresAssociations = require('./structures');
 const setupTarificationAssociations = require('./tarification');
 const setupTagsUtilisateurAssociations = require('./tags-utilisateur');
 const setupProvenancesAssociations = require('./provenances');
+const setupDesherbageAssociations = require('./desherbage');
 
 /**
  * Configure toutes les associations entre modeles
@@ -74,6 +75,9 @@ function setupAllAssociations(models) {
 
   // Provenances articles (achat, don, echange, etc.)
   setupProvenancesAssociations(models);
+
+  // Desherbage (lots de sortie)
+  setupDesherbageAssociations(models);
 }
 
 module.exports = setupAllAssociations;

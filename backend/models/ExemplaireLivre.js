@@ -52,7 +52,7 @@ module.exports = (sequelize) => {
       comment: 'Date d\'acquisition de cet exemplaire'
     },
     statut: {
-      type: DataTypes.ENUM('disponible', 'emprunte', 'reserve', 'maintenance', 'perdu', 'archive'),
+      type: DataTypes.ENUM('disponible', 'emprunte', 'reserve', 'maintenance', 'perdu', 'archive', 'sorti'),
       allowNull: false,
       defaultValue: 'disponible',
       comment: 'Statut de l\'exemplaire'
