@@ -566,9 +566,9 @@ const caisseController = {
         return res.status(404).json({ error: 'Session non trouvée' });
       }
 
-      // Charger les mouvements
+      // Charger les mouvements (non annulés)
       const mouvements = await MouvementCaisse.findAll({
-        where: { session_caisse_id: sessionId, annule: false },
+        where: { session_caisse_id: sessionId, statut: 'valide' },
         order: [['date_mouvement', 'ASC']]
       });
 
