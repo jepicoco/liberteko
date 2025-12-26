@@ -15,11 +15,8 @@ module.exports = (sequelize) => {
     structure_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: 'structures',
-        key: 'id'
-      },
       comment: 'Structure concernee'
+      // FK gérée par migration 20241221_addStructureConnecteurs
     },
     categorie: {
       type: DataTypes.ENUM('adherent', 'emprunt', 'cotisation', 'systeme', 'reservation'),
@@ -29,20 +26,14 @@ module.exports = (sequelize) => {
     configuration_email_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'configurations_email',
-        key: 'id'
-      },
       comment: 'Connecteur email pour cette categorie (null = utiliser defaut structure)'
+      // FK gérée par migration
     },
     configuration_sms_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      references: {
-        model: 'configurations_sms',
-        key: 'id'
-      },
       comment: 'Connecteur SMS pour cette categorie (null = utiliser defaut structure)'
+      // FK gérée par migration
     }
   }, {
     tableName: 'structure_connecteurs_categories',
