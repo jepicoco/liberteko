@@ -315,56 +315,67 @@ function setupStructuresAssociations(models) {
 
   // ========================================
   // StructureConnecteurCategorie
+  // FK gérées par migration, pas par sync
   // ========================================
 
   StructureConnecteurCategorie.belongsTo(Structure, {
     foreignKey: 'structure_id',
-    as: 'structure'
+    as: 'structure',
+    constraints: false
   });
 
   Structure.hasMany(StructureConnecteurCategorie, {
     foreignKey: 'structure_id',
-    as: 'connecteursCategories'
+    as: 'connecteursCategories',
+    constraints: false
   });
 
   StructureConnecteurCategorie.belongsTo(ConfigurationEmail, {
     foreignKey: 'configuration_email_id',
-    as: 'configurationEmail'
+    as: 'configurationEmail',
+    constraints: false
   });
 
   StructureConnecteurCategorie.belongsTo(ConfigurationSMS, {
     foreignKey: 'configuration_sms_id',
-    as: 'configurationSMS'
+    as: 'configurationSMS',
+    constraints: false
   });
 
   // ========================================
   // StructureConnecteurEvenement
+  // FK gérées par migration, pas par sync
   // ========================================
 
   StructureConnecteurEvenement.belongsTo(Structure, {
     foreignKey: 'structure_id',
-    as: 'structure'
+    as: 'structure',
+    constraints: false
   });
 
   Structure.hasMany(StructureConnecteurEvenement, {
     foreignKey: 'structure_id',
-    as: 'connecteursEvenements'
+    as: 'connecteursEvenements',
+    constraints: false
   });
 
   StructureConnecteurEvenement.belongsTo(ConfigurationEmail, {
     foreignKey: 'configuration_email_id',
-    as: 'configurationEmail'
+    as: 'configurationEmail',
+    constraints: false
   });
 
   StructureConnecteurEvenement.belongsTo(ConfigurationSMS, {
     foreignKey: 'configuration_sms_id',
-    as: 'configurationSMS'
+    as: 'configurationSMS',
+    constraints: false
   });
 
   StructureConnecteurEvenement.belongsTo(EventTrigger, {
     foreignKey: 'event_trigger_code',
     targetKey: 'code',
-    as: 'eventTrigger'
+    as: 'eventTrigger',
+    constraints: false
   });
 
   // ========================================
