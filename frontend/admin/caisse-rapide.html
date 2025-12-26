@@ -17,6 +17,7 @@
   <link href="/vendor/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.min.css">
   <style>
+    /* Variables theme sombre pour la caisse */
     :root {
       --caisse-bg: #1a1a2e;
       --caisse-card: #16213e;
@@ -29,90 +30,46 @@
       --caisse-muted: #6c757d;
     }
 
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      background-color: var(--caisse-bg);
+    /* Override Bootstrap pour theme sombre */
+    .caisse-dark-mode {
+      background-color: var(--caisse-bg) !important;
       color: var(--caisse-text);
-      min-height: 100vh;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      margin: 0;
-      padding: 0;
+      min-height: calc(100vh - 56px);
     }
 
-    /* Container principal */
-    .caisse-container {
-      height: 100vh;
+    /* Message selection structure */
+    .structure-required-message {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      text-align: center;
+      color: var(--caisse-muted);
+    }
+
+    .structure-required-message i {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      color: var(--caisse-warning);
+    }
+
+    .structure-required-message h3 {
+      color: var(--caisse-text);
+      margin-bottom: 10px;
+    }
+
+    .structure-required-message p {
+      color: var(--caisse-muted);
+      max-width: 400px;
+    }
+
+    /* Container principal caisse */
+    .caisse-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 56px);
       overflow: hidden;
-    }
-
-    /* Header */
-    .caisse-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 20px;
-      background-color: var(--caisse-card);
-      border-bottom: 1px solid var(--caisse-accent);
-      flex-shrink: 0;
-    }
-
-    .caisse-header h1 {
-      font-size: 1.4rem;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .caisse-header h1 i {
-      color: var(--caisse-gold);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-    }
-
-    .structure-select {
-      background-color: var(--caisse-accent);
-      border: 1px solid #444;
-      color: var(--caisse-text);
-      padding: 6px 12px;
-      border-radius: 8px;
-      font-size: 0.9rem;
-      cursor: pointer;
-    }
-
-    .header-buttons {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn-caisse {
-      background-color: var(--caisse-accent);
-      border: none;
-      color: var(--caisse-text);
-      padding: 10px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 1rem;
-    }
-
-    .btn-caisse:hover {
-      background-color: #1a4a7a;
-      color: white;
-    }
-
-    .btn-caisse.btn-fullscreen {
-      background-color: transparent;
-      border: 1px solid var(--caisse-accent);
     }
 
     /* Bannière session */
@@ -753,7 +710,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 1000;
+      z-index: 1050;
     }
 
     .modal-content {
@@ -764,6 +721,7 @@
       width: 90%;
       max-height: 90vh;
       overflow-y: auto;
+      color: var(--caisse-text);
     }
 
     .modal-content h4 {
@@ -896,184 +854,222 @@
     }
 
     /* Scrollbar styling */
-    ::-webkit-scrollbar {
+    .caisse-dark-mode ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
     }
 
-    ::-webkit-scrollbar-track {
+    .caisse-dark-mode ::-webkit-scrollbar-track {
       background: var(--caisse-accent);
       border-radius: 3px;
     }
 
-    ::-webkit-scrollbar-thumb {
+    .caisse-dark-mode ::-webkit-scrollbar-thumb {
       background: var(--caisse-muted);
       border-radius: 3px;
     }
 
-    ::-webkit-scrollbar-thumb:hover {
+    .caisse-dark-mode ::-webkit-scrollbar-thumb:hover {
       background: var(--caisse-text);
+    }
+
+    /* Bouton caisse dans header */
+    .btn-caisse-header {
+      background-color: var(--caisse-accent);
+      border: none;
+      color: var(--caisse-text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-caisse-header:hover {
+      background-color: #1a4a7a;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <div class="caisse-container">
-    <!-- Header -->
-    <div class="caisse-header">
-      <div class="header-left">
-        <h1><i class="bi bi-cash-stack"></i> Caisse Rapide</h1>
-        <select id="structure-select" class="structure-select" style="display: none;">
-          <option value="">Chargement...</option>
-        </select>
-      </div>
-      <div class="header-buttons">
-        <button onclick="toggleFullscreen()" class="btn-caisse btn-fullscreen" title="Plein ecran">
-          <i class="bi bi-fullscreen"></i>
-        </button>
-        <a href="caisse.html" class="btn-caisse" title="Caisse complete">
-          <i class="bi bi-gear"></i>
-        </a>
-        <a href="dashboard.html" class="btn-caisse" title="Retour dashboard">
-          <i class="bi bi-house"></i>
-        </a>
-      </div>
-    </div>
+  <!-- Navigation (generated by JS) -->
+  <nav id="admin-navbar"></nav>
 
-    <!-- Bannière session -->
-    <div id="session-banner" class="session-banner session-closed">
-      <div class="session-info">
-        <span><i class="bi bi-exclamation-circle"></i> Aucune session ouverte</span>
-      </div>
-      <div class="session-actions">
-        <button class="btn-session btn-open" onclick="showOpenSessionModal()">
-          <i class="bi bi-unlock"></i> Ouvrir une session
-        </button>
-      </div>
-    </div>
+  <div class="container-fluid p-0">
+    <div class="row g-0">
+      <!-- Sidebar (generated by JS) -->
+      <div id="admin-sidebar" class="col-md-2 bg-light d-none d-md-block"></div>
 
-    <!-- Layout principal -->
-    <div class="caisse-main" id="main-content" style="display: none;">
-      <!-- Colonne gauche: Usager + Produits -->
-      <div class="caisse-left">
-        <!-- Zone usager -->
-        <div class="caisse-zone member-zone">
-          <h3><i class="bi bi-person"></i> Usager</h3>
-          <div id="member-content">
-            <div class="member-placeholder">
-              <i class="bi bi-upc-scan"></i>
-              <p>Scannez ou recherchez un usager</p>
-              <button class="btn-caisse" onclick="showMemberSearch()" style="margin-top: 10px;">
-                <i class="bi bi-search"></i> Rechercher
+      <!-- Main Content -->
+      <div class="col-md-10 caisse-dark-mode">
+        <!-- Message si pas de structure selectionnee -->
+        <div id="structure-required" class="structure-required-message" style="display: none;">
+          <i class="bi bi-building-exclamation"></i>
+          <h3>Structure requise</h3>
+          <p>Veuillez selectionner une structure specifique dans la barre de navigation pour utiliser la caisse.</p>
+          <p class="text-muted mt-3"><small>La caisse ne peut pas fonctionner en mode "Toutes les structures".</small></p>
+        </div>
+
+        <!-- Container caisse (visible si structure selectionnee) -->
+        <div id="caisse-wrapper" class="caisse-container" style="display: none;">
+          <!-- Header avec boutons -->
+          <div class="d-flex justify-content-between align-items-center p-3" style="background-color: var(--caisse-card); border-bottom: 1px solid var(--caisse-accent);">
+            <div>
+              <h4 class="mb-0" style="color: var(--caisse-gold);"><i class="bi bi-cash-stack me-2"></i>Caisse Rapide</h4>
+              <small class="text-muted" id="current-structure-name">Structure: -</small>
+            </div>
+            <div class="d-flex gap-2">
+              <button onclick="toggleFullscreen()" class="btn-caisse-header" title="Plein ecran">
+                <i class="bi bi-fullscreen"></i>
+              </button>
+              <a href="caisse.html" class="btn-caisse-header" title="Caisse complete">
+                <i class="bi bi-gear"></i> Caisse complete
+              </a>
+            </div>
+          </div>
+
+          <!-- Bannière session -->
+          <div id="session-banner" class="session-banner session-closed">
+            <div class="session-info">
+              <span><i class="bi bi-exclamation-circle"></i> Aucune session ouverte</span>
+            </div>
+            <div class="session-actions">
+              <button class="btn-session btn-open" onclick="showOpenSessionModal()">
+                <i class="bi bi-unlock"></i> Ouvrir une session
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Zone produits -->
-        <div class="caisse-zone products-zone">
-          <h3><i class="bi bi-grid"></i> Produits</h3>
-          <div class="product-tabs">
-            <button class="product-tab active" data-category="cotisation" onclick="selectProductTab('cotisation')">Cotisations</button>
-            <button class="product-tab" data-category="adhesion" onclick="selectProductTab('adhesion')">Adhesions</button>
-            <button class="product-tab" data-category="vente" onclick="selectProductTab('vente')">Ventes</button>
-            <button class="product-tab" data-category="autre" onclick="selectProductTab('autre')">Autres</button>
-          </div>
-          <div id="products-list" class="products-list">
-            <!-- Products loaded dynamically -->
-          </div>
-        </div>
-      </div>
+          <!-- Layout principal -->
+          <div class="caisse-main" id="main-content" style="display: none;">
+            <!-- Colonne gauche: Usager + Produits -->
+            <div class="caisse-left">
+              <!-- Zone usager -->
+              <div class="caisse-zone member-zone">
+                <h3><i class="bi bi-person"></i> Usager</h3>
+                <div id="member-content">
+                  <div class="member-placeholder">
+                    <i class="bi bi-upc-scan"></i>
+                    <p>Scannez ou recherchez un usager</p>
+                    <button class="btn btn-outline-warning btn-sm" onclick="showMemberSearch()" style="margin-top: 10px;">
+                      <i class="bi bi-search"></i> Rechercher
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-      <!-- Colonne centre: Panier + Paiement -->
-      <div class="caisse-center">
-        <!-- Panier -->
-        <div class="caisse-zone cart-zone">
-          <h3><i class="bi bi-cart3"></i> Transaction</h3>
-          <div id="cart-items" class="cart-items">
-            <div class="cart-empty">
-              <i class="bi bi-cart" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-              <p>Selectionnez des produits</p>
+              <!-- Zone produits -->
+              <div class="caisse-zone products-zone">
+                <h3><i class="bi bi-grid"></i> Produits</h3>
+                <div class="product-tabs">
+                  <button class="product-tab active" data-category="cotisation" onclick="selectProductTab('cotisation')">Cotisations</button>
+                  <button class="product-tab" data-category="adhesion" onclick="selectProductTab('adhesion')">Adhesions</button>
+                  <button class="product-tab" data-category="vente" onclick="selectProductTab('vente')">Ventes</button>
+                  <button class="product-tab" data-category="autre" onclick="selectProductTab('autre')">Autres</button>
+                </div>
+                <div id="products-list" class="products-list">
+                  <!-- Products loaded dynamically -->
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="cart-total">
-            <span class="cart-total-label">Total</span>
-            <span id="cart-total-amount" class="cart-total-amount">0,00 EUR</span>
-          </div>
-        </div>
 
-        <!-- Modes de paiement -->
-        <div class="caisse-zone payment-zone">
-          <h3><i class="bi bi-credit-card"></i> Paiement</h3>
-          <div id="payment-modes" class="payment-modes-grid">
-            <!-- Payment modes loaded dynamically -->
-          </div>
-        </div>
+            <!-- Colonne centre: Panier + Paiement -->
+            <div class="caisse-center">
+              <!-- Panier -->
+              <div class="caisse-zone cart-zone">
+                <h3><i class="bi bi-cart3"></i> Transaction</h3>
+                <div id="cart-items" class="cart-items">
+                  <div class="cart-empty">
+                    <i class="bi bi-cart" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
+                    <p>Selectionnez des produits</p>
+                  </div>
+                </div>
+                <div class="cart-total">
+                  <span class="cart-total-label">Total</span>
+                  <span id="cart-total-amount" class="cart-total-amount">0,00 EUR</span>
+                </div>
+              </div>
 
-        <!-- Comptage espèces -->
-        <div class="caisse-zone cash-zone" id="cash-zone">
-          <h3><i class="bi bi-cash"></i> Comptage Especes</h3>
-          <div class="cash-grid">
-            <div class="cash-row coins">
-              <button class="cash-btn" onclick="addCash(0.10)">0,10</button>
-              <button class="cash-btn" onclick="addCash(0.20)">0,20</button>
-              <button class="cash-btn" onclick="addCash(0.50)">0,50</button>
-              <button class="cash-btn" onclick="addCash(1)">1</button>
-              <button class="cash-btn" onclick="addCash(2)">2</button>
-            </div>
-            <div class="cash-row bills">
-              <button class="cash-btn bill" onclick="addCash(5)">5 EUR</button>
-              <button class="cash-btn bill" onclick="addCash(10)">10 EUR</button>
-              <button class="cash-btn bill" onclick="addCash(20)">20 EUR</button>
-              <button class="cash-btn bill" onclick="addCash(50)">50 EUR</button>
-              <button class="cash-btn bill" onclick="addCash(100)">100 EUR</button>
-            </div>
-          </div>
-          <div class="cash-display">
-            <div class="cash-display-item">
-              <div class="cash-display-label">Recu</div>
-              <div id="amount-received" class="cash-display-value received">0,00 EUR</div>
-            </div>
-            <div class="cash-display-item">
-              <div class="cash-display-label">A rendre</div>
-              <div id="change-amount" class="cash-display-value change">0,00 EUR</div>
-            </div>
-          </div>
-          <div class="cash-actions">
-            <button class="btn-cash-reset" onclick="resetCash()">
-              <i class="bi bi-arrow-counterclockwise"></i> Reset
-            </button>
-            <button class="btn-cash-exact" onclick="setExactAmount()">
-              <i class="bi bi-check"></i> Montant exact
-            </button>
-          </div>
-        </div>
+              <!-- Modes de paiement -->
+              <div class="caisse-zone payment-zone">
+                <h3><i class="bi bi-credit-card"></i> Paiement</h3>
+                <div id="payment-modes" class="payment-modes-grid">
+                  <!-- Payment modes loaded dynamically -->
+                </div>
+              </div>
 
-        <!-- Bouton valider -->
-        <button id="btn-validate" class="btn-validate" onclick="validateTransaction()" disabled>
-          <i class="bi bi-check-circle"></i> Valider
-        </button>
-      </div>
+              <!-- Comptage espèces -->
+              <div class="caisse-zone cash-zone" id="cash-zone">
+                <h3><i class="bi bi-cash"></i> Comptage Especes</h3>
+                <div class="cash-grid">
+                  <div class="cash-row coins">
+                    <button class="cash-btn" onclick="addCash(0.10)">0,10</button>
+                    <button class="cash-btn" onclick="addCash(0.20)">0,20</button>
+                    <button class="cash-btn" onclick="addCash(0.50)">0,50</button>
+                    <button class="cash-btn" onclick="addCash(1)">1</button>
+                    <button class="cash-btn" onclick="addCash(2)">2</button>
+                  </div>
+                  <div class="cash-row bills">
+                    <button class="cash-btn bill" onclick="addCash(5)">5 EUR</button>
+                    <button class="cash-btn bill" onclick="addCash(10)">10 EUR</button>
+                    <button class="cash-btn bill" onclick="addCash(20)">20 EUR</button>
+                    <button class="cash-btn bill" onclick="addCash(50)">50 EUR</button>
+                    <button class="cash-btn bill" onclick="addCash(100)">100 EUR</button>
+                  </div>
+                </div>
+                <div class="cash-display">
+                  <div class="cash-display-item">
+                    <div class="cash-display-label">Recu</div>
+                    <div id="amount-received" class="cash-display-value received">0,00 EUR</div>
+                  </div>
+                  <div class="cash-display-item">
+                    <div class="cash-display-label">A rendre</div>
+                    <div id="change-amount" class="cash-display-value change">0,00 EUR</div>
+                  </div>
+                </div>
+                <div class="cash-actions">
+                  <button class="btn-cash-reset" onclick="resetCash()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset
+                  </button>
+                  <button class="btn-cash-exact" onclick="setExactAmount()">
+                    <i class="bi bi-check"></i> Montant exact
+                  </button>
+                </div>
+              </div>
 
-      <!-- Colonne droite: Historique -->
-      <div class="caisse-right">
-        <div class="caisse-zone history-zone">
-          <h3>
-            <span><i class="bi bi-clock-history"></i> Historique</span>
-            <button class="btn-history-clear" onclick="clearHistory()" title="Effacer l'historique">
-              <i class="bi bi-trash"></i>
-            </button>
-          </h3>
-          <div id="history-list" class="history-list">
-            <!-- History loaded dynamically -->
-          </div>
-          <div class="session-stats">
-            <div class="stat-box">
-              <div class="stat-label">Entrees</div>
-              <div id="stat-entrees" class="stat-value positive">0,00 EUR</div>
+              <!-- Bouton valider -->
+              <button id="btn-validate" class="btn-validate" onclick="validateTransaction()" disabled>
+                <i class="bi bi-check-circle"></i> Valider
+              </button>
             </div>
-            <div class="stat-box">
-              <div class="stat-label">Sorties</div>
-              <div id="stat-sorties" class="stat-value negative">0,00 EUR</div>
+
+            <!-- Colonne droite: Historique -->
+            <div class="caisse-right">
+              <div class="caisse-zone history-zone">
+                <h3>
+                  <span><i class="bi bi-clock-history"></i> Historique</span>
+                  <button class="btn-history-clear" onclick="clearHistory()" title="Effacer l'historique">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </h3>
+                <div id="history-list" class="history-list">
+                  <!-- History loaded dynamically -->
+                </div>
+                <div class="session-stats">
+                  <div class="stat-box">
+                    <div class="stat-label">Entrees</div>
+                    <div id="stat-entrees" class="stat-value positive">0,00 EUR</div>
+                  </div>
+                  <div class="stat-box">
+                    <div class="stat-label">Sorties</div>
+                    <div id="stat-sorties" class="stat-value negative">0,00 EUR</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1192,6 +1188,8 @@
   <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
   <script src="js/api-admin.js"></script>
   <script src="js/auth-admin.js"></script>
+  <script src="js/admin-navigation.js"></script>
+  <script src="js/admin-template.js"></script>
   <script src="js/caisse-rapide.js"></script>
 </body>
 </html>

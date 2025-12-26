@@ -8,7 +8,6 @@
 // ============================================
 const state = {
   // Structure & Caisse
-  structures: [],
   currentStructureId: null,
   caisses: [],
   currentCaisse: null,
@@ -39,21 +38,94 @@ const state = {
   barcodeTimeout: null
 };
 
-/**
- * Fonction globale pour api-admin.js
- * Permet d'envoyer le header X-Structure-Id avec les requetes API
- */
-window.getCurrentStructureId = () => state.currentStructureId;
-
 // ============================================
 // INITIALIZATION
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    // Initialiser le template admin (navbar + sidebar)
+    if (typeof initTemplate === 'function') {
+      await initTemplate('caisse-rapide');
+    }
+
+    // Attendre que les structures soient chargees par admin-template.js
+    await waitForStructures();
+
+    // Verifier la structure selectionnee
+    checkStructureSelection();
+
+    // Ecouter les changements de structure
+    window.addEventListener('structureChanged', onStructureChanged);
+
+    // Configurer l'ecoute clavier pour les codes-barres
+    setupBarcodeListener();
+
+  } catch (error) {
+    console.error('Erreur initialisation:', error);
+    showError('Erreur lors du chargement de la page');
+  }
+});
+
+/**
+ * Attendre que les structures soient chargees
+ */
+async function waitForStructures() {
+  // Si deja charge
+  if (window.USER_STRUCTURES && window.USER_STRUCTURES.length > 0) {
+    return;
+  }
+
+  // Attendre max 5 secondes
+  for (let i = 0; i < 50; i++) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    if (window.USER_STRUCTURES && window.USER_STRUCTURES.length > 0) {
+      return;
+    }
+  }
+}
+
+/**
+ * Verifier la structure selectionnee et afficher le bon contenu
+ */
+function checkStructureSelection() {
+  const structureId = window.CURRENT_STRUCTURE_ID;
+
+  const structureRequired = document.getElementById('structure-required');
+  const caisseWrapper = document.getElementById('caisse-wrapper');
+
+  if (!structureId) {
+    // Aucune structure selectionnee - afficher le message
+    structureRequired.style.display = 'flex';
+    caisseWrapper.style.display = 'none';
+  } else {
+    // Structure selectionnee - charger la caisse
+    structureRequired.style.display = 'none';
+    caisseWrapper.style.display = 'flex';
+
+    state.currentStructureId = structureId;
+    initCaisse();
+  }
+}
+
+/**
+ * Handler pour changement de structure
+ */
+function onStructureChanged(event) {
+  checkStructureSelection();
+}
+
+/**
+ * Initialiser la caisse pour la structure selectionnee
+ */
+async function initCaisse() {
+  try {
     showLoading();
 
-    // Charger les structures de l'utilisateur
-    await loadStructures();
+    // Mettre a jour le nom de la structure
+    updateStructureName();
+
+    // Charger les caisses de cette structure
+    await loadCaisses();
 
     // Charger les references (modes de paiement, categories)
     await loadReferences();
@@ -61,16 +133,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Charger les tarifs cotisation
     await loadTarifsCotisation();
 
-    // Configurer l'ecoute clavier pour les codes-barres
-    setupBarcodeListener();
+    // Verifier s'il y a une session ouverte
+    await checkOpenSessions();
 
     hideLoading();
   } catch (error) {
-    console.error('Erreur initialisation:', error);
+    console.error('Erreur initialisation caisse:', error);
     hideLoading();
-    showError('Erreur lors du chargement de la page');
+    showError('Erreur lors du chargement de la caisse');
   }
-});
+}
+
+/**
+ * Mettre a jour le nom de la structure affiche
+ */
+function updateStructureName() {
+  const nameEl = document.getElementById('current-structure-name');
+  if (!nameEl) return;
+
+  const structure = window.USER_STRUCTURES?.find(s => s.id === state.currentStructureId);
+  if (structure) {
+    nameEl.textContent = `Structure: ${structure.nom}`;
+  } else {
+    nameEl.textContent = 'Structure: -';
+  }
+}
 
 // ============================================
 // LOADING
@@ -84,58 +171,8 @@ function hideLoading() {
 }
 
 // ============================================
-// STRUCTURES & CAISSES
+// CAISSES
 // ============================================
-async function loadStructures() {
-  try {
-    const response = await apiAdmin.get('/api/parametres/mes-structures');
-    state.structures = response || [];
-
-    const select = document.getElementById('structure-select');
-    select.innerHTML = '';
-
-    if (state.structures.length === 0) {
-      select.innerHTML = '<option value="">Aucune structure</option>';
-      return;
-    }
-
-    state.structures.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.nom;
-      select.appendChild(opt);
-    });
-
-    // Selectionner la premiere structure
-    if (state.structures.length > 0) {
-      select.style.display = state.structures.length > 1 ? 'block' : 'none';
-      select.value = state.structures[0].id;
-      await selectStructure(state.structures[0].id);
-    }
-
-    // Ecouteur de changement
-    select.addEventListener('change', async (e) => {
-      await selectStructure(e.target.value);
-    });
-  } catch (error) {
-    console.error('Erreur chargement structures:', error);
-  }
-}
-
-async function selectStructure(structureId) {
-  state.currentStructureId = parseInt(structureId);
-
-  // Definir window.CURRENT_STRUCTURE_ID pour api-admin.js
-  window.CURRENT_STRUCTURE_ID = state.currentStructureId;
-  localStorage.setItem('selectedStructureId', structureId);
-
-  // Charger les caisses de cette structure
-  await loadCaisses();
-
-  // Verifier s'il y a une session ouverte
-  await checkOpenSessions();
-}
-
 async function loadCaisses() {
   try {
     const response = await apiAdmin.get('/api/caisses');
@@ -760,7 +797,7 @@ function renderMember() {
       <div class="member-placeholder">
         <i class="bi bi-upc-scan"></i>
         <p>Scannez ou recherchez un usager</p>
-        <button class="btn-caisse" onclick="showMemberSearch()" style="margin-top: 10px;">
+        <button class="btn btn-outline-warning btn-sm" onclick="showMemberSearch()" style="margin-top: 10px;">
           <i class="bi bi-search"></i> Rechercher
         </button>
       </div>
