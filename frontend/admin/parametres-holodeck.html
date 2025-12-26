@@ -98,6 +98,7 @@
 
     /* Couleurs pour les autres modules */
     .module-scanner .card-header { background: linear-gradient(135deg, #d4edda, #c3e6cb); color: #155724; }
+    .module-caisse .card-header { background: linear-gradient(135deg, #fff3cd, #ffc107); color: #856404; }
     .module-reservations .card-header { background: linear-gradient(135deg, #e8daef, #d7bde2); color: #6c3483; }
     .module-comptabilite .card-header { background: linear-gradient(135deg, #fff3cd, #ffe8a1); color: #856404; }
     .module-communications .card-header { background: linear-gradient(135deg, #cce5ff, #b8daff); color: #004085; }
@@ -447,7 +448,7 @@
     // Categories de modules
     const MODULE_CATEGORIES = {
       collections: ['ludotheque', 'bibliotheque', 'filmotheque', 'discotheque'],
-      fonctionnalites: ['scanner', 'reservations', 'communications', 'recherche_ia', 'plans', 'frequentation', 'charte'],
+      fonctionnalites: ['scanner', 'caisse', 'reservations', 'communications', 'recherche_ia', 'plans', 'frequentation', 'charte'],
       parametres: ['comptabilite', 'outils']
     };
 
@@ -566,7 +567,7 @@
 
         return `
           <div class="col-md-6 col-lg-3 mb-4">
-            <div class="card module-card ${module.actif ? '' : 'disabled'}" id="card-${module.code}">
+            <div class="card module-card module-${module.code} ${module.actif ? '' : 'disabled'}" id="card-${module.code}">
               <div class="card-header" style="${headerStyle}">
                 <i class="bi bi-${module.icone || 'box'}"></i>
                 ${module.libelle}
